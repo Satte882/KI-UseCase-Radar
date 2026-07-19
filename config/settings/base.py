@@ -165,12 +165,12 @@ LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
-        "json": {
-            "format": '{"time":"{asctime}","level":"{levelname}","logger":"{name}","message":"{message}"}',
+        "standard": {
+            "format": "{asctime} {levelname} {name} {message}",
             "style": "{",
         }
     },
-    "handlers": {"console": {"class": "logging.StreamHandler", "formatter": "json"}},
+    "handlers": {"console": {"class": "logging.StreamHandler", "formatter": "standard"}},
     "root": {"handlers": ["console"], "level": env("LOG_LEVEL", "INFO")},
     "loggers": {
         "django.security.DisallowedHost": {"handlers": ["console"], "level": "WARNING", "propagate": False},
