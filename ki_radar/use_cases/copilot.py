@@ -16,6 +16,10 @@ class CopilotUnavailable(RuntimeError):
     pass
 
 
+def _setting(name: str, default: str = "") -> str:
+    return str(getattr(settings, name, os.getenv(name, default)) or "")
+
+
 def _payload_for_use_case(use_case: UseCase) -> dict:
     decision = current_decision_check(use_case)
     return {
@@ -50,7 +54,7 @@ def _payload_for_use_case(use_case: UseCase) -> dict:
 
 
 def analyze_use_case(use_case: UseCase) -> str:
-    api_key = getattr(settings, "OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY", ""))
+    api_key = _setting("OPENROUTER_API_KEY")
     if not api_key:
         raise CopilotUnavailable("Kein OpenRouter API-Key konfiguriert.")
 
@@ -64,9 +68,6 @@ def analyze_use_case(use_case: UseCase) -> str:
         "'Entscheidungshinweis'. Kennzeichne Unsicherheit ausdrücklich."
     )
     body = {
-        "model": getattr(
-            settings, "OPENROUTER_MODEL", os.getenv("OPENROUTER_MODEL", "openrouter/free")
-        ),
         "temperature": 0.1,
         "max_tokens": 700,
         "messages": [
@@ -77,42 +78,41 @@ def analyze_use_case(use_case: UseCase) -> str:
             },
         ],
     }
+    model = _setting("OPENROUTER_MODEL")
+    if model:
+        body["model"] = model
+
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
-        "X-OpenRouter-Title": getattr(
-            settings,
-            "OPENROUTER_APP_NAME",
-            os.getenv("OPENROUTER_APP_NAME", "KI-Radar"),
-        ),
+        "X-OpenRouter-Title": _setting("OPENROUTER_APP_NAME", "KI-Radar"),
     }
-    site_url = getattr(settings, "OPENROUTER_SITE_URL", os.getenv("OPENROUTER_SITE_URL", ""))
+    site_url = _setting("OPENROUTER_SITE_URL")
     if site_url:
         headers["HTTP-Referer"] = site_url
 
     request = urllib.request.Request(
-        getattr(
-            settings,
+        _setting(
             "OPENROUTER_API_URL",
-            os.getenv(
-                "OPENROUTER_API_URL",
-                "https://openrouter.ai/api/v1/chat/completions",
-            ),
+            "https://openrouter.ai/api/v1/chat/completions",
         ),
         data=json.dumps(body).encode("utf-8"),
         headers=headers,
         method="POST",
     )
     try:
-        timeout = int(
-            getattr(
-                settings,
-                "OPENROUTER_TIMEOUT_SECONDS",
-                os.getenv("OPENROUTER_TIMEOUT_SECONDS", "30"),
-            )
-        )
-        with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310
+        timeout = int(_setting("OPENROUTER_TIMEOUT_SECONDS", "30"))
+        with urllib.request.urlopen(  # nosec B310  # noqa: S310
+            request, timeout=timeout
+        ) as response:
             payload = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        try:
+            error_payload = json.loads(exc.read().decode("utf-8"))
+            message = error_payload.get("error", {}).get("message", str(exc))
+        except (json.JSONDecodeError, AttributeError):
+            message = str(exc)
+        raise CopilotUnavailable(f"OpenRouter-Anfrage fehlgeschlagen: {message}") from exc
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
         raise CopilotUnavailable("OpenRouter ist derzeit nicht erreichbar.") from exc
 
