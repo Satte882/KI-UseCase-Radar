@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 import pytest
+from django.core.exceptions import ValidationError
 from django.urls import reverse
 from django.utils import timezone
 
@@ -20,6 +21,31 @@ def use_case(owner, business_unit):
         business_owner=owner,
         expected_benefit="Nutzen",
     )
+
+
+def prepare_failed_pilot(use_case, coordinator):
+    today = timezone.localdate()
+    use_case.status = UseCase.Status.PILOT
+    use_case.data_sources = "ERP und Dokumentenablage"
+    use_case.planned_pilot_end = today
+    use_case.technical_owner = coordinator
+    use_case.one_time_cost = Decimal("5000")
+    use_case.recurring_cost = Decimal("300")
+    use_case.support_responsibility = "IT-Service"
+    use_case.human_oversight = "Fachliche Freigabe bleibt manuell"
+    use_case.metric_name = "Bearbeitungszeit"
+    use_case.metric_type = UseCase.MetricType.DURATION
+    use_case.metric_direction = UseCase.MetricDirection.LOWER
+    use_case.metric_unit = "Minuten"
+    use_case.metric_baseline = Decimal("30")
+    use_case.metric_target = Decimal("10")
+    use_case.metric_actual = Decimal("12")
+    use_case.metric_measurement_method = "Zeitmessung bei 20 Fällen"
+    use_case.metric_measurement_period = "Pilotwochen 1 bis 4"
+    use_case.metric_measured_at = today
+    use_case.metric_evidence_url = "https://example.invalid/evidence"
+    use_case.save()
+    return today
 
 
 @pytest.mark.django_db
@@ -92,3 +118,55 @@ def test_review_can_supply_required_review_date_for_pilot_transition(coordinator
     assert use_case.next_review_date == today
     assert use_case.history.first().history_user == coordinator
     assert review.history.first().history_user == coordinator
+
+
+@pytest.mark.django_db
+def test_failed_pilot_cannot_go_live_without_confirmed_exception(coordinator, use_case):
+    today = prepare_failed_pilot(use_case, coordinator)
+
+    with pytest.raises(ValidationError, match="ausdrücklich bestätigte Ausnahme"):
+        create_review(
+            use_case=use_case,
+            actor=coordinator,
+            data={
+                "review_date": today,
+                "decision": Review.Decision.GO_LIVE,
+                "new_status": UseCase.Status.OPERATION,
+                "rationale": "Nutzen reicht trotz Zielabweichung für einen begrenzten Betrieb.",
+                "go_live_exception_confirmed": False,
+                "open_actions": "",
+                "action_owner": None,
+                "action_due_date": None,
+                "next_review_date": today,
+            },
+        )
+
+    use_case.refresh_from_db()
+    assert use_case.status == UseCase.Status.PILOT
+    assert Review.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_confirmed_go_live_exception_is_persisted(coordinator, use_case):
+    today = prepare_failed_pilot(use_case, coordinator)
+
+    review = create_review(
+        use_case=use_case,
+        actor=coordinator,
+        data={
+            "review_date": today,
+            "decision": Review.Decision.GO_LIVE,
+            "new_status": UseCase.Status.OPERATION,
+            "rationale": "Nutzen reicht trotz Zielabweichung für einen begrenzten Betrieb.",
+            "go_live_exception_confirmed": True,
+            "open_actions": "Zielwert nach drei Monaten erneut prüfen.",
+            "action_owner": coordinator,
+            "action_due_date": today,
+            "next_review_date": today,
+        },
+    )
+
+    use_case.refresh_from_db()
+    assert use_case.status == UseCase.Status.OPERATION
+    assert review.go_live_exception_confirmed is True
+    assert review.history.first().go_live_exception_confirmed is True
