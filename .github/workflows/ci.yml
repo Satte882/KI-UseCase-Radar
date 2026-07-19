@@ -103,7 +103,24 @@ jobs:
         run: docker compose -f compose.local.yml config --quiet
 
       - name: Validate production Compose
-        run: SECRETS_DIR="$PWD/.ci-secrets/prod" docker compose --env-file .env.production.example -f compose.prod.yml config --quiet
+        id: prod_compose
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          SECRETS_DIR="$PWD/.ci-secrets/prod" docker compose --env-file .env.production.example -f compose.prod.yml config 2>&1 | tee compose-production.log
+
+      - name: Upload production Compose diagnostics
+        if: steps.prod_compose.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: compose-production-diagnostics
+          path: compose-production.log
+          if-no-files-found: error
+
+      - name: Fail on invalid production Compose
+        if: steps.prod_compose.outcome == 'failure'
+        run: exit 1
 
       - name: Validate staging Compose
         run: STAGING_SECRETS_DIR="$PWD/.ci-secrets/staging" docker compose --env-file .env.staging.example -f compose.staging.yml config --quiet
