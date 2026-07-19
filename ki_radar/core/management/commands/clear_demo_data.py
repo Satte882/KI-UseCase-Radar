@@ -1,0 +1,20 @@
+from django.core.management.base import BaseCommand
+
+from ki_radar.core.demo_data import clear_demo_data
+
+
+class Command(BaseCommand):
+    help = "Remove only the KI-Radar demo dataset created by seed_demo_data."
+
+    def handle(self, *args, **options):
+        counts = clear_demo_data()
+        self.stdout.write(
+            self.style.SUCCESS(
+                "Demo-Daten entfernt: "
+                f"{counts['business_units']} Organisationseinheiten, "
+                f"{counts['users']} Benutzer, "
+                f"{counts['use_cases']} Use Cases, "
+                f"{counts['governance_assessments']} Governance-Screenings, "
+                f"{counts['reviews']} Reviews."
+            )
+        )
