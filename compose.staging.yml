@@ -45,5 +45,7 @@ volumes:
   staging_static:
   staging_var:
 secrets:
-  django_secret_key: {file: ${STAGING_SECRETS_DIR:-./secrets/staging}/django_secret_key}
-  db_password: {file: ${STAGING_SECRETS_DIR:-./secrets/staging}/db_password}
+  django_secret_key:
+    file: ${STAGING_SECRETS_DIR:-./secrets/staging}/django_secret_key
+  db_password:
+    file: ${STAGING_SECRETS_DIR:-./secrets/staging}/db_password
