@@ -51,4 +51,4 @@ def test_csv_export_is_authenticated(client, owner, use_case):
     client.force_login(owner)
     response = client.get(reverse("use_cases:export_csv"))
     assert response.status_code == 200
-    assert "KI-0001" in response.content.decode("utf-8-sig")
+    assert use_case.short_id in response.content.decode("utf-8-sig")
