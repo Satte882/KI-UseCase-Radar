@@ -2,14 +2,13 @@ from datetime import timedelta
 from decimal import Decimal
 
 from django.utils import timezone
-from ki_radar.use_cases.models import UseCase
 
 
 DEMO_METRICS = {
     "[DEMO] Interner Wissensassistent": {
         "metric_name": "Recherchezeit pro komplexer Anfrage",
-        "metric_type": UseCase.MetricType.DURATION,
-        "metric_direction": UseCase.MetricDirection.LOWER,
+        "metric_type": "duration",
+        "metric_direction": "lower",
         "metric_unit": "Minuten",
         "metric_baseline": Decimal("18"),
         "metric_target": Decimal("12.6"),
@@ -21,8 +20,8 @@ DEMO_METRICS = {
     },
     "[DEMO] Automatische Rechnungspruefung": {
         "metric_name": "Prüfzeit je Rechnung",
-        "metric_type": UseCase.MetricType.DURATION,
-        "metric_direction": UseCase.MetricDirection.LOWER,
+        "metric_type": "duration",
+        "metric_direction": "lower",
         "metric_unit": "Minuten",
         "metric_baseline": Decimal("11"),
         "metric_target": Decimal("8.25"),
@@ -34,8 +33,8 @@ DEMO_METRICS = {
     },
     "[DEMO] Zusammenfassung von Besprechungen": {
         "metric_name": "Nachbereitungszeit pro Besprechung",
-        "metric_type": UseCase.MetricType.DURATION,
-        "metric_direction": UseCase.MetricDirection.LOWER,
+        "metric_type": "duration",
+        "metric_direction": "lower",
         "metric_unit": "Minuten",
         "metric_baseline": Decimal("25"),
         "metric_target": Decimal("12.5"),
@@ -43,8 +42,8 @@ DEMO_METRICS = {
     },
     "[DEMO] Klassifikation eingehender Dokumente": {
         "metric_name": "Manueller Sortieraufwand je Dokument",
-        "metric_type": UseCase.MetricType.DURATION,
-        "metric_direction": UseCase.MetricDirection.LOWER,
+        "metric_type": "duration",
+        "metric_direction": "lower",
         "metric_unit": "Minuten",
         "metric_baseline": Decimal("3"),
         "metric_target": Decimal("1"),
@@ -56,8 +55,8 @@ DEMO_METRICS = {
     },
     "[DEMO] Unterstuetzung bei Kundenanfragen": {
         "metric_name": "Antworten ohne wesentliche Nacharbeit",
-        "metric_type": UseCase.MetricType.PERCENT,
-        "metric_direction": UseCase.MetricDirection.HIGHER,
+        "metric_type": "percent",
+        "metric_direction": "higher",
         "metric_unit": "Prozent",
         "metric_baseline": Decimal("45"),
         "metric_target": Decimal("75"),
@@ -69,8 +68,8 @@ DEMO_METRICS = {
     },
     "[DEMO] Absatz- oder Bedarfsprognose": {
         "metric_name": "Prognosegenauigkeit",
-        "metric_type": UseCase.MetricType.PERCENT,
-        "metric_direction": UseCase.MetricDirection.HIGHER,
+        "metric_type": "percent",
+        "metric_direction": "higher",
         "metric_unit": "Prozent",
         "metric_baseline": Decimal("65"),
         "metric_target": Decimal("80"),
@@ -78,8 +77,8 @@ DEMO_METRICS = {
     },
     "[DEMO] Qualitaetspruefung von Texten": {
         "metric_name": "Texte ohne wesentliche Nacharbeit",
-        "metric_type": UseCase.MetricType.PERCENT,
-        "metric_direction": UseCase.MetricDirection.HIGHER,
+        "metric_type": "percent",
+        "metric_direction": "higher",
         "metric_unit": "Prozent",
         "metric_baseline": Decimal("60"),
         "metric_target": Decimal("85"),
@@ -87,8 +86,8 @@ DEMO_METRICS = {
     },
     "[DEMO] Extraktion von Vertragsinformationen": {
         "metric_name": "Bearbeitungszeit je Vertrag",
-        "metric_type": UseCase.MetricType.DURATION,
-        "metric_direction": UseCase.MetricDirection.LOWER,
+        "metric_type": "duration",
+        "metric_direction": "lower",
         "metric_unit": "Minuten",
         "metric_baseline": Decimal("12"),
         "metric_target": Decimal("4"),
@@ -96,8 +95,8 @@ DEMO_METRICS = {
     },
     "[DEMO] Priorisierung interner Anfragen": {
         "metric_name": "Zeit bis zur korrekten Priorisierung",
-        "metric_type": UseCase.MetricType.DURATION,
-        "metric_direction": UseCase.MetricDirection.LOWER,
+        "metric_type": "duration",
+        "metric_direction": "lower",
         "metric_unit": "Stunden",
         "metric_baseline": Decimal("18"),
         "metric_target": Decimal("8"),
@@ -107,6 +106,8 @@ DEMO_METRICS = {
 
 
 def enrich_demo_metrics() -> int:
+    from ki_radar.use_cases.models import UseCase
+
     today = timezone.localdate()
     updated = 0
     for title, values in DEMO_METRICS.items():
