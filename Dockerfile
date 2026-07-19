@@ -7,7 +7,9 @@ RUN uv sync --frozen --no-dev --no-install-project
 
 FROM python:3.13.5-slim-bookworm
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PATH="/app/.venv/bin:$PATH"
-RUN apt-get update && apt-get install -y --no-install-recommends postgresql-client curl ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends postgresql-client curl ca-certificates rclone \
+    && rm -rf /var/lib/apt/lists/*
 RUN groupadd --gid 10001 app && useradd --uid 10001 --gid app --create-home app
 WORKDIR /app
 COPY --from=builder --chown=app:app /app/.venv /app/.venv
