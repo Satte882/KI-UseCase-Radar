@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Use Cases – KI-Radar{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3"><h1>Use Cases</h1><div>{% if can_create %}<a class="btn btn-primary" href="{% url 'use_cases:create' %}">Use Case anlegen</a>{% endif %} <a class="btn btn-outline-secondary" href="{% url 'use_cases:export_csv' %}">CSV-Export</a></div></div>
+<form method="get" class="card card-body mb-3"><div class="row g-2">
+  <div class="col-md-6"><input class="form-control" type="search" name="q" value="{{ request.GET.q }}" placeholder="ID, Titel, Problem oder Nutzen suchen"></div>
+  <div class="col-md-3"><select class="form-select" name="status"><option value="">Alle Status</option>{% for value,label in status_choices %}<option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+  <div class="col-md-2 form-check align-self-center"><input class="form-check-input" type="checkbox" name="overdue" value="1" id="overdue" {% if request.GET.overdue == '1' %}checked{% endif %}><label class="form-check-label" for="overdue">Review überfällig</label></div>
+  <div class="col-md-1"><button class="btn btn-dark w-100">Filtern</button></div>
+</div></form>
+<div class="table-responsive"><table class="table table-hover align-middle"><thead><tr><th>ID</th><th>Titel</th><th>Status</th><th>Organisation</th><th>Owner</th><th>Nächster Review</th><th>Hinweis</th></tr></thead><tbody>
+{% for item in use_cases %}<tr><td><a href="{{ item.get_absolute_url }}">{{ item.short_id }}</a></td><td>{{ item.title }}</td><td><span class="badge text-bg-secondary">{{ item.get_status_display }}</span></td><td>{{ item.business_unit }}</td><td>{{ item.business_owner.get_display_name }}</td><td>{{ item.next_review_date|date:"d.m.Y"|default:"–" }}</td><td>{{ item.recommendation }}</td></tr>{% empty %}<tr><td colspan="7" class="text-muted">Keine Use Cases gefunden.</td></tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}
