@@ -80,5 +80,6 @@ def apply_status_transition(*, use_case: UseCase, target_status: str, actor) -> 
     use_case.status = target_status
     if target_status == UseCase.Status.ENDED and not use_case.actual_end_date:
         use_case.actual_end_date = timezone.localdate()
+    use_case._history_user = actor
     use_case.save()
     return use_case
