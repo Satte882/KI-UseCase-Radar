@@ -7,6 +7,13 @@ from ki_radar.use_cases.models import UseCase
 from .models import Review
 
 
+class DateInput(forms.DateInput):
+    input_type = "date"
+
+    def __init__(self, attrs=None):
+        super().__init__(attrs=attrs, format="%Y-%m-%d")
+
+
 class ReviewForm(forms.ModelForm):
     ending_reason = forms.CharField(
         required=False, widget=forms.Textarea(attrs={"rows": 3}), label="Beendigungsgrund"
@@ -48,11 +55,21 @@ class ReviewForm(forms.ModelForm):
             "next_review_date",
         ]
         widgets = {
-            "review_date": forms.DateInput(attrs={"type": "date"}),
-            "action_due_date": forms.DateInput(attrs={"type": "date"}),
-            "next_review_date": forms.DateInput(attrs={"type": "date"}),
+            "review_date": DateInput(),
+            "action_due_date": DateInput(),
+            "next_review_date": DateInput(),
             "rationale": forms.Textarea(attrs={"rows": 4}),
             "open_actions": forms.Textarea(attrs={"rows": 3}),
+        }
+        labels = {
+            "review_date": "Review-Datum",
+            "decision": "Entscheidung",
+            "new_status": "Neuer Status",
+            "rationale": "Entscheidungsbegründung",
+            "open_actions": "Offene Maßnahmen",
+            "action_owner": "Maßnahmenverantwortliche Person",
+            "action_due_date": "Fälligkeitsdatum der Maßnahme",
+            "next_review_date": "Nächster Entscheidungstermin",
         }
 
     def __init__(self, *args, use_case: UseCase, **kwargs):

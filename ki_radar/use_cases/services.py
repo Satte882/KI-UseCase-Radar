@@ -81,6 +81,24 @@ GO_LIVE_METRIC_REQUIREMENTS = [
     "metric_evidence_url",
 ]
 
+FIELD_LABELS = {
+    "affected_process": "Betroffener Prozess",
+    "business_owner": "Business Owner",
+    "data_and_access_handling": "Umgang mit Daten und Zugaengen",
+    "data_sources": "Datenquellen",
+    "ending_reason": "Beendigungsgrund",
+    "expected_benefit": "Erwarteter Nutzen",
+    "human_oversight": "Menschliche Aufsicht",
+    "next_review_date": "Nächster Entscheidungstermin",
+    "one_time_cost": "Einmalige Kosten",
+    "planned_pilot_end": "Geplantes Pilotende",
+    "problem_statement": "Problemstellung",
+    "recurring_cost": "Laufende Kosten",
+    "support_responsibility": "Support-Verantwortung",
+    "technical_owner": "Technischer Owner",
+    "title": "Titel",
+}
+
 
 def required_fields_for_status(status: str) -> list[str]:
     return BASE_REQUIREMENTS.get(status, [])
@@ -95,7 +113,9 @@ def _missing_fields(use_case: UseCase, field_names: list[str]) -> list[str]:
     for field_name in field_names:
         value = getattr(use_case, field_name)
         if value in (None, ""):
-            missing.append(str(use_case._meta.get_field(field_name).verbose_name))
+            missing.append(
+                FIELD_LABELS.get(field_name, str(use_case._meta.get_field(field_name).verbose_name))
+            )
     return missing
 
 

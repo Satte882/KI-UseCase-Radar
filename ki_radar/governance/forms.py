@@ -4,6 +4,13 @@ from django.utils import timezone
 from .models import GovernanceAssessment
 
 
+class DateInput(forms.DateInput):
+    input_type = "date"
+
+    def __init__(self, attrs=None):
+        super().__init__(attrs=attrs, format="%Y-%m-%d")
+
+
 class GovernanceAssessmentForm(forms.ModelForm):
     class Meta:
         model = GovernanceAssessment
@@ -30,8 +37,8 @@ class GovernanceAssessmentForm(forms.ModelForm):
             "next_assessment_date",
         ]
         widgets = {
-            "assessment_date": forms.DateInput(attrs={"type": "date"}),
-            "next_assessment_date": forms.DateInput(attrs={"type": "date"}),
+            "assessment_date": DateInput(),
+            "next_assessment_date": DateInput(),
             "rationale": forms.Textarea(attrs={"rows": 4}),
         }
 

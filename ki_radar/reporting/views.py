@@ -35,7 +35,7 @@ def dashboard(request):
         .annotate(total=Count("id"))
     }
     blocked = sum(item.decision_check.state == "blocked" for item in active)
-    overdue = sum(item.decision_due and item.decision_due < today for item in active)
+    overdue = sum(item.decision_due is not None and item.decision_due < today for item in active)
     measured = sum(item.metric_actual is not None for item in active)
     achieved = sum(item.metric_result == UseCase.MetricResult.ACHIEVED for item in active)
 
@@ -48,7 +48,8 @@ def dashboard(request):
         "measured_total": measured,
         "achieved_total": achieved,
         "due_soon_total": sum(
-            item.decision_due and today <= item.decision_due <= today + timedelta(days=30)
+            item.decision_due is not None
+            and today <= item.decision_due <= today + timedelta(days=30)
             for item in active
         ),
         "today": today,
