@@ -1,18 +1,130 @@
 {% extends "base.html" %}
 {% block title %}{{ use_case.short_id }} – KI-Radar{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-start mb-4"><div><div class="text-muted">{{ use_case.short_id }}</div><h1>{{ use_case.title }}</h1><span class="badge text-bg-primary">{{ use_case.get_status_display }}</span> <span class="badge text-bg-light">{{ use_case.get_priority_display }}</span></div><div>{% if can_edit %}<a class="btn btn-primary" href="{% url 'use_cases:edit' use_case.pk %}">Bearbeiten</a>{% endif %}{% if nav_is_coordinator %} <a class="btn btn-outline-primary" href="{% url 'reviews:create' use_case.pk %}">Review anlegen</a> <a class="btn btn-outline-dark" href="{% url 'governance:create' use_case.pk %}">Governance-Screening</a>{% endif %} {% if can_edit %}<a class="btn btn-outline-secondary" href="{% url 'notifications:evidence_create' use_case.pk %}">Nachweislink</a>{% endif %}</div></div>
-<div class="row g-4">
-<div class="col-lg-8">
-<div class="card mb-3"><div class="card-header"><strong>Problem und fachlicher Kontext</strong></div><div class="card-body"><p>{{ use_case.problem_statement|linebreaksbr }}</p><dl class="row"><dt class="col-sm-4">Organisationseinheit</dt><dd class="col-sm-8">{{ use_case.business_unit }}</dd><dt class="col-sm-4">Prozess/Bereich</dt><dd class="col-sm-8">{{ use_case.affected_process }}</dd><dt class="col-sm-4">Business Owner</dt><dd class="col-sm-8">{{ use_case.business_owner.get_display_name }}</dd></dl></div></div>
-<div class="card mb-3"><div class="card-header"><strong>Nutzen und Erfolgsmessung</strong></div><div class="card-body"><p><strong>Erwarteter Nutzen:</strong><br>{{ use_case.expected_benefit|linebreaksbr }}</p><p><strong>Erfolgskriterium:</strong> {{ use_case.success_criterion|default:"–" }}</p><p><strong>Zielwert:</strong> {{ use_case.target_value|default:"–" }}</p><p><strong>Realisiertes Ergebnis:</strong> {{ use_case.realized_result|default:"–" }}</p><div class="row"><div class="col">Nutzen: {{ use_case.get_business_value_display }}</div><div class="col">Machbarkeit: {{ use_case.get_technical_feasibility_display }}</div><div class="col">Datenreife: {{ use_case.get_data_readiness_display }}</div><div class="col">Risiko: {{ use_case.get_risk_complexity_display }}</div></div></div></div>
-<div class="card mb-3"><div class="card-header"><strong>Technik, Systeme und Daten</strong></div><div class="card-body"><dl class="row"><dt class="col-sm-4">Lösungstyp</dt><dd class="col-sm-8">{{ use_case.get_solution_type_display }}</dd><dt class="col-sm-4">Anbieter/Produkt</dt><dd class="col-sm-8">{{ use_case.provider|default:"–" }} {{ use_case.product_name }}</dd><dt class="col-sm-4">Modell</dt><dd class="col-sm-8">{{ use_case.model_name|default:"–" }}</dd><dt class="col-sm-4">Datenquellen</dt><dd class="col-sm-8">{{ use_case.data_sources|linebreaksbr|default:"–" }}</dd></dl></div></div>
-<div class="card mb-3"><div class="card-header"><strong>Governance</strong></div><div class="card-body">{% for a in use_case.governance_assessments.all %}<div class="border-bottom pb-2 mb-2"><strong>{{ a.assessment_date|date:"d.m.Y" }} – {{ a.get_result_display }}</strong><br>{{ a.rationale|linebreaksbr }}<div class="small text-muted">DS: {{ a.privacy_review_required|yesno:"erforderlich,nicht erforderlich" }} · IS: {{ a.security_review_required|yesno:"erforderlich,nicht erforderlich" }} · Recht: {{ a.legal_review_required|yesno:"erforderlich,nicht erforderlich" }}</div></div>{% empty %}<p class="text-muted">Noch kein Governance-Screening vorhanden.</p>{% endfor %}</div></div>
-<div class="card mb-3"><div class="card-header"><strong>Reviews und Entscheidungen</strong></div><div class="card-body">{% for review in use_case.reviews.all %}<div class="border-bottom pb-2 mb-2"><strong>{{ review.review_date|date:"d.m.Y" }} – {{ review.get_decision_display }}</strong><br>{{ review.rationale|linebreaksbr }}<div class="small text-muted">{{ review.get_previous_status_display }} → {{ review.get_new_status_display }} · {{ review.reviewer.get_display_name|default:"Anonymisierter Benutzer" }}</div></div>{% empty %}<p class="text-muted">Noch keine Reviews vorhanden.</p>{% endfor %}</div></div>
+<div class="page-header">
+  <div>
+    <div class="eyebrow mb-2">{{ use_case.short_id }} · {{ use_case.business_unit }}</div>
+    <h1 class="page-title">{{ use_case.title }}</h1>
+    <p class="page-subtitle">{{ use_case.summary|default:use_case.problem_statement|truncatechars:180 }}</p>
+    <div class="d-flex flex-wrap gap-2 mt-3">
+      <span class="badge badge-soft">{{ use_case.get_status_display }}</span>
+      <span class="badge badge-soft">Priorität {{ use_case.get_priority_display }}</span>
+      <span class="badge state-{{ decision_check.state }}">{{ decision_check.state_label }}</span>
+      <span class="badge badge-soft">{{ use_case.metric_result_label }}</span>
+    </div>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    {% if can_edit %}<a class="btn btn-outline-secondary" href="{% url 'use_cases:edit' use_case.pk %}">Bearbeiten</a>{% endif %}
+    {% if nav_is_coordinator %}<a class="btn btn-primary" href="{% url 'reviews:create' use_case.pk %}">Entscheidung dokumentieren</a>{% endif %}
+  </div>
 </div>
-<div class="col-lg-4">
-<div class="card mb-3"><div class="card-header"><strong>Steuerung</strong></div><div class="card-body"><dl><dt>Nächster Review</dt><dd>{{ use_case.next_review_date|date:"d.m.Y"|default:"Nicht gesetzt" }}</dd><dt>KI-Koordinator</dt><dd>{% if use_case.coordinator %}{{ use_case.coordinator.get_display_name }}{% else %}–{% endif %}</dd><dt>Technischer Owner</dt><dd>{% if use_case.technical_owner %}{{ use_case.technical_owner.get_display_name }}{% else %}–{% endif %}</dd><dt>Empfehlung</dt><dd>{{ use_case.recommendation }}</dd></dl></div></div>
-<div class="card mb-3"><div class="card-header"><strong>Nachweise</strong></div><div class="list-group list-group-flush">{% for evidence in use_case.evidence_links.all %}<a class="list-group-item list-group-item-action" href="{{ evidence.url }}" rel="noopener noreferrer" target="_blank">{{ evidence.label }}<div class="small text-muted">{{ evidence.get_document_type_display }}</div></a>{% empty %}<div class="list-group-item text-muted">Keine Nachweise.</div>{% endfor %}</div></div>
-<div class="card"><div class="card-header"><strong>Änderungshistorie</strong></div><div class="list-group list-group-flush history-list">{% for h in history %}<div class="list-group-item"><strong>{{ h.history_date|date:"d.m.Y H:i" }}</strong><br><span class="small">{{ h.get_history_type_display }} durch {% if h.history_user %}{{ h.history_user.get_display_name }}{% else %}System{% endif %}</span></div>{% empty %}<div class="list-group-item text-muted">Keine Historie.</div>{% endfor %}</div></div>
-</div></div>
+
+<div class="row g-4">
+  <div class="col-xl-8">
+    <div class="app-card decision-panel mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <div><strong>{{ decision_check.title }}</strong><div class="small text-muted mt-1">Deterministische Entscheidungsprüfung</div></div>
+        <span class="badge state-{{ decision_check.state }}">{{ decision_check.state_label }}</span>
+      </div>
+      <div class="card-body">
+        {% if decision_check.blockers %}
+          <div class="section-title">Verbindliche Blocker</div>
+          <ul class="decision-list">{% for blocker in decision_check.blockers %}<li>{{ blocker }}</li>{% endfor %}</ul>
+        {% endif %}
+        {% if decision_check.warnings %}
+          <div class="section-title {% if decision_check.blockers %}mt-4{% endif %}">Prüfhinweise</div>
+          <ul class="decision-list">{% for warning in decision_check.warnings %}<li>{{ warning }}</li>{% endfor %}</ul>
+        {% endif %}
+        {% if not decision_check.blockers and not decision_check.warnings %}<p class="mb-0 text-muted">Alle strukturierten Voraussetzungen für diese Entscheidung sind erfüllt.</p>{% endif %}
+      </div>
+    </div>
+
+    <div class="app-card mb-4">
+      <div class="card-header"><strong>Primäre Erfolgsmetrik</strong><div class="small text-muted mt-1">Verbindliche Ziel-gegen-Ergebnis-Betrachtung</div></div>
+      <div class="card-body">
+        {% if use_case.metric_name %}
+        <div class="d-flex justify-content-between gap-3 align-items-start mb-3">
+          <div><div class="section-title mb-1">Kennzahl</div><h3 class="h5 mb-1">{{ use_case.metric_name }}</h3><div class="text-muted small">{{ use_case.get_metric_type_display }} · {{ use_case.get_metric_direction_display }} · {{ use_case.metric_unit }}</div></div>
+          <span class="badge {% if use_case.metric_result == 'achieved' %}state-ready{% elif use_case.metric_result == 'not_achieved' %}state-blocked{% else %}state-review{% endif %}">{{ use_case.metric_result_label }}</span>
+        </div>
+        <div class="kpi-strip mb-3">
+          <div class="kpi-cell"><small>Baseline</small><strong>{{ use_case.metric_baseline|default_if_none:"–" }} {{ use_case.metric_unit }}</strong></div>
+          <div class="kpi-cell"><small>Ziel</small><strong>{{ use_case.metric_target|default_if_none:"–" }} {{ use_case.metric_unit }}</strong></div>
+          <div class="kpi-cell"><small>Ist</small><strong>{{ use_case.metric_actual|default_if_none:"–" }} {{ use_case.metric_unit }}</strong></div>
+        </div>
+        <dl class="row mb-0 small">
+          <dt class="col-sm-3 text-muted">Messmethode</dt><dd class="col-sm-9">{{ use_case.metric_measurement_method|default:"–" }}</dd>
+          <dt class="col-sm-3 text-muted">Messzeitraum</dt><dd class="col-sm-9">{{ use_case.metric_measurement_period|default:"–" }}</dd>
+          <dt class="col-sm-3 text-muted">Messdatum</dt><dd class="col-sm-9">{{ use_case.metric_measured_at|date:"d.m.Y"|default:"–" }}</dd>
+          <dt class="col-sm-3 text-muted">Nachweis</dt><dd class="col-sm-9">{% if use_case.metric_evidence_url %}<a href="{{ use_case.metric_evidence_url }}" target="_blank" rel="noopener noreferrer">Messnachweis öffnen</a>{% else %}–{% endif %}</dd>
+        </dl>
+        {% else %}<p class="text-muted mb-0">Noch keine strukturierte Erfolgsmetrik definiert.</p>{% endif %}
+      </div>
+    </div>
+
+    <div class="app-card mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <div><strong>OpenRouter Review-Copilot</strong><div class="small text-muted mt-1">Semantischer Hinweisgeber – keine Freigabeinstanz</div></div>
+        {% if nav_is_coordinator %}
+        <form method="post" action="{% url 'use_cases:copilot' use_case.pk %}">{% csrf_token %}<button class="btn btn-outline-secondary btn-sm" {% if not copilot_enabled %}disabled{% endif %}>Analyse starten</button></form>
+        {% endif %}
+      </div>
+      <div class="card-body">
+        {% if copilot_analysis %}<div class="copilot-box">{{ copilot_analysis }}</div>
+        {% elif copilot_enabled %}<p class="text-muted mb-0">Der Copilot prüft die semantische Konsistenz von Problem, Nutzen, Metrik, Ziel, Ergebnis und Kosten. Seine Hinweise sind nicht bindend.</p>
+        {% else %}<p class="text-muted mb-0">OpenRouter ist nicht konfiguriert. Setze <code>OPENROUTER_API_KEY</code>, um die optionale Analyse zu aktivieren.</p>{% endif %}
+      </div>
+    </div>
+
+    <div class="app-card mb-4">
+      <div class="card-header"><strong>Fachlicher Kontext</strong></div>
+      <div class="card-body">
+        <div class="row g-4">
+          <div class="col-md-6"><div class="section-title">Problem</div><p>{{ use_case.problem_statement }}</p></div>
+          <div class="col-md-6"><div class="section-title">Erwarteter Nutzen</div><p>{{ use_case.expected_benefit }}</p></div>
+          <div class="col-md-6"><div class="section-title">Prozess</div><p>{{ use_case.affected_process }}</p></div>
+          <div class="col-md-6"><div class="section-title">Zielgruppe</div><p>{{ use_case.target_users|default:"–" }}</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="app-card">
+      <div class="card-header"><strong>Entscheidungsverlauf</strong></div>
+      <div class="list-group list-group-flush">
+        {% for review in use_case.reviews.all %}<div class="list-group-item bg-transparent py-3"><div class="d-flex justify-content-between gap-3"><strong>{{ review.get_decision_display }}</strong><span class="text-muted small">{{ review.review_date|date:"d.m.Y" }}</span></div><div class="small text-muted mt-1">{{ review.rationale }}</div></div>{% empty %}<div class="list-group-item bg-transparent text-muted">Noch keine Reviews dokumentiert.</div>{% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-4">
+    <div class="app-card mb-4">
+      <div class="card-header"><strong>Steuerung</strong></div>
+      <div class="card-body"><dl class="mb-0">
+        <dt class="text-muted small">Nächste Entscheidung</dt><dd>{{ decision_due|date:"d.m.Y"|default:"Nicht gesetzt" }}</dd>
+        <dt class="text-muted small">Business Owner</dt><dd>{{ use_case.business_owner.get_display_name }}</dd>
+        <dt class="text-muted small">KI-Koordinator</dt><dd>{% if use_case.coordinator %}{{ use_case.coordinator.get_display_name }}{% else %}–{% endif %}</dd>
+        <dt class="text-muted small">Technischer Owner</dt><dd>{% if use_case.technical_owner %}{{ use_case.technical_owner.get_display_name }}{% else %}–{% endif %}</dd>
+        <dt class="text-muted small">Einmalkosten</dt><dd>{{ use_case.one_time_cost|default_if_none:"–" }} €</dd>
+        <dt class="text-muted small">Laufende Kosten</dt><dd>{{ use_case.recurring_cost|default_if_none:"–" }} €</dd>
+      </dl></div>
+    </div>
+    <div class="app-card mb-4">
+      <div class="card-header"><strong>Governance & Nachweise</strong></div>
+      <div class="card-body">
+        <div class="d-grid gap-2 mb-3">
+          <span class="badge badge-soft text-start">Datenschutz: {% if use_case.privacy_review_completed %}abgeschlossen{% elif use_case.privacy_review_required %}offen{% else %}nicht erforderlich{% endif %}</span>
+          <span class="badge badge-soft text-start">Security: {% if use_case.security_review_completed %}abgeschlossen{% elif use_case.security_review_required %}offen{% else %}nicht erforderlich{% endif %}</span>
+          <span class="badge badge-soft text-start">Recht: {% if use_case.legal_review_completed %}abgeschlossen{% elif use_case.legal_review_required %}offen{% else %}nicht erforderlich{% endif %}</span>
+        </div>
+        {% if nav_is_coordinator %}<a class="btn btn-outline-secondary w-100 mb-2" href="{% url 'governance:create' use_case.pk %}">Governance-Screening</a>{% endif %}
+        {% if can_edit %}<a class="btn btn-outline-secondary w-100" href="{% url 'notifications:evidence_create' use_case.pk %}">Nachweislink hinzufügen</a>{% endif %}
+      </div>
+      <div class="list-group list-group-flush">{% for evidence in use_case.evidence_links.all %}<a class="list-group-item list-group-item-action bg-transparent" href="{{ evidence.url }}" rel="noopener noreferrer" target="_blank">{{ evidence.label }}<div class="small text-muted">{{ evidence.get_document_type_display }}</div></a>{% endfor %}</div>
+    </div>
+    <div class="app-card">
+      <div class="card-header"><strong>Änderungshistorie</strong></div>
+      <div class="list-group list-group-flush history-list">{% for h in history %}<div class="list-group-item bg-transparent"><strong>{{ h.history_date|date:"d.m.Y H:i" }}</strong><br><span class="small text-muted">{{ h.get_history_type_display }} durch {% if h.history_user %}{{ h.history_user.get_display_name }}{% else %}System{% endif %}</span></div>{% empty %}<div class="list-group-item bg-transparent text-muted">Keine Historie.</div>{% endfor %}</div>
+    </div>
+  </div>
+</div>
 {% endblock %}
