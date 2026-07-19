@@ -1,16 +1,17 @@
-name: Validate KI-Radar
+name: KI-Radar CI
 
 on:
   pull_request:
     branches: [main]
-    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
 
 permissions:
   contents: write
   pull-requests: read
 
 concurrency:
-  group: ki-radar-validate-${{ github.event.pull_request.number }}
+  group: ki-radar-ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -43,22 +44,11 @@ jobs:
       DATABASE_URL: postgresql://ki_radar:ki_radar_test_password@localhost:5432/ki_radar_test
 
     steps:
-      - name: Checkout pull-request branch
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
           fetch-depth: 0
           persist-credentials: true
-
-      - name: Materialize bootstrap archive when present
-        if: ${{ hashFiles('.bootstrap/part-00') != '' }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          cat .bootstrap/part-* | base64 --decode > /tmp/ki-radar.tgz
-          tar -tzf /tmp/ki-radar.tgz >/dev/null
-          tar -xzf /tmp/ki-radar.tgz
-          rm -rf .bootstrap
 
       - name: Install Python
         uses: actions/setup-python@v5
