@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import secrets
+from datetime import datetime
 from pathlib import Path
 
 from django.conf import settings
@@ -21,16 +22,60 @@ def _delete_user_sessions(user: User) -> None:
             session.delete()
 
 
-def _append_ledger(user_id: int, anonymized_username: str, request_reference: str) -> None:
+def _clear_notification_data(user: User, original_email: str) -> None:
+    NotificationLog.objects.filter(recipient_user=user).update(
+        recipient_email="", recipient_label="Anonymisierter Benutzer"
+    )
+    if original_email:
+        NotificationLog.objects.filter(recipient_email__iexact=original_email).update(
+            recipient_email="", recipient_label="Anonymisierter Benutzer"
+        )
+
+
+def _append_ledger(
+    user_id: int,
+    anonymized_username: str,
+    request_reference: str,
+    anonymized_at: datetime,
+) -> None:
     path: Path = settings.ANONYMIZATION_LEDGER_PATH
     path.parent.mkdir(parents=True, exist_ok=True)
     record = {
         "user_id": user_id,
         "anonymized_username": anonymized_username,
-        "anonymized_at": timezone.now().isoformat(),
+        "request_reference": request_reference,
+        "anonymized_at": anonymized_at.isoformat(),
     }
     with path.open("a", encoding="utf-8") as ledger:
         ledger.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+
+def apply_anonymized_identity(
+    *,
+    user: User,
+    anonymized_username: str,
+    anonymized_at: datetime | None = None,
+) -> User:
+    original_email = user.email
+    user.username = anonymized_username
+    user.first_name = ""
+    user.last_name = ""
+    user.email = f"{anonymized_username}@example.invalid"
+    user.external_identity_id = ""
+    user.job_function = ""
+    user.business_unit = None
+    user.is_active = False
+    user.is_staff = False
+    user.is_superuser = False
+    user.is_anonymized = True
+    user.anonymized_at = anonymized_at or timezone.now()
+    user.set_unusable_password()
+    user.save()
+    user.groups.clear()
+    user.user_permissions.clear()
+    _clear_notification_data(user, original_email)
+    _delete_user_sessions(user)
+    return user
 
 
 @transaction.atomic
@@ -45,36 +90,19 @@ def anonymize_user(*, user: User, privacy_request: PrivacyRequest, actor: User) 
     if user.is_anonymized:
         return user
 
-    original_email = user.email
-    suffix = secrets.token_hex(6)
-    anonymized_username = f"deleted-user-{suffix}"
-    user.username = anonymized_username
-    user.first_name = ""
-    user.last_name = ""
-    user.email = f"{anonymized_username}@example.invalid"
-    user.external_identity_id = ""
-    user.job_function = ""
-    user.business_unit = None
-    user.is_active = False
-    user.is_staff = False
-    user.is_superuser = False
-    user.is_anonymized = True
-    user.anonymized_at = timezone.now()
-    user.set_unusable_password()
-    user.groups.clear()
-    user.user_permissions.clear()
-    user.save()
-
-    NotificationLog.objects.filter(recipient_user=user).update(
-        recipient_email="", recipient_label="Anonymisierter Benutzer"
+    anonymized_username = f"deleted-user-{secrets.token_hex(6)}"
+    anonymized_at = timezone.now()
+    apply_anonymized_identity(
+        user=user,
+        anonymized_username=anonymized_username,
+        anonymized_at=anonymized_at,
     )
-    if original_email:
-        NotificationLog.objects.filter(recipient_email__iexact=original_email).update(
-            recipient_email="", recipient_label="Anonymisierter Benutzer"
-        )
-
-    _delete_user_sessions(user)
-    _append_ledger(user.pk, anonymized_username, privacy_request.reference)
+    _append_ledger(
+        user.pk,
+        anonymized_username,
+        privacy_request.reference,
+        anonymized_at,
+    )
 
     privacy_request.status = PrivacyRequest.Status.COMPLETED
     privacy_request.completed_at = timezone.now()
