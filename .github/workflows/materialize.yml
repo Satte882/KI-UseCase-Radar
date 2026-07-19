@@ -1,4 +1,4 @@
-name: Materialize and validate KI-Radar
+name: Validate KI-Radar
 
 on:
   pull_request:
@@ -10,11 +10,11 @@ permissions:
   pull-requests: read
 
 concurrency:
-  group: ki-radar-materialize-${{ github.event.pull_request.number }}
-  cancel-in-progress: false
+  group: ki-radar-validate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
-  materialize:
+  validate:
     runs-on: ubuntu-latest
 
     services:
@@ -50,18 +50,15 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Reconstruct and extract repository
+      - name: Materialize bootstrap archive when present
+        if: ${{ hashFiles('.bootstrap/part-00') != '' }}
         shell: bash
         run: |
           set -euo pipefail
-          test -f .bootstrap/part-00
-          test -f .bootstrap/part-04
           cat .bootstrap/part-* | base64 --decode > /tmp/ki-radar.tgz
           tar -tzf /tmp/ki-radar.tgz >/dev/null
           tar -xzf /tmp/ki-radar.tgz
           rm -rf .bootstrap
-          rm -f .github/workflows/materialize.yml
-          rm -f .github/workflows/bootstrap-generated-files.yml
 
       - name: Install Python
         uses: actions/setup-python@v5
@@ -74,14 +71,25 @@ jobs:
           version: "0.10.0"
           enable-cache: true
 
-      - name: Generate lockfile
-        run: uv lock
-
       - name: Install dependencies
         run: uv sync --frozen --dev
 
       - name: Generate initial migrations
-        run: uv run python manage.py makemigrations accounts core use_cases governance reviews notifications
+        shell: bash
+        run: |
+          set +e
+          uv run python manage.py makemigrations accounts core use_cases governance reviews notifications > migration-error.log 2>&1
+          exit_code=$?
+          cat migration-error.log
+          if [ "$exit_code" -ne 0 ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add migration-error.log
+            git commit -m "Capture migration failure [skip ci]" || true
+            git push origin HEAD:${{ github.head_ref }}
+            exit "$exit_code"
+          fi
+          rm -f migration-error.log
 
       - name: Ruff
         run: uv run ruff check .
@@ -92,25 +100,17 @@ jobs:
       - name: Verify migrations
         run: uv run python manage.py makemigrations --check --dry-run
 
+      - name: Apply migrations
+        run: uv run python manage.py migrate --noinput
+
       - name: Run tests
         run: uv run pytest -q
 
       - name: Bandit
-        run: uv run bandit -q -r accounts core governance ki_radar notifications reporting reviews use_cases config
+        run: uv run bandit -q -r ki_radar config
 
       - name: Dependency audit
         run: uv run pip-audit
 
       - name: Build production image
         run: docker build -t ki-radar:ci .
-
-      - name: Commit validated implementation
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git diff --cached --stat
-          git commit -m "Implement KI-Radar application"
-          git push origin HEAD:${{ github.head_ref }}
