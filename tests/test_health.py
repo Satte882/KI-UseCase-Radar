@@ -32,3 +32,31 @@ def test_operations_healthy(client):
         )
     response = client.get(reverse("health-operations"), HTTP_X_MONITORING_TOKEN="secret")
     assert response.status_code == 200
+
+
+@pytest.mark.django_db
+@override_settings(MONITORING_TOKEN="secret", JOB_FRESHNESS_HOURS=26)
+def test_operations_degraded_when_latest_backup_failed(client):
+    now = timezone.now()
+    for name in ["database_backup", "review_scan"]:
+        SystemJobRun.objects.create(
+            job_name=name,
+            status=SystemJobRun.Status.SUCCESS,
+            started_at=now - timedelta(minutes=5),
+            finished_at=now - timedelta(minutes=4),
+            exit_code=0,
+        )
+    SystemJobRun.objects.create(
+        job_name="database_backup",
+        status=SystemJobRun.Status.FAILED,
+        started_at=now - timedelta(minutes=1),
+        finished_at=now,
+        exit_code=1,
+        error_message="Backup failed",
+    )
+
+    response = client.get(reverse("health-operations"), HTTP_X_MONITORING_TOKEN="secret")
+    payload = response.json()
+    assert response.status_code == 503
+    assert payload["jobs"]["database_backup"]["last_run_status"] == "failed"
+    assert payload["jobs"]["database_backup"]["last_success"] is not None
