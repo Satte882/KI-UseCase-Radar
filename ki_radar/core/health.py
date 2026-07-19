@@ -50,7 +50,9 @@ def operational_health(request):
     for job_name in required_jobs:
         runs = SystemJobRun.objects.filter(job_name=job_name)
         latest = runs.order_by("-started_at").first()
-        last_success = runs.filter(status=SystemJobRun.Status.SUCCESS).order_by("-finished_at").first()
+        last_success = (
+            runs.filter(status=SystemJobRun.Status.SUCCESS).order_by("-finished_at").first()
+        )
         is_fresh = bool(
             latest
             and latest.status == SystemJobRun.Status.SUCCESS
