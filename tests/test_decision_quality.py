@@ -12,6 +12,7 @@ from ki_radar.use_cases.models import UseCase
 from ki_radar.use_cases.services import (
     check_go_live,
     check_pilot_start,
+    current_decision_check,
     validate_target_status,
 )
 
@@ -30,6 +31,17 @@ def decision_use_case(owner, coordinator, business_unit):
         next_review_date=timezone.localdate() + timedelta(days=14),
         planned_pilot_end=timezone.localdate() + timedelta(days=30),
     )
+
+
+@pytest.mark.django_db
+def test_idea_is_checked_for_review_before_pilot(decision_use_case):
+    decision_use_case.status = UseCase.Status.IDEA
+
+    check = current_decision_check(decision_use_case)
+
+    assert check.target_status == UseCase.Status.REVIEW
+    assert check.title == UseCase.Status.REVIEW.label
+    assert "Primäre Erfolgsmetrik" not in check.blockers
 
 
 @pytest.mark.django_db
@@ -77,6 +89,27 @@ def test_go_live_compares_target_and_actual(decision_use_case, coordinator):
     assert check.state == "review"
     assert decision_use_case.metric_result == UseCase.MetricResult.NOT_ACHIEVED
     assert "Pilotziel wurde nicht erreicht" in check.warnings[0]
+
+
+@pytest.mark.django_db
+def test_go_live_rechecks_complete_target_metric(decision_use_case, coordinator):
+    decision_use_case.status = UseCase.Status.PILOT
+    decision_use_case.technical_owner = coordinator
+    decision_use_case.one_time_cost = Decimal("5000")
+    decision_use_case.recurring_cost = Decimal("300")
+    decision_use_case.support_responsibility = "IT-Service"
+    decision_use_case.human_oversight = "Fachliche Freigabe bleibt manuell"
+    decision_use_case.metric_actual = Decimal("8.9")
+    decision_use_case.metric_measurement_period = "Pilotwochen 5 bis 8"
+    decision_use_case.metric_measured_at = timezone.localdate()
+    decision_use_case.metric_evidence_url = "https://example.invalid/evidence"
+    decision_use_case.save()
+
+    check = check_go_live(decision_use_case)
+
+    assert check.state == "blocked"
+    assert "Primäre Erfolgsmetrik" in check.blockers
+    assert "Zielwert" in check.blockers
 
 
 @pytest.mark.django_db
