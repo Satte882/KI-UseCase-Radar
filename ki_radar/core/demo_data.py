@@ -280,8 +280,7 @@ DEMO_USE_CASES = [
         priority=UseCase.Priority.NORMAL,
         next_review_offset=21,
         problem_statement=(
-            "Besprechungsnotizen sind uneinheitlich und Nachverfolgung offener Punkte "
-            "dauert lange."
+            "Besprechungsnotizen sind uneinheitlich und Nachverfolgung offener Punkte dauert lange."
         ),
         affected_process="Meeting-Nachbereitung",
         target_users="Projektteams und bereichsuebergreifende Arbeitsgruppen.",
@@ -399,8 +398,7 @@ DEMO_USE_CASES = [
         target_users="Service- und Supportteams.",
         intended_users="Mitarbeitende mit direktem Kundenkontakt.",
         intended_purpose=(
-            "Antwortentwuerfe aus freigegebenen Textbausteinen und Wissensartikeln "
-            "erzeugen."
+            "Antwortentwuerfe aus freigegebenen Textbausteinen und Wissensartikeln erzeugen."
         ),
         expected_benefit="Schnellere Reaktion und konsistentere Antworten.",
         benefit_category="Servicequalitaet",
@@ -487,8 +485,7 @@ DEMO_USE_CASES = [
         governance=GovernanceTemplate(
             result=GovernanceAssessment.Result.CLARIFICATION,
             rationale=(
-                "Datenqualitaet und Verantwortlichkeit fuer Prognosefehler muessen "
-                "geklaert werden."
+                "Datenqualitaet und Verantwortlichkeit fuer Prognosefehler muessen geklaert werden."
             ),
             evidence_url="https://example.invalid/evidence/demo-prognose",
             next_assessment_offset=45,
@@ -512,8 +509,7 @@ DEMO_USE_CASES = [
         priority=UseCase.Priority.LOW,
         next_review_offset=28,
         problem_statement=(
-            "Fachtexte werden uneinheitlich auf Tonalitaet, Lesbarkeit und Pflichtangaben "
-            "geprueft."
+            "Fachtexte werden uneinheitlich auf Tonalitaet, Lesbarkeit und Pflichtangaben geprueft."
         ),
         affected_process="Dokumenten- und Kommunikationsfreigabe",
         target_users="Kommunikation, Fachbereiche und Qualitaetssicherung.",
@@ -623,8 +619,7 @@ DEMO_USE_CASES = [
         priority=UseCase.Priority.NORMAL,
         next_review_offset=None,
         problem_statement=(
-            "Bewerbungsunterlagen sollten automatisch nach formalen Kriterien vorsortiert "
-            "werden."
+            "Bewerbungsunterlagen sollten automatisch nach formalen Kriterien vorsortiert werden."
         ),
         affected_process="Recruiting",
         target_users="Personalbereich und fachliche Hiring Manager.",
@@ -679,8 +674,7 @@ DEMO_USE_CASES = [
             legal_review_required=True,
             result=GovernanceAssessment.Result.LEGAL,
             rationale=(
-                "Bewerbungsdaten und automatisierte Personenbewertung sind besonders "
-                "risikoreich."
+                "Bewerbungsdaten und automatisierte Personenbewertung sind besonders risikoreich."
             ),
             evidence_url="https://example.invalid/evidence/demo-bewerbungen",
             next_assessment_offset=None,

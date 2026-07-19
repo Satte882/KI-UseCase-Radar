@@ -44,9 +44,7 @@ class Command(BaseCommand):
         )
         if generated_password:
             self.stdout.write(
-                self.style.WARNING(
-                    "Zufaelliges Demo-Passwort fuer alle Demo-Benutzer: " + password
-                )
+                self.style.WARNING("Zufaelliges Demo-Passwort fuer alle Demo-Benutzer: " + password)
             )
         else:
             self.stdout.write("Demo-Benutzerpasswort aus Option oder DEMO_USER_PASSWORD gesetzt.")
