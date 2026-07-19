@@ -1,0 +1,6 @@
+body { background: #f6f7f9; }
+.card { border-radius: .65rem; }
+.metric-card { min-height: 120px; }
+.history-list { max-height: 420px; overflow-y: auto; }
+.errorlist { color: #b02a37; margin: .25rem 0 0; padding-left: 1.25rem; }
+table a { text-decoration: none; font-weight: 600; }
