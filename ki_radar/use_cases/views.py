@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 import csv
+from datetime import timedelta
 
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+
+from ki_radar.accounts.models import BusinessUnit
 
 from .forms import UseCaseForm
 from .models import UseCase
@@ -20,15 +24,16 @@ def use_case_list(request):
     queryset = UseCase.objects.filter(is_archived=False).select_related(
         "business_unit", "business_owner", "coordinator"
     )
-    q = request.GET.get("q", "").strip()
-    if q:
+    query = request.GET.get("q", "").strip()
+    if query:
         queryset = queryset.filter(
-            Q(title__icontains=q)
-            | Q(short_id__icontains=q)
-            | Q(problem_statement__icontains=q)
-            | Q(expected_benefit__icontains=q)
+            Q(title__icontains=query)
+            | Q(short_id__icontains=query)
+            | Q(problem_statement__icontains=query)
+            | Q(expected_benefit__icontains=query)
         )
-    for param, field in {
+
+    for parameter, field_name in {
         "status": "status",
         "business_unit": "business_unit_id",
         "business_owner": "business_owner_id",
@@ -38,17 +43,40 @@ def use_case_list(request):
         "data_readiness": "data_readiness",
         "risk_complexity": "risk_complexity",
     }.items():
-        value = request.GET.get(param)
+        value = request.GET.get(parameter)
         if value:
-            queryset = queryset.filter(**{field: value})
-    if request.GET.get("overdue") == "1":
-        queryset = queryset.filter(next_review_date__lt=timezone.localdate()).exclude(
-            status=UseCase.Status.ENDED
-        )
+            queryset = queryset.filter(**{field_name: value})
+
+    for parameter in [
+        "privacy_review_required",
+        "security_review_required",
+        "legal_review_required",
+    ]:
+        if request.GET.get(parameter) == "1":
+            queryset = queryset.filter(**{parameter: True})
+
+    today = timezone.localdate()
+    review_state = request.GET.get("review_state", "")
+    if review_state == "overdue":
+        queryset = queryset.filter(next_review_date__lt=today).exclude(status=UseCase.Status.ENDED)
+    elif review_state == "due_30":
+        queryset = queryset.filter(
+            next_review_date__gte=today,
+            next_review_date__lte=today + timedelta(days=30),
+        ).exclude(status=UseCase.Status.ENDED)
+    elif review_state == "missing":
+        queryset = queryset.filter(next_review_date__isnull=True).exclude(status=UseCase.Status.ENDED)
+
+    user_model = get_user_model()
+    active_users = user_model.objects.filter(is_active=True, is_anonymized=False).order_by(
+        "last_name", "first_name", "username"
+    )
     context = {
         "use_cases": queryset,
         "status_choices": UseCase.Status.choices,
         "level_choices": UseCase.Level.choices,
+        "business_units": BusinessUnit.objects.filter(is_active=True).order_by("name"),
+        "active_users": active_users,
         "can_create": can_create_use_case(request.user),
     }
     return render(request, "use_cases/list.html", context)
