@@ -102,24 +102,24 @@ jobs:
         run: uv run python manage.py migrate --noinput
 
       - name: Run tests
+        run: uv run pytest -q
+
+      - name: Bandit
         shell: bash
         run: |
           set +e
-          uv run pytest -q > pytest-error.txt 2>&1
+          uv run bandit -q -r ki_radar config > bandit-error.txt 2>&1
           exit_code=$?
-          cat pytest-error.txt
+          cat bandit-error.txt
           if [ "$exit_code" -ne 0 ]; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add -f pytest-error.txt
-            git commit -m "Capture pytest failures [skip ci]" || true
+            git add -f bandit-error.txt
+            git commit -m "Capture Bandit findings [skip ci]" || true
             git push origin HEAD:${{ github.head_ref }}
             exit "$exit_code"
           fi
-          rm -f pytest-error.txt
-
-      - name: Bandit
-        run: uv run bandit -q -r ki_radar config
+          rm -f bandit-error.txt
 
       - name: Dependency audit
         run: uv run pip-audit
