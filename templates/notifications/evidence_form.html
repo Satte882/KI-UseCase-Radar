@@ -1,0 +1,3 @@
+{% extends "base.html" %}
+{% block title %}Nachweislink – KI-Radar{% endblock %}
+{% block content %}<h1>Nachweislink hinzufügen</h1><p class="text-muted">{{ use_case.short_id }} – {{ use_case.title }}</p><form method="post" class="card card-body">{% csrf_token %}{{ form.as_p }}<div><button class="btn btn-primary">Speichern</button> <a class="btn btn-outline-secondary" href="{{ use_case.get_absolute_url }}">Abbrechen</a></div></form>{% endblock %}
