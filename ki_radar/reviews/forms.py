@@ -41,6 +41,7 @@ class ReviewForm(forms.ModelForm):
             "decision",
             "new_status",
             "rationale",
+            "go_live_exception_confirmed",
             "open_actions",
             "action_owner",
             "action_due_date",
@@ -105,15 +106,17 @@ class ReviewForm(forms.ModelForm):
                     "new_status",
                     "Für eine Rückstufung muss eine frühere Lifecycle-Phase gewählt werden.",
                 )
-        if (
+        exception_required = (
             decision == Review.Decision.GO_LIVE
             and self.use_case.metric_result == UseCase.MetricResult.NOT_ACHIEVED
-            and not cleaned.get("go_live_exception_confirmed")
-        ):
+        )
+        if exception_required and not cleaned.get("go_live_exception_confirmed"):
             self.add_error(
                 "go_live_exception_confirmed",
                 "Die Ausnahme muss bei verfehltem Pilotziel ausdrücklich bestätigt werden.",
             )
+        if not exception_required:
+            cleaned["go_live_exception_confirmed"] = False
         if decision == Review.Decision.END:
             for field in ["ending_reason", "data_and_access_handling"]:
                 if not cleaned.get(field):
