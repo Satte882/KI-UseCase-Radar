@@ -77,7 +77,11 @@ volumes:
   prod_var:
   prod_backups:
 secrets:
-  django_secret_key: {file: ${SECRETS_DIR:-./secrets/prod}/django_secret_key}
-  db_password: {file: ${SECRETS_DIR:-./secrets/prod}/db_password}
-  sentry_dsn: {file: ${SECRETS_DIR:-./secrets/prod}/sentry_dsn}
-  monitoring_token: {file: ${SECRETS_DIR:-./secrets/prod}/monitoring_token}
+  django_secret_key:
+    file: ${SECRETS_DIR:-./secrets/prod}/django_secret_key
+  db_password:
+    file: ${SECRETS_DIR:-./secrets/prod}/db_password
+  sentry_dsn:
+    file: ${SECRETS_DIR:-./secrets/prod}/sentry_dsn
+  monitoring_token:
+    file: ${SECRETS_DIR:-./secrets/prod}/monitoring_token
