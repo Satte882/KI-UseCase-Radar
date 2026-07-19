@@ -6,7 +6,7 @@ from .models import EvidenceLink
 class EvidenceLinkForm(forms.ModelForm):
     class Meta:
         model = EvidenceLink
-        exclude = ["use_case", "created_by", "created_at", "updated_at"]
+        fields = ["label", "document_type", "url", "version", "comment"]
         widgets = {"comment": forms.Textarea(attrs={"rows": 3})}
 
     def __init__(self, *args, **kwargs):
