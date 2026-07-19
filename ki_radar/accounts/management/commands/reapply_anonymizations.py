@@ -1,10 +1,13 @@
 import json
+from datetime import datetime
 from pathlib import Path
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
-from django.utils import timezone
+from django.db import transaction
+
+from ki_radar.accounts.services import apply_anonymized_identity
 
 
 class Command(BaseCommand):
@@ -19,36 +22,32 @@ class Command(BaseCommand):
         if not path.exists():
             self.stdout.write(self.style.WARNING("No anonymization ledger found"))
             return
-        User = get_user_model()
+
+        user_model = get_user_model()
         count = 0
-        for line in path.read_text(encoding="utf-8").splitlines():
+        for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
             if not line.strip():
                 continue
-            record = json.loads(line)
-            user = User.objects.filter(pk=record["user_id"]).first()
+            try:
+                record = json.loads(line)
+                user_id = record["user_id"]
+                anonymized_username = record["anonymized_username"]
+                anonymized_at = datetime.fromisoformat(record["anonymized_at"])
+            except (KeyError, ValueError, TypeError, json.JSONDecodeError) as exc:
+                raise ValueError(f"Invalid anonymization ledger entry at line {line_number}") from exc
+
+            user = user_model.objects.filter(pk=user_id).first()
             if not user or user.is_anonymized:
                 continue
             count += 1
             if options["dry_run"]:
                 continue
-            user.username = record["anonymized_username"]
-            user.first_name = ""
-            user.last_name = ""
-            user.email = f"{record['anonymized_username']}@example.invalid"
-            user.external_identity_id = ""
-            user.job_function = ""
-            user.business_unit = None
-            user.is_active = False
-            user.is_staff = False
-            user.is_superuser = False
-            user.is_anonymized = True
-            user.anonymized_at = timezone.now()
-            user.set_unusable_password()
-            user.save()
-            user.groups.clear()
-            user.user_permissions.clear()
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"{'Would reapply' if options['dry_run'] else 'Reapplied'} {count} anonymizations"
-            )
-        )
+            with transaction.atomic():
+                apply_anonymized_identity(
+                    user=user,
+                    anonymized_username=anonymized_username,
+                    anonymized_at=anonymized_at,
+                )
+
+        action = "Would reapply" if options["dry_run"] else "Reapplied"
+        self.stdout.write(self.style.SUCCESS(f"{action} {count} anonymizations"))
