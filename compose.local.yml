@@ -16,7 +16,9 @@ services:
       timeout: 3s
       retries: 20
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.dev
       POSTGRES_HOST: db
