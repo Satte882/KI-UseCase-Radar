@@ -65,7 +65,9 @@ def use_case_list(request):
             next_review_date__lte=today + timedelta(days=30),
         ).exclude(status=UseCase.Status.ENDED)
     elif review_state == "missing":
-        queryset = queryset.filter(next_review_date__isnull=True).exclude(status=UseCase.Status.ENDED)
+        queryset = queryset.filter(next_review_date__isnull=True).exclude(
+            status=UseCase.Status.ENDED
+        )
 
     user_model = get_user_model()
     active_users = user_model.objects.filter(is_active=True, is_anonymized=False).order_by(

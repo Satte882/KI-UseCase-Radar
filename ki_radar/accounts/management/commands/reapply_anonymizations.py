@@ -34,7 +34,9 @@ class Command(BaseCommand):
                 anonymized_username = record["anonymized_username"]
                 anonymized_at = datetime.fromisoformat(record["anonymized_at"])
             except (KeyError, ValueError, TypeError, json.JSONDecodeError) as exc:
-                raise ValueError(f"Invalid anonymization ledger entry at line {line_number}") from exc
+                raise ValueError(
+                    f"Invalid anonymization ledger entry at line {line_number}"
+                ) from exc
 
             user = user_model.objects.filter(pk=user_id).first()
             if not user or user.is_anonymized:
