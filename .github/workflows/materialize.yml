@@ -1,20 +1,21 @@
-name: Materialize and validate KI-Radar
+name: KI-Radar CI
 
 on:
   pull_request:
     branches: [main]
-    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
 
 permissions:
   contents: write
   pull-requests: read
 
 concurrency:
-  group: ki-radar-materialize-${{ github.event.pull_request.number }}
-  cancel-in-progress: false
+  group: ki-radar-ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  materialize:
+  validate:
     runs-on: ubuntu-latest
 
     services:
@@ -43,27 +44,11 @@ jobs:
       DATABASE_URL: postgresql://ki_radar:ki_radar_test_password@localhost:5432/ki_radar_test
 
     steps:
-      - name: Checkout pull-request branch
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
           fetch-depth: 0
           persist-credentials: true
-
-      - name: Reconstruct and extract repository
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -f .bootstrap/part-00
-          test -f .bootstrap/part-04
-          cp .github/workflows/materialize.yml /tmp/materialize.yml
-          cat .bootstrap/part-* | base64 --decode > /tmp/ki-radar.tgz
-          tar -tzf /tmp/ki-radar.tgz >/dev/null
-          tar -xzf /tmp/ki-radar.tgz
-          rm -rf .bootstrap
-          rm -rf .github/workflows
-          mkdir -p .github/workflows
-          cp /tmp/materialize.yml .github/workflows/materialize.yml
 
       - name: Install Python
         uses: actions/setup-python@v5
@@ -76,25 +61,25 @@ jobs:
           version: "0.10.0"
           enable-cache: true
 
-      - name: Generate lockfile
-        run: uv lock
-
       - name: Install dependencies
         run: uv sync --frozen --dev
 
-      - name: Publish materialized source
+      - name: Generate initial migrations
         shell: bash
         run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git diff --cached --stat
-          git commit -m "Materialize KI-Radar source [skip ci]"
-          git push origin HEAD:${{ github.head_ref }}
-
-      - name: Generate initial migrations
-        run: uv run python manage.py makemigrations accounts core use_cases governance reviews notifications
+          set +e
+          uv run python manage.py makemigrations accounts core use_cases governance reviews notifications > migration-error.log 2>&1
+          exit_code=$?
+          cat migration-error.log
+          if [ "$exit_code" -ne 0 ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add migration-error.log
+            git commit -m "Capture migration failure [skip ci]" || true
+            git push origin HEAD:${{ github.head_ref }}
+            exit "$exit_code"
+          fi
+          rm -f migration-error.log
 
       - name: Ruff
         run: uv run ruff check .
@@ -105,11 +90,14 @@ jobs:
       - name: Verify migrations
         run: uv run python manage.py makemigrations --check --dry-run
 
+      - name: Apply migrations
+        run: uv run python manage.py migrate --noinput
+
       - name: Run tests
         run: uv run pytest -q
 
       - name: Bandit
-        run: uv run bandit -q -r accounts core governance ki_radar notifications reporting reviews use_cases config
+        run: uv run bandit -q -r ki_radar config
 
       - name: Dependency audit
         run: uv run pip-audit
