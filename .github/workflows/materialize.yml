@@ -61,25 +61,44 @@ jobs:
           version: "0.10.0"
           enable-cache: true
 
+      - name: Refresh lockfile
+        shell: bash
+        run: |
+          set -euo pipefail
+          uv lock
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add uv.lock
+          if ! git diff --cached --quiet; then
+            git commit -m "Refresh dependency lockfile [skip ci]"
+            git push origin HEAD:${{ github.head_ref }}
+          fi
+
       - name: Install dependencies
         run: uv sync --frozen --dev
 
       - name: Generate initial migrations
         shell: bash
         run: |
-          set +e
-          uv run python manage.py makemigrations accounts core use_cases governance reviews notifications > migration-error.log 2>&1
-          exit_code=$?
-          cat migration-error.log
-          if [ "$exit_code" -ne 0 ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add migration-error.log
-            git commit -m "Capture migration failure [skip ci]" || true
+          set -euo pipefail
+          uv run python manage.py makemigrations accounts core use_cases governance reviews notifications
+          git add ki_radar/**/migrations/*.py
+          if ! git diff --cached --quiet; then
+            git commit -m "Add initial Django migrations [skip ci]"
             git push origin HEAD:${{ github.head_ref }}
-            exit "$exit_code"
           fi
-          rm -f migration-error.log
+
+      - name: Apply safe Ruff fixes
+        shell: bash
+        run: |
+          set -euo pipefail
+          uv run ruff check . --fix || true
+          uv run ruff format .
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "Apply Ruff formatting fixes [skip ci]"
+            git push origin HEAD:${{ github.head_ref }}
+          fi
 
       - name: Ruff
         run: uv run ruff check .
