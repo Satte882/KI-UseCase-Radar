@@ -52,11 +52,12 @@ extend-exclude = ["*/migrations/*"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "DJ", "S", "SIM", "RUF"]
-ignore = ["DJ001"]
+ignore = ["DJ001", "RUF012"]
 
 [tool.ruff.lint.per-file-ignores]
 "**/tests/*.py" = ["S101", "S106"]
 "config/settings/*.py" = ["S105"]
+"config/settings/dev.py" = ["S104", "S105"]
 
 [tool.bandit]
 exclude_dirs = ["tests", "migrations", ".venv"]
