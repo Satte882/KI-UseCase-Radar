@@ -1,16 +1,50 @@
 {% extends "base.html" %}
-{% block title %}Dashboard – KI-Radar{% endblock %}
+{% block title %}Entscheidungen – KI-Radar{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4"><div><h1>Dashboard</h1><p class="text-muted mb-0">Stand {{ today|date:"d.m.Y" }}</p></div></div>
-<div class="row g-3 mb-4">
-{% for row in status_counts %}<div class="col-6 col-md"><div class="card metric-card"><div class="card-body"><div class="text-muted text-uppercase small">{{ row.status }}</div><div class="display-6">{{ row.total }}</div></div></div></div>{% empty %}<p>Noch keine Use Cases vorhanden.</p>{% endfor %}
+<div class="page-header">
+  <div>
+    <div class="eyebrow mb-2">Portfolio-Steuerung</div>
+    <h1 class="page-title">Entscheidungswarteschlange</h1>
+    <p class="page-subtitle">Wo muss heute eingegriffen werden – und ist die Entscheidungsgrundlage belastbar?</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary" href="{% url 'use_cases:list' %}">Alle Use Cases</a>
+    {% if nav_is_coordinator %}<a class="btn btn-primary" href="{% url 'reviews:monthly' %}">Monatsreview starten</a>{% endif %}
+  </div>
 </div>
-<div class="row g-4">
-  <div class="col-lg-6"><div class="card"><div class="card-header d-flex justify-content-between"><strong>Überfällige Reviews</strong><span class="badge bg-danger">{{ overdue|length }}</span></div><div class="list-group list-group-flush">{% for item in overdue %}<a class="list-group-item list-group-item-action" href="{{ item.get_absolute_url }}"><strong>{{ item.short_id }}</strong> {{ item.title }}<span class="float-end text-danger">{{ item.next_review_date|date:"d.m.Y" }}</span></a>{% empty %}<div class="list-group-item text-muted">Keine überfälligen Reviews.</div>{% endfor %}</div></div></div>
-  <div class="col-lg-6"><div class="card"><div class="card-header"><strong>Reviews in den nächsten 30 Tagen</strong></div><div class="list-group list-group-flush">{% for item in upcoming %}<a class="list-group-item list-group-item-action" href="{{ item.get_absolute_url }}"><strong>{{ item.short_id }}</strong> {{ item.title }}<span class="float-end">{{ item.next_review_date|date:"d.m.Y" }}</span></a>{% empty %}<div class="list-group-item text-muted">Keine anstehenden Reviews.</div>{% endfor %}</div></div></div>
-  <div class="col-lg-6"><div class="card"><div class="card-header"><strong>Aktive Piloten</strong></div><div class="list-group list-group-flush">{% for item in active_pilots %}<a class="list-group-item list-group-item-action" href="{{ item.get_absolute_url }}">{{ item.short_id }} – {{ item.title }}</a>{% empty %}<div class="list-group-item text-muted">Keine aktiven Piloten.</div>{% endfor %}</div></div></div>
-  <div class="col-lg-6"><div class="card"><div class="card-header"><strong>Produktive Use Cases</strong></div><div class="list-group list-group-flush">{% for item in operations %}<a class="list-group-item list-group-item-action" href="{{ item.get_absolute_url }}">{{ item.short_id }} – {{ item.title }}</a>{% empty %}<div class="list-group-item text-muted">Keine produktiven Use Cases.</div>{% endfor %}</div></div></div>
-  <div class="col-lg-6"><div class="card border-warning"><div class="card-header"><strong>Ohne Governance-Screening</strong></div><div class="list-group list-group-flush">{% for item in missing_governance %}<a class="list-group-item list-group-item-action" href="{{ item.get_absolute_url }}">{{ item.short_id }} – {{ item.title }}</a>{% empty %}<div class="list-group-item text-muted">Keine offenen Fälle.</div>{% endfor %}</div></div></div>
-  <div class="col-lg-6"><div class="card border-warning"><div class="card-header"><strong>Seit mehr als 60 Tagen unverändert</strong></div><div class="list-group list-group-flush">{% for item in stale %}<a class="list-group-item list-group-item-action" href="{{ item.get_absolute_url }}">{{ item.short_id }} – {{ item.title }}</a>{% empty %}<div class="list-group-item text-muted">Keine veralteten Einträge.</div>{% endfor %}</div></div></div>
+
+<div class="metric-grid">
+  <div class="app-card metric-card"><div class="metric-label">Aktive Vorhaben</div><div class="metric-value">{{ active_total }}</div><div class="metric-note">Prüfung, Pilot und Betrieb</div></div>
+  <div class="app-card metric-card"><div class="metric-label">Blockiert</div><div class="metric-value">{{ blocked_total }}</div><div class="metric-note">Pflichtangaben oder Freigaben fehlen</div></div>
+  <div class="app-card metric-card"><div class="metric-label">Überfällig</div><div class="metric-value">{{ overdue_total }}</div><div class="metric-note">Entscheidungstermin überschritten</div></div>
+  <div class="app-card metric-card"><div class="metric-label">Nutzen gemessen</div><div class="metric-value">{{ measured_total }}</div><div class="metric-note">Mit strukturiertem Ist-Wert</div></div>
+  <div class="app-card metric-card"><div class="metric-label">Ziel erreicht</div><div class="metric-value">{{ achieved_total }}</div><div class="metric-note">Primäre Erfolgsmetrik erfüllt</div></div>
+</div>
+
+<div class="app-card table-card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <div><strong>Nächste Entscheidungen</strong><div class="small text-muted mt-1">Sortiert nach Überfälligkeit, Blockern und Fälligkeit</div></div>
+    <span class="badge badge-soft">Stand {{ today|date:"d.m.Y" }}</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead><tr><th>Use Case</th><th>Phase</th><th>Anstehende Entscheidung</th><th>Reife</th><th>Hauptblocker / Hinweis</th><th>Fällig</th><th>Owner</th></tr></thead>
+      <tbody>
+      {% for item in decision_queue %}
+      <tr>
+        <td><a href="{{ item.get_absolute_url }}">{{ item.short_id }} · {{ item.title }}</a><div class="small text-muted">{{ item.business_unit }}</div></td>
+        <td><span class="badge badge-soft">{{ item.get_status_display }}</span></td>
+        <td><strong>{{ item.decision_check.title }}</strong></td>
+        <td><span class="badge state-{{ item.decision_check.state }}">{{ item.decision_check.state_label }}</span></td>
+        <td class="small">
+          {% if item.decision_check.blockers %}{{ item.decision_check.blockers.0 }}{% elif item.decision_check.warnings %}{{ item.decision_check.warnings.0 }}{% else %}<span class="text-muted">Keine offenen Blocker</span>{% endif %}
+        </td>
+        <td>{% if item.decision_due %}{{ item.decision_due|date:"d.m.Y" }}{% else %}<span class="text-muted">–</span>{% endif %}</td>
+        <td>{{ item.business_owner.get_display_name }}</td>
+      </tr>
+      {% empty %}<tr><td colspan="7" class="text-muted py-5 text-center">Keine aktiven Entscheidungen vorhanden.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 {% endblock %}
