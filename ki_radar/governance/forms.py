@@ -7,7 +7,28 @@ from .models import GovernanceAssessment
 class GovernanceAssessmentForm(forms.ModelForm):
     class Meta:
         model = GovernanceAssessment
-        exclude = ["use_case", "reviewer", "created_at", "updated_at"]
+        fields = [
+            "assessment_date",
+            "basis_version",
+            "personal_data",
+            "employee_data",
+            "automated_person_assessment",
+            "influences_person_decisions",
+            "biometric_data",
+            "safety_critical",
+            "regulated_product",
+            "health_safety_rights_impact",
+            "external_ai_or_cloud",
+            "generated_external_content",
+            "human_oversight_planned",
+            "privacy_review_required",
+            "security_review_required",
+            "legal_review_required",
+            "result",
+            "rationale",
+            "evidence_url",
+            "next_assessment_date",
+        ]
         widgets = {
             "assessment_date": forms.DateInput(attrs={"type": "date"}),
             "next_assessment_date": forms.DateInput(attrs={"type": "date"}),
