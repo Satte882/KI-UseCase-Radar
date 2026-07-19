@@ -68,18 +68,18 @@ jobs:
         shell: bash
         run: |
           set +e
-          uv run python manage.py makemigrations accounts core use_cases governance reviews notifications > migration-error.log 2>&1
+          uv run python manage.py makemigrations accounts core use_cases governance reviews notifications > migration-error.txt 2>&1
           exit_code=$?
-          cat migration-error.log
+          cat migration-error.txt
           if [ "$exit_code" -ne 0 ]; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add migration-error.log
+            git add -f migration-error.txt
             git commit -m "Capture migration failure [skip ci]" || true
             git push origin HEAD:${{ github.head_ref }}
             exit "$exit_code"
           fi
-          rm -f migration-error.log
+          rm -f migration-error.txt
 
       - name: Ruff
         run: uv run ruff check .
