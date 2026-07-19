@@ -90,19 +90,7 @@ jobs:
           fi
 
       - name: Ruff
-        shell: bash
-        run: |
-          set +e
-          uv run ruff check . --output-format=concise > ruff-error.txt 2>&1
-          exit_code=$?
-          cat ruff-error.txt
-          if [ "$exit_code" -ne 0 ]; then
-            git add -f ruff-error.txt
-            git commit -m "Capture Ruff findings [skip ci]" || true
-            git push origin HEAD:${{ github.head_ref }}
-            exit "$exit_code"
-          fi
-          rm -f ruff-error.txt
+        run: uv run ruff check .
 
       - name: Django system check
         run: uv run python manage.py check
@@ -114,7 +102,21 @@ jobs:
         run: uv run python manage.py migrate --noinput
 
       - name: Run tests
-        run: uv run pytest -q
+        shell: bash
+        run: |
+          set +e
+          uv run pytest -q > pytest-error.txt 2>&1
+          exit_code=$?
+          cat pytest-error.txt
+          if [ "$exit_code" -ne 0 ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -f pytest-error.txt
+            git commit -m "Capture pytest failures [skip ci]" || true
+            git push origin HEAD:${{ github.head_ref }}
+            exit "$exit_code"
+          fi
+          rm -f pytest-error.txt
 
       - name: Bandit
         run: uv run bandit -q -r ki_radar config
