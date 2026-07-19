@@ -1,23 +1,27 @@
 # KI-Radar lokal unter Windows 11 mit VS Code starten
 
-Diese Anleitung geht von folgendem Zielpfad aus:
+Diese Anleitung verwendet folgenden Zielpfad:
 
 ```text
 C:\Users\user\Documents\GitHub\KI-UseCase-Radar
 ```
 
-Der Repository-Name lautet **KI-UseCase-Radar**. Der in der Anfrage einmal genannte Pfad `KI-UseCae-Radar` enthält einen Schreibfehler und wird nicht verwendet.
+Der Repository-Name lautet **KI-UseCase-Radar**. Der einmal genannte Ordnername `KI-UseCae-Radar` enthält einen Schreibfehler und wird nicht verwendet.
 
 ## 1. Voraussetzungen
 
-Installieren Sie:
+Erforderlich sind:
 
 1. **Git for Windows**
 2. **Visual Studio Code**
 3. **Docker Desktop** mit aktivierter WSL-2-Engine
-4. optional **Python 3.13** und **uv**, falls Sie ohne App-Container entwickeln möchten
 
-Prüfen Sie in PowerShell:
+Optional für eine native Python-Entwicklung:
+
+4. **Python 3.13**
+5. **uv 0.10.x**
+
+In PowerShell prüfen:
 
 ```powershell
 git --version
@@ -25,9 +29,11 @@ docker --version
 docker compose version
 ```
 
+Docker Desktop muss gestartet sein, bevor der lokale Stack ausgeführt wird.
+
 ## 2. Repository klonen
 
-Öffnen Sie PowerShell:
+In PowerShell:
 
 ```powershell
 cd C:\Users\user\Documents\GitHub
@@ -51,6 +57,8 @@ Im integrierten VS-Code-Terminal:
 docker compose -f compose.local.yml up --build
 ```
 
+Der lokale Stack verwendet `Dockerfile.dev`. Dieses Entwicklungsimage enthält neben den Laufzeitabhängigkeiten auch Pytest, Ruff, Bandit und pip-audit. Das separate Produktionsimage aus `Dockerfile` bleibt davon unberührt und enthält keine Entwicklungswerkzeuge.
+
 Beim ersten Start werden automatisch:
 
 - PostgreSQL gestartet,
@@ -65,9 +73,11 @@ Die Anwendung ist erreichbar unter:
 http://127.0.0.1:8000
 ```
 
+Der Prozess bleibt im Terminal aktiv. Beenden mit `Strg+C`.
+
 ## 4. Administratorkonto anlegen
 
-Öffnen Sie ein zweites Terminal:
+Ein zweites VS-Code-Terminal öffnen:
 
 ```powershell
 docker compose -f compose.local.yml exec app python manage.py createsuperuser
@@ -90,37 +100,38 @@ http://127.0.0.1:8000/admin/
 Im Django Admin:
 
 1. mindestens eine **Organisationseinheit** anlegen,
-2. Benutzer anlegen,
-3. Benutzer einer der Gruppen zuordnen:
+2. benötigte Benutzer anlegen,
+3. Benutzer einer oder mehreren Gruppen zuordnen:
    - Technischer Administrator
    - KI-Koordinator
    - Business Owner
    - Leser
-4. bei technischen Administratoren zusätzlich `Mitarbeiter-Status` aktivieren, sofern sie den Django Admin verwenden sollen.
+4. für Benutzer mit Django-Admin-Zugriff zusätzlich `Mitarbeiter-Status` aktivieren.
 
-Für einen realistischen Einzeltest können Sie dasselbe Benutzerkonto sowohl als Superuser als auch als KI-Koordinator verwenden.
+Für den aktuellen Einzelbetrieb kann dasselbe Konto Superuser und KI-Koordinator sein.
 
-## 6. Tests ausführen
+## 6. Lokale Qualitätsprüfungen
 
-### Im Docker-Container gegen PostgreSQL
+Der lokale Docker-Stack enthält alle Entwicklungsabhängigkeiten.
 
 ```powershell
 docker compose -f compose.local.yml exec app pytest
-```
-
-### Qualitätschecks
-
-```powershell
 docker compose -f compose.local.yml exec app ruff check .
 docker compose -f compose.local.yml exec app python manage.py check
 docker compose -f compose.local.yml exec app python manage.py makemigrations --check --dry-run
+docker compose -f compose.local.yml exec app bandit -q -r ki_radar config
+docker compose -f compose.local.yml exec app pip-audit
 ```
 
-Die Dev-Abhängigkeiten werden im Produktionsimage bewusst nicht installiert. Für lokale Qualitätschecks kann daher alternativ die native `uv`-Variante verwendet werden oder ein Entwicklungsimage gebaut werden. Die GitHub-CI führt alle Qualitätschecks verbindlich aus.
+Den Produktionscontainer lokal bauen:
+
+```powershell
+docker build -t ki-radar:local .
+```
 
 ## 7. Native Entwicklung mit uv
 
-Diese Variante verwendet PostgreSQL weiterhin aus Docker, führt Django aber direkt unter Windows aus.
+Diese Variante startet nur PostgreSQL in Docker und führt Django direkt unter Windows aus.
 
 ### PostgreSQL starten
 
@@ -128,14 +139,14 @@ Diese Variante verwendet PostgreSQL weiterhin aus Docker, führt Django aber dir
 docker compose -f compose.local.yml up -d db
 ```
 
-### Virtuelle Umgebung und Abhängigkeiten
+### Abhängigkeiten installieren
 
 ```powershell
 uv sync --frozen --dev
 Copy-Item .env.example .env
 ```
 
-PowerShell-Umgebungsvariablen für die aktuelle Sitzung setzen:
+Umgebungsvariablen für die aktuelle PowerShell-Sitzung:
 
 ```powershell
 $env:DJANGO_SETTINGS_MODULE = "config.settings.dev"
@@ -147,7 +158,7 @@ $env:POSTGRES_PASSWORD = "ki_radar_local"
 $env:DJANGO_SECRET_KEY = "local-development-only"
 ```
 
-Migrationen und Start:
+Migrationen, Rollen und Administratorkonto:
 
 ```powershell
 uv run python manage.py migrate
@@ -156,32 +167,36 @@ uv run python manage.py createsuperuser
 uv run python manage.py runserver
 ```
 
-Tests:
+Qualitätsprüfungen:
 
 ```powershell
 uv run pytest
 uv run ruff check .
 uv run python manage.py check
 uv run python manage.py makemigrations --check --dry-run
+uv run bandit -q -r ki_radar config
+uv run pip-audit
 ```
 
-## 8. Beispieldaten manuell anlegen
+## 8. Erste Beispieldaten
 
 1. Im Admin eine Organisationseinheit anlegen.
 2. Auf der Startseite **Use Cases** öffnen.
 3. **Use Case anlegen** wählen.
-4. Als KI-Koordinator ein Governance-Screening und ein Review hinzufügen.
-5. Die Monatsreview-Ansicht öffnen.
+4. Pflichtinformationen für die Phase „Idee“ eintragen.
+5. Als KI-Koordinator ein Governance-Screening anlegen.
+6. Über ein Review den Lifecycle-Status verändern.
+7. Dashboard und Monatsreview-Ansicht prüfen.
 
 ## 9. Review-Scan ohne E-Mail
 
-Der aktuelle erste Umsetzungsschritt versendet keine E-Mails. Der tägliche Scan kann manuell ausgeführt werden:
+Im ersten Umsetzungsschritt werden bewusst keine E-Mails versendet. Der Review-Scan kann manuell ausgeführt werden:
 
 ```powershell
 docker compose -f compose.local.yml exec app python manage.py scan_due_reviews
 ```
 
-Der Scan dokumentiert den Lauf im Modell `SystemJobRun`. Fällige und überfällige Reviews werden direkt aus der Datenbank im Dashboard und in der Monatsreview-Ansicht angezeigt.
+Der Lauf wird in `SystemJobRun` dokumentiert. Fällige und überfällige Reviews werden unabhängig davon direkt aus der Datenbank im Dashboard und in der Monatsreview-Ansicht angezeigt.
 
 ## 10. Health-Checks
 
@@ -190,11 +205,22 @@ http://127.0.0.1:8000/health/live
 http://127.0.0.1:8000/health/ready
 ```
 
-Der operative Health-Endpunkt benötigt in Produktion einen geheimen Header und ist lokal ohne `MONITORING_TOKEN` absichtlich nicht verfügbar.
+Der operative Monitoring-Endpunkt benötigt in Produktion einen geheimen Header. Ohne gesetztes `MONITORING_TOKEN` ist er lokal absichtlich nicht verfügbar.
 
-## 11. Daten zurücksetzen
+## 11. Lokale Datenbank sichern und wiederherstellen
 
-Achtung: Dieser Befehl löscht die lokale Docker-Datenbank vollständig.
+Backup erzeugen:
+
+```powershell
+docker compose -f compose.local.yml exec db pg_dump -U ki_radar -d ki_radar -Fc -f /tmp/ki-radar.dump
+docker compose -f compose.local.yml cp db:/tmp/ki-radar.dump .\ki-radar.dump
+```
+
+Für einen Restore-Test eine separate Datenbank verwenden; die produktive beziehungsweise reguläre lokale Datenbank nicht überschreiben. Das vollständige Betriebsverfahren steht in `docs/BACKUP_RESTORE.md`.
+
+## 12. Lokale Daten vollständig zurücksetzen
+
+**Achtung:** Dieser Befehl löscht die lokale Docker-Datenbank und das lokale Anonymisierungs-Ledger.
 
 ```powershell
 docker compose -f compose.local.yml down -v
@@ -206,7 +232,7 @@ Anschließend neu starten:
 docker compose -f compose.local.yml up --build
 ```
 
-## 12. Häufige Fehler
+## 13. Häufige Fehler
 
 ### Port 8000 ist belegt
 
@@ -217,15 +243,24 @@ ports:
   - "127.0.0.1:8010:8000"
 ```
 
-Dann `http://127.0.0.1:8010` öffnen.
+Danach `http://127.0.0.1:8010` öffnen.
 
 ### Port 5433 ist belegt
 
-Den linken Datenbankport ändern. Bei nativer Entwicklung zusätzlich `POSTGRES_PORT` anpassen.
+Den linken Datenbankport in `compose.local.yml` ändern. Bei nativer Entwicklung zusätzlich `POSTGRES_PORT` anpassen.
 
 ### Docker Desktop läuft nicht
 
 Docker Desktop starten und warten, bis die Engine betriebsbereit ist.
+
+### Lockfile passt nicht zu pyproject.toml
+
+```powershell
+uv lock
+uv sync --frozen --dev
+```
+
+Eine beabsichtigte Änderung von `uv.lock` muss gemeinsam mit `pyproject.toml` committed werden.
 
 ### Migrationen fehlen
 
@@ -234,3 +269,10 @@ docker compose -f compose.local.yml exec app python manage.py makemigrations --c
 ```
 
 Es dürfen keine nicht versionierten Modelländerungen vorhanden sein.
+
+### Anwendung startet nach einem Codewechsel nicht
+
+```powershell
+docker compose -f compose.local.yml down
+docker compose -f compose.local.yml up --build
+```
