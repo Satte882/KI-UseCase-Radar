@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from ki_radar.governance.models import GovernanceAssessment
+from ki_radar.reviews.forms import ReviewForm
 from ki_radar.reviews.models import Review
 from ki_radar.reviews.services import create_review
 from ki_radar.use_cases.models import UseCase
@@ -54,6 +55,64 @@ def test_only_coordinator_can_open_review_form(client, owner, coordinator, use_c
     assert client.get(reverse("reviews:create", args=[use_case.pk])).status_code == 403
     client.force_login(coordinator)
     assert client.get(reverse("reviews:create", args=[use_case.pk])).status_code == 200
+
+
+@pytest.mark.django_db
+def test_review_form_uses_german_decision_labels(use_case):
+    form = ReviewForm(use_case=use_case)
+
+    assert form.fields["review_date"].label == "Review-Datum"
+    assert form.fields["decision"].label == "Entscheidung"
+    assert form.fields["new_status"].label == "Neuer Status"
+    assert form.fields["rationale"].label == "Entscheidungsbegründung"
+
+
+@pytest.mark.django_db
+def test_review_form_renders_date_inputs_in_browser_format(use_case):
+    localized_today = timezone.localdate().strftime("%d.%m.%Y")
+    form = ReviewForm(use_case=use_case)
+
+    assert f'value="{timezone.localdate().isoformat()}"' in form.as_p()
+    assert localized_today not in form.as_p()
+
+
+@pytest.mark.django_db
+def test_review_form_preselects_next_decision(use_case):
+    form = ReviewForm(use_case=use_case)
+
+    assert form.fields["decision"].initial == Review.Decision.START_REVIEW
+    assert form.fields["new_status"].initial == UseCase.Status.REVIEW
+
+
+@pytest.mark.django_db
+def test_review_form_preselects_operation_continuation(use_case):
+    use_case.status = UseCase.Status.OPERATION
+    use_case.save()
+
+    form = ReviewForm(use_case=use_case)
+
+    assert form.fields["decision"].initial == Review.Decision.CONTINUE
+    assert form.fields["new_status"].initial == UseCase.Status.OPERATION
+
+
+@pytest.mark.django_db
+def test_bound_review_form_keeps_submitted_decision(use_case):
+    form = ReviewForm(
+        {
+            "review_date": timezone.localdate(),
+            "decision": Review.Decision.REWORK,
+            "new_status": UseCase.Status.IDEA,
+            "rationale": "Nochmals überarbeiten.",
+            "open_actions": "",
+            "action_owner": "",
+            "action_due_date": "",
+            "next_review_date": "",
+        },
+        use_case=use_case,
+    )
+
+    assert form.fields["decision"].initial is None
+    assert form.is_valid()
 
 
 @pytest.mark.django_db

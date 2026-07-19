@@ -181,6 +181,23 @@ def test_governance_screenings_and_reviews_are_linked_to_demo_use_cases():
 
 
 @pytest.mark.django_db
+def test_demo_data_contains_confirmed_go_live_exception():
+    call_command("seed_demo_data")
+
+    exception_review = Review.objects.get(
+        use_case__title=f"{DEMO_PREFIX} Unterstuetzung bei Kundenanfragen",
+        decision=Review.Decision.GO_LIVE,
+    )
+    use_case = exception_review.use_case
+
+    assert exception_review.go_live_exception_confirmed is True
+    assert use_case.status == UseCase.Status.OPERATION
+    assert use_case.metric_result == UseCase.MetricResult.NOT_ACHIEVED
+    assert use_case.legal_review_completed is True
+    assert use_case.support_responsibility
+
+
+@pytest.mark.django_db
 def test_clear_demo_data_removes_only_seeded_demo_data():
     manual_unit = BusinessUnit.objects.create(name="Manuelle Organisationseinheit")
     manual_user = User.objects.create_user(

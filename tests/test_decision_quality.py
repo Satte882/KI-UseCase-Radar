@@ -64,6 +64,21 @@ def test_pilot_start_is_blocked_without_structured_metric(decision_use_case, coo
 
 
 @pytest.mark.django_db
+def test_decision_blockers_use_user_facing_labels(decision_use_case):
+    decision_use_case.planned_pilot_end = None
+    decision_use_case.next_review_date = None
+    decision_use_case.data_sources = ""
+    decision_use_case.save()
+
+    check = check_pilot_start(decision_use_case)
+
+    assert "Geplantes Pilotende" in check.blockers
+    assert "Nächster Entscheidungstermin" in check.blockers
+    assert "Datenquellen" in check.blockers
+    assert "planned pilot end" not in check.blockers
+
+
+@pytest.mark.django_db
 def test_go_live_compares_target_and_actual(decision_use_case, coordinator):
     decision_use_case.status = UseCase.Status.PILOT
     decision_use_case.technical_owner = coordinator

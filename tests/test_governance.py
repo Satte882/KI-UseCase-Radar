@@ -2,6 +2,7 @@ import pytest
 from django.urls import reverse
 from django.utils import timezone
 
+from ki_radar.governance.forms import GovernanceAssessmentForm
 from ki_radar.governance.models import GovernanceAssessment
 from ki_radar.use_cases.models import UseCase
 
@@ -35,3 +36,13 @@ def test_governance_updates_required_flags(client, coordinator, use_case):
     assert response.status_code == 302
     use_case.refresh_from_db()
     assert use_case.privacy_review_required is True
+
+
+@pytest.mark.django_db
+def test_governance_form_uses_german_labels():
+    form = GovernanceAssessmentForm()
+
+    assert form.fields["assessment_date"].label == "Screening-Datum"
+    assert form.fields["basis_version"].label == "Prüfgrundlage / Version"
+    assert form.fields["personal_data"].label == "Personenbezogene Daten"
+    assert form.fields["result"].label == "Ergebnis"

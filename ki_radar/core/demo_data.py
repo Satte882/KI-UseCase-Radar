@@ -97,6 +97,7 @@ class ReviewTemplate:
     open_actions: str = ""
     action_due_offset: int | None = None
     next_review_offset: int | None = None
+    go_live_exception_confirmed: bool = False
 
 
 @dataclass(frozen=True)
@@ -388,9 +389,9 @@ DEMO_USE_CASES = [
     UseCaseTemplate(
         title=f"{DEMO_PREFIX} Unterstuetzung bei Kundenanfragen",
         business_unit=f"{DEMO_PREFIX} Kunden- & Serviceprozesse",
-        status=UseCase.Status.PILOT,
+        status=UseCase.Status.OPERATION,
         priority=UseCase.Priority.HIGH,
-        next_review_offset=7,
+        next_review_offset=45,
         problem_statement=(
             "Antwortvorschlaege fuer wiederkehrende Anfragen werden haeufig neu formuliert."
         ),
@@ -426,8 +427,11 @@ DEMO_USE_CASES = [
         legal_review_required=True,
         privacy_review_completed=True,
         security_review_completed=True,
-        legal_review_completed=False,
+        legal_review_completed=True,
         human_oversight="Antworten werden vor Versand vollstaendig durch Mitarbeitende geprueft.",
+        support_responsibility=(
+            "Serviceleitung prueft Antwortqualitaet, IT-Support ueberwacht Betrieb."
+        ),
         governance=GovernanceTemplate(
             personal_data=True,
             external_ai_or_cloud=True,
@@ -450,7 +454,22 @@ DEMO_USE_CASES = [
                 "Rechtliche Textfreigaben fuer Standardantworten abschliessen.",
                 action_due_offset=7,
                 next_review_offset=7,
-            )
+            ),
+            ReviewTemplate(
+                -5,
+                UseCase.Status.PILOT,
+                UseCase.Status.OPERATION,
+                Review.Decision.GO_LIVE,
+                (
+                    "Pilotziel wurde knapp verfehlt; produktiver Betrieb wird wegen stabiler "
+                    "Entlastung, abgeschlossener Fachpruefungen und verpflichtender Nachmessung "
+                    "ausdruecklich als Ausnahme freigegeben."
+                ),
+                "Nutzenmessung nach 60 Tagen erneut bewerten.",
+                action_due_offset=60,
+                next_review_offset=45,
+                go_live_exception_confirmed=True,
+            ),
         ],
     ),
     UseCaseTemplate(
@@ -855,6 +874,7 @@ def seed_demo_data(*, demo_user_password: str) -> dict[str, int]:
                     "previous_status": review_template.previous_status,
                     "new_status": review_template.new_status,
                     "rationale": f"{DEMO_MARKER}: {review_template.rationale}",
+                    "go_live_exception_confirmed": (review_template.go_live_exception_confirmed),
                     "open_actions": review_template.open_actions,
                     "action_owner": owner if review_template.open_actions else None,
                     "action_due_date": _date_from_offset(today, review_template.action_due_offset),

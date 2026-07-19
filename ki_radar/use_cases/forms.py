@@ -10,6 +10,9 @@ from .models import UseCase
 class DateInput(forms.DateInput):
     input_type = "date"
 
+    def __init__(self, attrs=None):
+        super().__init__(attrs=attrs, format="%Y-%m-%d")
+
 
 class UseCaseForm(forms.ModelForm):
     class Meta:
@@ -90,6 +93,48 @@ class UseCaseForm(forms.ModelForm):
             ),
             "metric_actual": "Erst zum Pilotabschluss eintragen.",
             "metric_evidence_url": "Link auf die freigegebene Auswertung oder den Messnachweis.",
+        }
+        labels = {
+            "title": "Titel",
+            "summary": "Kurzbeschreibung",
+            "problem_statement": "Problemstellung",
+            "business_unit": "Organisationseinheit",
+            "affected_process": "Betroffener Prozess",
+            "target_users": "Zielgruppe",
+            "business_owner": "Business Owner",
+            "coordinator": "KI-Koordinator",
+            "technical_owner": "Technischer Owner",
+            "priority": "Priorität",
+            "next_review_date": "Nächster Entscheidungstermin",
+            "pilot_start": "Pilotbeginn",
+            "planned_pilot_end": "Geplantes Pilotende",
+            "solution_type": "Lösungstyp",
+            "hosting_type": "Hosting",
+            "provider": "Anbieter",
+            "product_name": "Produktname",
+            "model_name": "Modellname",
+            "source_systems": "Quellsysteme",
+            "data_sources": "Datenquellen",
+            "interface_description": "Schnittstellenbeschreibung",
+            "intended_users": "Vorgesehene Nutzer",
+            "intended_purpose": "Vorgesehener Zweck",
+            "expected_benefit": "Erwarteter Nutzen",
+            "benefit_category": "Nutzenkategorie",
+            "baseline": "Historische Baseline",
+            "success_criterion": "Historisches Erfolgskriterium",
+            "target_value": "Historischer Zielwert",
+            "realized_result": "Historisches Ergebnis",
+            "one_time_cost": "Einmalige Kosten",
+            "recurring_cost": "Laufende Kosten",
+            "business_value": "Business Value",
+            "technical_feasibility": "Technische Machbarkeit",
+            "data_readiness": "Datenreife",
+            "risk_complexity": "Risiko und Komplexität",
+            "privacy_review_completed": "Datenschutzprüfung abgeschlossen",
+            "security_review_completed": "Security-Prüfung abgeschlossen",
+            "legal_review_completed": "Rechtsprüfung abgeschlossen",
+            "human_oversight": "Menschliche Aufsicht",
+            "support_responsibility": "Support-Verantwortung",
         }
 
     def __init__(self, *args, current_user=None, **kwargs):

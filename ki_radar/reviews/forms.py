@@ -3,8 +3,16 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 
 from ki_radar.use_cases.models import UseCase
+from ki_radar.use_cases.services import current_decision_check
 
 from .models import Review
+
+
+class DateInput(forms.DateInput):
+    input_type = "date"
+
+    def __init__(self, attrs=None):
+        super().__init__(attrs=attrs, format="%Y-%m-%d")
 
 
 class ReviewForm(forms.ModelForm):
@@ -48,18 +56,42 @@ class ReviewForm(forms.ModelForm):
             "next_review_date",
         ]
         widgets = {
-            "review_date": forms.DateInput(attrs={"type": "date"}),
-            "action_due_date": forms.DateInput(attrs={"type": "date"}),
-            "next_review_date": forms.DateInput(attrs={"type": "date"}),
+            "review_date": DateInput(),
+            "action_due_date": DateInput(),
+            "next_review_date": DateInput(),
             "rationale": forms.Textarea(attrs={"rows": 4}),
             "open_actions": forms.Textarea(attrs={"rows": 3}),
+        }
+        labels = {
+            "review_date": "Review-Datum",
+            "decision": "Entscheidung",
+            "new_status": "Neuer Status",
+            "rationale": "Entscheidungsbegründung",
+            "open_actions": "Offene Maßnahmen",
+            "action_owner": "Maßnahmenverantwortliche Person",
+            "action_due_date": "Fälligkeitsdatum der Maßnahme",
+            "next_review_date": "Nächster Entscheidungstermin",
         }
 
     def __init__(self, *args, use_case: UseCase, **kwargs):
         self.use_case = use_case
         super().__init__(*args, **kwargs)
         self.fields["review_date"].initial = timezone.localdate()
-        self.fields["new_status"].initial = use_case.status
+        if not self.is_bound:
+            decision = current_decision_check(use_case)
+            initial_decision = {
+                UseCase.Status.REVIEW: Review.Decision.START_REVIEW,
+                UseCase.Status.PILOT: Review.Decision.START_PILOT,
+                UseCase.Status.OPERATION: (
+                    Review.Decision.CONTINUE
+                    if use_case.status == UseCase.Status.OPERATION
+                    else Review.Decision.GO_LIVE
+                ),
+                UseCase.Status.ENDED: Review.Decision.END,
+            }.get(decision.target_status)
+            if initial_decision:
+                self.fields["decision"].initial = initial_decision
+            self.fields["new_status"].initial = decision.target_status
         user_model = get_user_model()
         self.fields["action_owner"].queryset = user_model.objects.filter(
             is_active=True, is_anonymized=False

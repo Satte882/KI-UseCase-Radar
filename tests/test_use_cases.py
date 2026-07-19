@@ -1,6 +1,8 @@
 import pytest
 from django.urls import reverse
+from django.utils import timezone
 
+from ki_radar.use_cases.forms import UseCaseForm
 from ki_radar.use_cases.models import UseCase
 
 
@@ -35,6 +37,26 @@ def test_owner_cannot_edit_foreign_use_case(client, other_owner, use_case):
 def test_reader_cannot_create(client, reader):
     client.force_login(reader)
     assert client.get(reverse("use_cases:create")).status_code == 403
+
+
+@pytest.mark.django_db
+def test_use_case_form_uses_german_decision_labels():
+    form = UseCaseForm()
+
+    assert form.fields["problem_statement"].label == "Problemstellung"
+    assert form.fields["next_review_date"].label == "Nächster Entscheidungstermin"
+    assert form.fields["planned_pilot_end"].label == "Geplantes Pilotende"
+    assert form.fields["technical_owner"].label == "Technischer Owner"
+
+
+@pytest.mark.django_db
+def test_use_case_form_renders_date_inputs_in_browser_format(use_case):
+    localized_today = timezone.localdate().strftime("%d.%m.%Y")
+    use_case.next_review_date = timezone.localdate()
+    form = UseCaseForm(instance=use_case)
+
+    assert f'value="{timezone.localdate().isoformat()}"' in form.as_p()
+    assert localized_today not in form.as_p()
 
 
 @pytest.mark.django_db

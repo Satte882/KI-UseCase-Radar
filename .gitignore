@@ -5,6 +5,7 @@ __pycache__/
 .coverage
 htmlcov/
 .ruff_cache/
+.playwright-cli/
 .env
 .env.*
 !.env.example
