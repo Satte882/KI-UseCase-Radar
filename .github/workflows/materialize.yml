@@ -61,6 +61,19 @@ jobs:
           version: "0.10.0"
           enable-cache: true
 
+      - name: Refresh lockfile
+        shell: bash
+        run: |
+          set -euo pipefail
+          uv lock
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add uv.lock
+          if ! git diff --cached --quiet; then
+            git commit -m "Refresh dependency lockfile [skip ci]"
+            git push origin HEAD:${{ github.head_ref }}
+          fi
+
       - name: Install dependencies
         run: uv sync --frozen --dev
 
@@ -69,8 +82,6 @@ jobs:
         run: |
           set -euo pipefail
           uv run python manage.py makemigrations accounts core use_cases governance reviews notifications
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add ki_radar/**/migrations/*.py
           if ! git diff --cached --quiet; then
             git commit -m "Add initial Django migrations [skip ci]"
@@ -108,21 +119,7 @@ jobs:
         run: uv run bandit -q -r ki_radar config
 
       - name: Dependency audit
-        shell: bash
-        run: |
-          set +e
-          uv run pip-audit > audit-error.txt 2>&1
-          exit_code=$?
-          cat audit-error.txt
-          if [ "$exit_code" -ne 0 ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add -f audit-error.txt
-            git commit -m "Capture dependency audit findings [skip ci]" || true
-            git push origin HEAD:${{ github.head_ref }}
-            exit "$exit_code"
-          fi
-          rm -f audit-error.txt
+        run: uv run pip-audit
 
       - name: Build production image
         run: docker build -t ki-radar:ci .
