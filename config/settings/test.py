@@ -4,7 +4,6 @@ from .base import *  # noqa: F403
 from .base import BASE_DIR, DATABASES
 
 DEBUG = False
-SECRET_KEY = "test-only-secret-key"
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 AXES_ENABLED = False
 DATABASES["default"]["CONN_MAX_AGE"] = 0
