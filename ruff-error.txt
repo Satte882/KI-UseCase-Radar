@@ -1,0 +1,33 @@
+config/settings/dev.py:4:44: S104 Possible binding to all interfaces
+config/settings/test.py:10:1: E402 Module level import not at top of file
+config/settings/test.py:14:69: F405 `BASE_DIR` may be undefined, or defined from star imports
+ki_radar/accounts/admin.py:9:17: RUF005 Consider iterable unpacking instead of concatenation
+ki_radar/accounts/admin.py:25:19: RUF005 Consider iterable unpacking instead of concatenation
+ki_radar/accounts/models.py:13:20: RUF012 Mutable default value for class attribute
+ki_radar/accounts/models.py:58:20: RUF012 Mutable default value for class attribute
+ki_radar/core/admin.py:11:23: RUF012 Mutable default value for class attribute
+ki_radar/core/middleware.py:9:101: E501 Line too long (143 > 100)
+ki_radar/core/models.py:27:20: RUF012 Mutable default value for class attribute
+ki_radar/core/models.py:28:19: RUF012 Mutable default value for class attribute
+ki_radar/governance/forms.py:10:9: DJ006 Do not use `exclude` with `ModelForm`, use `fields` instead
+ki_radar/governance/forms.py:10:19: RUF012 Mutable default value for class attribute
+ki_radar/governance/forms.py:11:19: RUF012 Mutable default value for class attribute
+ki_radar/governance/models.py:50:20: RUF012 Mutable default value for class attribute
+ki_radar/governance/models.py:53:43: RUF001 String contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+ki_radar/notifications/admin.py:26:23: RUF012 Mutable default value for class attribute
+ki_radar/notifications/forms.py:9:9: DJ006 Do not use `exclude` with `ModelForm`, use `fields` instead
+ki_radar/notifications/forms.py:9:19: RUF012 Mutable default value for class attribute
+ki_radar/notifications/forms.py:10:19: RUF012 Mutable default value for class attribute
+ki_radar/notifications/models.py:64:20: RUF012 Mutable default value for class attribute
+ki_radar/reviews/forms.py:31:18: RUF012 Mutable default value for class attribute
+ki_radar/reviews/forms.py:41:19: RUF012 Mutable default value for class attribute
+ki_radar/reviews/models.py:45:20: RUF012 Mutable default value for class attribute
+ki_radar/use_cases/forms.py:17:9: DJ006 Do not use `exclude` with `ModelForm`, use `fields` instead
+ki_radar/use_cases/forms.py:17:19: RUF012 Mutable default value for class attribute
+ki_radar/use_cases/forms.py:35:19: RUF012 Mutable default value for class attribute
+ki_radar/use_cases/models.py:13:7: DJ008 Model does not define `__str__` method
+ki_radar/use_cases/models.py:149:20: RUF012 Mutable default value for class attribute
+ki_radar/use_cases/models.py:150:19: RUF012 Mutable default value for class attribute
+ki_radar/use_cases/models.py:156:43: RUF001 String contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+Found 31 errors.
+No fixes available (2 hidden fixes can be enabled with the `--unsafe-fixes` option).
