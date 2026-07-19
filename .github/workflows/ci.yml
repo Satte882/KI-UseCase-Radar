@@ -7,8 +7,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
-  pull-requests: write
+  contents: write
 
 concurrency:
   group: ki-radar-ci-${{ github.ref }}
@@ -46,6 +45,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Install Python
         uses: actions/setup-python@v5
@@ -64,28 +65,22 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen --dev
 
-      - name: Ruff lint
-        id: ruff
-        continue-on-error: true
+      - name: Apply Ruff fixes
         shell: bash
         run: |
-          set -o pipefail
-          uv run ruff check . 2>&1 | tee ruff-output.txt
+          set -euo pipefail
+          uv run ruff check . --fix
+          uv run ruff format .
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add .
+            git commit -m "Apply Ruff formatting"
+            git push origin HEAD:${{ github.head_ref }}
+          fi
 
-      - name: Report Ruff findings
-        if: steps.ruff.outcome == 'failure' && github.event_name == 'pull_request'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          {
-            echo '### Ruff lint findings'
-            echo '```text'
-            cat ruff-output.txt
-            echo '```'
-          } > ruff-comment.md
-          gh pr comment "${{ github.event.pull_request.number }}" --body-file ruff-comment.md
-          exit 1
+      - name: Ruff lint
+        run: uv run ruff check .
 
       - name: Ruff format
         run: uv run ruff format --check .
