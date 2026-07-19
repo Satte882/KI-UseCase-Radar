@@ -9,6 +9,7 @@ from .models import Review
 def create_review(*, use_case, actor, data) -> Review:
     previous_status = use_case.status
     review_data = data.copy()
+    review_data.pop("go_live_exception_confirmed", None)
 
     for field in [
         "ending_reason",
