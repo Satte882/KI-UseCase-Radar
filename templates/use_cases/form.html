@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} – KI-Radar{% endblock %}
+{% block content %}
+<h1>{{ title }}</h1><p class="text-muted">Pflichtfelder und fachliche Validierungen werden serverseitig geprüft.</p>
+<form method="post" class="card card-body">{% csrf_token %}{{ form.non_field_errors }}
+<div class="row g-3">{% for field in form %}<div class="{% if field.name in 'problem_statement summary expected_benefit baseline success_criterion realized_result source_systems data_sources interface_description intended_users intended_purpose human_oversight support_responsibility' %}col-12{% else %}col-md-6{% endif %}">{% if field.field.widget.input_type == 'checkbox' %}<div class="form-check mt-4">{{ field }}<label class="form-check-label">{{ field.label }}</label></div>{% else %}<label class="form-label">{{ field.label }}{% if field.field.required %} *{% endif %}</label>{{ field }}{% endif %}<div class="text-danger small">{{ field.errors }}</div>{% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}</div>{% endfor %}</div>
+<div class="mt-4"><button class="btn btn-primary">Speichern</button> {% if use_case %}<a class="btn btn-outline-secondary" href="{{ use_case.get_absolute_url }}">Abbrechen</a>{% endif %}</div></form>
+{% endblock %}
