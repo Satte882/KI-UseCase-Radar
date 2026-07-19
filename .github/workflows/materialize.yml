@@ -1,0 +1,41 @@
+name: Materialize KI-Radar repository
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".bootstrap/**"
+      - ".github/workflows/materialize.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ki-radar-materialize
+  cancel-in-progress: false
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Reconstruct and extract repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .bootstrap/part-* | base64 --decode > /tmp/ki-radar.tgz
+          tar -xzf /tmp/ki-radar.tgz
+          rm -rf .bootstrap
+          rm -f .github/workflows/materialize.yml
+
+      - name: Commit implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Implement KI-Radar application"
+          git push
