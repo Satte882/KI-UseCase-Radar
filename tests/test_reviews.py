@@ -49,9 +49,7 @@ def test_continue_review_keeps_status(client, coordinator, use_case):
 
 
 @pytest.mark.django_db
-def test_review_can_supply_required_review_date_for_pilot_transition(
-    coordinator, use_case
-):
+def test_review_can_supply_required_review_date_for_pilot_transition(coordinator, use_case):
     today = timezone.localdate()
     use_case.baseline = "30 Minuten"
     use_case.success_criterion = "Unter 10 Minuten"
