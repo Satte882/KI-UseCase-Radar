@@ -80,6 +80,17 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen --dev
 
+      - name: Publish materialized source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --stat
+          git commit -m "Materialize KI-Radar source [skip ci]"
+          git push origin HEAD:${{ github.head_ref }}
+
       - name: Generate initial migrations
         run: uv run python manage.py makemigrations accounts core use_cases governance reviews notifications
 
@@ -103,14 +114,3 @@ jobs:
 
       - name: Build production image
         run: docker build -t ki-radar:ci .
-
-      - name: Commit validated implementation
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git diff --cached --stat
-          git commit -m "Implement KI-Radar application"
-          git push origin HEAD:${{ github.head_ref }}
