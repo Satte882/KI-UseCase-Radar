@@ -1,5 +1,7 @@
+from django.core.exceptions import ValidationError
 from django.db import transaction
 
+from ki_radar.use_cases.models import UseCase
 from ki_radar.use_cases.services import apply_status_transition
 
 from .models import Review
@@ -9,7 +11,15 @@ from .models import Review
 def create_review(*, use_case, actor, data) -> Review:
     previous_status = use_case.status
     review_data = data.copy()
-    review_data.pop("go_live_exception_confirmed", None)
+
+    if (
+        review_data.get("decision") == Review.Decision.GO_LIVE
+        and use_case.metric_result == UseCase.MetricResult.NOT_ACHIEVED
+        and not review_data.get("go_live_exception_confirmed")
+    ):
+        raise ValidationError(
+            "Ein Go-live bei verfehltem Pilotziel benötigt eine ausdrücklich bestätigte Ausnahme."
+        )
 
     for field in [
         "ending_reason",

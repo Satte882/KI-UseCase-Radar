@@ -29,6 +29,10 @@ class Review(TimeStampedModel):
     new_status = models.CharField(max_length=20, choices=UseCase.Status.choices)
     decision = models.CharField(max_length=30, choices=Decision.choices)
     rationale = models.TextField()
+    go_live_exception_confirmed = models.BooleanField(
+        default=False,
+        verbose_name="Go-live-Ausnahme ausdrücklich bestätigt",
+    )
     open_actions = models.TextField(blank=True)
     action_owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,

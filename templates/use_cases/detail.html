@@ -91,7 +91,18 @@
     <div class="app-card">
       <div class="card-header"><strong>Entscheidungsverlauf</strong></div>
       <div class="list-group list-group-flush">
-        {% for review in use_case.reviews.all %}<div class="list-group-item bg-transparent py-3"><div class="d-flex justify-content-between gap-3"><strong>{{ review.get_decision_display }}</strong><span class="text-muted small">{{ review.review_date|date:"d.m.Y" }}</span></div><div class="small text-muted mt-1">{{ review.rationale }}</div></div>{% empty %}<div class="list-group-item bg-transparent text-muted">Noch keine Reviews dokumentiert.</div>{% endfor %}
+        {% for review in use_case.reviews.all %}
+        <div class="list-group-item bg-transparent py-3">
+          <div class="d-flex justify-content-between gap-3">
+            <div class="d-flex flex-wrap align-items-center gap-2">
+              <strong>{{ review.get_decision_display }}</strong>
+              {% if review.go_live_exception_confirmed %}<span class="badge state-review">Ausnahme ausdrücklich bestätigt</span>{% endif %}
+            </div>
+            <span class="text-muted small">{{ review.review_date|date:"d.m.Y" }}</span>
+          </div>
+          <div class="small text-muted mt-1">{{ review.rationale }}</div>
+        </div>
+        {% empty %}<div class="list-group-item bg-transparent text-muted">Noch keine Reviews dokumentiert.</div>{% endfor %}
       </div>
     </div>
   </div>
