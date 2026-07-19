@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 import pytest
 from django.urls import reverse
 from django.utils import timezone
@@ -51,11 +53,15 @@ def test_continue_review_keeps_status(client, coordinator, use_case):
 @pytest.mark.django_db
 def test_review_can_supply_required_review_date_for_pilot_transition(coordinator, use_case):
     today = timezone.localdate()
-    use_case.baseline = "30 Minuten"
-    use_case.success_criterion = "Unter 10 Minuten"
-    use_case.target_value = "10 Minuten"
     use_case.data_sources = "Freigegebene Wissensbasis"
     use_case.planned_pilot_end = today
+    use_case.metric_name = "Bearbeitungszeit"
+    use_case.metric_type = UseCase.MetricType.DURATION
+    use_case.metric_direction = UseCase.MetricDirection.LOWER
+    use_case.metric_unit = "Minuten"
+    use_case.metric_baseline = Decimal("30")
+    use_case.metric_target = Decimal("10")
+    use_case.metric_measurement_method = "Zeitmessung bei 20 Fällen"
     use_case.save()
     GovernanceAssessment.objects.create(
         use_case=use_case,

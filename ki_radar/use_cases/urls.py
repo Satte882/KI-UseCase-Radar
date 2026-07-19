@@ -9,4 +9,5 @@ urlpatterns = [
     path("export.csv", views.export_csv, name="export_csv"),
     path("<uuid:pk>/", views.use_case_detail, name="detail"),
     path("<uuid:pk>/edit/", views.use_case_edit, name="edit"),
+    path("<uuid:pk>/copilot/", views.use_case_copilot, name="copilot"),
 ]

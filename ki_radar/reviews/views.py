@@ -8,6 +8,7 @@ from django.utils import timezone
 
 from ki_radar.accounts.permissions import is_coordinator
 from ki_radar.use_cases.models import UseCase
+from ki_radar.use_cases.services import current_decision_check
 
 from .forms import ReviewForm
 from .services import create_review
@@ -17,7 +18,12 @@ from .services import create_review
 def review_create(request, use_case_id):
     if not is_coordinator(request.user):
         raise PermissionDenied
-    use_case = get_object_or_404(UseCase, pk=use_case_id)
+    use_case = get_object_or_404(
+        UseCase.objects.select_related("business_owner", "technical_owner").prefetch_related(
+            "governance_assessments"
+        ),
+        pk=use_case_id,
+    )
     if request.method == "POST":
         form = ReviewForm(request.POST, use_case=use_case)
         if form.is_valid():
@@ -30,7 +36,15 @@ def review_create(request, use_case_id):
                 return redirect(use_case)
     else:
         form = ReviewForm(use_case=use_case)
-    return render(request, "reviews/form.html", {"form": form, "use_case": use_case})
+    return render(
+        request,
+        "reviews/form.html",
+        {
+            "form": form,
+            "use_case": use_case,
+            "decision_check": current_decision_check(use_case),
+        },
+    )
 
 
 @login_required
@@ -51,7 +65,7 @@ def monthly_review(request):
         ),
         "missing_review_date": queryset.filter(next_review_date__isnull=True),
         "stale": queryset.filter(updated_at__date__lt=today - timedelta(days=60)),
-        "pilots_without_result": queryset.filter(status=UseCase.Status.PILOT, realized_result=""),
+        "pilots_without_result": queryset.filter(status=UseCase.Status.PILOT, metric_actual=None),
         "missing_governance": queryset.filter(governance_assessments__isnull=True).distinct(),
     }
     return render(request, "reviews/monthly.html", context)

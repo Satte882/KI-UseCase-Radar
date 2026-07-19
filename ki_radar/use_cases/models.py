@@ -1,4 +1,5 @@
 import uuid
+from decimal import Decimal
 
 from django.conf import settings
 from django.core.validators import MinValueValidator
@@ -51,6 +52,24 @@ class UseCase(TimeStampedModel):
         EXTERNAL = "external", "Extern"
         HYBRID = "hybrid", "Hybrid"
         UNKNOWN = "unknown", "Noch offen"
+
+    class MetricType(models.TextChoices):
+        NUMBER = "number", "Zahl"
+        PERCENT = "percent", "Prozent"
+        DURATION = "duration", "Dauer"
+        CURRENCY = "currency", "Geldbetrag"
+        COUNT = "count", "Anzahl"
+        RATING = "rating", "Bewertungsskala"
+
+    class MetricDirection(models.TextChoices):
+        LOWER = "lower", "Niedriger ist besser"
+        HIGHER = "higher", "Höher ist besser"
+
+    class MetricResult(models.TextChoices):
+        NOT_DEFINED = "not_defined", "Metrik nicht definiert"
+        NOT_MEASURED = "not_measured", "Noch nicht gemessen"
+        ACHIEVED = "achieved", "Ziel erreicht"
+        NOT_ACHIEVED = "not_achieved", "Ziel nicht erreicht"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     short_id = models.CharField(max_length=20, unique=True, blank=True)
@@ -116,6 +135,46 @@ class UseCase(TimeStampedModel):
     success_criterion = models.TextField(blank=True)
     target_value = models.CharField(max_length=200, blank=True)
     realized_result = models.TextField(blank=True)
+
+    metric_name = models.CharField(max_length=200, blank=True, verbose_name="Primäre Erfolgsmetrik")
+    metric_type = models.CharField(
+        max_length=20, choices=MetricType.choices, blank=True, verbose_name="Metriktyp"
+    )
+    metric_direction = models.CharField(
+        max_length=10,
+        choices=MetricDirection.choices,
+        blank=True,
+        verbose_name="Optimierungsrichtung",
+    )
+    metric_unit = models.CharField(max_length=80, blank=True, verbose_name="Einheit")
+    metric_baseline = models.DecimalField(
+        max_digits=14,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        verbose_name="Baseline-Wert",
+    )
+    metric_target = models.DecimalField(
+        max_digits=14,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        verbose_name="Zielwert",
+    )
+    metric_actual = models.DecimalField(
+        max_digits=14,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        verbose_name="Gemessener Ist-Wert",
+    )
+    metric_measurement_method = models.TextField(blank=True, verbose_name="Messmethode")
+    metric_measurement_period = models.CharField(
+        max_length=200, blank=True, verbose_name="Messzeitraum"
+    )
+    metric_measured_at = models.DateField(null=True, blank=True, verbose_name="Messdatum")
+    metric_evidence_url = models.URLField(blank=True, verbose_name="Messnachweis")
+
     one_time_cost = models.DecimalField(
         max_digits=12, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(0)]
     )
@@ -166,6 +225,28 @@ class UseCase(TimeStampedModel):
 
     def get_absolute_url(self):
         return reverse("use_cases:detail", kwargs={"pk": self.pk})
+
+    @property
+    def metric_result(self) -> str:
+        if not all([self.metric_name, self.metric_direction]) or self.metric_target is None:
+            return self.MetricResult.NOT_DEFINED
+        if self.metric_actual is None:
+            return self.MetricResult.NOT_MEASURED
+        if self.metric_direction == self.MetricDirection.LOWER:
+            achieved = self.metric_actual <= self.metric_target
+        else:
+            achieved = self.metric_actual >= self.metric_target
+        return self.MetricResult.ACHIEVED if achieved else self.MetricResult.NOT_ACHIEVED
+
+    @property
+    def metric_result_label(self) -> str:
+        return self.MetricResult(self.metric_result).label
+
+    @property
+    def metric_delta(self) -> Decimal | None:
+        if self.metric_actual is None or self.metric_baseline is None:
+            return None
+        return self.metric_actual - self.metric_baseline
 
     @property
     def recommendation(self) -> str:
