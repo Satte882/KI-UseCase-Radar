@@ -50,4 +50,4 @@ class GovernanceAssessment(TimeStampedModel):
         ordering = ["-assessment_date", "-created_at"]
 
     def __str__(self) -> str:
-        return f"{self.use_case.short_id} – {self.assessment_date}"
+        return f"{self.use_case.short_id} - {self.assessment_date}"
