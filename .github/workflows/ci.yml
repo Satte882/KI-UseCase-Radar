@@ -8,7 +8,6 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
 
 concurrency:
   group: ki-radar-ci-${{ github.ref }}
@@ -65,30 +64,7 @@ jobs:
         run: uv sync --frozen --dev
 
       - name: Ruff lint
-        id: ruff
-        continue-on-error: true
-        shell: bash
-        run: |
-          set +e
-          uv run ruff check . 2>&1 | tee ruff-output.txt
-          status=${PIPESTATUS[0]}
-          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
-          exit "$status"
-
-      - name: Report Ruff findings
-        if: steps.ruff.outputs.exit_code != '0' && github.event_name == 'pull_request'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          {
-            echo '### Ruff lint findings'
-            echo '```text'
-            cat ruff-output.txt
-            echo '```'
-          } > ruff-comment.md
-          gh pr comment "${{ github.event.pull_request.number }}" --body-file ruff-comment.md
-          exit 1
+        run: uv run ruff check .
 
       - name: Ruff format
         run: uv run ruff format --check .
