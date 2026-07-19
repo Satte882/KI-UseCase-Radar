@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import urllib.error
+import urllib.parse
 import urllib.request
 from dataclasses import asdict
 
@@ -91,11 +92,16 @@ def analyze_use_case(use_case: UseCase) -> str:
     if site_url:
         headers["HTTP-Referer"] = site_url
 
-    request = urllib.request.Request(
-        _setting(
-            "OPENROUTER_API_URL",
-            "https://openrouter.ai/api/v1/chat/completions",
-        ),
+    api_url = _setting(
+        "OPENROUTER_API_URL",
+        "https://openrouter.ai/api/v1/chat/completions",
+    )
+    parsed_url = urllib.parse.urlparse(api_url)
+    if parsed_url.scheme != "https" or not parsed_url.netloc:
+        raise CopilotUnavailable("Die OpenRouter API-URL muss eine gültige HTTPS-URL sein.")
+
+    request = urllib.request.Request(  # noqa: S310
+        api_url,
         data=json.dumps(body).encode("utf-8"),
         headers=headers,
         method="POST",
