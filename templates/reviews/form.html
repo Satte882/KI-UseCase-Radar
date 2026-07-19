@@ -1,3 +1,39 @@
 {% extends "base.html" %}
-{% block title %}Review – KI-Radar{% endblock %}
-{% block content %}<h1>Review anlegen</h1><p class="text-muted">{{ use_case.short_id }} – {{ use_case.title }} · aktueller Status: {{ use_case.get_status_display }}</p><form method="post" class="card card-body">{% csrf_token %}{{ form.non_field_errors }}<div class="row g-3">{% for field in form %}<div class="{% if field.name in 'rationale open_actions' %}col-12{% else %}col-md-6{% endif %}"><label class="form-label">{{ field.label }}</label>{{ field }}<div class="text-danger small">{{ field.errors }}</div></div>{% endfor %}</div><div class="mt-3"><button class="btn btn-primary">Review speichern</button> <a class="btn btn-outline-secondary" href="{{ use_case.get_absolute_url }}">Abbrechen</a></div></form>{% endblock %}
+{% block title %}Entscheidung – KI-Radar{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><div class="eyebrow mb-2">{{ use_case.short_id }} · {{ use_case.get_status_display }}</div><h1 class="page-title">Entscheidung dokumentieren</h1><p class="page-subtitle">{{ use_case.title }}</p></div>
+  <a class="btn btn-outline-secondary" href="{{ use_case.get_absolute_url }}">Zurück zum Use Case</a>
+</div>
+<div class="row g-4">
+  <div class="col-xl-4">
+    <div class="app-card decision-panel mb-4">
+      <div class="card-header d-flex justify-content-between"><strong>{{ decision_check.title }}</strong><span class="badge state-{{ decision_check.state }}">{{ decision_check.state_label }}</span></div>
+      <div class="card-body">
+        {% if decision_check.blockers %}<div class="section-title">Blocker</div><ul class="decision-list">{% for blocker in decision_check.blockers %}<li>{{ blocker }}</li>{% endfor %}</ul>{% endif %}
+        {% if decision_check.warnings %}<div class="section-title mt-3">Hinweise</div><ul class="decision-list">{% for warning in decision_check.warnings %}<li>{{ warning }}</li>{% endfor %}</ul>{% endif %}
+        {% if not decision_check.blockers and not decision_check.warnings %}<p class="text-muted mb-0">Die strukturierte Entscheidungsgrundlage ist vollständig.</p>{% endif %}
+      </div>
+    </div>
+    <div class="app-card">
+      <div class="card-header"><strong>Ziel gegen Ergebnis</strong></div>
+      <div class="card-body">
+        <div class="section-title">{{ use_case.metric_name|default:"Keine Metrik definiert" }}</div>
+        <dl class="row mb-0 small"><dt class="col-5 text-muted">Baseline</dt><dd class="col-7">{{ use_case.metric_baseline|default_if_none:"–" }} {{ use_case.metric_unit }}</dd><dt class="col-5 text-muted">Ziel</dt><dd class="col-7">{{ use_case.metric_target|default_if_none:"–" }} {{ use_case.metric_unit }}</dd><dt class="col-5 text-muted">Ist</dt><dd class="col-7">{{ use_case.metric_actual|default_if_none:"–" }} {{ use_case.metric_unit }}</dd><dt class="col-5 text-muted">Bewertung</dt><dd class="col-7">{{ use_case.metric_result_label }}</dd></dl>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-8">
+    <form method="post" class="app-card">{% csrf_token %}
+      <div class="card-header"><strong>Review und Beschluss</strong><div class="small text-muted mt-1">Die Entscheidung bleibt menschlich verantwortlich und wird revisionsfähig dokumentiert.</div></div>
+      <div class="card-body">{{ form.non_field_errors }}<div class="row g-3">
+        {% for field in form %}<div class="{% if field.name == 'rationale' or field.name == 'open_actions' or field.name == 'ending_reason' or field.name == 'data_and_access_handling' or field.name == 'replacement_solution' or field.name == 'final_assessment' or field.name == 'lessons_learned' or field.name == 'go_live_exception_confirmed' %}col-12{% else %}col-md-6{% endif %}">
+          {% if field.field.widget.input_type == 'checkbox' %}<div class="form-check mt-3">{{ field }}<label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label></div>{% else %}<label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% endif %}
+          <div class="text-danger small">{{ field.errors }}</div>{% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+        </div>{% endfor %}
+      </div></div>
+      <div class="card-body border-top d-flex justify-content-end gap-2"><a class="btn btn-outline-secondary" href="{{ use_case.get_absolute_url }}">Abbrechen</a><button class="btn btn-primary px-4">Entscheidung speichern</button></div>
+    </form>
+  </div>
+</div>
+{% endblock %}
