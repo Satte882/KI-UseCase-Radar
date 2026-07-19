@@ -87,7 +87,7 @@ jobs:
       - name: Dependency audit
         run: uv run pip-audit
 
-      - name: Validate Compose definitions
+      - name: Prepare Compose validation
         shell: bash
         run: |
           set -euo pipefail
@@ -98,9 +98,15 @@ jobs:
           for secret in django_secret_key db_password; do
             printf 'ci-placeholder\n' > ".ci-secrets/staging/${secret}"
           done
-          docker compose -f compose.local.yml config --quiet
-          SECRETS_DIR="$PWD/.ci-secrets/prod" docker compose --env-file .env.production.example -f compose.prod.yml config --quiet
-          STAGING_SECRETS_DIR="$PWD/.ci-secrets/staging" docker compose --env-file .env.staging.example -f compose.staging.yml config --quiet
+
+      - name: Validate local Compose
+        run: docker compose -f compose.local.yml config --quiet
+
+      - name: Validate production Compose
+        run: SECRETS_DIR="$PWD/.ci-secrets/prod" docker compose --env-file .env.production.example -f compose.prod.yml config --quiet
+
+      - name: Validate staging Compose
+        run: STAGING_SECRETS_DIR="$PWD/.ci-secrets/staging" docker compose --env-file .env.staging.example -f compose.staging.yml config --quiet
 
       - name: Build production image
         run: docker build -t ki-radar:ci .
