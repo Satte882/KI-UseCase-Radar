@@ -25,6 +25,14 @@ class ReviewForm(forms.ModelForm):
     lessons_learned = forms.CharField(
         required=False, widget=forms.Textarea(attrs={"rows": 2}), label="Lessons Learned"
     )
+    go_live_exception_confirmed = forms.BooleanField(
+        required=False,
+        label="Go-live trotz verfehltem Pilotziel ausdrücklich bestätigen",
+        help_text=(
+            "Nur erforderlich, wenn die primäre Erfolgsmetrik das definierte Ziel nicht erreicht. "
+            "Die Begründung gehört in das Feld Entscheidungsbegründung."
+        ),
+    )
 
     class Meta:
         model = Review
@@ -51,12 +59,15 @@ class ReviewForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["review_date"].initial = timezone.localdate()
         self.fields["new_status"].initial = use_case.status
-        User = get_user_model()
-        self.fields["action_owner"].queryset = User.objects.filter(
+        user_model = get_user_model()
+        self.fields["action_owner"].queryset = user_model.objects.filter(
             is_active=True, is_anonymized=False
         )
         for field in self.fields.values():
             field.widget.attrs.setdefault("class", "form-control")
+        for name in ["decision", "new_status", "action_owner"]:
+            self.fields[name].widget.attrs["class"] = "form-select"
+        self.fields["go_live_exception_confirmed"].widget.attrs["class"] = "form-check-input"
 
     def clean(self):
         cleaned = super().clean()
@@ -93,6 +104,15 @@ class ReviewForm(forms.ModelForm):
                 self.add_error(
                     "new_status",
                     "Für eine Rückstufung muss eine frühere Lifecycle-Phase gewählt werden.",
+                )
+        if decision == Review.Decision.GO_LIVE:
+            if (
+                self.use_case.metric_result == UseCase.MetricResult.NOT_ACHIEVED
+                and not cleaned.get("go_live_exception_confirmed")
+            ):
+                self.add_error(
+                    "go_live_exception_confirmed",
+                    "Die Ausnahme muss bei verfehltem Pilotziel ausdrücklich bestätigt werden.",
                 )
         if decision == Review.Decision.END:
             for field in ["ending_reason", "data_and_access_handling"]:
