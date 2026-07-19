@@ -86,6 +86,10 @@ def required_fields_for_status(status: str) -> list[str]:
     return BASE_REQUIREMENTS.get(status, [])
 
 
+def _combined_requirements(*groups: list[str]) -> list[str]:
+    return list(dict.fromkeys(field_name for group in groups for field_name in group))
+
+
 def _missing_fields(use_case: UseCase, field_names: list[str]) -> list[str]:
     missing = []
     for field_name in field_names:
@@ -98,7 +102,11 @@ def _missing_fields(use_case: UseCase, field_names: list[str]) -> list[str]:
 def check_pilot_start(use_case: UseCase) -> DecisionCheck:
     blockers = _missing_fields(
         use_case,
-        BASE_REQUIREMENTS[UseCase.Status.PILOT] + PILOT_METRIC_REQUIREMENTS,
+        _combined_requirements(
+            BASE_REQUIREMENTS[UseCase.Status.REVIEW],
+            BASE_REQUIREMENTS[UseCase.Status.PILOT],
+            PILOT_METRIC_REQUIREMENTS,
+        ),
     )
     warnings = []
     if not use_case.governance_assessments.exists():
@@ -124,7 +132,13 @@ def check_pilot_start(use_case: UseCase) -> DecisionCheck:
 def check_go_live(use_case: UseCase) -> DecisionCheck:
     blockers = _missing_fields(
         use_case,
-        BASE_REQUIREMENTS[UseCase.Status.OPERATION] + GO_LIVE_METRIC_REQUIREMENTS,
+        _combined_requirements(
+            BASE_REQUIREMENTS[UseCase.Status.REVIEW],
+            BASE_REQUIREMENTS[UseCase.Status.PILOT],
+            PILOT_METRIC_REQUIREMENTS,
+            BASE_REQUIREMENTS[UseCase.Status.OPERATION],
+            GO_LIVE_METRIC_REQUIREMENTS,
+        ),
     )
     warnings = []
     checks = [
@@ -173,7 +187,9 @@ def decision_check_for_status(use_case: UseCase, target_status: str) -> Decision
 
 
 def current_decision_check(use_case: UseCase) -> DecisionCheck:
-    if use_case.status in {UseCase.Status.IDEA, UseCase.Status.REVIEW}:
+    if use_case.status == UseCase.Status.IDEA:
+        return decision_check_for_status(use_case, UseCase.Status.REVIEW)
+    if use_case.status == UseCase.Status.REVIEW:
         return check_pilot_start(use_case)
     if use_case.status == UseCase.Status.PILOT:
         return check_go_live(use_case)
