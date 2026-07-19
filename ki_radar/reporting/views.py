@@ -48,8 +48,7 @@ def dashboard(request):
         "measured_total": measured,
         "achieved_total": achieved,
         "due_soon_total": sum(
-            item.decision_due
-            and today <= item.decision_due <= today + timedelta(days=30)
+            item.decision_due and today <= item.decision_due <= today + timedelta(days=30)
             for item in active
         ),
         "today": today,

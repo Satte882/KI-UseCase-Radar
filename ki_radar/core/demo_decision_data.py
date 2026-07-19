@@ -1,8 +1,7 @@
-from decimal import Decimal
 from datetime import timedelta
+from decimal import Decimal
 
 from django.utils import timezone
-
 
 DEMO_METRICS = {
     "[DEMO] Interner Wissensassistent": {
