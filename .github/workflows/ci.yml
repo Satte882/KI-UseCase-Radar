@@ -8,7 +8,6 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
 
 concurrency:
   group: ki-radar-ci-${{ github.ref }}
@@ -80,27 +79,7 @@ jobs:
         run: uv run python manage.py migrate --noinput
 
       - name: Run tests
-        id: pytest
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -o pipefail
-          uv run pytest -q 2>&1 | tee pytest-output.txt
-
-      - name: Report test findings
-        if: steps.pytest.outcome == 'failure' && github.event_name == 'pull_request'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          {
-            echo '### Pytest findings'
-            echo '```text'
-            tail -n 220 pytest-output.txt
-            echo '```'
-          } > pytest-comment.md
-          gh pr comment "${{ github.event.pull_request.number }}" --body-file pytest-comment.md
-          exit 1
+        run: uv run pytest -q
 
       - name: Bandit
         run: uv run bandit -q -r ki_radar config
