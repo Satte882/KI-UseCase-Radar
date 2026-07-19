@@ -1,5 +1,7 @@
 # KI-Radar
 
+[![KI-Radar CI](https://github.com/Satte882/KI-UseCase-Radar/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Satte882/KI-UseCase-Radar/actions/workflows/ci.yml)
+
 KI-Radar ist eine branchenneutrale Django-Anwendung zur transparenten Steuerung von KI-Ideen, Prüfungen, Piloten und produktiven KI-Anwendungen in KMU.
 
 ## Kernfunktionen
