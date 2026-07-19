@@ -2,7 +2,6 @@ from datetime import timedelta
 from decimal import Decimal
 
 from django.utils import timezone
-
 from ki_radar.use_cases.models import UseCase
 
 
