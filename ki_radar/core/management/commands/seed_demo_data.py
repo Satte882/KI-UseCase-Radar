@@ -5,6 +5,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
 from ki_radar.core.demo_data import seed_demo_data
+from ki_radar.core.demo_decision_data import enrich_demo_metrics
 
 
 class Command(BaseCommand):
@@ -32,6 +33,7 @@ class Command(BaseCommand):
             raise CommandError("Demo user password must not be empty.")
 
         counts = seed_demo_data(demo_user_password=password)
+        metric_count = enrich_demo_metrics()
         self.stdout.write(
             self.style.SUCCESS(
                 "Demo-Daten eingespielt: "
@@ -39,7 +41,8 @@ class Command(BaseCommand):
                 f"{counts['users']} Benutzer, "
                 f"{counts['use_cases']} Use Cases, "
                 f"{counts['governance_assessments']} Governance-Screenings, "
-                f"{counts['reviews']} Reviews."
+                f"{counts['reviews']} Reviews und "
+                f"{metric_count} strukturierte Erfolgsmetriken."
             )
         )
         if generated_password:
