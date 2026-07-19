@@ -46,21 +46,31 @@ def operational_health(request):
     required_jobs = ["database_backup", "review_scan"]
     jobs = {}
     healthy = True
+
     for job_name in required_jobs:
-        latest = SystemJobRun.objects.filter(job_name=job_name).order_by("-started_at").first()
+        runs = SystemJobRun.objects.filter(job_name=job_name)
+        latest = runs.order_by("-started_at").first()
+        last_success = runs.filter(status=SystemJobRun.Status.SUCCESS).order_by("-finished_at").first()
         is_fresh = bool(
             latest
             and latest.status == SystemJobRun.Status.SUCCESS
-            and latest.finished_at
-            and latest.finished_at >= threshold
+            and last_success
+            and last_success.finished_at
+            and last_success.finished_at >= threshold
         )
         jobs[job_name] = {
             "healthy": is_fresh,
-            "last_success": latest.finished_at.isoformat()
+            "last_run_status": latest.status if latest else None,
+            "last_run_finished_at": latest.finished_at.isoformat()
             if latest and latest.finished_at
+            else None,
+            "last_success": last_success.finished_at.isoformat()
+            if last_success and last_success.finished_at
             else None,
         }
         healthy = healthy and is_fresh
+
     return JsonResponse(
-        {"status": "ok" if healthy else "degraded", "jobs": jobs}, status=200 if healthy else 503
+        {"status": "ok" if healthy else "degraded", "jobs": jobs},
+        status=200 if healthy else 503,
     )
