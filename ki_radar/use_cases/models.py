@@ -13,6 +13,9 @@ from ki_radar.core.models import TimeStampedModel
 class UseCaseCounter(models.Model):
     id = models.BigAutoField(primary_key=True)
 
+    def __str__(self) -> str:
+        return str(self.pk)
+
 
 class UseCase(TimeStampedModel):
     class Status(models.TextChoices):
@@ -153,7 +156,7 @@ class UseCase(TimeStampedModel):
         ]
 
     def __str__(self) -> str:
-        return f"{self.short_id or 'Neu'} – {self.title}"
+        return f"{self.short_id or 'Neu'} - {self.title}"
 
     def save(self, *args, **kwargs):
         if not self.short_id:
