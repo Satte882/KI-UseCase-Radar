@@ -40,6 +40,17 @@ class UseCaseForm(forms.ModelForm):
             "intended_purpose",
             "expected_benefit",
             "benefit_category",
+            "metric_name",
+            "metric_type",
+            "metric_direction",
+            "metric_unit",
+            "metric_baseline",
+            "metric_target",
+            "metric_measurement_method",
+            "metric_actual",
+            "metric_measurement_period",
+            "metric_measured_at",
+            "metric_evidence_url",
             "baseline",
             "success_criterion",
             "target_value",
@@ -60,13 +71,25 @@ class UseCaseForm(forms.ModelForm):
             "next_review_date": DateInput(),
             "pilot_start": DateInput(),
             "planned_pilot_end": DateInput(),
+            "metric_measured_at": DateInput(),
             "problem_statement": forms.Textarea(attrs={"rows": 4}),
             "summary": forms.Textarea(attrs={"rows": 2}),
             "expected_benefit": forms.Textarea(attrs={"rows": 3}),
+            "metric_measurement_method": forms.Textarea(attrs={"rows": 2}),
             "baseline": forms.Textarea(attrs={"rows": 2}),
             "success_criterion": forms.Textarea(attrs={"rows": 2}),
+            "realized_result": forms.Textarea(attrs={"rows": 2}),
             "human_oversight": forms.Textarea(attrs={"rows": 2}),
             "support_responsibility": forms.Textarea(attrs={"rows": 2}),
+        }
+        help_texts = {
+            "metric_name": "Genau eine primäre Kennzahl, an der der Pilot bewertet wird.",
+            "metric_unit": "Zum Beispiel Minuten je Rechnung, Prozent, Euro oder Fälle pro Woche.",
+            "metric_measurement_method": (
+                "Wie und mit welcher Stichprobe wird die Kennzahl erhoben?"
+            ),
+            "metric_actual": "Erst zum Pilotabschluss eintragen.",
+            "metric_evidence_url": "Link auf die freigegebene Auswertung oder den Messnachweis.",
         }
 
     def __init__(self, *args, current_user=None, **kwargs):
@@ -78,6 +101,23 @@ class UseCaseForm(forms.ModelForm):
                 if not isinstance(field.widget, forms.CheckboxInput)
                 else "form-check-input",
             )
+        for field_name in [
+            "business_unit",
+            "business_owner",
+            "coordinator",
+            "technical_owner",
+            "priority",
+            "solution_type",
+            "hosting_type",
+            "metric_type",
+            "metric_direction",
+            "business_value",
+            "technical_feasibility",
+            "data_readiness",
+            "risk_complexity",
+        ]:
+            if field_name in self.fields:
+                self.fields[field_name].widget.attrs["class"] = "form-select"
         self.fields["business_unit"].queryset = BusinessUnit.objects.filter(is_active=True)
         user_model = get_user_model()
         active_users = user_model.objects.filter(is_active=True, is_anonymized=False).order_by(
@@ -107,4 +147,34 @@ class UseCaseForm(forms.ModelForm):
             self.add_error(
                 "planned_pilot_end", "Das geplante Pilotende darf nicht vor dem Pilotbeginn liegen."
             )
+
+        metric_type = cleaned.get("metric_type")
+        baseline = cleaned.get("metric_baseline")
+        target = cleaned.get("metric_target")
+        actual = cleaned.get("metric_actual")
+        direction = cleaned.get("metric_direction")
+        if metric_type == UseCase.MetricType.PERCENT:
+            for field_name, value in [
+                ("metric_baseline", baseline),
+                ("metric_target", target),
+                ("metric_actual", actual),
+            ]:
+                if value is not None and not 0 <= value <= 100:
+                    self.add_error(field_name, "Prozentwerte müssen zwischen 0 und 100 liegen.")
+        if baseline is not None and target is not None:
+            if baseline == target:
+                self.add_error(
+                    "metric_target",
+                    "Der Zielwert muss sich von der Baseline unterscheiden.",
+                )
+            elif direction == UseCase.MetricDirection.LOWER and target > baseline:
+                self.add_error(
+                    "metric_target",
+                    "Bei 'Niedriger ist besser' muss der Zielwert unter der Baseline liegen.",
+                )
+            elif direction == UseCase.MetricDirection.HIGHER and target < baseline:
+                self.add_error(
+                    "metric_target",
+                    "Bei 'Höher ist besser' muss der Zielwert über der Baseline liegen.",
+                )
         return cleaned
