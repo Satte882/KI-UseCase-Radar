@@ -77,6 +77,45 @@ def test_review_form_renders_date_inputs_in_browser_format(use_case):
 
 
 @pytest.mark.django_db
+def test_review_form_preselects_next_decision(use_case):
+    form = ReviewForm(use_case=use_case)
+
+    assert form.fields["decision"].initial == Review.Decision.START_REVIEW
+    assert form.fields["new_status"].initial == UseCase.Status.REVIEW
+
+
+@pytest.mark.django_db
+def test_review_form_preselects_operation_continuation(use_case):
+    use_case.status = UseCase.Status.OPERATION
+    use_case.save()
+
+    form = ReviewForm(use_case=use_case)
+
+    assert form.fields["decision"].initial == Review.Decision.CONTINUE
+    assert form.fields["new_status"].initial == UseCase.Status.OPERATION
+
+
+@pytest.mark.django_db
+def test_bound_review_form_keeps_submitted_decision(use_case):
+    form = ReviewForm(
+        {
+            "review_date": timezone.localdate(),
+            "decision": Review.Decision.REWORK,
+            "new_status": UseCase.Status.IDEA,
+            "rationale": "Nochmals überarbeiten.",
+            "open_actions": "",
+            "action_owner": "",
+            "action_due_date": "",
+            "next_review_date": "",
+        },
+        use_case=use_case,
+    )
+
+    assert form.fields["decision"].initial is None
+    assert form.is_valid()
+
+
+@pytest.mark.django_db
 def test_continue_review_keeps_status(client, coordinator, use_case):
     client.force_login(coordinator)
     response = client.post(

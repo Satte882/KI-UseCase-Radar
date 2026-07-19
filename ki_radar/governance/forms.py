@@ -41,6 +41,28 @@ class GovernanceAssessmentForm(forms.ModelForm):
             "next_assessment_date": DateInput(),
             "rationale": forms.Textarea(attrs={"rows": 4}),
         }
+        labels = {
+            "assessment_date": "Screening-Datum",
+            "basis_version": "Prüfgrundlage / Version",
+            "personal_data": "Personenbezogene Daten",
+            "employee_data": "Beschäftigtendaten",
+            "automated_person_assessment": "Automatisierte Personenbewertung",
+            "influences_person_decisions": "Beeinflusst Entscheidungen über Personen",
+            "biometric_data": "Biometrische Daten",
+            "safety_critical": "Sicherheitskritischer Einsatz",
+            "regulated_product": "Reguliertes Produkt",
+            "health_safety_rights_impact": "Auswirkung auf Gesundheit, Sicherheit oder Rechte",
+            "external_ai_or_cloud": "Externe KI oder Cloud",
+            "generated_external_content": "Extern veröffentlichte generierte Inhalte",
+            "human_oversight_planned": "Menschliche Aufsicht geplant",
+            "privacy_review_required": "Datenschutzprüfung erforderlich",
+            "security_review_required": "Security-Prüfung erforderlich",
+            "legal_review_required": "Rechtsprüfung erforderlich",
+            "result": "Ergebnis",
+            "rationale": "Begründung",
+            "evidence_url": "Nachweislink",
+            "next_assessment_date": "Nächstes Screening",
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

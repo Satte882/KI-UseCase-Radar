@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 
 from ki_radar.use_cases.models import UseCase
+from ki_radar.use_cases.services import current_decision_check
 
 from .models import Review
 
@@ -76,7 +77,21 @@ class ReviewForm(forms.ModelForm):
         self.use_case = use_case
         super().__init__(*args, **kwargs)
         self.fields["review_date"].initial = timezone.localdate()
-        self.fields["new_status"].initial = use_case.status
+        if not self.is_bound:
+            decision = current_decision_check(use_case)
+            initial_decision = {
+                UseCase.Status.REVIEW: Review.Decision.START_REVIEW,
+                UseCase.Status.PILOT: Review.Decision.START_PILOT,
+                UseCase.Status.OPERATION: (
+                    Review.Decision.CONTINUE
+                    if use_case.status == UseCase.Status.OPERATION
+                    else Review.Decision.GO_LIVE
+                ),
+                UseCase.Status.ENDED: Review.Decision.END,
+            }.get(decision.target_status)
+            if initial_decision:
+                self.fields["decision"].initial = initial_decision
+            self.fields["new_status"].initial = decision.target_status
         user_model = get_user_model()
         self.fields["action_owner"].queryset = user_model.objects.filter(
             is_active=True, is_anonymized=False
