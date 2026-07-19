@@ -6,7 +6,8 @@ from .models import BusinessUnit, PrivacyRequest, User
 
 @admin.register(User)
 class RadarUserAdmin(UserAdmin):
-    fieldsets = UserAdmin.fieldsets + (
+    fieldsets = (
+        *UserAdmin.fieldsets,
         (
             "KI-Radar",
             {
@@ -22,7 +23,7 @@ class RadarUserAdmin(UserAdmin):
     )
     readonly_fields = ("is_anonymized", "anonymized_at")
     list_display = ("username", "email", "business_unit", "is_active", "is_anonymized", "is_staff")
-    list_filter = UserAdmin.list_filter + ("is_anonymized", "business_unit")
+    list_filter = (*UserAdmin.list_filter, "is_anonymized", "business_unit")
 
 
 @admin.register(BusinessUnit)
