@@ -10,5 +10,7 @@ class SecurityHeadersMiddleware:
             "font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; "
             "form-action 'self'",
         )
-        response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+        response.headers.setdefault(
+            "Permissions-Policy", "camera=(), microphone=(), geolocation=()"
+        )
         return response

@@ -1,7 +1,13 @@
 import pytest
 from django.contrib.auth.models import Group
+
 from ki_radar.accounts.models import BusinessUnit, User
-from ki_radar.accounts.permissions import GROUP_BUSINESS_OWNER, GROUP_COORDINATOR, GROUP_READER, GROUP_TECH_ADMIN
+from ki_radar.accounts.permissions import (
+    GROUP_BUSINESS_OWNER,
+    GROUP_COORDINATOR,
+    GROUP_READER,
+    GROUP_TECH_ADMIN,
+)
 
 
 @pytest.fixture
@@ -10,7 +16,9 @@ def business_unit(db):
 
 
 def make_user(username, group_name, business_unit):
-    user = User.objects.create_user(username=username, password="VerySecureTestPassword!123", business_unit=business_unit)
+    user = User.objects.create_user(
+        username=username, password="VerySecureTestPassword!123", business_unit=business_unit
+    )
     group, _ = Group.objects.get_or_create(name=group_name)
     user.groups.add(group)
     return user

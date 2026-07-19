@@ -6,7 +6,9 @@ def can_create_use_case(user) -> bool:
 
 
 def can_edit_use_case(user, use_case) -> bool:
-    return is_coordinator(user) or (is_business_owner(user) and use_case.business_owner_id == user.id)
+    return is_coordinator(user) or (
+        is_business_owner(user) and use_case.business_owner_id == user.id
+    )
 
 
 def can_view_use_case(user, use_case) -> bool:

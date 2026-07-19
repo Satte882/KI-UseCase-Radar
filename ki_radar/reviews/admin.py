@@ -1,11 +1,20 @@
 from django.contrib import admin
 from simple_history.admin import SimpleHistoryAdmin
+
 from .models import Review
 
 
 @admin.register(Review)
 class ReviewAdmin(SimpleHistoryAdmin):
-    list_display = ("use_case", "review_date", "reviewer", "decision", "previous_status", "new_status", "next_review_date")
+    list_display = (
+        "use_case",
+        "review_date",
+        "reviewer",
+        "decision",
+        "previous_status",
+        "new_status",
+        "next_review_date",
+    )
     list_filter = ("decision", "new_status")
     search_fields = ("use_case__short_id", "use_case__title", "rationale", "open_actions")
 

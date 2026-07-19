@@ -1,5 +1,6 @@
 from django.contrib import admin
 from simple_history.admin import SimpleHistoryAdmin
+
 from .models import EvidenceLink, NotificationLog
 
 
@@ -12,7 +13,14 @@ class EvidenceLinkAdmin(SimpleHistoryAdmin):
 
 @admin.register(NotificationLog)
 class NotificationLogAdmin(admin.ModelAdmin):
-    list_display = ("notification_type", "use_case", "recipient_label", "status", "sent_at", "created_at")
+    list_display = (
+        "notification_type",
+        "use_case",
+        "recipient_label",
+        "status",
+        "sent_at",
+        "created_at",
+    )
     list_filter = ("status", "notification_type")
     search_fields = ("recipient_label", "recipient_email", "idempotency_key")
     readonly_fields = [field.name for field in NotificationLog._meta.fields]

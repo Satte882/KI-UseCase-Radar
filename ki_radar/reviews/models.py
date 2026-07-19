@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import models
 from simple_history.models import HistoricalRecords
+
 from ki_radar.core.models import TimeStampedModel
 from ki_radar.use_cases.models import UseCase
 
@@ -18,13 +19,24 @@ class Review(TimeStampedModel):
 
     use_case = models.ForeignKey(UseCase, on_delete=models.CASCADE, related_name="reviews")
     review_date = models.DateField()
-    reviewer = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="reviews_performed")
+    reviewer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="reviews_performed",
+    )
     previous_status = models.CharField(max_length=20, choices=UseCase.Status.choices)
     new_status = models.CharField(max_length=20, choices=UseCase.Status.choices)
     decision = models.CharField(max_length=30, choices=Decision.choices)
     rationale = models.TextField()
     open_actions = models.TextField(blank=True)
-    action_owner = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="review_actions")
+    action_owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="review_actions",
+    )
     action_due_date = models.DateField(null=True, blank=True)
     next_review_date = models.DateField(null=True, blank=True)
     history = HistoricalRecords(inherit=True)

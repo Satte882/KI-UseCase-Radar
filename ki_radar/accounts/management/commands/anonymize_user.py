@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
+
 from ki_radar.accounts.models import PrivacyRequest
 from ki_radar.accounts.services import anonymize_user
 
@@ -17,7 +18,9 @@ class Command(BaseCommand):
         try:
             user = User.objects.get(pk=options["user_id"])
             actor = User.objects.get(pk=options["actor_id"])
-            privacy_request = PrivacyRequest.objects.get(reference=options["privacy_request_reference"])
+            privacy_request = PrivacyRequest.objects.get(
+                reference=options["privacy_request_reference"]
+            )
         except (User.DoesNotExist, PrivacyRequest.DoesNotExist) as exc:
             raise CommandError(str(exc)) from exc
         anonymize_user(user=user, privacy_request=privacy_request, actor=actor)

@@ -1,5 +1,6 @@
 from django import forms
 from django.utils import timezone
+
 from .models import GovernanceAssessment
 
 
@@ -17,4 +18,9 @@ class GovernanceAssessmentForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["assessment_date"].initial = timezone.localdate()
         for field in self.fields.values():
-            field.widget.attrs.setdefault("class", "form-check-input" if isinstance(field.widget, forms.CheckboxInput) else "form-control")
+            field.widget.attrs.setdefault(
+                "class",
+                "form-check-input"
+                if isinstance(field.widget, forms.CheckboxInput)
+                else "form-control",
+            )

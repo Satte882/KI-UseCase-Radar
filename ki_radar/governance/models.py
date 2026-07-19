@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import models
 from simple_history.models import HistoricalRecords
+
 from ki_radar.core.models import TimeStampedModel
 from ki_radar.use_cases.models import UseCase
 
@@ -14,9 +15,16 @@ class GovernanceAssessment(TimeStampedModel):
         LEGAL = "legal", "Rechtliche Prüfung erforderlich"
         COMPLETED = "completed", "Prüfung abgeschlossen"
 
-    use_case = models.ForeignKey(UseCase, on_delete=models.CASCADE, related_name="governance_assessments")
+    use_case = models.ForeignKey(
+        UseCase, on_delete=models.CASCADE, related_name="governance_assessments"
+    )
     assessment_date = models.DateField()
-    reviewer = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="governance_reviews")
+    reviewer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="governance_reviews",
+    )
     basis_version = models.CharField(max_length=100)
     personal_data = models.BooleanField(default=False)
     employee_data = models.BooleanField(default=False)

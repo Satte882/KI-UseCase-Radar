@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+
 from ki_radar.core.models import TimeStampedModel
 
 
@@ -18,7 +19,9 @@ class BusinessUnit(TimeStampedModel):
 
 
 class User(AbstractUser):
-    business_unit = models.ForeignKey(BusinessUnit, null=True, blank=True, on_delete=models.SET_NULL)
+    business_unit = models.ForeignKey(
+        BusinessUnit, null=True, blank=True, on_delete=models.SET_NULL
+    )
     job_function = models.CharField(max_length=150, blank=True)
     external_identity_id = models.CharField(max_length=255, blank=True)
     is_anonymized = models.BooleanField(default=False)
@@ -41,7 +44,9 @@ class PrivacyRequest(TimeStampedModel):
         COMPLETED = "completed", "Umgesetzt"
 
     reference = models.CharField(max_length=50, unique=True)
-    subject_user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="privacy_requests")
+    subject_user = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.SET_NULL, related_name="privacy_requests"
+    )
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.RECEIVED)
     request_received_at = models.DateTimeField()
     decision_at = models.DateTimeField(null=True, blank=True)

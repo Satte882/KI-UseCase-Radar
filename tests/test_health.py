@@ -1,8 +1,10 @@
 from datetime import timedelta
+
 import pytest
 from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
+
 from ki_radar.core.models import SystemJobRun
 
 
@@ -21,6 +23,12 @@ def test_operations_requires_token(client):
 def test_operations_healthy(client):
     now = timezone.now()
     for name in ["database_backup", "review_scan"]:
-        SystemJobRun.objects.create(job_name=name, status=SystemJobRun.Status.SUCCESS, started_at=now - timedelta(minutes=1), finished_at=now, exit_code=0)
+        SystemJobRun.objects.create(
+            job_name=name,
+            status=SystemJobRun.Status.SUCCESS,
+            started_at=now - timedelta(minutes=1),
+            finished_at=now,
+            exit_code=0,
+        )
     response = client.get(reverse("health-operations"), HTTP_X_MONITORING_TOKEN="secret")
     assert response.status_code == 200

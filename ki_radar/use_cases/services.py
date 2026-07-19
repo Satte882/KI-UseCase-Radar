@@ -3,6 +3,7 @@ from __future__ import annotations
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
+
 from .models import UseCase
 
 STATUS_ORDER = {
@@ -16,9 +17,31 @@ STATUS_ORDER = {
 
 def required_fields_for_status(status: str) -> list[str]:
     requirements = {
-        UseCase.Status.REVIEW: ["title", "problem_statement", "affected_process", "business_owner", "expected_benefit"],
-        UseCase.Status.PILOT: ["baseline", "success_criterion", "target_value", "data_sources", "next_review_date", "planned_pilot_end"],
-        UseCase.Status.OPERATION: ["realized_result", "business_owner", "technical_owner", "one_time_cost", "recurring_cost", "support_responsibility", "human_oversight", "next_review_date"],
+        UseCase.Status.REVIEW: [
+            "title",
+            "problem_statement",
+            "affected_process",
+            "business_owner",
+            "expected_benefit",
+        ],
+        UseCase.Status.PILOT: [
+            "baseline",
+            "success_criterion",
+            "target_value",
+            "data_sources",
+            "next_review_date",
+            "planned_pilot_end",
+        ],
+        UseCase.Status.OPERATION: [
+            "realized_result",
+            "business_owner",
+            "technical_owner",
+            "one_time_cost",
+            "recurring_cost",
+            "support_responsibility",
+            "human_oversight",
+            "next_review_date",
+        ],
         UseCase.Status.ENDED: ["ending_reason", "data_and_access_handling"],
     }
     return requirements.get(status, [])
@@ -34,8 +57,16 @@ def validate_target_status(use_case: UseCase, target_status: str) -> None:
         missing.append("Governance-Screening")
     if target_status == UseCase.Status.OPERATION:
         checks = [
-            (use_case.privacy_review_required, use_case.privacy_review_completed, "Datenschutzprüfung"),
-            (use_case.security_review_required, use_case.security_review_completed, "Informationssicherheitsprüfung"),
+            (
+                use_case.privacy_review_required,
+                use_case.privacy_review_completed,
+                "Datenschutzprüfung",
+            ),
+            (
+                use_case.security_review_required,
+                use_case.security_review_completed,
+                "Informationssicherheitsprüfung",
+            ),
             (use_case.legal_review_required, use_case.legal_review_completed, "Rechtsprüfung"),
         ]
         missing.extend(label for required, completed, label in checks if required and not completed)

@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
@@ -46,4 +47,8 @@ class Command(BaseCommand):
             user.save()
             user.groups.clear()
             user.user_permissions.clear()
-        self.stdout.write(self.style.SUCCESS(f"{'Would reapply' if options['dry_run'] else 'Reapplied'} {count} anonymizations"))
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"{'Would reapply' if options['dry_run'] else 'Reapplied'} {count} anonymizations"
+            )
+        )

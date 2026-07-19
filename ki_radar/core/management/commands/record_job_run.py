@@ -1,7 +1,9 @@
 import json
 from datetime import datetime
+
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
+
 from ki_radar.core.models import SystemJobRun
 
 
@@ -21,7 +23,11 @@ class Command(BaseCommand):
             details = json.loads(options["details"])
         except json.JSONDecodeError as exc:
             raise CommandError("--details must be valid JSON") from exc
-        started_at = datetime.fromisoformat(options["started_at"]) if options["started_at"] else timezone.now()
+        started_at = (
+            datetime.fromisoformat(options["started_at"])
+            if options["started_at"]
+            else timezone.now()
+        )
         if timezone.is_naive(started_at):
             started_at = timezone.make_aware(started_at)
         run = SystemJobRun.objects.create(

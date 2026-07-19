@@ -10,6 +10,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from ki_radar.notifications.models import NotificationLog
+
 from .models import PrivacyRequest, User
 
 
@@ -34,7 +35,10 @@ def _append_ledger(user_id: int, anonymized_username: str, request_reference: st
 
 @transaction.atomic
 def anonymize_user(*, user: User, privacy_request: PrivacyRequest, actor: User) -> User:
-    if not actor.is_superuser and not actor.groups.filter(name="Technischer Administrator").exists():
+    if (
+        not actor.is_superuser
+        and not actor.groups.filter(name="Technischer Administrator").exists()
+    ):
         raise PermissionError("Only technical administrators may anonymize users")
     if privacy_request.status != PrivacyRequest.Status.APPROVED:
         raise ValueError("Privacy request must be approved before anonymization")
@@ -61,9 +65,13 @@ def anonymize_user(*, user: User, privacy_request: PrivacyRequest, actor: User) 
     user.user_permissions.clear()
     user.save()
 
-    NotificationLog.objects.filter(recipient_user=user).update(recipient_email="", recipient_label="Anonymisierter Benutzer")
+    NotificationLog.objects.filter(recipient_user=user).update(
+        recipient_email="", recipient_label="Anonymisierter Benutzer"
+    )
     if original_email:
-        NotificationLog.objects.filter(recipient_email__iexact=original_email).update(recipient_email="", recipient_label="Anonymisierter Benutzer")
+        NotificationLog.objects.filter(recipient_email__iexact=original_email).update(
+            recipient_email="", recipient_label="Anonymisierter Benutzer"
+        )
 
     _delete_user_sessions(user)
     _append_ledger(user.pk, anonymized_username, privacy_request.reference)

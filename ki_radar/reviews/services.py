@@ -1,5 +1,7 @@
 from django.db import transaction
+
 from ki_radar.use_cases.services import apply_status_transition
+
 from .models import Review
 
 
@@ -7,7 +9,13 @@ from .models import Review
 def create_review(*, use_case, actor, data) -> Review:
     previous_status = use_case.status
     data = data.copy()
-    for field in ["ending_reason", "data_and_access_handling", "replacement_solution", "final_assessment", "lessons_learned"]:
+    for field in [
+        "ending_reason",
+        "data_and_access_handling",
+        "replacement_solution",
+        "final_assessment",
+        "lessons_learned",
+    ]:
         value = data.pop(field, "")
         if value:
             setattr(use_case, field, value)

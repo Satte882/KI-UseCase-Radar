@@ -5,8 +5,10 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+
 from ki_radar.accounts.permissions import is_coordinator
 from ki_radar.use_cases.models import UseCase
+
 from .forms import ReviewForm
 from .services import create_review
 
@@ -36,11 +38,17 @@ def monthly_review(request):
     if not is_coordinator(request.user):
         raise PermissionDenied
     today = timezone.localdate()
-    queryset = UseCase.objects.filter(is_archived=False).exclude(status=UseCase.Status.ENDED).select_related("business_owner", "business_unit")
+    queryset = (
+        UseCase.objects.filter(is_archived=False)
+        .exclude(status=UseCase.Status.ENDED)
+        .select_related("business_owner", "business_unit")
+    )
     context = {
         "today": today,
         "overdue": queryset.filter(next_review_date__lt=today),
-        "due_soon": queryset.filter(next_review_date__gte=today, next_review_date__lte=today + timedelta(days=30)),
+        "due_soon": queryset.filter(
+            next_review_date__gte=today, next_review_date__lte=today + timedelta(days=30)
+        ),
         "missing_review_date": queryset.filter(next_review_date__isnull=True),
         "stale": queryset.filter(updated_at__date__lt=today - timedelta(days=60)),
         "pilots_without_result": queryset.filter(status=UseCase.Status.PILOT, realized_result=""),

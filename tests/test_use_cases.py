@@ -1,5 +1,6 @@
 import pytest
 from django.urls import reverse
+
 from ki_radar.use_cases.models import UseCase
 
 

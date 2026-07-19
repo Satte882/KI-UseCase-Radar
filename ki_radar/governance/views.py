@@ -3,8 +3,10 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
+
 from ki_radar.accounts.permissions import is_coordinator
 from ki_radar.use_cases.models import UseCase
+
 from .forms import GovernanceAssessmentForm
 
 
@@ -24,7 +26,14 @@ def assessment_create(request, use_case_id):
             use_case.privacy_review_required = assessment.privacy_review_required
             use_case.security_review_required = assessment.security_review_required
             use_case.legal_review_required = assessment.legal_review_required
-            use_case.save(update_fields=["privacy_review_required", "security_review_required", "legal_review_required", "updated_at"])
+            use_case.save(
+                update_fields=[
+                    "privacy_review_required",
+                    "security_review_required",
+                    "legal_review_required",
+                    "updated_at",
+                ]
+            )
             messages.success(request, "Governance-Screening wurde gespeichert.")
             return redirect(use_case)
     else:
