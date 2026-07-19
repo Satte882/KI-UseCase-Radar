@@ -14,23 +14,47 @@ class DateInput(forms.DateInput):
 class UseCaseForm(forms.ModelForm):
     class Meta:
         model = UseCase
-        exclude = [
-            "id",
-            "short_id",
-            "status",
-            "submitter",
-            "created_at",
-            "updated_at",
-            "actual_end_date",
-            "ending_reason",
-            "final_assessment",
-            "lessons_learned",
-            "data_and_access_handling",
-            "replacement_solution",
-            "is_archived",
-            "privacy_review_required",
-            "security_review_required",
-            "legal_review_required",
+        fields = [
+            "title",
+            "summary",
+            "problem_statement",
+            "business_unit",
+            "affected_process",
+            "target_users",
+            "business_owner",
+            "coordinator",
+            "technical_owner",
+            "priority",
+            "next_review_date",
+            "pilot_start",
+            "planned_pilot_end",
+            "solution_type",
+            "hosting_type",
+            "provider",
+            "product_name",
+            "model_name",
+            "source_systems",
+            "data_sources",
+            "interface_description",
+            "intended_users",
+            "intended_purpose",
+            "expected_benefit",
+            "benefit_category",
+            "baseline",
+            "success_criterion",
+            "target_value",
+            "realized_result",
+            "one_time_cost",
+            "recurring_cost",
+            "business_value",
+            "technical_feasibility",
+            "data_readiness",
+            "risk_complexity",
+            "privacy_review_completed",
+            "security_review_completed",
+            "legal_review_completed",
+            "human_oversight",
+            "support_responsibility",
         ]
         widgets = {
             "next_review_date": DateInput(),
@@ -55,8 +79,8 @@ class UseCaseForm(forms.ModelForm):
                 else "form-check-input",
             )
         self.fields["business_unit"].queryset = BusinessUnit.objects.filter(is_active=True)
-        User = get_user_model()
-        active_users = User.objects.filter(is_active=True, is_anonymized=False).order_by(
+        user_model = get_user_model()
+        active_users = user_model.objects.filter(is_active=True, is_anonymized=False).order_by(
             "last_name", "first_name", "username"
         )
         for name in ["business_owner", "coordinator", "technical_owner"]:
