@@ -1,14 +1,36 @@
 {% extends "base.html" %}
-{% block title %}Use Cases – KI-Radar{% endblock %}
+{% block title %}Use Cases - KI-Radar{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3"><h1>Use Cases</h1><div>{% if can_create %}<a class="btn btn-primary" href="{% url 'use_cases:create' %}">Use Case anlegen</a>{% endif %} <a class="btn btn-outline-secondary" href="{% url 'use_cases:export_csv' %}">CSV-Export</a></div></div>
-<form method="get" class="card card-body mb-3"><div class="row g-2">
-  <div class="col-md-6"><input class="form-control" type="search" name="q" value="{{ request.GET.q }}" placeholder="ID, Titel, Problem oder Nutzen suchen"></div>
-  <div class="col-md-3"><select class="form-select" name="status"><option value="">Alle Status</option>{% for value,label in status_choices %}<option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
-  <div class="col-md-2 form-check align-self-center"><input class="form-check-input" type="checkbox" name="overdue" value="1" id="overdue" {% if request.GET.overdue == '1' %}checked{% endif %}><label class="form-check-label" for="overdue">Review überfällig</label></div>
-  <div class="col-md-1"><button class="btn btn-dark w-100">Filtern</button></div>
-</div></form>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1>Use Cases</h1>
+  <div>
+    {% if can_create %}<a class="btn btn-primary" href="{% url 'use_cases:create' %}">Use Case anlegen</a>{% endif %}
+    <a class="btn btn-outline-secondary" href="{% url 'use_cases:export_csv' %}">CSV-Export</a>
+  </div>
+</div>
+<form method="get" class="card card-body mb-3">
+  <div class="row g-2">
+    <div class="col-lg-4"><input class="form-control" type="search" name="q" value="{{ request.GET.q }}" placeholder="ID, Titel, Problem oder Nutzen suchen"></div>
+    <div class="col-lg-2"><select class="form-select" name="status"><option value="">Alle Status</option>{% for value,label in status_choices %}<option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+    <div class="col-lg-3"><select class="form-select" name="business_unit"><option value="">Alle Organisationseinheiten</option>{% for item in business_units %}<option value="{{ item.pk }}" {% if request.GET.business_unit == item.pk|stringformat:'s' %}selected{% endif %}>{{ item.name }}</option>{% endfor %}</select></div>
+    <div class="col-lg-3"><select class="form-select" name="review_state"><option value="">Alle Review-Termine</option><option value="overdue" {% if request.GET.review_state == 'overdue' %}selected{% endif %}>Überfällig</option><option value="due_30" {% if request.GET.review_state == 'due_30' %}selected{% endif %}>In den nächsten 30 Tagen</option><option value="missing" {% if request.GET.review_state == 'missing' %}selected{% endif %}>Termin fehlt</option></select></div>
+
+    <div class="col-lg-3"><select class="form-select" name="business_owner"><option value="">Alle Business Owner</option>{% for user in active_users %}<option value="{{ user.pk }}" {% if request.GET.business_owner == user.pk|stringformat:'s' %}selected{% endif %}>{{ user.get_display_name }}</option>{% endfor %}</select></div>
+    <div class="col-lg-3"><select class="form-select" name="coordinator"><option value="">Alle KI-Koordinatoren</option>{% for user in active_users %}<option value="{{ user.pk }}" {% if request.GET.coordinator == user.pk|stringformat:'s' %}selected{% endif %}>{{ user.get_display_name }}</option>{% endfor %}</select></div>
+    <div class="col-lg-2"><select class="form-select" name="business_value"><option value="">Nutzen: alle</option>{% for value,label in level_choices %}<option value="{{ value }}" {% if request.GET.business_value == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+    <div class="col-lg-2"><select class="form-select" name="technical_feasibility"><option value="">Umsetzbarkeit: alle</option>{% for value,label in level_choices %}<option value="{{ value }}" {% if request.GET.technical_feasibility == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+    <div class="col-lg-2"><select class="form-select" name="data_readiness"><option value="">Datenreife: alle</option>{% for value,label in level_choices %}<option value="{{ value }}" {% if request.GET.data_readiness == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+
+    <div class="col-lg-2"><select class="form-select" name="risk_complexity"><option value="">Risiko: alle</option>{% for value,label in level_choices %}<option value="{{ value }}" {% if request.GET.risk_complexity == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+    <div class="col-lg-8 d-flex flex-wrap gap-3 align-items-center">
+      <div class="form-check"><input class="form-check-input" type="checkbox" name="privacy_review_required" value="1" id="privacy-required" {% if request.GET.privacy_review_required == '1' %}checked{% endif %}><label class="form-check-label" for="privacy-required">Datenschutzprüfung erforderlich</label></div>
+      <div class="form-check"><input class="form-check-input" type="checkbox" name="security_review_required" value="1" id="security-required" {% if request.GET.security_review_required == '1' %}checked{% endif %}><label class="form-check-label" for="security-required">Security-Prüfung erforderlich</label></div>
+      <div class="form-check"><input class="form-check-input" type="checkbox" name="legal_review_required" value="1" id="legal-required" {% if request.GET.legal_review_required == '1' %}checked{% endif %}><label class="form-check-label" for="legal-required">Rechtsprüfung erforderlich</label></div>
+    </div>
+    <div class="col-lg-2 d-flex gap-2"><button class="btn btn-dark flex-grow-1">Filtern</button><a class="btn btn-outline-secondary" href="{% url 'use_cases:list' %}">Reset</a></div>
+  </div>
+</form>
 <div class="table-responsive"><table class="table table-hover align-middle"><thead><tr><th>ID</th><th>Titel</th><th>Status</th><th>Organisation</th><th>Owner</th><th>Nächster Review</th><th>Hinweis</th></tr></thead><tbody>
-{% for item in use_cases %}<tr><td><a href="{{ item.get_absolute_url }}">{{ item.short_id }}</a></td><td>{{ item.title }}</td><td><span class="badge text-bg-secondary">{{ item.get_status_display }}</span></td><td>{{ item.business_unit }}</td><td>{{ item.business_owner.get_display_name }}</td><td>{{ item.next_review_date|date:"d.m.Y"|default:"–" }}</td><td>{{ item.recommendation }}</td></tr>{% empty %}<tr><td colspan="7" class="text-muted">Keine Use Cases gefunden.</td></tr>{% endfor %}
+{% for item in use_cases %}<tr><td><a href="{{ item.get_absolute_url }}">{{ item.short_id }}</a></td><td>{{ item.title }}</td><td><span class="badge text-bg-secondary">{{ item.get_status_display }}</span></td><td>{{ item.business_unit }}</td><td>{{ item.business_owner.get_display_name }}</td><td>{{ item.next_review_date|date:"d.m.Y"|default:"-" }}</td><td>{{ item.recommendation }}</td></tr>{% empty %}<tr><td colspan="7" class="text-muted">Keine Use Cases gefunden.</td></tr>{% endfor %}
 </tbody></table></div>
 {% endblock %}
