@@ -28,6 +28,10 @@
 - Ein Wechsel in `Pilot` oder `Betrieb` ist ohne positive Freigabeentscheidung serverseitig blockiert.
 - Die bisherigen Lifecycle-, Governance-, Metrik- und Go-live-Prüfungen bleiben zusätzlich aktiv.
 
+## Technische Abnahme
+
+Die reguläre Pull-Request-Pipeline prüft Linting, Formatierung, Django-Systemcheck, Migrationsparität und -anwendung, fachliche Tests, Security-Scan, Abhängigkeiten, Compose-Konfigurationen sowie Produktions- und Entwicklungsbuild.
+
 ## Bewusste Abgrenzung
 
 Nicht Bestandteil von PR A sind Duplikatsprüfung, Benefit-Kalibrierungsloop, Portfolio-Auswertung, Strategieaggregation, Delivery-Handover und Multi-Tenancy.
