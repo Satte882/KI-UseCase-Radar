@@ -109,11 +109,36 @@ def _persist_optional_origin(*, candidate: UseCase, stored: dict) -> None:
     source_stage_id = stored.get("source_stage_id")
     if not source_stage_id:
         return
-    from ki_radar.architecture.models import UseCaseOrigin, ValueStreamStage
+    from ki_radar.architecture.models import (
+        ProcessAnalysis,
+        SolutionOption,
+        UseCaseOrigin,
+        ValueStreamStage,
+    )
 
     stage = ValueStreamStage.objects.filter(pk=source_stage_id).first()
-    if stage is not None:
-        UseCaseOrigin.objects.create(use_case=candidate, stage=stage)
+    if stage is None:
+        return
+    process_analysis = None
+    source_process_id = stored.get("source_process_analysis_id")
+    if source_process_id:
+        process_analysis = ProcessAnalysis.objects.filter(
+            pk=source_process_id,
+            stage=stage,
+        ).first()
+    solution_option = None
+    source_option_id = stored.get("source_solution_option_id")
+    if source_option_id and process_analysis is not None:
+        solution_option = SolutionOption.objects.filter(
+            pk=source_option_id,
+            process_analysis=process_analysis,
+        ).first()
+    UseCaseOrigin.objects.create(
+        use_case=candidate,
+        stage=stage,
+        process_analysis=process_analysis,
+        solution_option=solution_option,
+    )
 
 
 @login_required
