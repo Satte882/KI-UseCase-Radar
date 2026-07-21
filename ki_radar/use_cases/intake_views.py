@@ -40,7 +40,12 @@ def _form_initial(step: int, stored: dict) -> dict:
     return {name: stored[name] for name in fields if name in stored}
 
 
-def _wizard_step_states(*, stored: dict, current_step: int, error_step: int | None = None) -> list[dict]:
+def _wizard_step_states(
+    *,
+    stored: dict,
+    current_step: int,
+    error_step: int | None = None,
+) -> list[dict]:
     states = []
     for number in WIZARD_STEPS:
         form_class = WIZARD_STEPS[number]["form"]
