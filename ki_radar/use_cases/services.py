@@ -151,7 +151,6 @@ FIELD_LABELS = {
     "title": "Titel",
 }
 
-
 APPROVAL_STATUSES = {
     UseCase.DecisionStatus.APPROVED,
     UseCase.DecisionStatus.APPROVED_WITH_CONDITIONS,
@@ -195,6 +194,8 @@ def check_pilot_start(use_case: UseCase) -> DecisionCheck:
         ),
     )
     warnings = []
+    if use_case.decision_status not in APPROVAL_STATUSES:
+        blockers.append("Positive Freigabeentscheidung")
     if not use_case.governance_assessments.exists():
         blockers.append("Governance-Screening")
     if (
@@ -227,6 +228,8 @@ def check_go_live(use_case: UseCase) -> DecisionCheck:
         ),
     )
     warnings = []
+    if use_case.decision_status not in APPROVAL_STATUSES:
+        blockers.append("Positive Freigabeentscheidung")
     checks = [
         (
             use_case.privacy_review_required,
@@ -358,9 +361,22 @@ def approval_check(
         blockers.append("Aktuelle strukturierte Bewertung")
         return ApprovalCheck(blockers=blockers)
 
+    if actor and assessment.assessed_by_id == actor.id:
+        blockers.append("Bewertende und entscheidende Person müssen verschieden sein")
+
     if target_status in APPROVAL_STATUSES:
+        if actor and use_case.business_owner_id == actor.id:
+            blockers.append(
+                "Fachlich verantwortliche und freigebende Person müssen verschieden sein"
+            )
         if assessment.confidence_level == UseCase.Level.LOW:
             blockers.append("Confidence ist für eine Freigabe zu niedrig")
+        if assessment.technical_feasibility == UseCase.Level.LOW:
+            blockers.append("Technische Machbarkeit ist zu niedrig")
+        if assessment.data_readiness == UseCase.Level.LOW:
+            blockers.append("Datenverfügbarkeit und -qualität sind zu niedrig")
+        if assessment.risk_complexity == UseCase.Level.HIGH:
+            blockers.append("Risiko und Komplexität sind für eine Freigabe zu hoch")
         if not assessment.governance_precheck_completed:
             blockers.append("Governance-Vorprüfung")
         if not governance_confirmed:
@@ -381,9 +397,6 @@ def approval_check(
             if required and not completed:
                 blockers.append(label)
 
-    if actor and assessment.assessed_by_id == actor.id:
-        blockers.append("Bewertende und entscheidende Person müssen verschieden sein")
-
     if assessment.recommendation != target_status:
         warnings.append(
             "Die Entscheidung weicht von der Empfehlung der bewertenden Person ab und muss "
@@ -400,12 +413,14 @@ def create_decision_assessment(*, use_case: UseCase, actor, data) -> DecisionAss
     version = (
         use_case.decision_assessments.aggregate(max_version=Max("version"))["max_version"] or 0
     ) + 1
-    assessment = DecisionAssessment.objects.create(
+    assessment = DecisionAssessment(
         use_case=use_case,
         assessed_by=actor,
         version=version,
         **data,
     )
+    assessment.full_clean()
+    assessment.save()
     use_case.business_value = assessment.business_value
     use_case.technical_feasibility = assessment.technical_feasibility
     use_case.data_readiness = assessment.data_readiness
@@ -418,6 +433,13 @@ def create_decision_assessment(*, use_case: UseCase, actor, data) -> DecisionAss
     use_case._history_user = actor
     use_case.save()
     return assessment
+
+
+def _save_approval_decision(**kwargs) -> ApprovalDecision:
+    decision = ApprovalDecision(**kwargs)
+    decision.full_clean()
+    decision.save()
+    return decision
 
 
 @transaction.atomic
@@ -447,14 +469,14 @@ def submit_approval_decision(*, use_case: UseCase, actor, data) -> ApprovalDecis
             finalized_at__isnull=True,
         ).exists():
             raise ValidationError("Es besteht bereits eine offene zweite Freigabe.")
-        return ApprovalDecision.objects.create(
+        return _save_approval_decision(
             use_case=use_case,
             assessment=assessment,
             decided_by=actor,
             **data,
         )
 
-    decision = ApprovalDecision.objects.create(
+    decision = _save_approval_decision(
         use_case=use_case,
         assessment=assessment,
         decided_by=actor,
@@ -477,6 +499,10 @@ def confirm_conditional_decision(*, decision: ApprovalDecision, actor) -> Approv
         raise ValidationError(
             "Die zweite Freigabe muss durch eine weitere unabhängige berechtigte Person erfolgen."
         )
+    if actor.id == decision.use_case.business_owner_id:
+        raise ValidationError(
+            "Die fachlich verantwortliche Person darf die eigene Freigabe nicht bestätigen."
+        )
     if decision.assessment_id != decision.use_case.decision_assessments.first().id:
         raise ValidationError("Seit dem Vorschlag wurde eine neue Bewertung erstellt.")
 
@@ -491,6 +517,7 @@ def confirm_conditional_decision(*, decision: ApprovalDecision, actor) -> Approv
 
     decision.second_approved_by = actor
     decision.finalized_at = timezone.now()
+    decision.full_clean()
     decision.save(update_fields=["second_approved_by", "finalized_at", "updated_at"])
     decision.use_case.decision_status = decision.decision_status
     decision.use_case._history_user = actor
