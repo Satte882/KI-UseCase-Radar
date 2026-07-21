@@ -132,12 +132,15 @@ def build_blocker_details(use_case: UseCase, blockers: list[str]) -> list[Blocke
                 if has_assessment
                 else reverse("use_cases:assessment_create", kwargs={"pk": use_case.pk})
             )
+            action_label = (
+                "Freigabeentscheidung öffnen" if has_assessment else "Bewertung anlegen"
+            )
             details.append(
                 BlockerDetail(
                     code=_code(label),
                     label=label,
                     category="process",
-                    action_label="Freigabeentscheidung öffnen" if has_assessment else "Bewertung anlegen",
+                    action_label=action_label,
                     target_url=target_url,
                 )
             )
