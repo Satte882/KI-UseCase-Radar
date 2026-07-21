@@ -25,6 +25,17 @@ SOLUTION_TYPE_MAP = {
     SolutionOption.OptionType.GENERATIVE_AI: UseCase.SolutionType.GENERATIVE,
     SolutionOption.OptionType.ASSISTANT: UseCase.SolutionType.ASSISTANT,
 }
+DISCOVERY_PREFILL_MESSAGE = (
+    "Der Intake wurde aus der Value-Stream-Phase vorbefüllt. Alle Angaben bleiben editierbar."
+)
+PREFERRED_ONLY_MESSAGE = (
+    "Nur eine ausdrücklich bevorzugte Lösungsoption kann in den Use-Case-Intake "
+    "überführt werden."
+)
+PREFERRED_PREFILL_MESSAGE = (
+    "Der Intake wurde aus der bevorzugten Lösungsoption vorbefüllt. Die bestehende "
+    "Bewertung und Governance bleiben verbindlich."
+)
 
 
 def _can_edit_process(user, process_analysis: ProcessAnalysis) -> bool:
@@ -51,7 +62,11 @@ def value_stream_list(request):
 @login_required
 def value_stream_detail(request, pk):
     value_stream = get_object_or_404(
-        ValueStream.objects.select_related("business_unit", "owner", "created_by").prefetch_related(
+        ValueStream.objects.select_related(
+            "business_unit",
+            "owner",
+            "created_by",
+        ).prefetch_related(
             "stages__use_case_origins__use_case",
             "stages__process_analyses__solution_options",
         ),
@@ -131,7 +146,10 @@ def stage_create(request, value_stream_id):
 
 @login_required
 def stage_update(request, pk):
-    stage = get_object_or_404(ValueStreamStage.objects.select_related("value_stream"), pk=pk)
+    stage = get_object_or_404(
+        ValueStreamStage.objects.select_related("value_stream"),
+        pk=pk,
+    )
     if not can_edit_value_stream(request.user, stage.value_stream):
         raise PermissionDenied
     form = ValueStreamStageForm(request.POST or None, instance=stage)
@@ -172,10 +190,7 @@ def stage_start_use_case(request, pk):
         stored["problem_statement"] = stage.pain_points.strip()
     request.session[SESSION_KEY] = stored
     request.session.modified = True
-    messages.info(
-        request,
-        "Der Intake wurde aus der Value-Stream-Phase vorbefüllt. Alle Angaben bleiben editierbar.",
-    )
+    messages.info(request, DISCOVERY_PREFILL_MESSAGE)
     return redirect("use_cases:create")
 
 
@@ -218,8 +233,12 @@ def process_analysis_create(request, stage_id):
 def process_analysis_detail(request, pk):
     process_analysis = get_object_or_404(
         ProcessAnalysis.objects.select_related(
-            "stage__value_stream__business_unit", "analyzed_by"
-        ).prefetch_related("solution_options", "use_case_origins__use_case"),
+            "stage__value_stream__business_unit",
+            "analyzed_by",
+        ).prefetch_related(
+            "solution_options",
+            "use_case_origins__use_case",
+        ),
         pk=pk,
     )
     return render(
@@ -266,7 +285,10 @@ def solution_option_create(request, process_analysis_id):
     )
     if not _can_edit_process(request.user, process_analysis):
         raise PermissionDenied
-    form = SolutionOptionForm(request.POST or None, process_analysis=process_analysis)
+    form = SolutionOptionForm(
+        request.POST or None,
+        process_analysis=process_analysis,
+    )
     if request.method == "POST" and form.is_valid():
         option = form.save(commit=False)
         option.process_analysis = process_analysis
@@ -288,7 +310,9 @@ def solution_option_create(request, process_analysis_id):
 @login_required
 def solution_option_update(request, pk):
     option = get_object_or_404(
-        SolutionOption.objects.select_related("process_analysis__stage__value_stream"),
+        SolutionOption.objects.select_related(
+            "process_analysis__stage__value_stream"
+        ),
         pk=pk,
     )
     if not _can_edit_process(request.user, option.process_analysis):
@@ -325,13 +349,14 @@ def solution_option_start_use_case(request, pk):
         pk=pk,
     )
     if option.recommendation != SolutionOption.Recommendation.PREFERRED:
-        messages.warning(
-            request,
-            "Nur eine ausdrücklich bevorzugte Lösungsoption kann in den Use-Case-Intake überführt werden.",
-        )
+        messages.warning(request, PREFERRED_ONLY_MESSAGE)
         return redirect(option.process_analysis)
     process_analysis = option.process_analysis
     stage = process_analysis.stage
+    solution_type = SOLUTION_TYPE_MAP.get(
+        option.option_type,
+        UseCase.SolutionType.OTHER,
+    )
     stored = {
         "title": option.name,
         "business_unit": stage.value_stream.business_unit_id,
@@ -344,15 +369,12 @@ def solution_option_start_use_case(request, pk):
         "intended_purpose": option.description,
         "expected_benefit": option.expected_value,
         "data_sources": option.data_requirements or process_analysis.data_objects,
-        "solution_type": SOLUTION_TYPE_MAP.get(option.option_type, UseCase.SolutionType.OTHER),
+        "solution_type": solution_type,
         "source_stage_id": str(stage.pk),
         "source_process_analysis_id": str(process_analysis.pk),
         "source_solution_option_id": str(option.pk),
     }
     request.session[SESSION_KEY] = stored
     request.session.modified = True
-    messages.info(
-        request,
-        "Der Intake wurde aus der bevorzugten Lösungsoption vorbefüllt. Die bestehende Bewertung und Governance bleiben verbindlich.",
-    )
+    messages.info(request, PREFERRED_PREFILL_MESSAGE)
     return redirect("use_cases:create")
