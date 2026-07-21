@@ -88,7 +88,9 @@ def test_stage_can_prefill_existing_intake_without_bypassing_it(
     client.force_login(owner)
 
     response = client.get(
-        reverse("architecture:stage_start_use_case", kwargs={"pk": value_stream_stage.pk})
+        reverse(
+            "architecture:stage_start_use_case", kwargs={"pk": value_stream_stage.pk}
+        )
     )
 
     assert response.status_code == 302
