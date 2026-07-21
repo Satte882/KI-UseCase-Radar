@@ -139,6 +139,14 @@ def _unclassified_reason(item: UseCase) -> str:
 
 
 def _decorate_item(item: UseCase) -> None:
+    item.portfolio_business_value_label = LEVEL_LABELS.get(
+        item.portfolio_business_value,
+        "Nicht bestimmbar",
+    )
+    item.portfolio_technical_feasibility_label = LEVEL_LABELS.get(
+        item.portfolio_technical_feasibility,
+        "Nicht bestimmbar",
+    )
     item.portfolio_confidence_label = LEVEL_LABELS.get(
         item.portfolio_confidence,
         "Nicht bestimmbar",
@@ -193,6 +201,8 @@ def _landscape_context(queryset: QuerySet[UseCase], group: str) -> list[dict]:
     group_field, _group_label, choice_labels = GROUP_CONFIG[group]
     unclassified_filter = (
         Q(portfolio_assessment_id__isnull=True)
+        | Q(portfolio_business_value__isnull=True)
+        | Q(portfolio_technical_feasibility__isnull=True)
         | ~Q(portfolio_business_value__in=VALID_LEVELS)
         | ~Q(portfolio_technical_feasibility__in=VALID_LEVELS)
     )
