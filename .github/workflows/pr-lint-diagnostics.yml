@@ -19,7 +19,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          ruff check . > ruff-output.txt 2>&1
+          ruff check --output-format concise . > ruff-output.txt 2>&1
           printf '%s\n' "$?" > ruff-exit-code.txt
           exit 0
       - uses: actions/upload-artifact@v4
