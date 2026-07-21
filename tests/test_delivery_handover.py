@@ -254,9 +254,7 @@ def test_delivery_views_require_post_for_creation_and_export_markdown(
     package = DeliveryPackage.objects.get(use_case=use_case)
     assert created.status_code == 302
 
-    export = client.get(
-        reverse("delivery:package_export_markdown", kwargs={"pk": package.pk})
-    )
+    export = client.get(reverse("delivery:package_export_markdown", kwargs={"pk": package.pk}))
     assert export.status_code == 200
     assert export["Content-Type"].startswith("text/markdown")
     assert "# Delivery Package" in export.content.decode()
@@ -276,9 +274,7 @@ def test_delivery_overview_is_visible_and_creation_is_coordinator_only(
     client.force_login(owner)
 
     overview = client.get(reverse("delivery:package_list"))
-    forbidden = client.post(
-        reverse("delivery:package_create", kwargs={"use_case_id": use_case.pk})
-    )
+    forbidden = client.post(reverse("delivery:package_create", kwargs={"use_case_id": use_case.pk}))
 
     assert overview.status_code == 200
     assert use_case.short_id in overview.content.decode()

@@ -135,9 +135,7 @@ def build_initial_delivery_data(
         "security_privacy_requirements": (
             "\n".join(checks) or "Keine zusätzlichen Prüfungen markiert."
         ),
-        "human_oversight": (
-            use_case.human_oversight or "Menschliche Kontrolle konkretisieren."
-        ),
+        "human_oversight": (use_case.human_oversight or "Menschliche Kontrolle konkretisieren."),
         "logging_and_audit": (
             "Fachliche Entscheidungen, Fehler und relevante Änderungen protokollieren."
         ),
@@ -193,9 +191,7 @@ def create_delivery_package(*, use_case: UseCase, actor) -> DeliveryPackage:
 
 
 def missing_ready_fields(package: DeliveryPackage) -> list[str]:
-    field_labels = {
-        field.name: str(field.verbose_name) for field in package._meta.fields
-    }
+    field_labels = {field.name: str(field.verbose_name) for field in package._meta.fields}
     return [
         field_labels[name]
         for name in READY_REQUIRED_FIELDS
@@ -221,9 +217,7 @@ def hand_over_package(package: DeliveryPackage, actor) -> None:
     package.status = DeliveryPackage.Status.HANDED_OVER
     package.handed_over_by = actor
     package.handed_over_at = timezone.now()
-    package.save(
-        update_fields=["status", "handed_over_by", "handed_over_at", "updated_at"]
-    )
+    package.save(update_fields=["status", "handed_over_by", "handed_over_at", "updated_at"])
 
 
 def render_delivery_markdown(package: DeliveryPackage) -> str:
@@ -232,8 +226,7 @@ def render_delivery_markdown(package: DeliveryPackage) -> str:
         ("Ziel und Ergebnis", package.target_outcome),
         (
             "Scope",
-            f"### Im Scope\n{package.in_scope}\n\n"
-            f"### Nicht im Scope\n{package.out_of_scope}",
+            f"### Im Scope\n{package.in_scope}\n\n### Nicht im Scope\n{package.out_of_scope}",
         ),
         ("Nutzer und Szenarien", package.users_and_scenarios),
         ("Lösungsrahmen", package.solution_outline),

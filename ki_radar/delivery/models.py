@@ -39,9 +39,7 @@ class DeliveryPackage(TimeStampedModel):
     data_context = models.TextField(verbose_name="Datenobjekte und Datenquellen")
     integrations = models.TextField(blank=True, verbose_name="Schnittstellen und Integrationen")
     functional_requirements = models.TextField(verbose_name="Funktionale Anforderungen")
-    non_functional_requirements = models.TextField(
-        verbose_name="Nichtfunktionale Anforderungen"
-    )
+    non_functional_requirements = models.TextField(verbose_name="Nichtfunktionale Anforderungen")
     security_privacy_requirements = models.TextField(
         verbose_name="Security-, Datenschutz- und Rechtsanforderungen"
     )
