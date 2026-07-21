@@ -12,9 +12,7 @@ def test_base_template_loads_form_guidance_assets():
 
 def test_form_guidance_contract_covers_examples_and_dynamic_states():
     script = (ROOT / "static" / "js" / "form-guidance.js").read_text(encoding="utf-8")
-    stylesheet = (ROOT / "static" / "css" / "form-guidance.css").read_text(
-        encoding="utf-8"
-    )
+    stylesheet = (ROOT / "static" / "css" / "form-guidance.css").read_text(encoding="utf-8")
 
     assert "(z. B. automatische Prüfung von Eingangsrechnungen)" in script
     assert "field-guidance-required-empty" in script
