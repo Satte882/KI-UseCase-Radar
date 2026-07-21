@@ -74,6 +74,15 @@ a { color: #a99aff; }
 .kpi-cell strong { font-size: 1.15rem; }
 .copilot-box { white-space: pre-wrap; background: #090f1c; border: 1px solid rgba(32,198,215,.24); border-radius: 13px; padding: 18px; color: #d8e5f5; line-height: 1.65; }
 .section-title { font-size: .78rem; text-transform: uppercase; letter-spacing: .09em; color: #8291a8; margin: 4px 0 12px; }
+.wizard-progress-1 { width: 16.6667%; }
+.wizard-progress-2 { width: 33.3333%; }
+.wizard-progress-3 { width: 50%; }
+.wizard-progress-4 { width: 66.6667%; }
+.wizard-progress-5 { width: 83.3333%; }
+.wizard-progress-6 { width: 100%; }
+.review-requirements { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 16px; }
+.review-requirements dt, .review-requirements dd { margin: 0; }
+.review-requirements dd { color: #c4cfdf; text-align: right; }
 .form-section { padding: 20px; border: 1px solid var(--border); border-radius: 14px; background: rgba(9,15,27,.44); margin-bottom: 18px; }
 .history-list { max-height: 420px; overflow-y: auto; }
 .errorlist { color: #ff91a3; margin: .25rem 0 0; padding-left: 1.25rem; }

@@ -73,6 +73,7 @@ def use_case_intake(request, step: int = 1):
     stored = request.session.get(SESSION_KEY, {})
     step_config = WIZARD_STEPS[step]
     form_class = step_config["form"]
+    progress_class = f"wizard-progress-{step}"
 
     if step == 6:
         required_steps_complete = all(
@@ -106,6 +107,7 @@ def use_case_intake(request, step: int = 1):
                 "step": step,
                 "step_config": step_config,
                 "total_steps": len(WIZARD_STEPS),
+                "progress_class": progress_class,
                 "stored": stored,
                 "candidate": candidate,
                 "blockers": blockers,
@@ -130,6 +132,7 @@ def use_case_intake(request, step: int = 1):
             "step": step,
             "step_config": step_config,
             "total_steps": len(WIZARD_STEPS),
+            "progress_class": progress_class,
             "previous_step": step - 1 if step > 1 else None,
         },
     )

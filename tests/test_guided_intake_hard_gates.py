@@ -1,5 +1,6 @@
 from datetime import timedelta
 from decimal import Decimal
+from pathlib import Path
 
 import pytest
 from django.contrib.auth.models import Group
@@ -15,6 +16,44 @@ from ki_radar.use_cases.services import (
     create_decision_assessment,
     submit_approval_decision,
 )
+
+
+def complete_intake_data(business_unit, **overrides):
+    data = {
+        "title": "Wissenssuche verbessern",
+        "business_unit": business_unit.pk,
+        "problem_statement": (
+            "Mitarbeitende benötigen zu viel Zeit, um verbindliche Informationen zu finden."
+        ),
+        "affected_process": "Interne Wissenssuche",
+        "summary": "Eine Anfrage löst heute eine manuelle Suche aus.",
+        "target_users": "Mitarbeitende im Kundenservice",
+        "source_systems": "SharePoint und PDF-Richtlinien",
+        "intended_users": "Mitarbeitende im Kundenservice",
+        "intended_purpose": "Relevante Textstellen mit Quellenhinweis auffinden",
+        "privacy_review_required": False,
+        "security_review_required": False,
+        "legal_review_required": False,
+        "expected_benefit": "Suchzeit je Anfrage reduzieren",
+        "metric_name": "Suchzeit je Anfrage",
+        "metric_type": UseCase.MetricType.DURATION,
+        "metric_direction": UseCase.MetricDirection.LOWER,
+        "metric_unit": "Minuten",
+        "metric_baseline": "20",
+        "metric_target": "8",
+        "metric_measurement_method": "Vierwöchige Stichprobe über 100 Anfragen",
+        "data_sources": "Freigegebene Richtlinien und Arbeitsanweisungen",
+        "solution_type": UseCase.SolutionType.ASSISTANT,
+        "hosting_type": UseCase.HostingType.INTERNAL,
+    }
+    data.update(overrides)
+    return data
+
+
+def set_intake_session(client, business_unit, **overrides):
+    session = client.session
+    session["use_case_intake"] = complete_intake_data(business_unit, **overrides)
+    session.save()
 
 
 def make_coordinator(username, business_unit):
@@ -302,6 +341,87 @@ def test_guided_intake_creates_assessment_ready_use_case(client, owner, business
     assert use_case.business_owner == owner
     assert use_case.decision_status == UseCase.DecisionStatus.READY
     assert use_case.metric_baseline == Decimal("20")
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("step", range(1, 7))
+def test_intake_uses_validated_progress_class(client, owner, business_unit, step):
+    client.force_login(owner)
+    if step == 6:
+        set_intake_session(client, business_unit)
+
+    response = client.get(reverse("use_cases:intake_step", args=[step]))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert f'class="progress-bar wizard-progress-{step}"' in content
+    assert f'aria-valuenow="{step}"' in content
+    assert 'aria-valuemin="1"' in content
+    assert 'aria-valuemax="6"' in content
+
+
+@pytest.mark.django_db
+def test_intake_progress_rejects_arbitrary_step_class(client, owner):
+    client.force_login(owner)
+
+    response = client.get(reverse("use_cases:intake_step", args=[999]))
+
+    assert response.status_code == 302
+    assert "wizard-progress-999" not in response.content.decode()
+
+
+def test_intake_template_progress_has_no_inline_style():
+    template = Path("templates/use_cases/intake_wizard.html").read_text(encoding="utf-8")
+
+    assert '<div class="progress-bar {{ progress_class }}"></div>' in template
+    assert "style=" not in template
+
+
+def test_intake_progress_classes_define_all_six_widths():
+    stylesheet = Path("static/css/app.css").read_text(encoding="utf-8")
+    expected_widths = ["16.6667%", "33.3333%", "50%", "66.6667%", "83.3333%", "100%"]
+
+    for step, width in enumerate(expected_widths, start=1):
+        assert f".wizard-progress-{step} {{ width: {width}; }}" in stylesheet
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("privacy", "security", "legal", "required_count"),
+    [
+        (False, False, False, 0),
+        (True, False, False, 1),
+        (True, True, False, 2),
+        (True, True, True, 3),
+    ],
+)
+def test_intake_precheck_lists_required_reviews_separately(
+    client,
+    owner,
+    business_unit,
+    privacy,
+    security,
+    legal,
+    required_count,
+):
+    client.force_login(owner)
+    set_intake_session(
+        client,
+        business_unit,
+        privacy_review_required=privacy,
+        security_review_required=security,
+        legal_review_required=legal,
+    )
+
+    response = client.get(reverse("use_cases:intake_step", args=[6]))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert "<dt>Datenschutz</dt>" in content
+    assert "<dt>Informationssicherheit</dt>" in content
+    assert "<dt>Recht</dt>" in content
+    assert content.count("<dd>Erforderlich</dd>") == required_count
+    assert content.count("<dd>Nicht erforderlich</dd>") == 3 - required_count
 
 
 @pytest.mark.django_db
