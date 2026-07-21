@@ -144,6 +144,21 @@
       </div>
     </div>
 
+    {% if architecture_origin %}
+    <div class="app-card mb-4">
+      <div class="card-header"><strong>Herkunft aus Discovery</strong><div class="small text-muted mt-1">Nachvollziehbare Herkunftskette vom Value Stream bis zum Use Case.</div></div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-4 text-muted">Value Stream</dt><dd class="col-sm-8"><a href="{{ architecture_origin.stage.value_stream.get_absolute_url }}">{{ architecture_origin.stage.value_stream.name }}</a></dd>
+          <dt class="col-sm-4 text-muted">Phase</dt><dd class="col-sm-8">{{ architecture_origin.stage.name }}</dd>
+          <dt class="col-sm-4 text-muted">Prozessanalyse</dt><dd class="col-sm-8">{% if architecture_origin.process_analysis %}<a href="{{ architecture_origin.process_analysis.get_absolute_url }}">{{ architecture_origin.process_analysis.name }}</a>{% else %}–{% endif %}</dd>
+          <dt class="col-sm-4 text-muted">Lösungsoption</dt><dd class="col-sm-8">{% if architecture_origin.solution_option %}{{ architecture_origin.solution_option.name }}{% else %}–{% endif %}</dd>
+          <dt class="col-sm-4 text-muted">Use Case</dt><dd class="col-sm-8">{{ use_case.short_id }} · {{ use_case.title }}</dd>
+        </dl>
+      </div>
+    </div>
+    {% endif %}
+
     <div class="app-card mb-4">
       <div class="card-header"><strong>Freigabeentscheidungen</strong></div>
       <div class="list-group list-group-flush">

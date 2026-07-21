@@ -907,7 +907,9 @@ def clear_demo_data() -> dict[str, int]:
     use_case_count = use_cases.count()
     use_cases.delete()
 
-    users = User.objects.filter(username__in=usernames, is_superuser=False)
+    users = User.objects.filter(username__in=usernames, is_superuser=False).exclude(
+        owned_use_cases__isnull=False
+    )
     user_count = users.count()
     users.delete()
 

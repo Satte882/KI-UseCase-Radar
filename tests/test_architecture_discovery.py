@@ -2,7 +2,13 @@ import pytest
 from django.core.exceptions import ObjectDoesNotExist
 from django.urls import reverse
 
-from ki_radar.architecture.models import UseCaseOrigin, ValueStream, ValueStreamStage
+from ki_radar.architecture.models import (
+    ProcessAnalysis,
+    SolutionOption,
+    UseCaseOrigin,
+    ValueStream,
+    ValueStreamStage,
+)
 from ki_radar.use_cases.intake_views import SESSION_KEY, _persist_optional_origin
 from ki_radar.use_cases.models import UseCase
 
@@ -165,3 +171,66 @@ def test_value_stream_detail_shows_traceable_use_case_origin(
     assert "End-to-End-Phasen" in content
     assert use_case.short_id in content
     assert "Use Case direkt aus Phase ableiten" in content
+
+
+@pytest.mark.django_db
+def test_use_case_detail_shows_complete_architecture_origin_chain(
+    client,
+    owner,
+    business_unit,
+    value_stream,
+    value_stream_stage,
+):
+    process_analysis = ProcessAnalysis.objects.create(
+        stage=value_stream_stage,
+        name="Eingangsrechnungsprüfung",
+        status=ProcessAnalysis.Status.VALIDATED,
+        scope_start="Rechnungseingang",
+        scope_end="Buchungsfreigabe",
+        trigger="Eingegangene Rechnung",
+        outcome="Geprüfte Rechnung",
+        current_flow="Manuelle Prüfung",
+        roles="Buchhaltung",
+        systems="ERP",
+        data_objects="Rechnung",
+        bottlenecks="Manueller Abgleich",
+        baseline_metrics="Elf Minuten je Rechnung",
+        analyzed_by=owner,
+    )
+    solution_option = SolutionOption.objects.create(
+        process_analysis=process_analysis,
+        name="Regel- und KI-gestützte Rechnungsprüfung",
+        option_type=SolutionOption.OptionType.GENERATIVE_AI,
+        recommendation=SolutionOption.Recommendation.PREFERRED,
+        description="Vorprüfung automatisieren.",
+        expected_value="Weniger manuelle Prüfzeit.",
+        feasibility="high",
+        created_by=owner,
+    )
+    use_case = UseCase.objects.create(
+        title="Automatische Rechnungspruefung",
+        problem_statement="Rechnungen werden manuell geprüft.",
+        business_unit=business_unit,
+        affected_process="Eingangsrechnungsverarbeitung",
+        business_owner=owner,
+        submitter=owner,
+        expected_benefit="Schnellere Vorprüfung.",
+    )
+    UseCaseOrigin.objects.create(
+        use_case=use_case,
+        stage=value_stream_stage,
+        process_analysis=process_analysis,
+        solution_option=solution_option,
+    )
+    client.force_login(owner)
+
+    response = client.get(use_case.get_absolute_url())
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "Herkunft aus Discovery" in content
+    assert value_stream.name in content
+    assert value_stream_stage.name in content
+    assert process_analysis.name in content
+    assert solution_option.name in content
+    assert use_case.title in content
