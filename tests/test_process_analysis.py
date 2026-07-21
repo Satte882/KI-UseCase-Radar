@@ -33,7 +33,9 @@ def architecture_context(owner, business_unit):
         actors="Einkauf und Fachbereich",
         systems="ERP, E-Mail und Dateiablage",
         documents="Angebote und Kriterienkatalog",
-        pain_points="Uneinheitliche Angebote verlängern den manuellen Vergleich erheblich.",
+        pain_points=(
+            "Uneinheitliche Angebote verlängern den manuellen Vergleich erheblich."
+        ),
         baseline_metrics="Fünf Tage Durchlaufzeit",
     )
     process = ProcessAnalysis.objects.create(
@@ -44,16 +46,22 @@ def architecture_context(owner, business_unit):
         scope_end="Lieferant ist ausgewählt",
         trigger="Ablauf der Angebotsfrist",
         outcome="Nachvollziehbare Lieferantenentscheidung",
-        current_flow="Angebote öffnen, Werte übertragen, fehlende Angaben nachfordern, bewerten.",
+        current_flow=(
+            "Angebote öffnen, Werte übertragen, fehlende Angaben nachfordern, bewerten."
+        ),
         roles="Einkauf erstellt Vergleich; Fachbereich bewertet Qualität.",
         systems="ERP, Shared Inbox, Dateiablage",
         data_objects="Angebote, Kriterien, Lieferantenstammdaten",
-        business_rules="Mindestens fünf Lieferanten; Muss-Kriterien müssen erfüllt sein.",
+        business_rules=(
+            "Mindestens fünf Lieferanten; Muss-Kriterien müssen erfüllt sein."
+        ),
         handoffs="Einkauf übergibt Shortlist an Fachbereich.",
         bottlenecks="Manuelle Übertragung und Rückfragen verursachen Wartezeit.",
         exceptions="Fehlende Preise oder abweichende Mengeneinheiten.",
         baseline_metrics="Fünf Tage Durchlaufzeit, zwei Rückfragen je Angebot.",
-        target_state_principles="Vergleichbare Struktur, nachvollziehbare Bewertung, Mensch entscheidet.",
+        target_state_principles=(
+            "Vergleichbare Struktur, nachvollziehbare Bewertung, Mensch entscheidet."
+        ),
         analyzed_by=owner,
     )
     return stream, stage, process
@@ -67,7 +75,9 @@ def preferred_option(owner, architecture_context):
         name="Assistierter Angebotsvergleich",
         option_type=SolutionOption.OptionType.ASSISTANT,
         recommendation=SolutionOption.Recommendation.PREFERRED,
-        description="Extrahiert Angebotsdaten und erstellt einen nachvollziehbaren Vergleich.",
+        description=(
+            "Extrahiert Angebotsdaten und erstellt einen nachvollziehbaren Vergleich."
+        ),
         expected_value="Durchlaufzeit von fünf auf drei Tage reduzieren.",
         feasibility="high",
         data_requirements="PDF- und Word-Angebote sowie Kriterienkatalog",
@@ -81,7 +91,11 @@ def preferred_option(owner, architecture_context):
 
 
 @pytest.mark.django_db
-def test_owner_can_create_process_analysis_from_stage(client, owner, architecture_context):
+def test_owner_can_create_process_analysis_from_stage(
+    client,
+    owner,
+    architecture_context,
+):
     _stream, stage, _process = architecture_context
     client.force_login(owner)
 
@@ -148,7 +162,7 @@ def test_solution_options_allow_non_ai_alternatives_and_only_one_preferred(
         },
         process_analysis=process,
     )
-    assert form.is_valid() is False
+    assert not form.is_valid()
     assert "recommendation" in form.errors
 
 
@@ -172,7 +186,10 @@ def test_only_preferred_solution_prefills_governed_intake(
     client.force_login(owner)
 
     blocked = client.get(
-        reverse("architecture:solution_option_start_use_case", kwargs={"pk": candidate.pk})
+        reverse(
+            "architecture:solution_option_start_use_case",
+            kwargs={"pk": candidate.pk},
+        )
     )
     assert blocked.status_code == 302
     assert SESSION_KEY not in client.session
@@ -203,7 +220,9 @@ def test_process_and_solution_origin_is_traceable(
     _stream, stage, process = architecture_context
     use_case = UseCase.objects.create(
         title="Assistierter Angebotsvergleich",
-        problem_statement="Uneinheitliche Angebote verlängern den Vergleich erheblich.",
+        problem_statement=(
+            "Uneinheitliche Angebote verlängern den Vergleich erheblich."
+        ),
         business_unit=business_unit,
         affected_process=process.name,
         business_owner=owner,
