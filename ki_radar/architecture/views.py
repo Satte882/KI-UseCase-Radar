@@ -32,9 +32,9 @@ def value_stream_list(request):
 @login_required
 def value_stream_detail(request, pk):
     value_stream = get_object_or_404(
-        ValueStream.objects.select_related(
-            "business_unit", "owner", "created_by"
-        ).prefetch_related("stages__use_case_origins__use_case"),
+        ValueStream.objects.select_related("business_unit", "owner", "created_by").prefetch_related(
+            "stages__use_case_origins__use_case"
+        ),
         pk=pk,
     )
     return render(
@@ -94,12 +94,8 @@ def stage_create(request, value_stream_id):
     value_stream = get_object_or_404(ValueStream, pk=value_stream_id)
     if not can_edit_value_stream(request.user, value_stream):
         raise PermissionDenied
-    max_sequence = (
-        value_stream.stages.aggregate(max_sequence=Max("sequence"))["max_sequence"] or 0
-    )
-    form = ValueStreamStageForm(
-        request.POST or None, initial={"sequence": max_sequence + 1}
-    )
+    max_sequence = value_stream.stages.aggregate(max_sequence=Max("sequence"))["max_sequence"] or 0
+    form = ValueStreamStageForm(request.POST or None, initial={"sequence": max_sequence + 1})
     if request.method == "POST" and form.is_valid():
         stage = form.save(commit=False)
         stage.value_stream = value_stream
@@ -115,9 +111,7 @@ def stage_create(request, value_stream_id):
 
 @login_required
 def stage_update(request, pk):
-    stage = get_object_or_404(
-        ValueStreamStage.objects.select_related("value_stream"), pk=pk
-    )
+    stage = get_object_or_404(ValueStreamStage.objects.select_related("value_stream"), pk=pk)
     if not can_edit_value_stream(request.user, stage.value_stream):
         raise PermissionDenied
     form = ValueStreamStageForm(request.POST or None, instance=stage)
