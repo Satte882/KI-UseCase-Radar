@@ -1,0 +1,27 @@
+{% if journey %}
+<div class="app-card mb-4" aria-label="Fachliche Journey">
+  <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <strong>Geführte Initiative Journey</strong>
+      <div class="small text-muted mt-1">{{ journey.path_label }}</div>
+    </div>
+    {% if journey.completion_message %}<span class="badge state-ready">Abgeschlossen</span>{% endif %}
+  </div>
+  <div class="card-body">
+    <div class="d-flex flex-wrap gap-2 align-items-stretch">
+      {% for step in journey.steps %}
+      <div class="border rounded px-3 py-2 flex-grow-1" style="min-width: 145px; max-width: 220px;">
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge {% if step.state == 'complete' %}state-ready{% elif step.state == 'current' %}state-review{% elif step.state == 'blocked' %}state-blocked{% else %}badge-soft{% endif %}">
+            {% if step.state == 'complete' %}✓{% elif step.state == 'current' %}●{% elif step.state == 'blocked' %}!{% elif step.state == 'optional' %}–{% else %}○{% endif %}
+          </span>
+          {% if step.url %}<a class="fw-semibold text-decoration-none" href="{{ step.url }}">{{ step.label }}</a>{% else %}<span class="fw-semibold">{{ step.label }}</span>{% endif %}
+        </div>
+        {% if step.reason %}<div class="small text-muted mt-2">{{ step.reason }}</div>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% if journey.completion_message %}<div class="small text-success mt-3"><strong>{{ journey.completion_message }}</strong></div>{% endif %}
+  </div>
+</div>
+{% endif %}
