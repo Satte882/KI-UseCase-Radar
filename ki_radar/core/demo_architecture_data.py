@@ -441,9 +441,8 @@ def _seed_curated_use_case_decisions() -> int:
     coordinator = customer.coordinator
     if coordinator is None:
         raise RuntimeError("The customer service demo requires a coordinator.")
-    customer.status = UseCase.Status.PILOT
     customer.decision_status = UseCase.DecisionStatus.READY
-    customer.save(update_fields=["status", "decision_status", "updated_at"])
+    customer.save(update_fields=["decision_status", "updated_at"])
     customer_assessment = _upsert_assessment(
         use_case=customer,
         coordinator=coordinator,
