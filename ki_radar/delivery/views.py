@@ -18,7 +18,6 @@ from .permissions import (
 from .services import (
     APPROVED_STATUSES,
     create_delivery_package,
-    delivery_eligibility,
     hand_over_package,
     mark_package_ready,
     missing_ready_fields,
@@ -39,14 +38,25 @@ def package_list(request):
     )
     rows = []
     for use_case in use_cases:
-        eligible, reason, _decision = delivery_eligibility(use_case)
-        latest_package = use_case.delivery_packages.first()
+        decisions = list(use_case.approval_decisions.all())
+        final_decision = next(
+            (
+                decision
+                for decision in decisions
+                if decision.decision_status in APPROVED_STATUSES
+                and decision.finalized_at is not None
+            ),
+            None,
+        )
+        packages = list(use_case.delivery_packages.all())
         rows.append(
             {
                 "use_case": use_case,
-                "eligible": eligible,
-                "eligibility_reason": reason,
-                "latest_package": latest_package,
+                "eligible": final_decision is not None,
+                "eligibility_reason": (
+                    "" if final_decision else "Die positive Freigabe ist noch nicht final dokumentiert."
+                ),
+                "latest_package": packages[0] if packages else None,
             }
         )
     return render(
@@ -57,6 +67,7 @@ def package_list(request):
 
 
 @login_required
+@require_POST
 def package_create(request, use_case_id):
     if not can_create_package(request.user):
         raise PermissionDenied
@@ -163,7 +174,10 @@ def package_export_markdown(request, pk):
     )
     if not can_view_package(request.user, package):
         raise PermissionDenied
-    response = HttpResponse(render_delivery_markdown(package), content_type="text/markdown; charset=utf-8")
+    response = HttpResponse(
+        render_delivery_markdown(package),
+        content_type="text/markdown; charset=utf-8",
+    )
     response["Content-Disposition"] = (
         f'attachment; filename="{package.use_case.short_id}-delivery-v{package.version}.md"'
     )
