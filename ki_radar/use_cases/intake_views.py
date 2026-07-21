@@ -105,6 +105,17 @@ def _build_use_case(*, stored: dict, user) -> UseCase:
     )
 
 
+def _persist_optional_origin(*, candidate: UseCase, stored: dict) -> None:
+    source_stage_id = stored.get("source_stage_id")
+    if not source_stage_id:
+        return
+    from ki_radar.architecture.models import UseCaseOrigin, ValueStreamStage
+
+    stage = ValueStreamStage.objects.filter(pk=source_stage_id).first()
+    if stage is not None:
+        UseCaseOrigin.objects.create(use_case=candidate, stage=stage)
+
+
 @login_required
 def use_case_intake(request, step: int = 1):
     if not can_create_use_case(request.user):
@@ -136,6 +147,7 @@ def use_case_intake(request, step: int = 1):
             else:
                 candidate._history_user = request.user
                 candidate.save()
+                _persist_optional_origin(candidate=candidate, stored=stored)
                 request.session.pop(SESSION_KEY, None)
                 messages.success(
                     request,
