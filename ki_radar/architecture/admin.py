@@ -46,14 +46,26 @@ class ProcessAnalysisAdmin(admin.ModelAdmin):
 
 @admin.register(SolutionOption)
 class SolutionOptionAdmin(admin.ModelAdmin):
-    list_display = ("name", "process_analysis", "option_type", "recommendation", "feasibility")
+    list_display = (
+        "name",
+        "process_analysis",
+        "option_type",
+        "recommendation",
+        "feasibility",
+    )
     list_filter = ("option_type", "recommendation", "feasibility")
     search_fields = ("name", "description", "expected_value", "architecture_fit")
 
 
 @admin.register(UseCaseOrigin)
 class UseCaseOriginAdmin(admin.ModelAdmin):
-    list_display = ("use_case", "stage", "process_analysis", "solution_option", "created_at")
+    list_display = (
+        "use_case",
+        "stage",
+        "process_analysis",
+        "solution_option",
+        "created_at",
+    )
     search_fields = ("use_case__short_id", "use_case__title", "stage__name")
     readonly_fields = (
         "use_case",
