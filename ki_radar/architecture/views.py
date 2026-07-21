@@ -29,8 +29,7 @@ DISCOVERY_PREFILL_MESSAGE = (
     "Der Intake wurde aus der Value-Stream-Phase vorbefüllt. Alle Angaben bleiben editierbar."
 )
 PREFERRED_ONLY_MESSAGE = (
-    "Nur eine ausdrücklich bevorzugte Lösungsoption kann in den Use-Case-Intake "
-    "überführt werden."
+    "Nur eine ausdrücklich bevorzugte Lösungsoption kann in den Use-Case-Intake überführt werden."
 )
 PREFERRED_PREFILL_MESSAGE = (
     "Der Intake wurde aus der bevorzugten Lösungsoption vorbefüllt. Die bestehende "
@@ -310,9 +309,7 @@ def solution_option_create(request, process_analysis_id):
 @login_required
 def solution_option_update(request, pk):
     option = get_object_or_404(
-        SolutionOption.objects.select_related(
-            "process_analysis__stage__value_stream"
-        ),
+        SolutionOption.objects.select_related("process_analysis__stage__value_stream"),
         pk=pk,
     )
     if not _can_edit_process(request.user, option.process_analysis):
