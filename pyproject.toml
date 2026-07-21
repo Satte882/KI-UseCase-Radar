@@ -56,6 +56,9 @@ ignore = ["DJ001", "RUF012"]
 
 [tool.ruff.lint.per-file-ignores]
 "**/tests/*.py" = ["S101", "S106"]
+"tests/test_guided_journey.py" = ["E501", "S101", "S106"]
+"ki_radar/core/demo_architecture_data.py" = ["E501"]
+"ki_radar/use_cases/journey.py" = ["E501"]
 "config/settings/*.py" = ["S105"]
 "config/settings/dev.py" = ["S104", "S105"]
 
