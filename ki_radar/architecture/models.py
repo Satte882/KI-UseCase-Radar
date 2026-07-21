@@ -88,3 +88,22 @@ class ValueStreamStage(TimeStampedModel):
 
     def get_absolute_url(self):
         return self.value_stream.get_absolute_url()
+
+
+class UseCaseOrigin(TimeStampedModel):
+    use_case = models.OneToOneField(
+        "use_cases.UseCase",
+        on_delete=models.CASCADE,
+        related_name="architecture_origin",
+    )
+    stage = models.ForeignKey(
+        ValueStreamStage,
+        on_delete=models.PROTECT,
+        related_name="use_case_origins",
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"{self.use_case.short_id} aus {self.stage}"
