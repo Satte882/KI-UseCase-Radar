@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Delivery – KI-Radar{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="eyebrow mb-2">Delivery Handover</div>
+    <h1 class="page-title">Delivery Packages</h1>
+    <p class="page-subtitle">Final freigegebene Use Cases in einen umsetzbaren Scope für Delivery übersetzen.</p>
+  </div>
+</div>
+
+<div class="alert alert-secondary mb-4">
+  <strong>Klare Systemgrenze:</strong> KI-Radar definiert Kontext, Anforderungen, MVP und Abnahme. Umsetzung, Sprints und Ressourcen bleiben in Jira, Azure DevOps, GitHub oder einem anderen Delivery-System.
+</div>
+
+<div class="app-card table-card">
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead><tr><th>Use Case</th><th>Organisation</th><th>Freigabe</th><th>Delivery Package</th><th>Aktion</th></tr></thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td><a href="{{ row.use_case.get_absolute_url }}">{{ row.use_case.short_id }} · {{ row.use_case.title }}</a></td>
+          <td>{{ row.use_case.business_unit }}</td>
+          <td>{{ row.use_case.get_decision_status_display }}</td>
+          <td>
+            {% if row.latest_package %}<a href="{{ row.latest_package.get_absolute_url }}">v{{ row.latest_package.version }} · {{ row.latest_package.get_status_display }}</a>{% else %}<span class="text-muted">Noch nicht erstellt</span>{% endif %}
+          </td>
+          <td>
+            {% if can_create and row.eligible %}
+            <form method="post" action="{% url 'delivery:package_create' row.use_case.pk %}">{% csrf_token %}<button class="btn btn-sm btn-primary">{% if row.latest_package %}Neue Version{% else %}Package erzeugen{% endif %}</button></form>
+            {% elif not row.eligible %}<span class="small text-warning">{{ row.eligibility_reason }}</span>{% else %}–{% endif %}
+          </td>
+        </tr>
+        {% empty %}<tr><td colspan="5" class="text-center text-muted py-5">Noch keine final freigegebenen Use Cases.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
