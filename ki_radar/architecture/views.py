@@ -5,11 +5,40 @@ from django.db.models import Count, Max
 from django.shortcuts import get_object_or_404, redirect, render
 
 from ki_radar.use_cases.intake_views import SESSION_KEY
+from ki_radar.use_cases.models import UseCase
 from ki_radar.use_cases.permissions import can_create_use_case
 
-from .forms import ValueStreamForm, ValueStreamStageForm
-from .models import ValueStream, ValueStreamStage
+from .forms import (
+    ProcessAnalysisForm,
+    SolutionOptionForm,
+    ValueStreamForm,
+    ValueStreamStageForm,
+)
+from .models import ProcessAnalysis, SolutionOption, ValueStream, ValueStreamStage
 from .permissions import can_edit_value_stream, can_manage_architecture
+
+SOLUTION_TYPE_MAP = {
+    SolutionOption.OptionType.RULE_AUTOMATION: UseCase.SolutionType.AUTOMATION,
+    SolutionOption.OptionType.STANDARD_SOFTWARE: UseCase.SolutionType.STANDARD,
+    SolutionOption.OptionType.CUSTOM_SOFTWARE: UseCase.SolutionType.CUSTOM,
+    SolutionOption.OptionType.ANALYTICS_ML: UseCase.SolutionType.ANALYTICS,
+    SolutionOption.OptionType.GENERATIVE_AI: UseCase.SolutionType.GENERATIVE,
+    SolutionOption.OptionType.ASSISTANT: UseCase.SolutionType.ASSISTANT,
+}
+DISCOVERY_PREFILL_MESSAGE = (
+    "Der Intake wurde aus der Value-Stream-Phase vorbefüllt. Alle Angaben bleiben editierbar."
+)
+PREFERRED_ONLY_MESSAGE = (
+    "Nur eine ausdrücklich bevorzugte Lösungsoption kann in den Use-Case-Intake überführt werden."
+)
+PREFERRED_PREFILL_MESSAGE = (
+    "Der Intake wurde aus der bevorzugten Lösungsoption vorbefüllt. Die bestehende "
+    "Bewertung und Governance bleiben verbindlich."
+)
+
+
+def _can_edit_process(user, process_analysis: ProcessAnalysis) -> bool:
+    return can_edit_value_stream(user, process_analysis.stage.value_stream)
 
 
 @login_required
@@ -32,8 +61,13 @@ def value_stream_list(request):
 @login_required
 def value_stream_detail(request, pk):
     value_stream = get_object_or_404(
-        ValueStream.objects.select_related("business_unit", "owner", "created_by").prefetch_related(
-            "stages__use_case_origins__use_case"
+        ValueStream.objects.select_related(
+            "business_unit",
+            "owner",
+            "created_by",
+        ).prefetch_related(
+            "stages__use_case_origins__use_case",
+            "stages__process_analyses__solution_options",
         ),
         pk=pk,
     )
@@ -111,7 +145,10 @@ def stage_create(request, value_stream_id):
 
 @login_required
 def stage_update(request, pk):
-    stage = get_object_or_404(ValueStreamStage.objects.select_related("value_stream"), pk=pk)
+    stage = get_object_or_404(
+        ValueStreamStage.objects.select_related("value_stream"),
+        pk=pk,
+    )
     if not can_edit_value_stream(request.user, stage.value_stream):
         raise PermissionDenied
     form = ValueStreamStageForm(request.POST or None, instance=stage)
@@ -152,8 +189,189 @@ def stage_start_use_case(request, pk):
         stored["problem_statement"] = stage.pain_points.strip()
     request.session[SESSION_KEY] = stored
     request.session.modified = True
-    messages.info(
-        request,
-        "Der Intake wurde aus der Value-Stream-Phase vorbefüllt. Alle Angaben bleiben editierbar.",
+    messages.info(request, DISCOVERY_PREFILL_MESSAGE)
+    return redirect("use_cases:create")
+
+
+@login_required
+def process_analysis_create(request, stage_id):
+    stage = get_object_or_404(
+        ValueStreamStage.objects.select_related("value_stream"),
+        pk=stage_id,
     )
+    if not can_edit_value_stream(request.user, stage.value_stream):
+        raise PermissionDenied
+    form = ProcessAnalysisForm(
+        request.POST or None,
+        initial={
+            "name": f"Prozessanalyse: {stage.name}",
+            "trigger": stage.value_stream.trigger,
+            "outcome": stage.description or stage.value_stream.outcome,
+            "roles": stage.actors,
+            "systems": stage.systems,
+            "data_objects": stage.documents,
+            "bottlenecks": stage.pain_points,
+            "baseline_metrics": stage.baseline_metrics,
+        },
+    )
+    if request.method == "POST" and form.is_valid():
+        process_analysis = form.save(commit=False)
+        process_analysis.stage = stage
+        process_analysis.analyzed_by = request.user
+        process_analysis.save()
+        messages.success(request, "Prozessanalyse wurde angelegt.")
+        return redirect(process_analysis)
+    return render(
+        request,
+        "architecture/process_analysis_form.html",
+        {"form": form, "stage": stage, "title": "Prozessanalyse anlegen"},
+    )
+
+
+@login_required
+def process_analysis_detail(request, pk):
+    process_analysis = get_object_or_404(
+        ProcessAnalysis.objects.select_related(
+            "stage__value_stream__business_unit",
+            "analyzed_by",
+        ).prefetch_related(
+            "solution_options",
+            "use_case_origins__use_case",
+        ),
+        pk=pk,
+    )
+    return render(
+        request,
+        "architecture/process_analysis_detail.html",
+        {
+            "process_analysis": process_analysis,
+            "can_edit": _can_edit_process(request.user, process_analysis),
+            "can_create_use_case": can_create_use_case(request.user),
+        },
+    )
+
+
+@login_required
+def process_analysis_update(request, pk):
+    process_analysis = get_object_or_404(
+        ProcessAnalysis.objects.select_related("stage__value_stream"),
+        pk=pk,
+    )
+    if not _can_edit_process(request.user, process_analysis):
+        raise PermissionDenied
+    form = ProcessAnalysisForm(request.POST or None, instance=process_analysis)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Prozessanalyse wurde aktualisiert.")
+        return redirect(process_analysis)
+    return render(
+        request,
+        "architecture/process_analysis_form.html",
+        {
+            "form": form,
+            "stage": process_analysis.stage,
+            "process_analysis": process_analysis,
+            "title": "Prozessanalyse bearbeiten",
+        },
+    )
+
+
+@login_required
+def solution_option_create(request, process_analysis_id):
+    process_analysis = get_object_or_404(
+        ProcessAnalysis.objects.select_related("stage__value_stream"),
+        pk=process_analysis_id,
+    )
+    if not _can_edit_process(request.user, process_analysis):
+        raise PermissionDenied
+    form = SolutionOptionForm(
+        request.POST or None,
+        process_analysis=process_analysis,
+    )
+    if request.method == "POST" and form.is_valid():
+        option = form.save(commit=False)
+        option.process_analysis = process_analysis
+        option.created_by = request.user
+        option.save()
+        messages.success(request, "Lösungsoption wurde ergänzt.")
+        return redirect(process_analysis)
+    return render(
+        request,
+        "architecture/solution_option_form.html",
+        {
+            "form": form,
+            "process_analysis": process_analysis,
+            "title": "Lösungsoption ergänzen",
+        },
+    )
+
+
+@login_required
+def solution_option_update(request, pk):
+    option = get_object_or_404(
+        SolutionOption.objects.select_related("process_analysis__stage__value_stream"),
+        pk=pk,
+    )
+    if not _can_edit_process(request.user, option.process_analysis):
+        raise PermissionDenied
+    form = SolutionOptionForm(
+        request.POST or None,
+        instance=option,
+        process_analysis=option.process_analysis,
+    )
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Lösungsoption wurde aktualisiert.")
+        return redirect(option.process_analysis)
+    return render(
+        request,
+        "architecture/solution_option_form.html",
+        {
+            "form": form,
+            "process_analysis": option.process_analysis,
+            "option": option,
+            "title": "Lösungsoption bearbeiten",
+        },
+    )
+
+
+@login_required
+def solution_option_start_use_case(request, pk):
+    if not can_create_use_case(request.user):
+        raise PermissionDenied
+    option = get_object_or_404(
+        SolutionOption.objects.select_related(
+            "process_analysis__stage__value_stream__business_unit"
+        ),
+        pk=pk,
+    )
+    if option.recommendation != SolutionOption.Recommendation.PREFERRED:
+        messages.warning(request, PREFERRED_ONLY_MESSAGE)
+        return redirect(option.process_analysis)
+    process_analysis = option.process_analysis
+    stage = process_analysis.stage
+    solution_type = SOLUTION_TYPE_MAP.get(
+        option.option_type,
+        UseCase.SolutionType.OTHER,
+    )
+    stored = {
+        "title": option.name,
+        "business_unit": stage.value_stream.business_unit_id,
+        "problem_statement": process_analysis.bottlenecks,
+        "affected_process": process_analysis.name,
+        "summary": process_analysis.current_flow,
+        "target_users": process_analysis.roles,
+        "source_systems": process_analysis.systems,
+        "intended_users": process_analysis.roles,
+        "intended_purpose": option.description,
+        "expected_benefit": option.expected_value,
+        "data_sources": option.data_requirements or process_analysis.data_objects,
+        "solution_type": solution_type,
+        "source_stage_id": str(stage.pk),
+        "source_process_analysis_id": str(process_analysis.pk),
+        "source_solution_option_id": str(option.pk),
+    }
+    request.session[SESSION_KEY] = stored
+    request.session.modified = True
+    messages.info(request, PREFERRED_PREFILL_MESSAGE)
     return redirect("use_cases:create")

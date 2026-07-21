@@ -164,4 +164,4 @@ def test_value_stream_detail_shows_traceable_use_case_origin(
     content = response.content.decode()
     assert "End-to-End-Phasen" in content
     assert use_case.short_id in content
-    assert "Use Case aus Phase ableiten" in content
+    assert "Use Case direkt aus Phase ableiten" in content

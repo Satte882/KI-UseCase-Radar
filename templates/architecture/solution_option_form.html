@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} – KI-Radar{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="eyebrow mb-2">{{ process_analysis.name }}</div>
+    <h1 class="page-title">{{ title }}</h1>
+    <p class="page-subtitle">Organisatorische, regelbasierte, klassische Software- und KI-Optionen vergleichbar dokumentieren.</p>
+  </div>
+  <a class="btn btn-outline-secondary" href="{{ process_analysis.get_absolute_url }}">Abbrechen</a>
+</div>
+
+<form method="post" class="app-card">
+  {% csrf_token %}
+  <div class="card-header"><strong>Opportunities &amp; Solutions · ADM Phase E</strong><div class="small text-muted mt-1">Eine Option wird nicht automatisch bevorzugt. Der Status benötigt eine nachvollziehbare Begründung.</div></div>
+  <div class="card-body">
+    {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="row g-3">
+      {% for field in form %}
+      <div class="{% if field.name == 'name' or field.name == 'option_type' or field.name == 'recommendation' or field.name == 'feasibility' %}col-md-6{% else %}col-12{% endif %}">
+        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {{ field.errors }}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="card-body border-top border-secondary-subtle text-end"><button class="btn btn-primary">Speichern</button></div>
+</form>
+{% endblock %}

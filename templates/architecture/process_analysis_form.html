@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} – KI-Radar{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="eyebrow mb-2">{{ stage.value_stream.name }} · {{ stage.name }}</div>
+    <h1 class="page-title">{{ title }}</h1>
+    <p class="page-subtitle">Ist-Prozess, Bottlenecks und Soll-Prinzipien strukturiert erfassen. Kein BPMN-Editor.</p>
+  </div>
+  <a class="btn btn-outline-secondary" href="{% if process_analysis %}{{ process_analysis.get_absolute_url }}{% else %}{{ stage.value_stream.get_absolute_url }}{% endif %}">Abbrechen</a>
+</div>
+
+<form method="post" class="app-card">
+  {% csrf_token %}
+  <div class="card-header"><strong>Prozessanalyse · ADM Phase B</strong><div class="small text-muted mt-1">Der Fokus liegt auf dem fachlichen Ablauf und den Ursachen, nicht auf einer vorgezogenen Technologiewahl.</div></div>
+  <div class="card-body">
+    {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="row g-3">
+      {% for field in form %}
+      <div class="{% if field.name == 'name' or field.name == 'status' or field.name == 'scope_start' or field.name == 'scope_end' or field.name == 'trigger' or field.name == 'outcome' %}col-md-6{% else %}col-12{% endif %}">
+        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+        {{ field.errors }}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="card-body border-top border-secondary-subtle text-end"><button class="btn btn-primary">Speichern</button></div>
+</form>
+{% endblock %}

@@ -21,9 +21,7 @@
 </div>
 
 <div class="app-card mb-4">
-  <div class="card-header d-flex justify-content-between align-items-start gap-3">
-    <div><strong>TOGAF-light: Architecture Vision</strong><div class="small text-muted mt-1">Konkrete Artefakte aus ADM Phase A; kein vollständiger ADM-Zyklus.</div></div>
-  </div>
+  <div class="card-header"><strong>TOGAF-light: Architecture Vision</strong><div class="small text-muted mt-1">Konkrete Artefakte aus ADM Phase A; kein vollständiger ADM-Zyklus.</div></div>
   <div class="card-body">
     <div class="row g-4">
       <div class="col-md-6"><div class="section-title">Stakeholder</div><div class="text-preline">{{ value_stream.stakeholders|default:"Noch offen" }}</div></div>
@@ -34,7 +32,7 @@
 
 <div class="app-card">
   <div class="card-header d-flex justify-content-between align-items-start gap-3">
-    <div><strong>End-to-End-Phasen</strong><div class="small text-muted mt-1">ADM Phase B: Wertschöpfung, Beteiligte, Systeme, Informationen, Engpässe und Baselines.</div></div>
+    <div><strong>End-to-End-Phasen</strong><div class="small text-muted mt-1">ADM Phase B: Wertschöpfung zuerst grob strukturieren; nur relevante Phasen werden anschließend im Detail analysiert.</div></div>
     {% if can_edit %}<a class="btn btn-sm btn-primary" href="{% url 'architecture:stage_create' value_stream.pk %}">Phase ergänzen</a>{% endif %}
   </div>
   <div class="card-body">
@@ -53,13 +51,20 @@
           <dt>Engpässe</dt><dd>{{ stage.pain_points|default:"–" }}</dd>
           <dt>Baseline</dt><dd>{{ stage.baseline_metrics|default:"–" }}</dd>
         </dl>
+        <div class="stage-use-cases">
+          <div class="section-title mb-1">Prozessanalysen</div>
+          {% for analysis in stage.process_analyses.all %}
+          <a href="{{ analysis.get_absolute_url }}">{{ analysis.name }} · {{ analysis.solution_options.all|length }} Optionen</a>
+          {% empty %}<span class="small text-muted">Noch keine Detailanalyse</span>{% endfor %}
+        </div>
         {% if stage.use_case_origins.all %}
         <div class="stage-use-cases">
           <div class="section-title mb-1">Abgeleitete Use Cases</div>
           {% for origin in stage.use_case_origins.all %}<a href="{{ origin.use_case.get_absolute_url }}">{{ origin.use_case.short_id }} · {{ origin.use_case.title }}</a>{% endfor %}
         </div>
         {% endif %}
-        {% if can_create_use_case %}<a class="btn btn-sm btn-outline-secondary w-100 mt-3" href="{% url 'architecture:stage_start_use_case' stage.pk %}">Use Case aus Phase ableiten</a>{% endif %}
+        {% if can_edit %}<a class="btn btn-sm btn-primary w-100 mt-3" href="{% url 'architecture:process_analysis_create' stage.pk %}">Prozess im Detail analysieren</a>{% endif %}
+        {% if can_create_use_case %}<a class="btn btn-sm btn-outline-secondary w-100 mt-2" href="{% url 'architecture:stage_start_use_case' stage.pk %}">Use Case direkt aus Phase ableiten</a>{% endif %}
       </section>
       {% empty %}
       <div class="text-muted">Noch keine Phasen erfasst. Beginnen Sie mit 5–10 groben End-to-End-Phasen statt mit Detailprozessen.</div>

@@ -19,4 +19,34 @@ urlpatterns = [
         views.stage_start_use_case,
         name="stage_start_use_case",
     ),
+    path(
+        "stages/<uuid:stage_id>/processes/new/",
+        views.process_analysis_create,
+        name="process_analysis_create",
+    ),
+    path(
+        "processes/<uuid:pk>/",
+        views.process_analysis_detail,
+        name="process_analysis_detail",
+    ),
+    path(
+        "processes/<uuid:pk>/edit/",
+        views.process_analysis_update,
+        name="process_analysis_update",
+    ),
+    path(
+        "processes/<uuid:process_analysis_id>/options/new/",
+        views.solution_option_create,
+        name="solution_option_create",
+    ),
+    path(
+        "options/<uuid:pk>/edit/",
+        views.solution_option_update,
+        name="solution_option_update",
+    ),
+    path(
+        "options/<uuid:pk>/start-use-case/",
+        views.solution_option_start_use_case,
+        name="solution_option_start_use_case",
+    ),
 ]
