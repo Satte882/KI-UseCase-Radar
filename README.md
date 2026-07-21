@@ -147,7 +147,7 @@ Der mitgelieferte Demo-Datensatz zeigt den vollständigen Arbeitsablauf:
 4. Eine kombinierte Regel- und Assistenzlösung wird als bevorzugte Option gewählt.
 5. Der daraus abgeleitete Use Case wird hinsichtlich Nutzen, Datenreife, Machbarkeit, Risiko und Governance bewertet.
 6. Nach der finalen Freigabe entsteht ein versioniertes Delivery Package mit MVP-Scope, Anforderungen und Akzeptanzkriterien.
-7. Die operative Umsetzung wird an ein externes Delivery-System übergeben.
+7. Das Delivery Package ist bereit für die verbindliche Übergabe an ein externes Delivery-System.
 
 Damit wird nicht nur ein KI-Use-Case dokumentiert, sondern seine fachliche Herkunft und seine Umsetzungsreife nachvollziehbar gemacht.
 
