@@ -93,7 +93,10 @@ def _architecture_context(use_case: UseCase) -> dict[str, str]:
     }
 
 
-def build_initial_delivery_data(use_case: UseCase, decision: ApprovalDecision) -> dict[str, str]:
+def build_initial_delivery_data(
+    use_case: UseCase,
+    decision: ApprovalDecision,
+) -> dict[str, str]:
     metric = (
         f"{use_case.metric_name}: Baseline {use_case.metric_baseline} "
         f"→ Ziel {use_case.metric_target} {use_case.metric_unit}.\n"
@@ -129,17 +132,27 @@ def build_initial_delivery_data(use_case: UseCase, decision: ApprovalDecision) -
         "non_functional_requirements": (
             "Performance, Verfügbarkeit, Barrierefreiheit und Wartbarkeit konkretisieren."
         ),
-        "security_privacy_requirements": "\n".join(checks) or "Keine zusätzlichen Prüfungen markiert.",
-        "human_oversight": use_case.human_oversight or "Menschliche Kontrolle konkretisieren.",
-        "logging_and_audit": "Fachliche Entscheidungen, Fehler und relevante Änderungen protokollieren.",
-        "operations_and_support": use_case.support_responsibility or "Betriebsverantwortung festlegen.",
+        "security_privacy_requirements": (
+            "\n".join(checks) or "Keine zusätzlichen Prüfungen markiert."
+        ),
+        "human_oversight": (
+            use_case.human_oversight or "Menschliche Kontrolle konkretisieren."
+        ),
+        "logging_and_audit": (
+            "Fachliche Entscheidungen, Fehler und relevante Änderungen protokollieren."
+        ),
+        "operations_and_support": (
+            use_case.support_responsibility or "Betriebsverantwortung festlegen."
+        ),
         "mvp_scope": "Kleinsten Ende-zu-Ende-Ablauf für die Nutzenvalidierung beschreiben.",
         "acceptance_criteria": (
             "1. Fachlicher Kernablauf ist Ende-zu-Ende demonstrierbar.\n"
             "2. Freigabeauflagen und Governance-Anforderungen sind umgesetzt.\n"
             f"3. {metric}"
         ),
-        "test_scenarios": "Happy Path, Datenfehler, fachliche Ausnahme und manuellen Eingriff testen.",
+        "test_scenarios": (
+            "Happy Path, Datenfehler, fachliche Ausnahme und manuellen Eingriff testen."
+        ),
         "measurement_plan": metric,
         "dependencies": "",
         "risks": "",
@@ -180,7 +193,9 @@ def create_delivery_package(*, use_case: UseCase, actor) -> DeliveryPackage:
 
 
 def missing_ready_fields(package: DeliveryPackage) -> list[str]:
-    field_labels = {field.name: str(field.verbose_name) for field in package._meta.fields}
+    field_labels = {
+        field.name: str(field.verbose_name) for field in package._meta.fields
+    }
     return [
         field_labels[name]
         for name in READY_REQUIRED_FIELDS
@@ -200,7 +215,9 @@ def mark_package_ready(package: DeliveryPackage) -> None:
 
 def hand_over_package(package: DeliveryPackage, actor) -> None:
     if package.status != DeliveryPackage.Status.READY:
-        raise ValidationError("Nur ein als bereit markiertes Delivery Package kann übergeben werden.")
+        raise ValidationError(
+            "Nur ein als bereit markiertes Delivery Package kann übergeben werden."
+        )
     package.status = DeliveryPackage.Status.HANDED_OVER
     package.handed_over_by = actor
     package.handed_over_at = timezone.now()
@@ -213,7 +230,11 @@ def render_delivery_markdown(package: DeliveryPackage) -> str:
     sections = [
         ("Problem und Geschäftskontext", package.problem_context),
         ("Ziel und Ergebnis", package.target_outcome),
-        ("Scope", f"### Im Scope\n{package.in_scope}\n\n### Nicht im Scope\n{package.out_of_scope}"),
+        (
+            "Scope",
+            f"### Im Scope\n{package.in_scope}\n\n"
+            f"### Nicht im Scope\n{package.out_of_scope}",
+        ),
         ("Nutzer und Szenarien", package.users_and_scenarios),
         ("Lösungsrahmen", package.solution_outline),
         ("Systemkontext", package.system_context),
@@ -236,8 +257,9 @@ def render_delivery_markdown(package: DeliveryPackage) -> str:
         ("Initiales Backlog", package.initial_backlog),
         ("Übergabehinweise", package.handover_notes),
     ]
-    body = "\n\n".join(f"## {title}\n\n{content or '–'}" for title, content in sections)
+    body = "\n\n".join(f"## {title}\n\n{content or '-'}" for title, content in sections)
     return (
-        f"# Delivery Package – {package.use_case.short_id} {package.use_case.title}\n\n"
-        f"Version: {package.version}  \nStatus: {package.get_status_display()}\n\n{body}\n"
+        f"# Delivery Package - {package.use_case.short_id} {package.use_case.title}\n\n"
+        f"Version: {package.version}  \n"
+        f"Status: {package.get_status_display()}\n\n{body}\n"
     )
