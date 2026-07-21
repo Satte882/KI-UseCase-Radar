@@ -2,7 +2,7 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-    dependencies = [("architecture", "0002_processanalysis_solutionoption")]
+    dependencies = [("architecture", "0002_process_analysis_solution_options")]
 
     operations = [
         migrations.AddField(
