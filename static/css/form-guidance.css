@@ -35,8 +35,8 @@ textarea.form-control::placeholder {
   box-shadow: 0 0 0 .2rem rgba(124, 92, 255, .13);
 }
 
-.field-attention .form-control.field-guidance-filled,
-.field-attention .form-select.field-guidance-filled {
+.field-error .form-control.field-guidance-filled,
+.field-error .form-select.field-guidance-filled {
   border-color: rgba(255, 107, 130, .7);
 }
 

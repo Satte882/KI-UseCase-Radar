@@ -27,3 +27,5 @@ def test_form_guidance_contract_covers_examples_and_dynamic_states():
     assert ".field-guidance-optional-empty" in stylesheet
     assert ".field-guidance-filled" in stylesheet
     assert "::placeholder" in stylesheet
+    assert ".field-error .form-control.field-guidance-filled" in stylesheet
+    assert ".field-attention .form-control.field-guidance-filled" not in stylesheet
