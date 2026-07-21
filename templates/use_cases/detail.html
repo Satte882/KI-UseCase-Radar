@@ -12,29 +12,44 @@
       <span class="badge {% if use_case.decision_status == 'approved' or use_case.decision_status == 'approved_with_conditions' %}state-ready{% elif use_case.decision_status == 'deferred' or use_case.decision_status == 'not_pursued' %}state-blocked{% else %}state-review{% endif %}">Entscheidung: {{ use_case.get_decision_status_display }}</span>
       <span class="badge badge-soft">Priorität {{ use_case.get_priority_display }}</span>
       <span class="badge state-{{ decision_check.state }}">{{ decision_check.state_label }}</span>
+      <span class="badge badge-soft">{{ use_case.metric_result_label }}</span>
     </div>
   </div>
   <div class="d-flex flex-wrap gap-2">
     {% if can_edit %}<a class="btn btn-outline-secondary" href="{% url 'use_cases:edit' use_case.pk %}">Stammdaten bearbeiten</a>{% endif %}
+    {% if nav_is_coordinator %}<a class="btn btn-outline-secondary" href="{% url 'reviews:create' use_case.pk %}">Lifecycle-Review</a>{% endif %}
     {% if nav_is_coordinator %}<a class="btn btn-outline-primary" href="{% url 'use_cases:assessment_create' use_case.pk %}">{% if latest_assessment %}Neue Bewertungsversion{% else %}Bewertung anlegen{% endif %}</a>{% endif %}
-    {% if nav_is_coordinator and latest_assessment %}<a class="btn btn-primary" href="{% url 'use_cases:approval_decision_create' use_case.pk %}">Entscheidung treffen</a>{% endif %}
+    {% if nav_is_coordinator and latest_assessment %}<a class="btn btn-primary" href="{% url 'use_cases:approval_decision_create' use_case.pk %}">Freigabeentscheidung</a>{% endif %}
   </div>
 </div>
 
 <div class="app-card decision-panel mb-4">
   <div class="card-header d-flex justify-content-between align-items-center gap-3">
-    <div><strong>Belastbare Freigabeentscheidung</strong><div class="small text-muted mt-1">Bewertung, Evidenz und Entscheidung sind getrennt; positive Status werden serverseitig geprüft.</div></div>
+    <div><strong>Belastbare Freigabeentscheidung</strong><div class="small text-muted mt-1">Bewertung, Evidenz und Entscheidung sind getrennt. Positive Entscheidungen und spätere Lifecycle-Übergänge werden serverseitig geprüft.</div></div>
     <span class="badge {% if use_case.decision_status == 'approved' or use_case.decision_status == 'approved_with_conditions' %}state-ready{% elif use_case.decision_status == 'deferred' or use_case.decision_status == 'not_pursued' %}state-blocked{% else %}state-review{% endif %}">{{ use_case.get_decision_status_display }}</span>
   </div>
   <div class="card-body">
     {% if latest_assessment %}
     <div class="row g-4">
-      <div class="col-lg-4"><div class="section-title">Aktuelle Bewertung</div><p class="mb-1"><strong>Version {{ latest_assessment.version }}</strong> vom {{ latest_assessment.assessment_date|date:"d.m.Y" }}</p><div class="small text-muted">durch {{ latest_assessment.assessed_by.get_display_name }}</div></div>
-      <div class="col-lg-4"><div class="section-title">Hergeleitete Confidence</div><span class="badge {% if latest_assessment.confidence_level == 'low' %}state-blocked{% elif latest_assessment.confidence_level == 'medium' %}state-review{% else %}state-ready{% endif %}">{{ latest_assessment.confidence_label }}</span><div class="small text-muted mt-2">{{ latest_assessment.get_evidence_quality_display }} · {{ latest_assessment.get_evidence_coverage_display }}</div></div>
-      <div class="col-lg-4"><div class="section-title">Empfehlung</div><p class="mb-1"><strong>{{ latest_assessment.get_recommendation_display }}</strong></p><div class="small text-muted">Governance-Vorprüfung: {% if latest_assessment.governance_precheck_completed %}durchgeführt{% else %}offen{% endif %}</div></div>
+      <div class="col-lg-4">
+        <div class="section-title">Aktuelle Bewertung</div>
+        <p class="mb-1"><strong>Version {{ latest_assessment.version }}</strong> vom {{ latest_assessment.assessment_date|date:"d.m.Y" }}</p>
+        <div class="small text-muted">durch {% if latest_assessment.assessed_by %}{{ latest_assessment.assessed_by.get_display_name }}{% else %}unbekannt{% endif %}</div>
+      </div>
+      <div class="col-lg-4">
+        <div class="section-title">Hergeleitete Confidence</div>
+        <span class="badge {% if latest_assessment.confidence_level == 'low' %}state-blocked{% elif latest_assessment.confidence_level == 'medium' %}state-review{% else %}state-ready{% endif %}">{{ latest_assessment.confidence_label }}</span>
+        <div class="small text-muted mt-2">{{ latest_assessment.get_evidence_quality_display }} · {{ latest_assessment.get_evidence_coverage_display }}</div>
+      </div>
+      <div class="col-lg-4">
+        <div class="section-title">Empfehlung</div>
+        <p class="mb-1"><strong>{{ latest_assessment.get_recommendation_display }}</strong></p>
+        <div class="small text-muted">Governance-Vorprüfung: {% if latest_assessment.governance_precheck_completed %}durchgeführt{% else %}offen{% endif %}</div>
+      </div>
     </div>
     <hr>
-    <p class="mb-2">{{ latest_assessment.rationale }}</p><a href="{{ latest_assessment.evidence_url }}" target="_blank" rel="noopener noreferrer">Bewertungsnachweis öffnen</a>
+    <p class="mb-2">{{ latest_assessment.rationale }}</p>
+    <a href="{{ latest_assessment.evidence_url }}" target="_blank" rel="noopener noreferrer">Bewertungsnachweis öffnen</a>
     {% else %}
     <p class="mb-0 text-muted">Der Use Case ist aufgenommen, aber noch nicht strukturiert bewertet. Ohne Bewertung kann keine Freigabeentscheidung erfolgen.</p>
     {% endif %}
@@ -43,8 +58,8 @@
 
 {% for approval in use_case.approval_decisions.all %}
 {% if approval.is_pending_second_approval %}
-<div class="alert alert-warning d-flex justify-content-between align-items-center gap-3">
-  <div><strong>Zweite Freigabe ausstehend</strong><div class="small">{{ approval.get_decision_status_display }} wurde von {{ approval.decided_by.get_display_name }} vorgeschlagen. Der Entscheidungsstatus wurde noch nicht verändert.</div></div>
+<div class="alert alert-warning d-flex flex-wrap justify-content-between align-items-center gap-3">
+  <div><strong>Zweite Freigabe ausstehend</strong><div class="small">{{ approval.get_decision_status_display }} wurde von {% if approval.decided_by %}{{ approval.decided_by.get_display_name }}{% else %}einer berechtigten Person{% endif %} vorgeschlagen. Der Entscheidungsstatus wurde noch nicht verändert.</div></div>
   {% if nav_is_coordinator %}<form method="post" action="{% url 'use_cases:conditional_decision_confirm' approval.pk %}">{% csrf_token %}<button class="btn btn-warning">Als zweite Person bestätigen</button></form>{% endif %}
 </div>
 {% endif %}
@@ -54,46 +69,138 @@
   <div class="col-xl-8">
     <div class="app-card decision-panel mb-4">
       <div class="card-header d-flex justify-content-between align-items-center">
-        <div><strong>{{ decision_check.title }}</strong><div class="small text-muted mt-1">Bestehende Lifecycle-Prüfung</div></div>
+        <div><strong>{{ decision_check.title }}</strong><div class="small text-muted mt-1">Bestehende Lifecycle-Prüfung inklusive positiver Freigabeentscheidung</div></div>
         <span class="badge state-{{ decision_check.state }}">{{ decision_check.state_label }}</span>
       </div>
       <div class="card-body">
-        {% if decision_check.blockers %}<div class="section-title">Verbindliche Blocker</div><ul class="decision-list">{% for blocker in decision_check.blockers %}<li>{{ blocker }}</li>{% endfor %}</ul>{% endif %}
-        {% if decision_check.warnings %}<div class="section-title {% if decision_check.blockers %}mt-4{% endif %}">Prüfhinweise</div><ul class="decision-list">{% for warning in decision_check.warnings %}<li>{{ warning }}</li>{% endfor %}</ul>{% endif %}
+        {% if decision_check.blockers %}
+          <div class="section-title">Verbindliche Blocker</div>
+          <ul class="decision-list">{% for blocker in decision_check.blockers %}<li>{{ blocker }}</li>{% endfor %}</ul>
+        {% endif %}
+        {% if decision_check.warnings %}
+          <div class="section-title {% if decision_check.blockers %}mt-4{% endif %}">Prüfhinweise</div>
+          <ul class="decision-list">{% for warning in decision_check.warnings %}<li>{{ warning }}</li>{% endfor %}</ul>
+        {% endif %}
         {% if not decision_check.blockers and not decision_check.warnings %}<p class="mb-0 text-muted">Alle strukturierten Voraussetzungen für diese Lifecycle-Entscheidung sind erfüllt.</p>{% endif %}
       </div>
     </div>
 
     <div class="app-card mb-4">
-      <div class="card-header"><strong>Primäre Erfolgsmetrik</strong></div>
+      <div class="card-header"><strong>Primäre Erfolgsmetrik</strong><div class="small text-muted mt-1">Verbindliche Ziel-gegen-Ergebnis-Betrachtung</div></div>
       <div class="card-body">
         {% if use_case.metric_name %}
-        <div class="d-flex justify-content-between gap-3 align-items-start mb-3"><div><div class="section-title mb-1">Kennzahl</div><h3 class="h5 mb-1">{{ use_case.metric_name }}</h3><div class="text-muted small">{{ use_case.get_metric_type_display }} · {{ use_case.get_metric_direction_display }} · {{ use_case.metric_unit }}</div></div><span class="badge {% if use_case.metric_result == 'achieved' %}state-ready{% elif use_case.metric_result == 'not_achieved' %}state-blocked{% else %}state-review{% endif %}">{{ use_case.metric_result_label }}</span></div>
-        <div class="kpi-strip mb-3"><div class="kpi-cell"><small>Baseline</small><strong>{{ use_case.metric_baseline|default_if_none:"–" }} {{ use_case.metric_unit }}</strong></div><div class="kpi-cell"><small>Ziel</small><strong>{{ use_case.metric_target|default_if_none:"–" }} {{ use_case.metric_unit }}</strong></div><div class="kpi-cell"><small>Ist</small><strong>{{ use_case.metric_actual|default_if_none:"–" }} {{ use_case.metric_unit }}</strong></div></div>
-        <dl class="row mb-0 small"><dt class="col-sm-3 text-muted">Messmethode</dt><dd class="col-sm-9">{{ use_case.metric_measurement_method|default:"–" }}</dd><dt class="col-sm-3 text-muted">Messzeitraum</dt><dd class="col-sm-9">{{ use_case.metric_measurement_period|default:"–" }}</dd><dt class="col-sm-3 text-muted">Messdatum</dt><dd class="col-sm-9">{{ use_case.metric_measured_at|date:"d.m.Y"|default:"–" }}</dd></dl>
+        <div class="d-flex justify-content-between gap-3 align-items-start mb-3">
+          <div><div class="section-title mb-1">Kennzahl</div><h3 class="h5 mb-1">{{ use_case.metric_name }}</h3><div class="text-muted small">{{ use_case.get_metric_type_display }} · {{ use_case.get_metric_direction_display }} · {{ use_case.metric_unit }}</div></div>
+          <span class="badge {% if use_case.metric_result == 'achieved' %}state-ready{% elif use_case.metric_result == 'not_achieved' %}state-blocked{% else %}state-review{% endif %}">{{ use_case.metric_result_label }}</span>
+        </div>
+        <div class="kpi-strip mb-3">
+          <div class="kpi-cell"><small>Baseline</small><strong>{{ use_case.metric_baseline|default_if_none:"–" }} {{ use_case.metric_unit }}</strong></div>
+          <div class="kpi-cell"><small>Ziel</small><strong>{{ use_case.metric_target|default_if_none:"–" }} {{ use_case.metric_unit }}</strong></div>
+          <div class="kpi-cell"><small>Ist</small><strong>{{ use_case.metric_actual|default_if_none:"–" }} {{ use_case.metric_unit }}</strong></div>
+        </div>
+        <dl class="row mb-0 small">
+          <dt class="col-sm-3 text-muted">Messmethode</dt><dd class="col-sm-9">{{ use_case.metric_measurement_method|default:"–" }}</dd>
+          <dt class="col-sm-3 text-muted">Messzeitraum</dt><dd class="col-sm-9">{{ use_case.metric_measurement_period|default:"–" }}</dd>
+          <dt class="col-sm-3 text-muted">Messdatum</dt><dd class="col-sm-9">{{ use_case.metric_measured_at|date:"d.m.Y"|default:"–" }}</dd>
+          <dt class="col-sm-3 text-muted">Nachweis</dt><dd class="col-sm-9">{% if use_case.metric_evidence_url %}<a href="{{ use_case.metric_evidence_url }}" target="_blank" rel="noopener noreferrer">Messnachweis öffnen</a>{% else %}–{% endif %}</dd>
+        </dl>
         {% else %}<p class="text-muted mb-0">Noch keine strukturierte Erfolgsmetrik definiert.</p>{% endif %}
       </div>
     </div>
 
     <div class="app-card mb-4">
-      <div class="card-header"><strong>Fachlicher Kontext</strong></div>
-      <div class="card-body"><div class="row g-4"><div class="col-md-6"><div class="section-title">Problem</div><p>{{ use_case.problem_statement }}</p></div><div class="col-md-6"><div class="section-title">Erwarteter Nutzen</div><p>{{ use_case.expected_benefit }}</p></div><div class="col-md-6"><div class="section-title">Prozess</div><p>{{ use_case.affected_process }}</p></div><div class="col-md-6"><div class="section-title">Zielgruppe</div><p>{{ use_case.target_users|default:"–" }}</p></div></div></div>
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <div><strong>OpenRouter Review-Copilot</strong><div class="small text-muted mt-1">Semantischer Hinweisgeber – keine Freigabeinstanz</div></div>
+        {% if nav_is_coordinator %}
+        <form method="post" action="{% url 'use_cases:copilot' use_case.pk %}">{% csrf_token %}<button class="btn btn-outline-secondary btn-sm" {% if not copilot_enabled %}disabled{% endif %}>Analyse starten</button></form>
+        {% endif %}
+      </div>
+      <div class="card-body">
+        {% if copilot_analysis %}<div class="copilot-box">{{ copilot_analysis }}</div>
+        {% elif copilot_enabled %}<p class="text-muted mb-0">Der Copilot prüft die semantische Konsistenz von Problem, Nutzen, Metrik, Ziel, Ergebnis und Kosten. Seine Hinweise sind nicht bindend.</p>
+        {% else %}<p class="text-muted mb-0">OpenRouter ist nicht konfiguriert. Setze <code>OPENROUTER_API_KEY</code>, um die optionale Analyse zu aktivieren.</p>{% endif %}
+      </div>
     </div>
 
-    <div class="app-card">
+    <div class="app-card mb-4">
+      <div class="card-header"><strong>Fachlicher Kontext</strong></div>
+      <div class="card-body">
+        <div class="row g-4">
+          <div class="col-md-6"><div class="section-title">Problem</div><p>{{ use_case.problem_statement }}</p></div>
+          <div class="col-md-6"><div class="section-title">Erwarteter Nutzen</div><p>{{ use_case.expected_benefit }}</p></div>
+          <div class="col-md-6"><div class="section-title">Prozess</div><p>{{ use_case.affected_process }}</p></div>
+          <div class="col-md-6"><div class="section-title">Zielgruppe</div><p>{{ use_case.target_users|default:"–" }}</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="app-card mb-4">
       <div class="card-header"><strong>Freigabeentscheidungen</strong></div>
       <div class="list-group list-group-flush">
         {% for approval in use_case.approval_decisions.all %}
-        <div class="list-group-item bg-transparent py-3"><div class="d-flex justify-content-between gap-3"><div><strong>{{ approval.get_decision_status_display }}</strong>{% if approval.is_pending_second_approval %}<span class="badge state-review ms-2">Zweite Freigabe offen</span>{% endif %}<div class="small text-muted mt-1">{{ approval.rationale }}</div></div><span class="text-muted small">{{ approval.created_at|date:"d.m.Y" }}</span></div></div>
+        <div class="list-group-item bg-transparent py-3">
+          <div class="d-flex justify-content-between gap-3">
+            <div>
+              <strong>{{ approval.get_decision_status_display }}</strong>
+              {% if approval.is_pending_second_approval %}<span class="badge state-review ms-2">Zweite Freigabe offen</span>{% endif %}
+              <div class="small text-muted mt-1">{{ approval.rationale }}</div>
+              {% if approval.conditions %}<div class="small mt-2"><strong>Auflage:</strong> {{ approval.conditions }} · fällig {{ approval.condition_due_date|date:"d.m.Y" }}</div>{% endif %}
+            </div>
+            <span class="text-muted small">{{ approval.created_at|date:"d.m.Y" }}</span>
+          </div>
+        </div>
         {% empty %}<div class="list-group-item bg-transparent text-muted">Noch keine Freigabeentscheidung dokumentiert.</div>{% endfor %}
+      </div>
+    </div>
+
+    <div class="app-card">
+      <div class="card-header"><strong>Entscheidungsverlauf</strong><div class="small text-muted mt-1">Bestehende Lifecycle-Reviews</div></div>
+      <div class="list-group list-group-flush">
+        {% for review in use_case.reviews.all %}
+        <div class="list-group-item bg-transparent py-3">
+          <div class="d-flex justify-content-between gap-3">
+            <div class="d-flex flex-wrap align-items-center gap-2">
+              <strong>{{ review.get_decision_display }}</strong>
+              {% if review.go_live_exception_confirmed %}<span class="badge state-review">Ausnahme ausdrücklich bestätigt</span>{% endif %}
+            </div>
+            <span class="text-muted small">{{ review.review_date|date:"d.m.Y" }}</span>
+          </div>
+          <div class="small text-muted mt-1">{{ review.rationale }}</div>
+        </div>
+        {% empty %}<div class="list-group-item bg-transparent text-muted">Noch keine Reviews dokumentiert.</div>{% endfor %}
       </div>
     </div>
   </div>
 
   <div class="col-xl-4">
-    <div class="app-card mb-4"><div class="card-header"><strong>Steuerung</strong></div><div class="card-body"><dl class="mb-0"><dt class="text-muted small">Nächste Lifecycle-Entscheidung</dt><dd>{{ decision_due|date:"d.m.Y"|default:"Nicht gesetzt" }}</dd><dt class="text-muted small">Fachlich verantwortlich</dt><dd>{{ use_case.business_owner.get_display_name }}</dd><dt class="text-muted small">KI-Koordinator</dt><dd>{% if use_case.coordinator %}{{ use_case.coordinator.get_display_name }}{% else %}–{% endif %}</dd><dt class="text-muted small">Technischer Owner</dt><dd>{% if use_case.technical_owner %}{{ use_case.technical_owner.get_display_name }}{% else %}–{% endif %}</dd></dl></div></div>
-    <div class="app-card mb-4"><div class="card-header"><strong>Governance & Nachweise</strong></div><div class="card-body"><div class="d-grid gap-2 mb-3"><span class="badge badge-soft text-start">Datenschutz: {% if use_case.privacy_review_completed %}abgeschlossen{% elif use_case.privacy_review_required %}offen{% else %}nicht erforderlich{% endif %}</span><span class="badge badge-soft text-start">Security: {% if use_case.security_review_completed %}abgeschlossen{% elif use_case.security_review_required %}offen{% else %}nicht erforderlich{% endif %}</span><span class="badge badge-soft text-start">Recht: {% if use_case.legal_review_completed %}abgeschlossen{% elif use_case.legal_review_required %}offen{% else %}nicht erforderlich{% endif %}</span></div>{% if nav_is_coordinator %}<a class="btn btn-outline-secondary w-100 mb-2" href="{% url 'governance:create' use_case.pk %}">Governance-Screening</a>{% endif %}{% if can_edit %}<a class="btn btn-outline-secondary w-100" href="{% url 'notifications:evidence_create' use_case.pk %}">Nachweislink hinzufügen</a>{% endif %}</div></div>
-    <div class="app-card"><div class="card-header"><strong>Änderungshistorie</strong></div><div class="list-group list-group-flush history-list">{% for h in history %}<div class="list-group-item bg-transparent"><strong>{{ h.history_date|date:"d.m.Y H:i" }}</strong><br><span class="small text-muted">{{ h.get_history_type_display }} durch {% if h.history_user %}{{ h.history_user.get_display_name }}{% else %}System{% endif %}</span></div>{% empty %}<div class="list-group-item bg-transparent text-muted">Keine Historie.</div>{% endfor %}</div></div>
+    <div class="app-card mb-4">
+      <div class="card-header"><strong>Steuerung</strong></div>
+      <div class="card-body"><dl class="mb-0">
+        <dt class="text-muted small">Nächste Lifecycle-Entscheidung</dt><dd>{{ decision_due|date:"d.m.Y"|default:"Nicht gesetzt" }}</dd>
+        <dt class="text-muted small">Fachlich verantwortlich</dt><dd>{{ use_case.business_owner.get_display_name }}</dd>
+        <dt class="text-muted small">KI-Koordinator</dt><dd>{% if use_case.coordinator %}{{ use_case.coordinator.get_display_name }}{% else %}–{% endif %}</dd>
+        <dt class="text-muted small">Technischer Owner</dt><dd>{% if use_case.technical_owner %}{{ use_case.technical_owner.get_display_name }}{% else %}–{% endif %}</dd>
+        <dt class="text-muted small">Einmalkosten</dt><dd>{{ use_case.one_time_cost|default_if_none:"–" }} €</dd>
+        <dt class="text-muted small">Laufende Kosten</dt><dd>{{ use_case.recurring_cost|default_if_none:"–" }} €</dd>
+      </dl></div>
+    </div>
+    <div class="app-card mb-4">
+      <div class="card-header"><strong>Governance & Nachweise</strong></div>
+      <div class="card-body">
+        <div class="d-grid gap-2 mb-3">
+          <span class="badge badge-soft text-start">Datenschutz: {% if use_case.privacy_review_completed %}abgeschlossen{% elif use_case.privacy_review_required %}offen{% else %}nicht erforderlich{% endif %}</span>
+          <span class="badge badge-soft text-start">Security: {% if use_case.security_review_completed %}abgeschlossen{% elif use_case.security_review_required %}offen{% else %}nicht erforderlich{% endif %}</span>
+          <span class="badge badge-soft text-start">Recht: {% if use_case.legal_review_completed %}abgeschlossen{% elif use_case.legal_review_required %}offen{% else %}nicht erforderlich{% endif %}</span>
+        </div>
+        {% if nav_is_coordinator %}<a class="btn btn-outline-secondary w-100 mb-2" href="{% url 'governance:create' use_case.pk %}">Governance-Screening</a>{% endif %}
+        {% if can_edit %}<a class="btn btn-outline-secondary w-100" href="{% url 'notifications:evidence_create' use_case.pk %}">Nachweislink hinzufügen</a>{% endif %}
+      </div>
+      <div class="list-group list-group-flush">{% for evidence in use_case.evidence_links.all %}<a class="list-group-item list-group-item-action bg-transparent" href="{{ evidence.url }}" rel="noopener noreferrer" target="_blank">{{ evidence.label }}<div class="small text-muted">{{ evidence.get_document_type_display }}</div></a>{% endfor %}</div>
+    </div>
+    <div class="app-card">
+      <div class="card-header"><strong>Änderungshistorie</strong></div>
+      <div class="list-group list-group-flush history-list">{% for h in history %}<div class="list-group-item bg-transparent"><strong>{{ h.history_date|date:"d.m.Y H:i" }}</strong><br><span class="small text-muted">{{ h.get_history_type_display }} durch {% if h.history_user %}{{ h.history_user.get_display_name }}{% else %}System{% endif %}</span></div>{% empty %}<div class="list-group-item bg-transparent text-muted">Keine Historie.</div>{% endfor %}</div>
+    </div>
   </div>
 </div>
 {% endwith %}
