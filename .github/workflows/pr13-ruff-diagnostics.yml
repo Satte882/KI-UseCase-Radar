@@ -1,0 +1,53 @@
+name: PR13 Ruff Diagnostics
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feature/delivery-handover]
+
+permissions:
+  contents: read
+
+jobs:
+  ruff-diagnostics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.10.0"
+          enable-cache: true
+      - run: uv sync --frozen --dev
+      - name: Capture Ruff diagnostics
+        id: ruff
+        shell: bash
+        run: |
+          set +e
+          {
+            echo '=== RUFF CHECK ==='
+            uv run ruff check .
+            check_status=$?
+            echo '=== RUFF FORMAT ==='
+            uv run ruff format --check .
+            format_status=$?
+            echo "check_status=$check_status"
+            echo "format_status=$format_status"
+          } > pr13-ruff.log 2>&1
+          cat pr13-ruff.log
+          if [ "$check_status" -ne 0 ] || [ "$format_status" -ne 0 ]; then
+            echo "exit_code=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "exit_code=0" >> "$GITHUB_OUTPUT"
+          fi
+          exit 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pr13-ruff-log
+          path: pr13-ruff.log
+      - name: Fail if Ruff failed
+        if: steps.ruff.outputs.exit_code != '0'
+        run: exit 1
