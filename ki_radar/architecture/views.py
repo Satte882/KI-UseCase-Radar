@@ -5,6 +5,10 @@ from django.db.models import Count, Max
 from django.shortcuts import get_object_or_404, redirect, render
 
 from ki_radar.use_cases.intake_views import SESSION_KEY
+from ki_radar.use_cases.journey import (
+    build_process_analysis_journey,
+    build_value_stream_journey,
+)
 from ki_radar.use_cases.models import UseCase
 from ki_radar.use_cases.permissions import can_create_use_case
 
@@ -76,6 +80,7 @@ def value_stream_detail(request, pk):
         "architecture/value_stream_detail.html",
         {
             "value_stream": value_stream,
+            "journey": build_value_stream_journey(value_stream, request.user),
             "can_edit": can_edit_value_stream(request.user, value_stream),
             "can_create_use_case": can_create_use_case(request.user),
         },
@@ -245,6 +250,7 @@ def process_analysis_detail(request, pk):
         "architecture/process_analysis_detail.html",
         {
             "process_analysis": process_analysis,
+            "journey": build_process_analysis_journey(process_analysis, request.user),
             "can_edit": _can_edit_process(request.user, process_analysis),
             "can_create_use_case": can_create_use_case(request.user),
         },
