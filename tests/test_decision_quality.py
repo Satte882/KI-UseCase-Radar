@@ -30,6 +30,7 @@ def decision_use_case(owner, coordinator, business_unit):
         data_sources="ERP und Dokumentenablage",
         next_review_date=timezone.localdate() + timedelta(days=14),
         planned_pilot_end=timezone.localdate() + timedelta(days=30),
+        decision_status=UseCase.DecisionStatus.APPROVED,
     )
 
 
