@@ -18,6 +18,34 @@ class UseCaseCounter(models.Model):
         return str(self.pk)
 
 
+class StrategicObjective(TimeStampedModel):
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="owned_strategic_objectives",
+    )
+    active_from = models.DateField(null=True, blank=True)
+    active_until = models.DateField(null=True, blank=True)
+    target_kpi = models.CharField(max_length=200, blank=True)
+    target_value = models.CharField(max_length=200, blank=True)
+    is_active = models.BooleanField(default=True, db_index=True)
+
+    class Meta:
+        ordering = ["-is_active", "title"]
+        indexes = [
+            models.Index(
+                fields=["is_active", "active_until"], name="use_cases_obj_active_until_idx"
+            )
+        ]
+
+    def __str__(self) -> str:
+        return self.title
+
+
 class UseCase(TimeStampedModel):
     class Status(models.TextChoices):
         IDEA = "idea", "Idee"
@@ -129,6 +157,14 @@ class UseCase(TimeStampedModel):
     intended_users = models.TextField(blank=True)
     intended_purpose = models.TextField(blank=True)
 
+    strategic_objective = models.ForeignKey(
+        StrategicObjective,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="use_cases",
+    )
+    strategy_contribution = models.TextField(blank=True)
     expected_benefit = models.TextField()
     benefit_category = models.CharField(max_length=120, blank=True)
     baseline = models.TextField(blank=True)
@@ -210,8 +246,15 @@ class UseCase(TimeStampedModel):
     class Meta:
         ordering = ["-updated_at"]
         indexes = [
-            models.Index(fields=["status", "next_review_date"]),
-            models.Index(fields=["business_unit", "status"]),
+            models.Index(
+                fields=["status", "next_review_date"], name="use_cases_u_status_166548_idx"
+            ),
+            models.Index(
+                fields=["business_unit", "status"], name="use_cases_u_busines_130cef_idx"
+            ),
+            models.Index(
+                fields=["strategic_objective", "status"], name="usecase_strategy_status_idx"
+            ),
         ]
 
     def __str__(self) -> str:
@@ -259,3 +302,152 @@ class UseCase(TimeStampedModel):
         if high_positive >= 2 and self.risk_complexity != self.Level.HIGH:
             return "Bevorzugt prüfen"
         return "Vorläufig zurückstellen"
+
+
+class DecisionAssessment(TimeStampedModel):
+    class Confidence(models.TextChoices):
+        LOW = "low", "Niedrig"
+        MEDIUM = "medium", "Mittel"
+        HIGH = "high", "Hoch"
+
+    use_case = models.ForeignKey(
+        UseCase, on_delete=models.CASCADE, related_name="decision_assessments"
+    )
+    version = models.PositiveIntegerField()
+    assessed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="decision_assessments",
+    )
+    assessment_date = models.DateField()
+
+    business_value = models.CharField(max_length=10, choices=UseCase.Level.choices)
+    business_value_confidence = models.CharField(max_length=10, choices=Confidence.choices)
+    business_value_rationale = models.TextField()
+    business_value_evidence_url = models.URLField(blank=True)
+
+    strategic_fit = models.CharField(max_length=10, choices=UseCase.Level.choices)
+    strategic_fit_confidence = models.CharField(max_length=10, choices=Confidence.choices)
+    strategic_fit_rationale = models.TextField()
+    strategic_fit_evidence_url = models.URLField(blank=True)
+
+    technical_feasibility = models.CharField(max_length=10, choices=UseCase.Level.choices)
+    technical_feasibility_confidence = models.CharField(max_length=10, choices=Confidence.choices)
+    technical_feasibility_rationale = models.TextField()
+    technical_feasibility_evidence_url = models.URLField(blank=True)
+
+    data_readiness = models.CharField(max_length=10, choices=UseCase.Level.choices)
+    data_readiness_confidence = models.CharField(max_length=10, choices=Confidence.choices)
+    data_readiness_rationale = models.TextField()
+    data_readiness_evidence_url = models.URLField(blank=True)
+
+    risk_complexity = models.CharField(max_length=10, choices=UseCase.Level.choices)
+    risk_complexity_confidence = models.CharField(max_length=10, choices=Confidence.choices)
+    risk_complexity_rationale = models.TextField()
+    risk_complexity_evidence_url = models.URLField(blank=True)
+
+    overall_rationale = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-version"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["use_case", "version"], name="unique_assessment_version_per_use_case"
+            )
+        ]
+        indexes = [
+            models.Index(
+                fields=["use_case", "-assessment_date"],
+                name="use_cases_assessment_date_idx",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.use_case.short_id} – Bewertung v{self.version}"
+
+    @property
+    def minimum_confidence(self) -> str:
+        values = [
+            self.business_value_confidence,
+            self.strategic_fit_confidence,
+            self.technical_feasibility_confidence,
+            self.data_readiness_confidence,
+            self.risk_complexity_confidence,
+        ]
+        order = {self.Confidence.LOW: 0, self.Confidence.MEDIUM: 1, self.Confidence.HIGH: 2}
+        return min(values, key=order.get)
+
+    @property
+    def minimum_confidence_label(self) -> str:
+        return self.Confidence(self.minimum_confidence).label
+
+    @property
+    def criterion_rows(self) -> list[dict]:
+        fields = [
+            ("Business Value", "business_value"),
+            ("Strategischer Fit", "strategic_fit"),
+            ("Technische Machbarkeit", "technical_feasibility"),
+            ("Datenreife", "data_readiness"),
+            ("Risiko und Komplexität", "risk_complexity"),
+        ]
+        return [
+            {
+                "label": label,
+                "rating": getattr(self, f"get_{name}_display")(),
+                "confidence": getattr(self, f"get_{name}_confidence_display")(),
+                "rationale": getattr(self, f"{name}_rationale"),
+                "evidence_url": getattr(self, f"{name}_evidence_url"),
+            }
+            for label, name in fields
+        ]
+
+
+class BenefitMeasurement(TimeStampedModel):
+    use_case = models.ForeignKey(
+        UseCase, on_delete=models.CASCADE, related_name="benefit_measurements"
+    )
+    measured_at = models.DateField(db_index=True)
+    period = models.CharField(max_length=200)
+    actual_value = models.DecimalField(max_digits=14, decimal_places=4)
+    method = models.TextField()
+    evidence_url = models.URLField()
+    variance_reason = models.TextField(blank=True)
+    decision_consequence = models.TextField(blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="benefit_measurements",
+    )
+
+    class Meta:
+        ordering = ["-measured_at", "-created_at"]
+        indexes = [
+            models.Index(
+                fields=["use_case", "-measured_at"], name="use_cases_benefit_date_idx"
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.use_case.short_id} – {self.measured_at}"
+
+    @property
+    def result(self) -> str:
+        if self.use_case.metric_target is None or not self.use_case.metric_direction:
+            return UseCase.MetricResult.NOT_DEFINED
+        if self.use_case.metric_direction == UseCase.MetricDirection.LOWER:
+            achieved = self.actual_value <= self.use_case.metric_target
+        else:
+            achieved = self.actual_value >= self.use_case.metric_target
+        return UseCase.MetricResult.ACHIEVED if achieved else UseCase.MetricResult.NOT_ACHIEVED
+
+    @property
+    def result_label(self) -> str:
+        return UseCase.MetricResult(self.result).label
+
+    @property
+    def delta_from_baseline(self) -> Decimal | None:
+        if self.use_case.metric_baseline is None:
+            return None
+        return self.actual_value - self.use_case.metric_baseline
