@@ -33,9 +33,7 @@ def architecture_context(owner, business_unit):
         actors="Einkauf und Fachbereich",
         systems="ERP, E-Mail und Dateiablage",
         documents="Angebote und Kriterienkatalog",
-        pain_points=(
-            "Uneinheitliche Angebote verlängern den manuellen Vergleich erheblich."
-        ),
+        pain_points=("Uneinheitliche Angebote verlängern den manuellen Vergleich erheblich."),
         baseline_metrics="Fünf Tage Durchlaufzeit",
     )
     process = ProcessAnalysis.objects.create(
@@ -46,15 +44,11 @@ def architecture_context(owner, business_unit):
         scope_end="Lieferant ist ausgewählt",
         trigger="Ablauf der Angebotsfrist",
         outcome="Nachvollziehbare Lieferantenentscheidung",
-        current_flow=(
-            "Angebote öffnen, Werte übertragen, fehlende Angaben nachfordern, bewerten."
-        ),
+        current_flow=("Angebote öffnen, Werte übertragen, fehlende Angaben nachfordern, bewerten."),
         roles="Einkauf erstellt Vergleich; Fachbereich bewertet Qualität.",
         systems="ERP, Shared Inbox, Dateiablage",
         data_objects="Angebote, Kriterien, Lieferantenstammdaten",
-        business_rules=(
-            "Mindestens fünf Lieferanten; Muss-Kriterien müssen erfüllt sein."
-        ),
+        business_rules=("Mindestens fünf Lieferanten; Muss-Kriterien müssen erfüllt sein."),
         handoffs="Einkauf übergibt Shortlist an Fachbereich.",
         bottlenecks="Manuelle Übertragung und Rückfragen verursachen Wartezeit.",
         exceptions="Fehlende Preise oder abweichende Mengeneinheiten.",
@@ -75,9 +69,7 @@ def preferred_option(owner, architecture_context):
         name="Assistierter Angebotsvergleich",
         option_type=SolutionOption.OptionType.ASSISTANT,
         recommendation=SolutionOption.Recommendation.PREFERRED,
-        description=(
-            "Extrahiert Angebotsdaten und erstellt einen nachvollziehbaren Vergleich."
-        ),
+        description=("Extrahiert Angebotsdaten und erstellt einen nachvollziehbaren Vergleich."),
         expected_value="Durchlaufzeit von fünf auf drei Tage reduzieren.",
         feasibility="high",
         data_requirements="PDF- und Word-Angebote sowie Kriterienkatalog",
@@ -220,9 +212,7 @@ def test_process_and_solution_origin_is_traceable(
     _stream, stage, process = architecture_context
     use_case = UseCase.objects.create(
         title="Assistierter Angebotsvergleich",
-        problem_statement=(
-            "Uneinheitliche Angebote verlängern den Vergleich erheblich."
-        ),
+        problem_statement=("Uneinheitliche Angebote verlängern den Vergleich erheblich."),
         business_unit=business_unit,
         affected_process=process.name,
         business_owner=owner,
