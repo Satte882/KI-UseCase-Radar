@@ -177,11 +177,20 @@ class SolutionOption(TimeStampedModel):
         verbose_name="Machbarkeit",
     )
     data_requirements = models.TextField(blank=True, verbose_name="Datenanforderungen")
-    application_impact = models.TextField(blank=True, verbose_name="Auswirkung auf Anwendungen")
+    application_impact = models.TextField(
+        blank=True,
+        verbose_name="Auswirkung auf Anwendungen",
+    )
     integration_impact = models.TextField(blank=True, verbose_name="Integrationen")
-    technology_constraints = models.TextField(blank=True, verbose_name="Technologieleitplanken")
+    technology_constraints = models.TextField(
+        blank=True,
+        verbose_name="Technologieleitplanken",
+    )
     risks = models.TextField(blank=True, verbose_name="Risiken und Nachteile")
-    architecture_fit = models.TextField(blank=True, verbose_name="Begründung und Architecture Fit")
+    architecture_fit = models.TextField(
+        blank=True,
+        verbose_name="Begründung und Architecture Fit",
+    )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
