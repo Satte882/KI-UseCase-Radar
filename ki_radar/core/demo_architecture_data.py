@@ -204,11 +204,18 @@ def seed_demo_architecture_data() -> dict[str, int]:
 
 
 def clear_demo_architecture_data() -> dict[str, int]:
+    demo_use_cases = UseCase.objects.filter(title=DEMO_USE_CASE_TITLE)
+    delivery_count, _ = DeliveryPackage.objects.filter(use_case__in=demo_use_cases).delete()
+    decision_count, _ = ApprovalDecision.objects.filter(use_case__in=demo_use_cases).delete()
+    assessment_count, _ = DecisionAssessment.objects.filter(use_case__in=demo_use_cases).delete()
     origin_count, _ = UseCaseOrigin.objects.filter(
         stage__value_stream__name=DEMO_VALUE_STREAM_NAME
     ).delete()
     stream_count, _ = ValueStream.objects.filter(name=DEMO_VALUE_STREAM_NAME).delete()
     return {
+        "delivery_packages": delivery_count,
+        "approval_decisions": decision_count,
+        "decision_assessments": assessment_count,
         "architecture_origins": origin_count,
         "value_streams": stream_count,
     }
