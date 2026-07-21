@@ -1,9 +1,9 @@
 name: Lint Diagnostic
 
 on:
-  push:
+  pull_request:
     branches:
-      - feature/strategy-evidence-benefit-loop
+      - main
 
 permissions:
   contents: read
