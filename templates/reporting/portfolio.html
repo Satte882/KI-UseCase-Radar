@@ -47,7 +47,7 @@
   </div>
   <div class="card-body">
     {% if not show_not_pursued and not_pursued_total %}<div class="alert alert-secondary"><strong>{{ not_pursued_total }} nicht weiterverfolgte Use Cases sind ausgeblendet.</strong> Sie können über den Filter kontrolliert eingeblendet werden, erscheinen dann bewusst optisch zurückgenommen.</div>{% endif %}
-    <div class="portfolio-matrix-scroll">
+    <div class="portfolio-matrix-scroll overflow-auto pb-2">
       <div class="portfolio-matrix" role="table" aria-label="Portfolio-Matrix wirtschaftlicher Nutzen und technische Machbarkeit">
         <div class="matrix-corner" role="columnheader">Nutzen ↓ / Machbarkeit →</div>
         {% for column in matrix_rows.0.cells %}<div class="matrix-axis" role="columnheader">{{ column.technical_label }}</div>{% endfor %}
