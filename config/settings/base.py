@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "simple_history",
     "ki_radar.core",
     "ki_radar.accounts",
+    "ki_radar.architecture",
     "ki_radar.use_cases",
     "ki_radar.governance",
     "ki_radar.reviews",
