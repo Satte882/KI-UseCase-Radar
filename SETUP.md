@@ -25,7 +25,7 @@ cd KI-UseCase-Radar
 code .
 ```
 
-## 3. Lokale Konfiguration und OpenRouter
+## 3. Lokale Konfiguration
 
 Falls noch keine `.env` vorhanden ist:
 
@@ -33,30 +33,20 @@ Falls noch keine `.env` vorhanden ist:
 Copy-Item .env.example .env
 ```
 
-Für den optionalen semantischen Review-Copilot in `.env` eintragen:
+Für den optionalen semantischen Review-Copilot kann in `.env` eingetragen werden:
 
 ```dotenv
 OPENROUTER_API_KEY=<eigener-key>
+OPENROUTER_MODEL=<optionaler-modell-slug>
 ```
 
-Optional kann ein konkretes OpenRouter-Modell gewählt werden:
-
-```dotenv
-OPENROUTER_MODEL=anbieter/modell-slug
-```
-
-Bleibt `OPENROUTER_MODEL` leer, verwendet OpenRouter das im Konto konfigurierte Standardmodell. Ohne API-Key funktionieren alle verbindlichen Decision-Readiness-Checks; nur die semantische Copilot-Analyse ist deaktiviert.
-
-Die `.env` ist durch `.gitignore` vom Repository ausgeschlossen und darf nicht committed werden.
+Ohne API-Key funktionieren alle verbindlichen Discovery-, Bewertungs-, Governance-, Portfolio- und Delivery-Funktionen vollständig. Die `.env` ist durch `.gitignore` ausgeschlossen und darf nicht committed werden.
 
 ## 4. Anwendung mit Docker starten
 
 ```powershell
 docker compose -f compose.local.yml up --build
 ```
-
-Docker Compose liest die `.env` im Repository-Stamm automatisch und reicht die
-OpenRouter-Variablen an den App-Container weiter.
 
 Beim Start werden automatisch:
 
@@ -72,12 +62,13 @@ Anwendung:
 http://127.0.0.1:8000
 ```
 
-## 5. Demo-Daten für den Produkttest
+## 5. Demo-Daten für den End-to-End-Test
 
 Ein zweites Terminal öffnen:
 
 ```powershell
-docker compose -f compose.local.yml exec app python manage.py seed_demo_data --password "Demo-Test-2026!"
+docker compose -f compose.local.yml exec app `
+  python manage.py seed_demo_data --password "Demo-Test-2026!"
 ```
 
 Anmeldung als KI-Koordinator:
@@ -87,7 +78,17 @@ Benutzer: demo_ki_koordinator
 Passwort: Demo-Test-2026!
 ```
 
-Der Demo-Datensatz enthält Lifecycle-Fälle, Governance-Screenings, Reviews und strukturierte Erfolgsmetriken mit erreichten und verfehlten Zielen. Dadurch können Entscheidungswarteschlange, Pilot-Gates, Go-live-Prüfung und OpenRouter-Copilot direkt getestet werden.
+Der Demo-Datensatz enthält:
+
+- Lifecycle- und Governance-Fälle,
+- strukturierte Erfolgsmetriken,
+- einen Value Stream „Beschaffung bis Zahlung“,
+- eine detaillierte Prozessanalyse zur Eingangsrechnungsprüfung,
+- eine bevorzugte Lösungsoption,
+- einen daraus abgeleiteten und final freigegebenen Use Case,
+- ein vorausgefülltes Delivery Package im Status „Bereit zur Übergabe“.
+
+Dadurch können Discovery, TOGAF-light-Artefakte, Use-Case-Governance, Portfolio und Delivery-Handover ohne zusätzliche Stammdaten getestet werden.
 
 Demo-Daten entfernen:
 
@@ -95,7 +96,44 @@ Demo-Daten entfernen:
 docker compose -f compose.local.yml exec app python manage.py clear_demo_data
 ```
 
-## 6. Eigenes Administratorkonto
+Die Befehle sind wiederholbar. Ein bereits übergebenes Demo-Package bleibt bei erneutem Seeding unverändert.
+
+## 6. Empfohlener fachlicher Testablauf
+
+### Discovery und Business Architecture
+
+1. In der Sidebar **Analyse** öffnen.
+2. Den Value Stream **[DEMO] Beschaffung bis Zahlung** öffnen.
+3. Auslöser, Ergebnis, Scope, strategisches Ziel, Stakeholder und Leitplanken prüfen.
+4. Die Phase **Eingangsrechnung prüfen** öffnen beziehungsweise ihre Detailinformationen prüfen.
+5. Die Prozessanalyse **Eingangsrechnungsprüfung** öffnen.
+6. Ist-Ablauf, Rollen, Systeme, Datenobjekte, Regeln, Übergaben, Bottlenecks und Baseline nachvollziehen.
+7. Die bevorzugte Lösungsoption mit organisatorischen beziehungsweise technischen Alternativen vergleichen.
+
+### Use Case, Entscheidung und Portfolio
+
+8. Den verknüpften Use Case **[DEMO] Automatische Rechnungspruefung** öffnen.
+9. Herkunft, Nutzenmetrik, Governance und finale Freigabe prüfen.
+10. Im Bereich **Portfolio** die Einordnung nach Nutzen, Machbarkeit, Entscheidungsstatus und Confidence ansehen.
+11. Auf Dashboard und Detailseite die bearbeitbaren Blocker anderer Demo-Use-Cases testen.
+
+### Delivery-Handover
+
+12. Den Bereich **Delivery** öffnen.
+13. Das vorhandene Delivery Package zur Rechnungsprüfung öffnen.
+14. Scope, Zielbild, Anforderungen, MVP, Akzeptanzkriterien, Testfälle und initiales Backlog prüfen.
+15. Markdown exportieren.
+16. Das Package als KI-Koordinator an Delivery übergeben.
+17. Prüfen, dass die übergebene Version nicht mehr bearbeitet werden kann.
+18. Über die Delivery-Übersicht eine neue Version erzeugen und als neuen Entwurf bearbeiten.
+
+### Optionaler Copilot
+
+19. Bei gesetztem `OPENROUTER_API_KEY` auf einer Use-Case-Detailseite die semantische Review-Analyse starten.
+
+Der Copilot liefert ausschließlich Hinweise. Er darf keine Freigabe, keinen Lifecycle-Übergang und keinen Delivery-Handover auslösen.
+
+## 7. Eigenes Administratorkonto
 
 ```powershell
 docker compose -f compose.local.yml exec app python manage.py createsuperuser
@@ -114,20 +152,6 @@ Im Admin mindestens eine Organisationseinheit und die benötigten Benutzer anleg
 - KI-Koordinator
 - Business Owner
 - Leser
-
-## 7. Fachlicher Testablauf
-
-1. Entscheidungswarteschlange auf der Startseite prüfen.
-2. Einen Use Case in der Phase Prüfung öffnen.
-3. Primäre Erfolgsmetrik mit Baseline, Ziel, Einheit und Messmethode erfassen.
-4. Governance-Screening anlegen.
-5. Pilotstart über einen Review beschließen.
-6. Ist-Wert, Messzeitraum, Messdatum und Nachweis ergänzen.
-7. Go-live-Prüfung öffnen und Zielerreichung kontrollieren.
-8. Bei verfehltem Ziel die explizite Ausnahmebestätigung testen.
-9. Auf der Detailseite die optionale OpenRouter-Analyse starten.
-
-Der OpenRouter-Copilot liefert ausschließlich semantische Hinweise. Er darf keinen Lifecycle-Übergang freigeben oder blockieren.
 
 ## 8. Qualitätsprüfungen
 
@@ -149,8 +173,7 @@ docker build -t ki-radar:local .
 
 ## 9. Native Entwicklung mit uv
 
-Bei der nativen Ausführung lädt Django die `.env` nicht automatisch. Zuerst nur
-PostgreSQL starten und die Python-Abhängigkeiten synchronisieren:
+Bei nativer Ausführung lädt Django die `.env` nicht automatisch. Zuerst PostgreSQL starten und Abhängigkeiten synchronisieren:
 
 ```text
 docker compose -f compose.local.yml up -d db
@@ -158,7 +181,8 @@ uv sync --frozen --dev
 ```
 
 Die `.env.example` verwendet für die native Verbindung den Host-Port `5433`.
-Unter Linux und macOS die Prozessumgebung so laden:
+
+Unter Linux und macOS:
 
 ```bash
 cp .env.example .env  # nur falls noch keine .env vorhanden ist
@@ -167,6 +191,7 @@ source .env
 set +a
 
 uv run python manage.py migrate
+uv run python manage.py seed_roles
 uv run pytest -q
 uv run python manage.py runserver
 ```
@@ -177,10 +202,8 @@ Unter PowerShell die Einträge sicher zeilenweise in die Prozessumgebung laden:
 $envFile = ".env"
 Get-Content -LiteralPath $envFile | ForEach-Object {
     $line = $_.Trim()
-
     if ($line -and -not $line.StartsWith("#") -and $line.Contains("=")) {
         $name, $value = $line -split "=", 2
-
         if ($name) {
             [Environment]::SetEnvironmentVariable(
                 $name.Trim(),
@@ -195,12 +218,6 @@ uv run python manage.py migrate
 uv run python manage.py seed_roles
 uv run pytest -q
 uv run python manage.py runserver
-```
-
-Für den optionalen Copilot genügt in der `.env`:
-
-```dotenv
-OPENROUTER_API_KEY=<eigener-key>
 ```
 
 ## 10. Health-Checks
@@ -239,7 +256,8 @@ docker compose -f compose.local.yml up --build
 ### Migrationen fehlen
 
 ```powershell
-docker compose -f compose.local.yml exec app python manage.py makemigrations --check --dry-run
+docker compose -f compose.local.yml exec app `
+  python manage.py makemigrations --check --dry-run
 ```
 
 ### Port 8000 oder 5433 ist belegt
