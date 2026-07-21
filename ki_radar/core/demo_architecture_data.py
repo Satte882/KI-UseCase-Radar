@@ -18,9 +18,7 @@ DEMO_USE_CASE_TITLE = "[DEMO] Automatische Rechnungspruefung"
 
 
 def seed_demo_architecture_data() -> dict[str, int]:
-    use_case = UseCase.objects.select_related("business_unit").get(
-        title=DEMO_USE_CASE_TITLE
-    )
+    use_case = UseCase.objects.select_related("business_unit").get(title=DEMO_USE_CASE_TITLE)
     owner = use_case.business_owner
     coordinator = use_case.coordinator
     if owner is None or coordinator is None:
@@ -72,37 +70,23 @@ def seed_demo_architecture_data() -> dict[str, int]:
         defaults={
             "status": ProcessAnalysis.Status.TARGET_DEFINED,
             "scope_start": "Eine Rechnung ist eingegangen.",
-            "scope_end": (
-                "Die Rechnung ist freigegeben oder zur Klärung zurückgegeben."
-            ),
+            "scope_end": ("Die Rechnung ist freigegeben oder zur Klärung zurückgegeben."),
             "trigger": "Eingang einer neuen Rechnung.",
             "outcome": "Nachvollziehbare Zahlungsfreigabe oder begründete Abweichung.",
             "current_flow": (
                 "Rechnung öffnen, Bestell- und Wareneingangsdaten suchen, Positionen "
                 "vergleichen, Abweichungen bewerten und Freigabe dokumentieren."
             ),
-            "roles": (
-                "Buchhaltung prüft formal; Einkauf und Fachbereich klären Abweichungen."
-            ),
+            "roles": ("Buchhaltung prüft formal; Einkauf und Fachbereich klären Abweichungen."),
             "systems": "ERP, Dokumentenmanagement und E-Mail.",
-            "data_objects": (
-                "Rechnung, Bestellung, Wareneingang und Lieferantenstammdaten."
-            ),
-            "business_rules": (
-                "Betrag, Menge, Preis und Bestellbezug müssen plausibel sein."
-            ),
-            "handoffs": (
-                "Buchhaltung übergibt Abweichungen an Einkauf oder Fachbereich."
-            ),
-            "bottlenecks": (
-                "Manuelle Suche, Medienbrüche und Rückfragen verursachen Wartezeit."
-            ),
+            "data_objects": ("Rechnung, Bestellung, Wareneingang und Lieferantenstammdaten."),
+            "business_rules": ("Betrag, Menge, Preis und Bestellbezug müssen plausibel sein."),
+            "handoffs": ("Buchhaltung übergibt Abweichungen an Einkauf oder Fachbereich."),
+            "bottlenecks": ("Manuelle Suche, Medienbrüche und Rückfragen verursachen Wartezeit."),
             "exceptions": (
                 "Teilrechnungen, fehlende Bestellnummern und abweichende Mengeneinheiten."
             ),
-            "baseline_metrics": (
-                "Elf Minuten je Rechnung; mehrere Rückfragen pro Woche."
-            ),
+            "baseline_metrics": ("Elf Minuten je Rechnung; mehrere Rückfragen pro Woche."),
             "target_state_principles": (
                 "Standardfälle automatisiert vorbereiten, Abweichungen erklären und die "
                 "fachliche Freigabe beim Menschen belassen."
@@ -120,19 +104,13 @@ def seed_demo_architecture_data() -> dict[str, int]:
                 "Rechnungsdaten extrahieren, regelbasiert abgleichen und nicht eindeutige "
                 "Abweichungen zur fachlichen Prüfung markieren."
             ),
-            "expected_value": (
-                "Prüfzeit reduzieren und Abweichungen konsistenter behandeln."
-            ),
+            "expected_value": ("Prüfzeit reduzieren und Abweichungen konsistenter behandeln."),
             "feasibility": "medium",
             "data_requirements": "Rechnungen, Bestellungen und Wareneingangsdaten.",
             "application_impact": "Erweiterung der internen Rechnungsprüfung.",
             "integration_impact": "ERP- und Dokumentenmanagement-Schnittstelle.",
-            "technology_constraints": (
-                "Interne Verarbeitung und nachvollziehbare Regeln."
-            ),
-            "risks": (
-                "Sonderfälle dürfen nicht fälschlich automatisch freigegeben werden."
-            ),
+            "technology_constraints": ("Interne Verarbeitung und nachvollziehbare Regeln."),
+            "risks": ("Sonderfälle dürfen nicht fälschlich automatisch freigegeben werden."),
             "architecture_fit": (
                 "Standardfälle werden vorbereitet; das ERP bleibt führend und der Mensch "
                 "entscheidet über Abweichungen."
@@ -165,9 +143,7 @@ def seed_demo_architecture_data() -> dict[str, int]:
             "evidence_coverage": DecisionAssessment.ConfidenceFactor.SOLID,
             "independent_review": DecisionAssessment.ConfidenceFactor.SOLID,
             "assumptions_resolved": DecisionAssessment.ConfidenceFactor.SOLID,
-            "evidence_url": (
-                "https://example.invalid/evidence/demo-rechnungspruefung-delivery"
-            ),
+            "evidence_url": ("https://example.invalid/evidence/demo-rechnungspruefung-delivery"),
             "rationale": (
                 "Prozessmessung, Datenstichprobe und technischer Lösungsrahmen liegen vor."
             ),
@@ -184,18 +160,14 @@ def seed_demo_architecture_data() -> dict[str, int]:
             use_case=use_case,
             assessment=assessment,
             decision_status=UseCase.DecisionStatus.APPROVED,
-            rationale=(
-                "Pilot und Delivery Package sind für den Demo-Use-Case freigegeben."
-            ),
+            rationale=("Pilot und Delivery Package sind für den Demo-Use-Case freigegeben."),
             decided_by=coordinator,
             governance_confirmed=True,
             finalized_at=timezone.now(),
         )
     else:
         decision.decision_status = UseCase.DecisionStatus.APPROVED
-        decision.rationale = (
-            "Pilot und Delivery Package sind für den Demo-Use-Case freigegeben."
-        )
+        decision.rationale = "Pilot und Delivery Package sind für den Demo-Use-Case freigegeben."
         decision.decided_by = coordinator
         decision.governance_confirmed = True
         decision.finalized_at = timezone.now()
