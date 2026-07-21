@@ -23,6 +23,10 @@ def is_business_owner(user) -> bool:
     return bool(is_coordinator(user) or in_group(user, GROUP_BUSINESS_OWNER))
 
 
+def is_business_owner_or_coordinator(user) -> bool:
+    return is_business_owner(user)
+
+
 def is_reader(user) -> bool:
     return bool(user.is_authenticated)
 
