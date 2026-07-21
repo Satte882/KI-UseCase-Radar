@@ -106,11 +106,19 @@ class ProcessAnalysisForm(StyledModelForm):
 class SolutionOptionForm(StyledModelForm):
     def __init__(self, *args, process_analysis=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.process_analysis = process_analysis or getattr(self.instance, "process_analysis", None)
+        if process_analysis is not None:
+            self.process_analysis = process_analysis
+        elif self.instance.pk:
+            self.process_analysis = self.instance.process_analysis
+        else:
+            self.process_analysis = None
 
     def clean_recommendation(self):
         recommendation = self.cleaned_data["recommendation"]
-        if recommendation != SolutionOption.Recommendation.PREFERRED or self.process_analysis is None:
+        if (
+            recommendation != SolutionOption.Recommendation.PREFERRED
+            or self.process_analysis is None
+        ):
             return recommendation
         existing = self.process_analysis.solution_options.filter(
             recommendation=SolutionOption.Recommendation.PREFERRED
