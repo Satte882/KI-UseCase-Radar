@@ -4,6 +4,7 @@ import secrets
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
+from ki_radar.core.demo_architecture_data import seed_demo_architecture_data
 from ki_radar.core.demo_data import seed_demo_data
 from ki_radar.core.demo_decision_data import enrich_demo_metrics
 
@@ -34,6 +35,7 @@ class Command(BaseCommand):
 
         counts = seed_demo_data(demo_user_password=password)
         metric_count = enrich_demo_metrics()
+        architecture_counts = seed_demo_architecture_data()
         self.stdout.write(
             self.style.SUCCESS(
                 "Demo-Daten eingespielt: "
@@ -41,8 +43,12 @@ class Command(BaseCommand):
                 f"{counts['users']} Benutzer, "
                 f"{counts['use_cases']} Use Cases, "
                 f"{counts['governance_assessments']} Governance-Screenings, "
-                f"{counts['reviews']} Reviews und "
-                f"{metric_count} strukturierte Erfolgsmetriken."
+                f"{counts['reviews']} Reviews, "
+                f"{metric_count} strukturierte Erfolgsmetriken, "
+                f"{architecture_counts['value_streams']} Value Stream, "
+                f"{architecture_counts['process_analyses']} Prozessanalyse, "
+                f"{architecture_counts['solution_options']} Lösungsoption und "
+                f"{architecture_counts['delivery_packages']} Delivery Package."
             )
         )
         if generated_password:
