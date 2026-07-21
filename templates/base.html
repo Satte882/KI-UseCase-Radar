@@ -16,15 +16,18 @@
   <aside class="app-sidebar">
     <a class="brand" href="{% url 'reporting:dashboard' %}">
       <span class="brand-mark">KR</span>
-      <span><strong>KI-Radar</strong><small>Decision Governance</small></span>
+      <span><strong>KI-Radar</strong><small>Business Architecture</small></span>
     </a>
     <nav class="sidebar-nav">
       <div class="nav-caption">Arbeitsbereich</div>
-      <a class="sidebar-link {% if request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'reporting:dashboard' %}">
-        <span class="nav-icon">⌁</span> Entscheidungen
+      <a class="sidebar-link {% if request.resolver_match.namespace == 'architecture' %}active{% endif %}" href="{% url 'architecture:value_stream_list' %}">
+        <span class="nav-icon">⇢</span> Analyse
       </a>
       <a class="sidebar-link {% if request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'portfolio' %}active{% endif %}" href="{% url 'reporting:portfolio' %}">
         <span class="nav-icon">◈</span> Portfolio
+      </a>
+      <a class="sidebar-link {% if request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'reporting:dashboard' %}">
+        <span class="nav-icon">⌁</span> Entscheidungen
       </a>
       <a class="sidebar-link {% if request.resolver_match.namespace == 'use_cases' %}active{% endif %}" href="{% url 'use_cases:list' %}">
         <span class="nav-icon">◫</span> Use Cases
@@ -49,7 +52,7 @@
   </aside>
   <div class="app-main">
     <header class="app-topbar">
-      <div><span class="eyebrow">KI-Portfolio · Governance · Evidenz</span></div>
+      <div><span class="eyebrow">Discovery · Portfolio · Decision Governance</span></div>
       <div class="topbar-status"><span class="status-dot"></span> System bereit</div>
     </header>
     <main class="app-content">
@@ -65,6 +68,6 @@
 {% else %}
 </main>
 {% endif %}
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nvCsp7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 </body>
 </html>
