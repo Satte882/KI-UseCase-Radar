@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}{{ process_analysis.name }} – KI-Radar{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="eyebrow mb-2">{{ process_analysis.stage.value_stream.name }} · {{ process_analysis.stage.name }}</div>
+    <h1 class="page-title">{{ process_analysis.name }}</h1>
+    <p class="page-subtitle">{{ process_analysis.get_status_display }} · Ist-Prozess, Architekturkontext und Lösungsoptionen.</p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a class="btn btn-outline-secondary" href="{{ process_analysis.stage.value_stream.get_absolute_url }}">Zum Value Stream</a>
+    {% if can_edit %}<a class="btn btn-primary" href="{% url 'architecture:process_analysis_update' process_analysis.pk %}">Bearbeiten</a>{% endif %}
+  </div>
+</div>
+
+<div class="architecture-summary-grid mb-4">
+  <section class="app-card card-body"><div class="section-title">Prozessstart</div><div class="text-preline">{{ process_analysis.scope_start }}</div></section>
+  <section class="app-card card-body"><div class="section-title">Prozessende</div><div class="text-preline">{{ process_analysis.scope_end }}</div></section>
+  <section class="app-card card-body"><div class="section-title">Auslöser</div><div class="text-preline">{{ process_analysis.trigger }}</div></section>
+  <section class="app-card card-body"><div class="section-title">Ergebnis</div><div class="text-preline">{{ process_analysis.outcome }}</div></section>
+</div>
+
+<div class="app-card mb-4">
+  <div class="card-header"><strong>Business Architecture · ADM Phase B</strong><div class="small text-muted mt-1">Der Ist-Ablauf und seine Ursachen werden getrennt von der späteren Lösungswahl dokumentiert.</div></div>
+  <div class="card-body architecture-artifact-grid">
+    <section><div class="section-title">Ist-Ablauf</div><div class="text-preline">{{ process_analysis.current_flow }}</div></section>
+    <section><div class="section-title">Rollen und Verantwortung</div><div class="text-preline">{{ process_analysis.roles }}</div></section>
+    <section><div class="section-title">Bottlenecks und Ursachen</div><div class="text-preline">{{ process_analysis.bottlenecks }}</div></section>
+    <section><div class="section-title">Baseline und Kennzahlen</div><div class="text-preline">{{ process_analysis.baseline_metrics }}</div></section>
+    <section><div class="section-title">Geschäftsregeln</div><div class="text-preline">{{ process_analysis.business_rules|default:"Noch nicht dokumentiert" }}</div></section>
+    <section><div class="section-title">Übergaben und Schnittstellen</div><div class="text-preline">{{ process_analysis.handoffs|default:"Noch nicht dokumentiert" }}</div></section>
+    <section><div class="section-title">Ausnahmen und Fehlerfälle</div><div class="text-preline">{{ process_analysis.exceptions|default:"Noch nicht dokumentiert" }}</div></section>
+    <section><div class="section-title">Soll-Prinzipien</div><div class="text-preline">{{ process_analysis.target_state_principles|default:"Noch nicht dokumentiert" }}</div></section>
+  </div>
+</div>
+
+<div class="app-card mb-4">
+  <div class="card-header"><strong>Information Systems &amp; Technology · ADM Phasen C/D</strong><div class="small text-muted mt-1">Konkreter System-, Informations- und Integrationskontext, kein vollständiges Applikationsportfolio.</div></div>
+  <div class="card-body architecture-artifact-grid">
+    <section><div class="section-title">Anwendungen und Arbeitsmittel</div><div class="text-preline">{{ process_analysis.systems }}</div></section>
+    <section><div class="section-title">Datenobjekte und Dokumente</div><div class="text-preline">{{ process_analysis.data_objects }}</div></section>
+  </div>
+</div>
+
+<div class="app-card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-start gap-3">
+    <div><strong>Lösungsoptionen · ADM Phase E</strong><div class="small text-muted mt-1">Alternativen sichtbar vergleichen; maximal eine Option wird ausdrücklich bevorzugt.</div></div>
+    {% if can_edit %}<a class="btn btn-sm btn-primary" href="{% url 'architecture:solution_option_create' process_analysis.pk %}">Option ergänzen</a>{% endif %}
+  </div>
+  <div class="card-body">
+    <div class="solution-option-grid">
+      {% for option in process_analysis.solution_options.all %}
+      <section class="solution-option-card solution-option-{{ option.recommendation }}">
+        <div class="d-flex justify-content-between align-items-start gap-2">
+          <div><span class="badge badge-soft">{{ option.get_option_type_display }}</span><h2 class="h5 mt-2 mb-1">{{ option.name }}</h2></div>
+          <span class="badge {% if option.recommendation == 'preferred' %}state-ready{% elif option.recommendation == 'rejected' %}state-blocked{% else %}state-review{% endif %}">{{ option.get_recommendation_display }}</span>
+        </div>
+        <p class="text-muted">{{ option.description }}</p>
+        <dl class="stage-facts">
+          <dt>Beitrag</dt><dd>{{ option.expected_value }}</dd>
+          <dt>Machbarkeit</dt><dd>{{ option.get_feasibility_display }}</dd>
+          <dt>Daten</dt><dd>{{ option.data_requirements|default:"–" }}</dd>
+          <dt>Anwendungen</dt><dd>{{ option.application_impact|default:"–" }}</dd>
+          <dt>Integrationen</dt><dd>{{ option.integration_impact|default:"–" }}</dd>
+          <dt>Technologie</dt><dd>{{ option.technology_constraints|default:"–" }}</dd>
+          <dt>Risiken</dt><dd>{{ option.risks|default:"–" }}</dd>
+          <dt>Begründung</dt><dd>{{ option.architecture_fit|default:"–" }}</dd>
+        </dl>
+        {% if can_edit %}<a class="btn btn-sm btn-outline-secondary w-100 mt-3" href="{% url 'architecture:solution_option_update' option.pk %}">Option bearbeiten</a>{% endif %}
+        {% if can_create_use_case and option.recommendation == 'preferred' %}<a class="btn btn-sm btn-primary w-100 mt-2" href="{% url 'architecture:solution_option_start_use_case' option.pk %}">Bevorzugte Option als Use Case prüfen</a>{% endif %}
+      </section>
+      {% empty %}<p class="text-muted mb-0">Noch keine Lösungsoptionen dokumentiert. Prüfen Sie organisatorische und regelbasierte Alternativen ebenso wie KI.</p>{% endfor %}
+    </div>
+  </div>
+</div>
+
+{% if process_analysis.use_case_origins.all %}
+<div class="app-card">
+  <div class="card-header"><strong>Abgeleitete Use Cases</strong></div>
+  <div class="list-group list-group-flush">
+    {% for origin in process_analysis.use_case_origins.all %}<a class="list-group-item list-group-item-action bg-transparent" href="{{ origin.use_case.get_absolute_url }}">{{ origin.use_case.short_id }} · {{ origin.use_case.title }}</a>{% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}
