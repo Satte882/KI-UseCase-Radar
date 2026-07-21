@@ -28,7 +28,7 @@
   </div>
   <div class="table-responsive">
     <table class="table table-hover align-middle">
-      <thead><tr><th>Use Case</th><th>Phase</th><th>Anstehende Entscheidung</th><th>Reife</th><th>Hauptblocker / Hinweis</th><th>Fällig</th><th>Owner</th></tr></thead>
+      <thead><tr><th>Use Case</th><th>Phase</th><th>Anstehende Entscheidung</th><th>Reife</th><th>Offene Voraussetzungen</th><th>Fällig</th><th>Owner</th></tr></thead>
       <tbody>
       {% for item in decision_queue %}
       <tr>
@@ -37,7 +37,7 @@
         <td><strong>{{ item.decision_check.title }}</strong></td>
         <td><span class="badge state-{{ item.decision_check.state }}">{{ item.decision_check.state_label }}</span></td>
         <td class="small">
-          {% if item.decision_check.blockers %}{{ item.decision_check.blockers.0 }}{% elif item.decision_check.warnings %}{{ item.decision_check.warnings.0 }}{% else %}<span class="text-muted">Keine offenen Blocker</span>{% endif %}
+          {% if item.blocker_details %}<strong>{{ item.blocker_details|length }} offen</strong><div class="text-muted mt-1"><span aria-hidden="true">⚠</span> {{ item.blocker_details.0.label }}</div><a href="{{ item.blocker_details.0.target_href }}">Ersten Punkt bearbeiten</a>{% elif item.decision_check.warnings %}{{ item.decision_check.warnings.0 }}{% else %}<span class="text-muted">Keine offenen Blocker</span>{% endif %}
         </td>
         <td>{% if item.decision_due %}{{ item.decision_due|date:"d.m.Y" }}{% else %}<span class="text-muted">–</span>{% endif %}</td>
         <td>{{ item.business_owner.get_display_name }}</td>
