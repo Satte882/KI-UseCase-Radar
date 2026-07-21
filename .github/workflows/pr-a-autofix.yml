@@ -1,0 +1,58 @@
+name: PR A Autofix
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  autofix:
+    if: github.head_ref == 'feature/guided-intake-hard-gates'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.10.0"
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --frozen --dev
+
+      - name: Apply deterministic fixes
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("ki_radar/use_cases/models.py")
+          path.write_text(path.read_text().replace(" – ", " - "), encoding="utf-8")
+          PY
+          uv run ruff check . --fix
+          uv run ruff format .
+          rm -f .github/workflows/pr-a-diagnostics.yml
+          rm -f .github/workflows/pr-a-autofix.yml
+
+      - name: Commit fixes
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "Format PR A implementation"
+          git push
