@@ -2,8 +2,8 @@ import pytest
 
 from ki_radar.architecture.models import ProcessAnalysis, SolutionOption, ValueStream
 from ki_radar.core.demo_architecture_data import (
-    DEMO_USE_CASE_TITLE,
-    DEMO_VALUE_STREAM_NAME,
+    INVOICE_STREAM_NAME,
+    INVOICE_USE_CASE_TITLE,
     clear_demo_architecture_data,
     seed_demo_architecture_data,
 )
@@ -22,18 +22,18 @@ def test_architecture_demo_seed_is_idempotent_and_clearable():
     second = seed_demo_architecture_data()
 
     assert first == second
-    assert ValueStream.objects.filter(name=DEMO_VALUE_STREAM_NAME).count() == 1
+    assert ValueStream.objects.filter(name=INVOICE_STREAM_NAME).count() == 1
     assert (
-        ProcessAnalysis.objects.filter(stage__value_stream__name=DEMO_VALUE_STREAM_NAME).count()
+        ProcessAnalysis.objects.filter(stage__value_stream__name=INVOICE_STREAM_NAME).count()
         == 1
     )
     assert (
         SolutionOption.objects.filter(
-            process_analysis__stage__value_stream__name=DEMO_VALUE_STREAM_NAME
+            process_analysis__stage__value_stream__name=INVOICE_STREAM_NAME
         ).count()
         == 1
     )
-    use_case = UseCase.objects.get(title=DEMO_USE_CASE_TITLE)
+    use_case = UseCase.objects.get(title=INVOICE_USE_CASE_TITLE)
     package = DeliveryPackage.objects.get(use_case=use_case, version=1)
     assert package.status == DeliveryPackage.Status.READY
 
@@ -47,5 +47,5 @@ def test_architecture_demo_seed_is_idempotent_and_clearable():
     counts = clear_demo_data()
 
     assert counts["use_cases"] > 0
-    assert ValueStream.objects.filter(name=DEMO_VALUE_STREAM_NAME).exists() is False
-    assert UseCase.objects.filter(title=DEMO_USE_CASE_TITLE).exists() is False
+    assert ValueStream.objects.filter(name=INVOICE_STREAM_NAME).exists() is False
+    assert UseCase.objects.filter(title=INVOICE_USE_CASE_TITLE).exists() is False
