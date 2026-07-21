@@ -5,6 +5,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
+from ki_radar.use_cases.journey import build_delivery_package_journey
 from ki_radar.use_cases.models import UseCase
 
 from .forms import DeliveryPackageForm
@@ -104,6 +105,13 @@ def package_detail(request, pk):
             "generated_from_decision__assessment",
             "created_by",
             "handed_over_by",
+        ).prefetch_related(
+            "use_case__decision_assessments",
+            "use_case__approval_decisions",
+            "use_case__delivery_packages",
+            "use_case__architecture_origin__stage__value_stream",
+            "use_case__architecture_origin__process_analysis",
+            "use_case__architecture_origin__solution_option",
         ),
         pk=pk,
     )
@@ -114,6 +122,7 @@ def package_detail(request, pk):
         "delivery/package_detail.html",
         {
             "package": package,
+            "journey": build_delivery_package_journey(package, request.user),
             "can_edit": can_edit_package(request.user, package),
             "can_transition": can_transition_package(request.user),
             "missing_ready_fields": missing_ready_fields(package),
