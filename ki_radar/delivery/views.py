@@ -54,7 +54,9 @@ def package_list(request):
                 "use_case": use_case,
                 "eligible": final_decision is not None,
                 "eligibility_reason": (
-                    "" if final_decision else "Die positive Freigabe ist noch nicht final dokumentiert."
+                    ""
+                    if final_decision
+                    else "Die positive Freigabe ist noch nicht final dokumentiert."
                 ),
                 "latest_package": packages[0] if packages else None,
             }
@@ -72,7 +74,10 @@ def package_create(request, use_case_id):
     if not can_create_package(request.user):
         raise PermissionDenied
     use_case = get_object_or_404(
-        UseCase.objects.select_related("business_unit", "business_owner").prefetch_related(
+        UseCase.objects.select_related(
+            "business_unit",
+            "business_owner",
+        ).prefetch_related(
             "approval_decisions__assessment",
             "delivery_packages",
         ),
