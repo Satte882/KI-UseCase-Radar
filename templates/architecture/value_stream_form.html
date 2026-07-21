@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} – KI-Radar{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="eyebrow mb-2">Discovery &amp; Architecture</div>
+    <h1 class="page-title">{{ title }}</h1>
+    <p class="page-subtitle">ADM Phase A pragmatisch abbilden: Scope, Ziel, Stakeholder und Leitplanken – ohne vollständiges Enterprise-Architecture-Repository.</p>
+  </div>
+  <a class="btn btn-outline-secondary" href="{% if value_stream %}{{ value_stream.get_absolute_url }}{% else %}{% url 'architecture:value_stream_list' %}{% endif %}">Abbrechen</a>
+</div>
+
+<form method="post" class="app-card">
+  {% csrf_token %}
+  <div class="card-header"><strong>Architecture Vision und Value-Stream-Rahmen</strong></div>
+  <div class="card-body">
+    {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="row g-3">
+      {% for field in form %}
+      <div class="{% if field.name in 'name business_unit owner status' %}col-md-6{% else %}col-12{% endif %}">
+        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+        {{ field.errors }}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="card-body border-top border-secondary-subtle d-flex justify-content-end gap-2">
+    <button class="btn btn-primary">Speichern</button>
+  </div>
+</form>
+{% endblock %}
