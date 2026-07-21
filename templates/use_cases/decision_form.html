@@ -24,9 +24,12 @@
     <div class="app-card decision-panel">
       <div class="card-header"><strong>{{ approval_check.state_label }}</strong></div>
       <div class="card-body">
-        {% if approval_check.blockers %}<div class="section-title">Verbindliche Blocker</div><ul class="decision-list">{% for blocker in approval_check.blockers %}<li>{{ blocker }}</li>{% endfor %}</ul>{% endif %}
-        {% if approval_check.warnings %}<div class="section-title {% if approval_check.blockers %}mt-3{% endif %}">Abweichungshinweise</div><ul class="decision-list">{% for warning in approval_check.warnings %}<li>{{ warning }}</li>{% endfor %}</ul>{% endif %}
-        {% if not approval_check.blockers and not approval_check.warnings %}<p class="text-muted mb-0">Die aktuell gewählte Entscheidung erfüllt alle strukturierten Voraussetzungen.</p>{% endif %}
+        {% if approval_blocker_details %}
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3"><div><strong>{{ approval_blocker_details|length }} Voraussetzungen offen</strong><div class="small text-muted">Die positive Entscheidung bleibt serverseitig blockiert.</div></div>{% if first_approval_blocker %}<a class="btn btn-outline-danger btn-sm" href="{{ first_approval_blocker.target_href }}">Offenen Punkt anzeigen</a>{% endif %}</div>
+        <div class="blocker-actions">{% for blocker in approval_blocker_details %}<div class="blocker-action blocker-{{ blocker.category }}"><div><span class="blocker-icon" aria-hidden="true">⚠</span><strong>{{ blocker.label }}</strong></div><a class="btn btn-outline-secondary btn-sm" href="{{ blocker.target_href }}">{{ blocker.action_label }}</a></div>{% endfor %}</div>
+        {% endif %}
+        {% if approval_check.warnings %}<div class="section-title {% if approval_blocker_details %}mt-3{% endif %}">Abweichungshinweise</div><ul class="decision-list">{% for warning in approval_check.warnings %}<li>{{ warning }}</li>{% endfor %}</ul>{% endif %}
+        {% if not approval_blocker_details and not approval_check.warnings %}<p class="text-muted mb-0">Die aktuell gewählte Entscheidung erfüllt alle strukturierten Voraussetzungen.</p>{% endif %}
       </div>
     </div>
   </div>
