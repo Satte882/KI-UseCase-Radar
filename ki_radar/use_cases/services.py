@@ -3,11 +3,14 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
+from django.db.models import Max
 from django.utils import timezone
 
-from .models import UseCase
+from ki_radar.accounts.permissions import is_coordinator
+
+from .models import ApprovalDecision, DecisionAssessment, UseCase
 
 STATUS_ORDER = {
     UseCase.Status.IDEA: 0,
@@ -36,6 +39,30 @@ class DecisionCheck:
             "ready": "Entscheidungsbereit",
             "blocked": "Blockiert",
             "review": "Prüfung empfohlen",
+        }[self.state]
+
+
+@dataclass(frozen=True)
+class ApprovalCheck:
+    blockers: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
+
+    @property
+    def is_ready(self) -> bool:
+        return not self.blockers
+
+    @property
+    def state(self) -> str:
+        if self.blockers:
+            return "blocked"
+        return "review" if self.warnings else "ready"
+
+    @property
+    def state_label(self) -> str:
+        return {
+            "ready": "Freigabebereit",
+            "blocked": "Freigabe blockiert",
+            "review": "Prüfung erforderlich",
         }[self.state]
 
 
@@ -81,14 +108,39 @@ GO_LIVE_METRIC_REQUIREMENTS = [
     "metric_evidence_url",
 ]
 
+INTAKE_REQUIREMENTS = [
+    "title",
+    "problem_statement",
+    "business_unit",
+    "affected_process",
+    "business_owner",
+    "expected_benefit",
+    "metric_name",
+    "metric_type",
+    "metric_direction",
+    "metric_unit",
+    "metric_baseline",
+    "metric_target",
+    "metric_measurement_method",
+    "data_sources",
+]
+
 FIELD_LABELS = {
     "affected_process": "Betroffener Prozess",
-    "business_owner": "Business Owner",
-    "data_and_access_handling": "Umgang mit Daten und Zugaengen",
+    "business_owner": "Fachlich verantwortliche Person",
+    "business_unit": "Organisationseinheit",
+    "data_and_access_handling": "Umgang mit Daten und Zugängen",
     "data_sources": "Datenquellen",
     "ending_reason": "Beendigungsgrund",
     "expected_benefit": "Erwarteter Nutzen",
     "human_oversight": "Menschliche Aufsicht",
+    "metric_baseline": "Baseline-Wert",
+    "metric_direction": "Optimierungsrichtung",
+    "metric_measurement_method": "Messmethode",
+    "metric_name": "Primäre Erfolgsmetrik",
+    "metric_target": "Zielwert",
+    "metric_type": "Metriktyp",
+    "metric_unit": "Einheit",
     "next_review_date": "Nächster Entscheidungstermin",
     "one_time_cost": "Einmalige Kosten",
     "planned_pilot_end": "Geplantes Pilotende",
@@ -97,6 +149,16 @@ FIELD_LABELS = {
     "support_responsibility": "Support-Verantwortung",
     "technical_owner": "Technischer Owner",
     "title": "Titel",
+}
+
+
+APPROVAL_STATUSES = {
+    UseCase.DecisionStatus.APPROVED,
+    UseCase.DecisionStatus.APPROVED_WITH_CONDITIONS,
+}
+FINAL_DECISION_STATUSES = APPROVAL_STATUSES | {
+    UseCase.DecisionStatus.DEFERRED,
+    UseCase.DecisionStatus.NOT_PURSUED,
 }
 
 
@@ -117,6 +179,10 @@ def _missing_fields(use_case: UseCase, field_names: list[str]) -> list[str]:
                 FIELD_LABELS.get(field_name, str(use_case._meta.get_field(field_name).verbose_name))
             )
     return missing
+
+
+def intake_blockers(use_case: UseCase) -> list[str]:
+    return _missing_fields(use_case, INTAKE_REQUIREMENTS)
 
 
 def check_pilot_start(use_case: UseCase) -> DecisionCheck:
@@ -271,3 +337,162 @@ def apply_status_transition(*, use_case: UseCase, target_status: str, actor) -> 
     use_case._history_user = actor
     use_case.save()
     return use_case
+
+
+def approval_check(
+    *,
+    use_case: UseCase,
+    target_status: str,
+    actor=None,
+    governance_confirmed: bool = False,
+) -> ApprovalCheck:
+    blockers = intake_blockers(use_case)
+    warnings = []
+    assessment = use_case.decision_assessments.first()
+
+    if target_status not in FINAL_DECISION_STATUSES:
+        blockers.append("Unzulässiger Entscheidungsstatus")
+        return ApprovalCheck(blockers=blockers)
+
+    if assessment is None:
+        blockers.append("Aktuelle strukturierte Bewertung")
+        return ApprovalCheck(blockers=blockers)
+
+    if target_status in APPROVAL_STATUSES:
+        if assessment.confidence_level == UseCase.Level.LOW:
+            blockers.append("Confidence ist für eine Freigabe zu niedrig")
+        if not assessment.governance_precheck_completed:
+            blockers.append("Governance-Vorprüfung")
+        if not governance_confirmed:
+            blockers.append("Separate Governance-Bestätigung durch die entscheidende Person")
+        for required, completed, label in [
+            (
+                use_case.privacy_review_required,
+                use_case.privacy_review_completed,
+                "Datenschutzprüfung",
+            ),
+            (
+                use_case.security_review_required,
+                use_case.security_review_completed,
+                "Informationssicherheitsprüfung",
+            ),
+            (use_case.legal_review_required, use_case.legal_review_completed, "Rechtsprüfung"),
+        ]:
+            if required and not completed:
+                blockers.append(label)
+
+    if actor and assessment.assessed_by_id == actor.id:
+        blockers.append("Bewertende und entscheidende Person müssen verschieden sein")
+
+    if assessment.recommendation != target_status:
+        warnings.append(
+            "Die Entscheidung weicht von der Empfehlung der bewertenden Person ab und muss "
+            "besonders begründet werden."
+        )
+
+    return ApprovalCheck(blockers=blockers, warnings=warnings)
+
+
+@transaction.atomic
+def create_decision_assessment(*, use_case: UseCase, actor, data) -> DecisionAssessment:
+    if not is_coordinator(actor):
+        raise PermissionDenied
+    version = (
+        use_case.decision_assessments.aggregate(max_version=Max("version"))["max_version"] or 0
+    ) + 1
+    assessment = DecisionAssessment.objects.create(
+        use_case=use_case,
+        assessed_by=actor,
+        version=version,
+        **data,
+    )
+    use_case.business_value = assessment.business_value
+    use_case.technical_feasibility = assessment.technical_feasibility
+    use_case.data_readiness = assessment.data_readiness
+    use_case.risk_complexity = assessment.risk_complexity
+    use_case.decision_status = (
+        UseCase.DecisionStatus.READY
+        if not intake_blockers(use_case)
+        else UseCase.DecisionStatus.CLARIFICATION
+    )
+    use_case._history_user = actor
+    use_case.save()
+    return assessment
+
+
+@transaction.atomic
+def submit_approval_decision(*, use_case: UseCase, actor, data) -> ApprovalDecision:
+    if not is_coordinator(actor):
+        raise PermissionDenied
+    target_status = data["decision_status"]
+    check = approval_check(
+        use_case=use_case,
+        target_status=target_status,
+        actor=actor,
+        governance_confirmed=data.get("governance_confirmed", False),
+    )
+    if check.blockers:
+        raise ValidationError("Freigabe blockiert: " + ", ".join(check.blockers))
+
+    assessment = use_case.decision_assessments.first()
+    if target_status == UseCase.DecisionStatus.APPROVED_WITH_CONDITIONS:
+        if not all(
+            [data.get("conditions"), data.get("condition_owner"), data.get("condition_due_date")]
+        ):
+            raise ValidationError(
+                "Eine Freigabe mit Auflagen benötigt Auflage, Verantwortung und Fälligkeit."
+            )
+        if use_case.approval_decisions.filter(
+            decision_status=UseCase.DecisionStatus.APPROVED_WITH_CONDITIONS,
+            finalized_at__isnull=True,
+        ).exists():
+            raise ValidationError("Es besteht bereits eine offene zweite Freigabe.")
+        return ApprovalDecision.objects.create(
+            use_case=use_case,
+            assessment=assessment,
+            decided_by=actor,
+            **data,
+        )
+
+    decision = ApprovalDecision.objects.create(
+        use_case=use_case,
+        assessment=assessment,
+        decided_by=actor,
+        finalized_at=timezone.now(),
+        **data,
+    )
+    use_case.decision_status = target_status
+    use_case._history_user = actor
+    use_case.save()
+    return decision
+
+
+@transaction.atomic
+def confirm_conditional_decision(*, decision: ApprovalDecision, actor) -> ApprovalDecision:
+    if not is_coordinator(actor):
+        raise PermissionDenied
+    if not decision.is_pending_second_approval:
+        raise ValidationError("Diese Entscheidung wartet nicht auf eine zweite Freigabe.")
+    if actor.id in {decision.decided_by_id, decision.assessment.assessed_by_id}:
+        raise ValidationError(
+            "Die zweite Freigabe muss durch eine weitere unabhängige berechtigte Person erfolgen."
+        )
+    if decision.assessment_id != decision.use_case.decision_assessments.first().id:
+        raise ValidationError("Seit dem Vorschlag wurde eine neue Bewertung erstellt.")
+
+    check = approval_check(
+        use_case=decision.use_case,
+        target_status=decision.decision_status,
+        actor=decision.decided_by,
+        governance_confirmed=decision.governance_confirmed,
+    )
+    if check.blockers:
+        raise ValidationError("Freigabe blockiert: " + ", ".join(check.blockers))
+
+    decision.second_approved_by = actor
+    decision.finalized_at = timezone.now()
+    decision.save(update_fields=["second_approved_by", "finalized_at", "updated_at"])
+    decision.use_case.decision_status = decision.decision_status
+    decision.use_case._history_user = actor
+    decision.use_case.save()
+    return decision
