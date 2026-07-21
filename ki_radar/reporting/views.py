@@ -5,6 +5,7 @@ from django.db.models import Count
 from django.shortcuts import render
 from django.utils import timezone
 
+from ki_radar.use_cases.blockers import build_blocker_details
 from ki_radar.use_cases.models import UseCase
 from ki_radar.use_cases.services import (
     current_decision_check,
@@ -20,11 +21,12 @@ def dashboard(request):
         UseCase.objects.filter(is_archived=False)
         .exclude(status=UseCase.Status.ENDED)
         .select_related("business_owner", "business_unit", "technical_owner")
-        .prefetch_related("governance_assessments")
+        .prefetch_related("governance_assessments", "decision_assessments")
     )
     active = list(active_qs)
     for item in active:
         item.decision_check = current_decision_check(item)
+        item.blocker_details = build_blocker_details(item, item.decision_check.blockers)
         item.decision_due = decision_due_date(item)
     decision_queue = sorted(active, key=decision_priority)
 

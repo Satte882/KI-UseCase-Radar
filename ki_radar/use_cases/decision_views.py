@@ -6,6 +6,7 @@ from django.views.decorators.http import require_POST
 
 from ki_radar.accounts.permissions import is_coordinator
 
+from .blockers import build_blocker_details
 from .decision_forms import ApprovalDecisionForm, DecisionAssessmentForm
 from .models import ApprovalDecision, UseCase
 from .services import (
@@ -87,6 +88,7 @@ def approval_decision_create(request, pk):
         actor=request.user,
         governance_confirmed=request.POST.get("governance_confirmed") == "on",
     )
+    blocker_details = build_blocker_details(use_case, check.blockers)
     return render(
         request,
         "use_cases/decision_form.html",
@@ -95,6 +97,8 @@ def approval_decision_create(request, pk):
             "use_case": use_case,
             "assessment": assessment,
             "approval_check": check,
+            "approval_blocker_details": blocker_details,
+            "first_approval_blocker": blocker_details[0] if blocker_details else None,
         },
     )
 
