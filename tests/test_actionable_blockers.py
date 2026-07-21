@@ -12,7 +12,9 @@ def make_use_case(owner, business_unit, **overrides):
     data = {
         "title": "Richtlinien schneller finden",
         "summary": "Informationen liegen in mehreren Dokumenten.",
-        "problem_statement": "Mitarbeitende benötigen lange, um freigegebene Richtlinien zu finden.",
+        "problem_statement": (
+            "Mitarbeitende benötigen lange, um freigegebene Richtlinien zu finden."
+        ),
         "business_unit": business_unit,
         "affected_process": "Interne Informationssuche",
         "target_users": "Mitarbeitende",
@@ -109,7 +111,9 @@ def test_wizard_stepper_marks_invalid_current_step(client, owner, business_unit)
 
 @pytest.mark.django_db
 def test_dashboard_and_detail_show_actionable_blocker_summary(
-    client, owner, business_unit
+    client,
+    owner,
+    business_unit,
 ):
     use_case = make_use_case(owner, business_unit)
     client.force_login(owner)
