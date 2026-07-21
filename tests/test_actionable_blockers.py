@@ -48,9 +48,7 @@ def test_blocker_details_are_derived_from_canonical_strings(owner, business_unit
     assert measurement.field_name == "metric_measurement_method"
     assert "highlight=metric_measurement_method" in measurement.target_href
     assert measurement.target_href.endswith("#field-metric_measurement_method")
-    approval = next(
-        detail for detail in details if detail.label == "Positive Freigabeentscheidung"
-    )
+    approval = next(detail for detail in details if detail.label == "Positive Freigabeentscheidung")
     assert approval.category == "process"
 
 
