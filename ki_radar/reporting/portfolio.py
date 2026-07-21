@@ -3,7 +3,17 @@ from __future__ import annotations
 from collections.abc import Mapping
 from urllib.parse import urlencode
 
-from django.db.models import Case, CharField, Count, OuterRef, Q, QuerySet, Subquery, Value, When
+from django.db.models import (
+    Case,
+    CharField,
+    Count,
+    OuterRef,
+    Q,
+    QuerySet,
+    Subquery,
+    Value,
+    When,
+)
 
 from ki_radar.accounts.models import BusinessUnit
 from ki_radar.use_cases.models import DecisionAssessment, UseCase
@@ -51,16 +61,12 @@ def annotated_portfolio_queryset() -> QuerySet[UseCase]:
         .annotate(
             portfolio_assessment_id=Subquery(latest.values("id")[:1]),
             portfolio_business_value=Subquery(latest.values("business_value")[:1]),
-            portfolio_technical_feasibility=Subquery(
-                latest.values("technical_feasibility")[:1]
-            ),
+            portfolio_technical_feasibility=Subquery(latest.values("technical_feasibility")[:1]),
             portfolio_evidence_quality=Subquery(latest.values("evidence_quality")[:1]),
             portfolio_evidence_recency=Subquery(latest.values("evidence_recency")[:1]),
             portfolio_evidence_coverage=Subquery(latest.values("evidence_coverage")[:1]),
             portfolio_independent_review=Subquery(latest.values("independent_review")[:1]),
-            portfolio_assumptions_resolved=Subquery(
-                latest.values("assumptions_resolved")[:1]
-            ),
+            portfolio_assumptions_resolved=Subquery(latest.values("assumptions_resolved")[:1]),
         )
     )
     return queryset.annotate(
@@ -73,12 +79,8 @@ def annotated_portfolio_queryset() -> QuerySet[UseCase]:
                     ),
                     portfolio_evidence_recency__gte=DecisionAssessment.ConfidenceFactor.SOLID,
                     portfolio_evidence_coverage__gte=DecisionAssessment.ConfidenceFactor.SOLID,
-                    portfolio_independent_review__gte=(
-                        DecisionAssessment.ConfidenceFactor.SOLID
-                    ),
-                    portfolio_assumptions_resolved__gte=(
-                        DecisionAssessment.ConfidenceFactor.SOLID
-                    ),
+                    portfolio_independent_review__gte=(DecisionAssessment.ConfidenceFactor.SOLID),
+                    portfolio_assumptions_resolved__gte=(DecisionAssessment.ConfidenceFactor.SOLID),
                 ),
                 then=Value(UseCase.Level.HIGH),
             ),
@@ -89,9 +91,7 @@ def annotated_portfolio_queryset() -> QuerySet[UseCase]:
                     ),
                     portfolio_evidence_recency__gte=DecisionAssessment.ConfidenceFactor.LIMITED,
                     portfolio_evidence_coverage__gte=DecisionAssessment.ConfidenceFactor.LIMITED,
-                    portfolio_independent_review__gte=(
-                        DecisionAssessment.ConfidenceFactor.LIMITED
-                    ),
+                    portfolio_independent_review__gte=(DecisionAssessment.ConfidenceFactor.LIMITED),
                     portfolio_assumptions_resolved__gte=(
                         DecisionAssessment.ConfidenceFactor.LIMITED
                     ),
@@ -114,7 +114,10 @@ def _selected_filters(params: Mapping[str, str]) -> dict[str, str]:
     }
 
 
-def _apply_filters(queryset: QuerySet[UseCase], selected: dict[str, str]) -> QuerySet[UseCase]:
+def _apply_filters(
+    queryset: QuerySet[UseCase],
+    selected: dict[str, str],
+) -> QuerySet[UseCase]:
     if selected["business_unit"]:
         queryset = queryset.filter(business_unit_id=selected["business_unit"])
     if selected["lifecycle"] in STATUS_LABELS:
@@ -151,12 +154,12 @@ def _decorate_item(item: UseCase) -> None:
         item.portfolio_confidence,
         "Nicht bestimmbar",
     )
-    item.portfolio_is_not_pursued = (
-        item.decision_status == UseCase.DecisionStatus.NOT_PURSUED
-    )
+    item.portfolio_is_not_pursued = item.decision_status == UseCase.DecisionStatus.NOT_PURSUED
 
 
-def _matrix_context(items: list[UseCase]) -> tuple[list[dict], list[UseCase], list[dict]]:
+def _matrix_context(
+    items: list[UseCase],
+) -> tuple[list[dict], list[UseCase], list[dict]]:
     cells = {(business, technical): [] for business in LEVEL_ORDER for technical in LEVEL_ORDER}
     classified: list[UseCase] = []
     unclassified: list[dict] = []
@@ -280,14 +283,10 @@ def _group_links(params: Mapping[str, str]) -> list[dict]:
 def build_portfolio_context(params: Mapping[str, str]) -> dict:
     selected = _selected_filters(params)
     queryset = _apply_filters(annotated_portfolio_queryset(), selected)
-    explicit_not_pursued = (
-        selected["decision_status"] == UseCase.DecisionStatus.NOT_PURSUED
-    )
+    explicit_not_pursued = selected["decision_status"] == UseCase.DecisionStatus.NOT_PURSUED
     include_not_pursued = str(params.get("include_not_pursued", "")) == "1"
     show_not_pursued = include_not_pursued or explicit_not_pursued
-    not_pursued_total = queryset.filter(
-        decision_status=UseCase.DecisionStatus.NOT_PURSUED
-    ).count()
+    not_pursued_total = queryset.filter(decision_status=UseCase.DecisionStatus.NOT_PURSUED).count()
     if not show_not_pursued:
         queryset = queryset.exclude(decision_status=UseCase.DecisionStatus.NOT_PURSUED)
 
