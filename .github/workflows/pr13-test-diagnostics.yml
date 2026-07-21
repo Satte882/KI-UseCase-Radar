@@ -1,6 +1,8 @@
 name: PR13 Demo Test Diagnostics
 
 on:
+  pull_request:
+    branches: [main]
   push:
     branches: [feature/delivery-handover]
 
