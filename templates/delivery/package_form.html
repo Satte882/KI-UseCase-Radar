@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Delivery Package bearbeiten – KI-Radar{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="eyebrow mb-2">{{ package.use_case.short_id }} · Version {{ package.version }}</div>
+    <h1 class="page-title">Delivery Package bearbeiten</h1>
+    <p class="page-subtitle">Aus dem freigegebenen Zielbild einen eindeutigen MVP- und Umsetzungsrahmen machen.</p>
+  </div>
+  <a class="btn btn-outline-secondary" href="{{ package.get_absolute_url }}">Abbrechen</a>
+</div>
+
+<form method="post">
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+  <div class="delivery-form-grid">
+    {% for field in form %}
+    <section class="app-card card-body delivery-form-field">
+      <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field }}
+      {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+      {{ field.errors }}
+    </section>
+    {% endfor %}
+  </div>
+  <div class="app-card card-body mt-4 d-flex justify-content-end"><button class="btn btn-primary">Speichern</button></div>
+</form>
+{% endblock %}

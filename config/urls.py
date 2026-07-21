@@ -11,6 +11,7 @@ urlpatterns = [
     path("governance/", include("ki_radar.governance.urls")),
     path("reviews/", include("ki_radar.reviews.urls")),
     path("evidence/", include("ki_radar.notifications.urls")),
+    path("delivery/", include("ki_radar.delivery.urls")),
     path("", include("ki_radar.reporting.urls")),
     path("health/live", health.liveness, name="health-live"),
     path("health/ready", health.readiness, name="health-ready"),

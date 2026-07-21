@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Delivery {{ package.use_case.short_id }} – KI-Radar{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="eyebrow mb-2">{{ package.use_case.short_id }} · Delivery v{{ package.version }}</div>
+    <h1 class="page-title">{{ package.use_case.title }}</h1>
+    <p class="page-subtitle">{{ package.get_status_display }} · erzeugt aus {{ package.generated_from_decision.get_decision_status_display }}</p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a class="btn btn-outline-secondary" href="{% url 'delivery:package_list' %}">Zur Übersicht</a>
+    <a class="btn btn-outline-secondary" href="{% url 'delivery:package_export_markdown' package.pk %}">Markdown exportieren</a>
+    {% if can_edit %}<a class="btn btn-primary" href="{% url 'delivery:package_update' package.pk %}">Bearbeiten</a>{% endif %}
+  </div>
+</div>
+
+<div class="kpi-strip mb-4">
+  <div class="kpi-cell"><small>Status</small><strong>{{ package.get_status_display }}</strong></div>
+  <div class="kpi-cell"><small>Version</small><strong>{{ package.version }}</strong></div>
+  <div class="kpi-cell"><small>Freigabe</small><strong>{{ package.generated_from_decision.get_decision_status_display }}</strong></div>
+</div>
+
+{% if missing_ready_fields and package.status != 'handed_over' %}
+<div class="alert alert-warning"><strong>{{ missing_ready_fields|length }} Pflichtbereiche sind leer.</strong> {{ missing_ready_fields|join:", " }}</div>
+{% endif %}
+
+<div class="delivery-artifact-grid mb-4">
+  <section class="app-card card-body"><div class="section-title">Problem und Kontext</div><div class="text-preline">{{ package.problem_context }}</div></section>
+  <section class="app-card card-body"><div class="section-title">Ziel und Ergebnis</div><div class="text-preline">{{ package.target_outcome }}</div></section>
+  <section class="app-card card-body"><div class="section-title">Im Scope</div><div class="text-preline">{{ package.in_scope }}</div></section>
+  <section class="app-card card-body"><div class="section-title">Nicht im Scope</div><div class="text-preline">{{ package.out_of_scope }}</div></section>
+</div>
+
+<div class="app-card mb-4">
+  <div class="card-header"><strong>Zielbild und Architekturkontext</strong><div class="small text-muted mt-1">Konsolidierte Artefakte aus Discovery, Prozessanalyse, Lösungsoption, Use Case und Freigabe.</div></div>
+  <div class="card-body architecture-artifact-grid">
+    <section><div class="section-title">Nutzer und Szenarien</div><div class="text-preline">{{ package.users_and_scenarios }}</div></section>
+    <section><div class="section-title">Lösungsrahmen</div><div class="text-preline">{{ package.solution_outline }}</div></section>
+    <section><div class="section-title">Systemkontext</div><div class="text-preline">{{ package.system_context }}</div></section>
+    <section><div class="section-title">Datenkontext</div><div class="text-preline">{{ package.data_context }}</div></section>
+    <section><div class="section-title">Integrationen</div><div class="text-preline">{{ package.integrations|default:"–" }}</div></section>
+    <section><div class="section-title">Architekturentscheidungen</div><div class="text-preline">{{ package.architecture_decisions|default:"–" }}</div></section>
+  </div>
+</div>
+
+<div class="app-card mb-4">
+  <div class="card-header"><strong>Umsetzungsanforderungen</strong></div>
+  <div class="card-body architecture-artifact-grid">
+    <section><div class="section-title">Funktionale Anforderungen</div><div class="text-preline">{{ package.functional_requirements }}</div></section>
+    <section><div class="section-title">Nichtfunktionale Anforderungen</div><div class="text-preline">{{ package.non_functional_requirements }}</div></section>
+    <section><div class="section-title">Security, Datenschutz und Recht</div><div class="text-preline">{{ package.security_privacy_requirements }}</div></section>
+    <section><div class="section-title">Menschliche Aufsicht</div><div class="text-preline">{{ package.human_oversight }}</div></section>
+    <section><div class="section-title">Logging und Audit</div><div class="text-preline">{{ package.logging_and_audit }}</div></section>
+    <section><div class="section-title">Betrieb und Support</div><div class="text-preline">{{ package.operations_and_support }}</div></section>
+  </div>
+</div>
+
+<div class="app-card mb-4">
+  <div class="card-header"><strong>MVP und Abnahme · ADM Phase F</strong><div class="small text-muted mt-1">Übergangsplanung und Delivery-Start, keine Sprint- oder Ressourcenverwaltung.</div></div>
+  <div class="card-body architecture-artifact-grid">
+    <section><div class="section-title">MVP-Scope</div><div class="text-preline">{{ package.mvp_scope }}</div></section>
+    <section><div class="section-title">Akzeptanzkriterien</div><div class="text-preline">{{ package.acceptance_criteria }}</div></section>
+    <section><div class="section-title">Testfälle</div><div class="text-preline">{{ package.test_scenarios }}</div></section>
+    <section><div class="section-title">Erfolgsmessung</div><div class="text-preline">{{ package.measurement_plan }}</div></section>
+    <section><div class="section-title">Initiales Backlog</div><div class="text-preline">{{ package.initial_backlog }}</div></section>
+    <section><div class="section-title">Delivery-System</div>{% if package.external_delivery_url %}<a href="{{ package.external_delivery_url }}">Externes Delivery-Artefakt öffnen</a>{% else %}<span class="text-muted">Noch nicht verknüpft</span>{% endif %}</section>
+  </div>
+</div>
+
+<div class="app-card mb-4">
+  <div class="card-header"><strong>Risiken, Abhängigkeiten und Übergabe</strong></div>
+  <div class="card-body architecture-artifact-grid">
+    <section><div class="section-title">Abhängigkeiten</div><div class="text-preline">{{ package.dependencies|default:"–" }}</div></section>
+    <section><div class="section-title">Risiken</div><div class="text-preline">{{ package.risks|default:"–" }}</div></section>
+    <section><div class="section-title">Annahmen</div><div class="text-preline">{{ package.assumptions|default:"–" }}</div></section>
+    <section><div class="section-title">Übergabehinweise</div><div class="text-preline">{{ package.handover_notes|default:"–" }}</div></section>
+  </div>
+</div>
+
+{% if can_transition %}
+<div class="app-card card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
+  <div>
+    <strong>Verbindlicher Handover</strong>
+    <div class="small text-muted">Nach der Übergabe ist diese Version unveränderlich. Änderungen erfolgen als neue Version.</div>
+  </div>
+  <div class="d-flex gap-2">
+    {% if package.status == 'draft' %}<form method="post" action="{% url 'delivery:package_mark_ready' package.pk %}">{% csrf_token %}<button class="btn btn-outline-secondary">Als bereit markieren</button></form>{% endif %}
+    {% if package.status == 'ready' %}<form method="post" action="{% url 'delivery:package_handover' package.pk %}">{% csrf_token %}<button class="btn btn-primary">An Delivery übergeben</button></form>{% endif %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

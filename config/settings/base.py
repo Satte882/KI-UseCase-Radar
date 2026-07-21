@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "ki_radar.reviews",
     "ki_radar.notifications",
     "ki_radar.reporting",
+    "ki_radar.delivery",
 ]
 
 MIDDLEWARE = [
