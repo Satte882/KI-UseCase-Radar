@@ -13,6 +13,8 @@ from ki_radar.use_cases.services import (
     decision_priority,
 )
 
+from .portfolio import build_portfolio_context
+
 
 @login_required
 def dashboard(request):
@@ -57,3 +59,12 @@ def dashboard(request):
         "today": today,
     }
     return render(request, "reporting/dashboard.html", context)
+
+
+@login_required
+def portfolio(request):
+    return render(
+        request,
+        "reporting/portfolio.html",
+        build_portfolio_context(request.GET),
+    )
