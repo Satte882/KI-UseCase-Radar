@@ -48,7 +48,7 @@ class Migration(migrations.Migration):
             model_name="usecase",
             index=models.Index(
                 fields=["decision_status", "updated_at"],
-                name="usecase_decision_updated_idx",
+                name="use_cases_u_decisio_55feda_idx",
             ),
         ),
         migrations.CreateModel(
