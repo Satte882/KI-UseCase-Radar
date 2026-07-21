@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.db.models import Count
+from django.db.models import Count, Max
 from django.shortcuts import get_object_or_404, redirect, render
 
 from ki_radar.use_cases.intake_views import SESSION_KEY
@@ -33,7 +33,7 @@ def value_stream_list(request):
 def value_stream_detail(request, pk):
     value_stream = get_object_or_404(
         ValueStream.objects.select_related("business_unit", "owner", "created_by").prefetch_related(
-            "stages__originated_use_cases"
+            "stages__use_case_origins__use_case"
         ),
         pk=pk,
     )
@@ -90,8 +90,8 @@ def stage_create(request, value_stream_id):
     value_stream = get_object_or_404(ValueStream, pk=value_stream_id)
     if not can_edit_value_stream(request.user, value_stream):
         raise PermissionDenied
-    initial = {"sequence": (value_stream.stages.aggregate(max_sequence=Count("id"))["max_sequence"] or 0) + 1}
-    form = ValueStreamStageForm(request.POST or None, initial=initial)
+    max_sequence = value_stream.stages.aggregate(max_sequence=Max("sequence"))["max_sequence"] or 0
+    form = ValueStreamStageForm(request.POST or None, initial={"sequence": max_sequence + 1})
     if request.method == "POST" and form.is_valid():
         stage = form.save(commit=False)
         stage.value_stream = value_stream
@@ -118,7 +118,12 @@ def stage_update(request, pk):
     return render(
         request,
         "architecture/stage_form.html",
-        {"form": form, "value_stream": stage.value_stream, "stage": stage, "title": "Phase bearbeiten"},
+        {
+            "form": form,
+            "value_stream": stage.value_stream,
+            "stage": stage,
+            "title": "Phase bearbeiten",
+        },
     )
 
 
