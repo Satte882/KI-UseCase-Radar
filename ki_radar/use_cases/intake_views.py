@@ -13,6 +13,14 @@ from .permissions import can_create_use_case
 from .services import intake_blockers
 
 SESSION_KEY = "use_case_intake"
+STEP_LABELS = {
+    1: "Problem",
+    2: "Prozess",
+    3: "Nutzung",
+    4: "Nutzen",
+    5: "Daten",
+    6: "Vorprüfung",
+}
 
 
 def _serialize_cleaned_data(cleaned_data: dict) -> dict:
@@ -30,6 +38,35 @@ def _serialize_cleaned_data(cleaned_data: dict) -> dict:
 def _form_initial(step: int, stored: dict) -> dict:
     fields = WIZARD_STEPS[step]["form"].base_fields
     return {name: stored[name] for name in fields if name in stored}
+
+
+def _wizard_step_states(*, stored: dict, current_step: int, error_step: int | None = None) -> list[dict]:
+    states = []
+    for number in WIZARD_STEPS:
+        form_class = WIZARD_STEPS[number]["form"]
+        complete = number == 6 and current_step == 6
+        if form_class is not None:
+            complete = all(name in stored for name in form_class.base_fields)
+        if number == error_step:
+            state = "error"
+            symbol = "!"
+        elif complete:
+            state = "complete"
+            symbol = "✓"
+        else:
+            state = "pending"
+            symbol = str(number)
+        states.append(
+            {
+                "number": number,
+                "label": STEP_LABELS[number],
+                "state": state,
+                "symbol": symbol,
+                "is_current": number == current_step,
+                "is_reachable": number <= current_step,
+            }
+        )
+    return states
 
 
 def _build_use_case(*, stored: dict, user) -> UseCase:
@@ -108,12 +145,14 @@ def use_case_intake(request, step: int = 1):
                 "step_config": step_config,
                 "total_steps": len(WIZARD_STEPS),
                 "progress_class": progress_class,
+                "step_states": _wizard_step_states(stored=stored, current_step=step),
                 "stored": stored,
                 "candidate": candidate,
                 "blockers": blockers,
             },
         )
 
+    error_step = None
     if request.method == "POST":
         form = form_class(request.POST)
         if form.is_valid():
@@ -121,6 +160,7 @@ def use_case_intake(request, step: int = 1):
             request.session[SESSION_KEY] = stored
             request.session.modified = True
             return redirect("use_cases:intake_step", step=step + 1)
+        error_step = step
     else:
         form = form_class(initial=_form_initial(step, stored))
 
@@ -133,6 +173,11 @@ def use_case_intake(request, step: int = 1):
             "step_config": step_config,
             "total_steps": len(WIZARD_STEPS),
             "progress_class": progress_class,
+            "step_states": _wizard_step_states(
+                stored=stored,
+                current_step=step,
+                error_step=error_step,
+            ),
             "previous_step": step - 1 if step > 1 else None,
         },
     )
