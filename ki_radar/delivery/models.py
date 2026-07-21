@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.urls import reverse
 
@@ -87,6 +88,17 @@ class DeliveryPackage(TimeStampedModel):
 
     def __str__(self) -> str:
         return f"{self.use_case.short_id} - Delivery v{self.version}"
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            previous_status = (
+                type(self).objects.filter(pk=self.pk).values_list("status", flat=True).first()
+            )
+            if previous_status == self.Status.HANDED_OVER:
+                raise ValidationError(
+                    "Eine übergebene Delivery-Package-Version ist unveränderlich."
+                )
+        super().save(*args, **kwargs)
 
     def get_absolute_url(self):
         return reverse("delivery:package_detail", kwargs={"pk": self.pk})
