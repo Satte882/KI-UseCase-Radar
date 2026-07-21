@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Portfolio – KI-Radar{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="eyebrow mb-2">Deskriptive Portfolio-Sicht</div>
+    <h1 class="page-title">Portfolio</h1>
+    <p class="page-subtitle">Use Cases nach wirtschaftlichem Nutzen, technischer Machbarkeit und belastbarer Entscheidungsgrundlage einordnen.</p>
+  </div>
+  <a class="btn btn-outline-secondary" href="{% url 'use_cases:list' %}">Alle Use Cases</a>
+</div>
+
+<form class="app-card portfolio-filters mb-4" method="get">
+  <div class="card-header"><strong>Portfolio filtern</strong><div class="small text-muted mt-1">Alle Filter wirken auf Matrix, Landkarte und die Liste nicht einordenbarer Use Cases.</div></div>
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-4 col-xl-2"><label class="form-label" for="filter-business-unit">Organisationseinheit</label><select class="form-select" id="filter-business-unit" name="business_unit"><option value="">Alle</option>{% for unit in business_units %}<option value="{{ unit.pk }}" {% if selected.business_unit == unit.pk|stringformat:"s" %}selected{% endif %}>{{ unit.name }}</option>{% endfor %}</select></div>
+      <div class="col-md-4 col-xl-2"><label class="form-label" for="filter-lifecycle">Lifecycle</label><select class="form-select" id="filter-lifecycle" name="lifecycle"><option value="">Alle</option>{% for value, label in lifecycle_choices %}<option value="{{ value }}" {% if selected.lifecycle == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+      <div class="col-md-4 col-xl-2"><label class="form-label" for="filter-decision">Entscheidungsstatus</label><select class="form-select" id="filter-decision" name="decision_status"><option value="">Alle</option>{% for value, label in decision_status_choices %}<option value="{{ value }}" {% if selected.decision_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+      <div class="col-md-4 col-xl-2"><label class="form-label" for="filter-solution">Lösungstyp</label><select class="form-select" id="filter-solution" name="solution_type"><option value="">Alle</option>{% for value, label in solution_type_choices %}<option value="{{ value }}" {% if selected.solution_type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+      <div class="col-md-4 col-xl-2"><label class="form-label" for="filter-confidence">Confidence</label><select class="form-select" id="filter-confidence" name="confidence"><option value="">Alle</option>{% for value, label in confidence_choices %}<option value="{{ value }}" {% if selected.confidence == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+      <div class="col-md-4 col-xl-2 d-flex align-items-end"><button class="btn btn-primary w-100">Filter anwenden</button></div>
+    </div>
+    <input type="hidden" name="group" value="{{ landscape_group }}">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mt-3">
+      <div class="form-check"><input class="form-check-input" id="include-not-pursued" type="checkbox" name="include_not_pursued" value="1" {% if show_not_pursued %}checked{% endif %}><label class="form-check-label" for="include-not-pursued">Nicht weiterverfolgte Use Cases einblenden</label></div>
+      <a href="{% url 'reporting:portfolio' %}">Filter zurücksetzen</a>
+    </div>
+  </div>
+</form>
+
+<div class="metric-grid portfolio-metrics">
+  <div class="app-card metric-card"><div class="metric-label">Sichtbar</div><div class="metric-value">{{ visible_total }}</div><div class="metric-note">Use Cases nach aktuellem Filter</div></div>
+  <div class="app-card metric-card"><div class="metric-label">Einordenbar</div><div class="metric-value">{{ classified_total }}</div><div class="metric-note">Aktuelle Bewertung mit Nutzen und Machbarkeit</div></div>
+  <div class="app-card metric-card"><div class="metric-label">Nicht einordenbar</div><div class="metric-value">{{ unclassified_total }}</div><div class="metric-note">Bewertung fehlt oder ist unvollständig</div></div>
+  <div class="app-card metric-card"><div class="metric-label">Nicht weiterverfolgt</div><div class="metric-value">{{ not_pursued_total }}</div><div class="metric-note">{% if show_not_pursued %}In der Ansicht enthalten{% else %}Standardmäßig ausgeblendet{% endif %}</div></div>
+</div>
+
+<div class="app-card mb-4">
+  <div class="card-header d-flex flex-wrap justify-content-between align-items-start gap-3">
+    <div><strong>Entscheidungs-Matrix</strong><div class="small text-muted mt-1">Y-Achse: wirtschaftlicher Nutzen · X-Achse: technische Machbarkeit. Die Kategorien der neuesten Bewertung werden direkt verwendet.</div></div>
+    <div class="portfolio-legend" aria-label="Legende">
+      <span><i class="legend-line confidence-high"></i> Confidence hoch</span>
+      <span><i class="legend-line confidence-medium"></i> mittel</span>
+      <span><i class="legend-line confidence-low"></i> niedrig</span>
+    </div>
+  </div>
+  <div class="card-body">
+    {% if not show_not_pursued and not_pursued_total %}<div class="alert alert-secondary"><strong>{{ not_pursued_total }} nicht weiterverfolgte Use Cases sind ausgeblendet.</strong> Sie können über den Filter kontrolliert eingeblendet werden, erscheinen dann bewusst optisch zurückgenommen.</div>{% endif %}
+    <div class="portfolio-matrix" role="table" aria-label="Portfolio-Matrix wirtschaftlicher Nutzen und technische Machbarkeit">
+      <div class="matrix-corner" role="columnheader">Nutzen ↓ / Machbarkeit →</div>
+      {% for column in matrix_rows.0.cells %}<div class="matrix-axis" role="columnheader">{{ column.technical_label }}</div>{% endfor %}
+      {% for row in matrix_rows %}
+        <div class="matrix-axis matrix-axis-y" role="rowheader">{{ row.business_label }}</div>
+        {% for cell in row.cells %}
+        <section class="matrix-cell" role="cell" aria-label="Nutzen {{ row.business_label }}, Machbarkeit {{ cell.technical_label }}">
+          <div class="matrix-cell-heading"><strong>{{ cell.hint }}</strong><span>{{ cell.items|length }}</span></div>
+          <div class="matrix-items">
+          {% for item in cell.items %}
+            <a class="portfolio-chip portfolio-status-{{ item.decision_status }} confidence-{{ item.portfolio_confidence }}{% if item.portfolio_is_not_pursued %} portfolio-chip-muted{% endif %}" href="{{ item.get_absolute_url }}" title="{{ item.short_id }} · {{ item.title }} · {{ item.get_decision_status_display }} · Confidence {{ item.portfolio_confidence_label }}">
+              {% if item.portfolio_confidence == 'low' %}<span aria-hidden="true">⚠</span>{% endif %}<span>{{ item.short_id }}</span><strong>{{ item.title|truncatechars:42 }}</strong>
+            </a>
+          {% empty %}<span class="matrix-empty">Keine Use Cases</span>{% endfor %}
+          </div>
+        </section>
+        {% endfor %}
+      {% endfor %}
+    </div>
+    <div class="portfolio-status-legend mt-3">
+      {% for value, label in decision_status_choices %}<span class="portfolio-status-key portfolio-status-{{ value }}">{{ label }}</span>{% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="app-card mb-4">
+  <div class="card-header"><strong>Tabellarische Matrix-Alternative</strong><div class="small text-muted mt-1">Dieselben einordenbaren Daten ohne räumliche Kodierung.</div></div>
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead><tr><th>Use Case</th><th>Organisationseinheit</th><th>Nutzen</th><th>Machbarkeit</th><th>Confidence</th><th>Entscheidungsstatus</th></tr></thead>
+      <tbody>{% for item in classified_items %}<tr><td><a href="{{ item.get_absolute_url }}">{{ item.short_id }} · {{ item.title }}</a></td><td>{{ item.business_unit }}</td><td>{{ item.portfolio_business_value|capfirst }}</td><td>{{ item.portfolio_technical_feasibility|capfirst }}</td><td>{{ item.portfolio_confidence_label }}</td><td>{{ item.get_decision_status_display }}</td></tr>{% empty %}<tr><td colspan="6" class="text-center text-muted py-4">Keine einordenbaren Use Cases im aktuellen Filter.</td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+</div>
+
+<div class="app-card mb-4">
+  <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <div><strong>Portfolio-Landkarte nach {{ landscape_group_label }}</strong><div class="small text-muted mt-1">Die Gruppensummen und Verteilungen werden datenbankseitig aggregiert.</div></div>
+    <nav class="portfolio-group-tabs" aria-label="Gruppierung der Portfolio-Landkarte">{% for link in group_links %}<a class="btn btn-sm {% if link.key == landscape_group %}btn-primary{% else %}btn-outline-secondary{% endif %}" href="?{{ link.query }}">{{ link.label }}</a>{% endfor %}</nav>
+  </div>
+  <div class="card-body">
+    <div class="portfolio-landscape">
+      {% for group in landscape_groups %}
+      <section class="landscape-card">
+        <div class="d-flex justify-content-between gap-3"><div><div class="section-title mb-1">{{ landscape_group_label }}</div><h2 class="h5 mb-0">{{ group.label }}</h2></div><span class="landscape-total">{{ group.total }}</span></div>
+        <div class="landscape-section"><strong>Entscheidungsstatus</strong><div class="landscape-badges">{% for status in group.status_counts %}<span class="portfolio-status-key portfolio-status-{{ status.key }}">{{ status.label }}: {{ status.count }}</span>{% empty %}<span class="text-muted">Keine Daten</span>{% endfor %}</div></div>
+        <div class="landscape-section"><strong>Confidence</strong><dl class="landscape-confidence">{% for confidence in group.confidence_counts %}<dt>{{ confidence.label }}</dt><dd>{{ confidence.count }}</dd>{% endfor %}</dl></div>
+        {% if group.unclassified_total %}<div class="small text-warning"><span aria-hidden="true">⚠</span> {{ group.unclassified_total }} nicht einordenbar</div>{% endif %}
+      </section>
+      {% empty %}<p class="text-muted mb-0">Keine Gruppen im aktuellen Filter vorhanden.</p>{% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="app-card">
+  <div class="card-header"><strong>Nicht einordenbar – {{ unclassified_total }} Use Cases</strong><div class="small text-muted mt-1">Diese Vorhaben verschwinden nicht aus der Portfoliosicht, sondern werden mit dem konkreten Grund separat ausgewiesen.</div></div>
+  <div class="list-group list-group-flush">
+    {% for entry in unclassified_items %}<a class="list-group-item list-group-item-action bg-transparent py-3" href="{{ entry.item.get_absolute_url }}"><div class="d-flex flex-wrap justify-content-between gap-3"><div><strong>{{ entry.item.short_id }} · {{ entry.item.title }}</strong><div class="small text-muted mt-1">{{ entry.item.business_unit }} · {{ entry.item.get_decision_status_display }}</div></div><span class="badge state-review">{{ entry.reason }}</span></div></a>{% empty %}<div class="list-group-item bg-transparent text-muted py-4">Alle sichtbaren Use Cases sind in der Matrix einordenbar.</div>{% endfor %}
+  </div>
+</div>
+{% endblock %}
