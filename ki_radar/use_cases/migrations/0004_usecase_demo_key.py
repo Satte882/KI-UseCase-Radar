@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
             name="demo_key",
             field=models.SlugField(
                 blank=True,
-                db_index=True,
+                editable=False,
                 max_length=100,
                 null=True,
             ),
