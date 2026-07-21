@@ -37,11 +37,23 @@ jobs:
           python - <<'PY'
           from pathlib import Path
 
-          path = Path("ki_radar/use_cases/models.py")
-          path.write_text(path.read_text().replace(" – ", " - "), encoding="utf-8")
+          models = Path("ki_radar/use_cases/models.py")
+          models.write_text(models.read_text().replace(" – ", " - "), encoding="utf-8")
+
+          intake = Path("ki_radar/use_cases/intake.py")
+          content = intake.read_text()
+          content = content.replace(
+              '        "subtitle": "Für die Aufnahme genügt ein belastbarer Rahmen; Architekturdetails folgen später.",',
+              '        "subtitle": (\n'
+              '            "Für die Aufnahme genügt ein belastbarer Rahmen; "\n'
+              '            "Architekturdetails folgen später."\n'
+              '        ),',
+          )
+          intake.write_text(content, encoding="utf-8")
           PY
-          uv run ruff check . --fix
+          uv run ruff check . --fix || true
           uv run ruff format .
+          uv run ruff check .
           rm -f .github/workflows/pr-a-diagnostics.yml
           rm -f .github/workflows/pr-a-autofix.yml
 
