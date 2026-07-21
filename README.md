@@ -2,13 +2,27 @@
 
 [![KI-Radar CI](https://github.com/Satte882/KI-UseCase-Radar/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Satte882/KI-UseCase-Radar/actions/workflows/ci.yml)
 
-> AI Business Architecture, Portfolio- und Decision-Governance-Cockpit für kleine und mittlere Unternehmen.
+> AI Business Architecture, Portfolio- und Decision-Governance-Cockpit für kleine und mittlere Unternehmen
 
-KI-Radar verbindet die fachliche Analyse eines Unternehmensbereichs mit der belastbaren Auswahl, Freigabe und Übergabe von KI-Vorhaben an ein Delivery-Team.
+
+KI-Radar verbindet die Analyse von Geschäftsprozessen mit der strukturierten Auswahl, Bewertung, Freigabe und Übergabe von KI-Vorhaben an ein Delivery-Team.
+
+Das System beantwortet nicht nur, **welche KI-Ideen existieren**, sondern vor allem:
+
+* Aus welchem Geschäftsproblem entsteht ein Vorhaben?
+* Ist KI tatsächlich die geeignete Lösung?
+* Sind Nutzen, Datenlage und technische Machbarkeit ausreichend belegt?
+* Welche Governance- und Fachprüfungen fehlen?
+* Ist das Vorhaben entscheidungs- und umsetzungsreif?
+* Was muss ein Delivery-Team konkret umsetzen?
+
+---
+
+## End-to-End-Arbeitsmodell
 
 ```text
 Value Stream
-→ Prozessanalyse und Bottleneck
+→ Prozessproblem und Bottleneck
 → organisatorische, klassische und KI-Lösungsoptionen
 → geführter Use-Case-Intake
 → evidenzbasierte Bewertung und Freigabe
@@ -17,233 +31,299 @@ Value Stream
 → Umsetzung in Jira, Azure DevOps, GitHub oder einem anderen Delivery-System
 ```
 
-Der Discovery-Pfad ist optional. Ein Use Case kann weiterhin direkt über den bestehenden Intake erfasst werden. Dadurch eignet sich KI-Radar sowohl für systematische Architekturarbeit als auch für bereits bekannte Einzelvorhaben.
+Der Discovery- und Architecture-Pfad ist optional.
+
+Bereits bekannte KI-Vorhaben können weiterhin direkt über den Use-Case-Intake erfasst werden. Nur systematisch abgeleitete Vorhaben erhalten zusätzlich eine nachvollziehbare Herkunftskette vom Value Stream bis zur ausgewählten Lösungsoption.
+
+---
 
 ## Welches Problem löst KI-Radar?
 
 In vielen Organisationen sind Informationen über KI-Ideen, Prozessprobleme, Bewertungen, Governance-Prüfungen und Delivery-Anforderungen über Tabellen, Präsentationen, Tickets und einzelne Dokumente verteilt.
 
-KI-Radar beantwortet in einem durchgängigen Arbeitsmodell:
+Dadurch bleiben zentrale Fragen häufig unbeantwortet:
 
-- Wo entsteht im End-to-End-Value-Stream ein relevantes Problem?
-- Wie sieht der heutige Prozess mit Rollen, Systemen, Daten, Regeln und Engpässen aus?
-- Ist KI tatsächlich die sinnvollste Option oder reicht eine organisatorische beziehungsweise regelbasierte Lösung?
-- Welcher messbare Nutzen wird erwartet?
-- Wie belastbar sind Nutzen, Machbarkeit, Datenlage und Risiken belegt?
-- Welche Governance- und Fachprüfungen fehlen?
-- Wer hat welche Entscheidung auf welcher Evidenzbasis getroffen?
-- Welche Vorhaben gehören aktiv ins Portfolio?
-- Was muss ein Delivery-Team konkret umsetzen und wie wird der MVP abgenommen?
+* Wo entsteht im End-to-End-Prozess ein relevantes Problem?
+* Wie hoch ist der erwartete und messbare Nutzen?
+* Welche einfacheren Lösungsalternativen wurden geprüft?
+* Wie belastbar sind Machbarkeit, Datenlage und Risiken bewertet?
+* Welche Entscheidung wurde wann, von wem und auf welcher Evidenzbasis getroffen?
+* Welche Vorhaben gehören aktiv ins Portfolio?
+* Welche Voraussetzungen fehlen noch?
+* Ist der Scope konkret genug für eine Übergabe an Delivery?
 
-## Produktbereiche
+KI-Radar führt diese Informationen in einem gemeinsamen, nachvollziehbaren Arbeitsmodell zusammen.
 
-### Analyse
+---
 
-Der Bereich **Analyse** unterstützt einen optionalen Business-Architecture-Pfad.
+## Vier zentrale Produktfähigkeiten
 
-#### Value-Stream-Analyse
+### 1. Business Architecture und Discovery
 
-Ein Value Stream beschreibt die End-to-End-Wertschöpfung mit:
+KI-Radar unterstützt die strukturierte Analyse eines Geschäftsbereichs durch:
 
-- Auslöser und Ergebnis für den Empfänger
-- Scope und strategischem Ziel
-- Stakeholdern und Leitplanken
-- geordneten Hauptphasen
-- Rollen, Systemen und Dokumenten je Phase
-- Problemen, Engpässen und Baseline-Kennzahlen
+* End-to-End-Value-Streams
+* geordnete Wertschöpfungsphasen
+* Rollen, Systeme und Dokumente
+* Probleme, Engpässe und Baseline-Kennzahlen
+* detaillierte Prozessanalysen
+* organisatorische, regelbasierte und technische Lösungsoptionen
 
-Aus einer Phase kann der vorhandene Use-Case-Intake vorbefüllt werden. Alle bestehenden Plausibilitäts- und Hard-Gate-Prüfungen bleiben dabei aktiv.
+KI wird nicht automatisch als bevorzugte Lösung behandelt. Eine organisatorische Änderung, Standardsoftware oder regelbasierte Automatisierung kann die bessere Option sein.
 
-#### Prozessanalyse
+### 2. Decision Governance
 
-Nur relevante Value-Stream-Phasen werden detailliert analysiert:
+Jeder Use Case wird anhand einer nachvollziehbaren Evidenzbasis bewertet.
 
-- Prozessstart und Prozessende
-- Auslöser und Ergebnis
-- Ist-Ablauf
-- Rollen und Verantwortlichkeiten
-- Anwendungen und Arbeitsmittel
-- Datenobjekte und Dokumente
-- Geschäftsregeln
-- Übergaben und Schnittstellen
-- Bottlenecks und Ursachen
-- Ausnahmen und Fehlerfälle
-- Baseline und Prozesskennzahlen
-- Prinzipien für einen Soll-Prozess
+Berücksichtigt werden unter anderem:
 
-KI-Radar ist bewusst kein BPMN-Modellierer. Der Schwerpunkt liegt auf entscheidungsrelevanten Artefakten und der nachvollziehbaren Ableitung von Lösungsoptionen.
+* wirtschaftlicher Nutzen
+* strategischer Beitrag
+* technische Machbarkeit
+* Datenreife
+* Risiko und Komplexität
+* Qualität und Aktualität der Evidenz
+* unabhängige Prüfung
+* offene Annahmen
+* Governance- und Fachprüfungen
 
-#### Lösungsoptionen
+Bewertung und Freigabe sind getrennte Arbeitsschritte.
 
-Eine Prozessanalyse kann mehrere Alternativen enthalten:
+Verbindliche Entscheidungen werden serverseitig durch deterministische Hard Gates abgesichert. Ein optionales LLM kann Hinweise liefern, aber keine Freigabe oder Lifecycle-Entscheidung auslösen.
 
-- organisatorische Änderung
-- regelbasierte Automatisierung
-- Standardsoftware
-- individuelle Software
-- Analytics oder Machine Learning
-- generative KI
-- Assistenzsystem
-- keine technische Lösung
+### 3. Portfolio-Steuerung
 
-Maximal eine Option wird ausdrücklich als bevorzugt markiert. Nur diese kann in den bestehenden Use-Case-Intake überführt werden. KI wird dadurch nicht automatisch bevorzugt, sondern muss sich gegenüber einfacheren Alternativen begründen.
+Die Portfolio-Sicht verbindet Managementübersicht und operative Handlungsfähigkeit:
 
-### Use Cases und Entscheidungen
+* kategorische Matrix aus Nutzen und technischer Machbarkeit
+* Entscheidungsstatus und Confidence
+* Filter nach Organisationseinheit, Lifecycle, Lösungstyp und Status
+* gruppierte Portfolio-Landkarte
+* separate Darstellung nicht einordenbarer Vorhaben
+* konkrete Daten- und Prozessblocker
+* direkte Navigation zur jeweils notwendigen Aktion
 
-Der sechsstufige Intake führt von der Problemstellung bis zur Vorprüfung:
+Es wird bewusst kein künstlicher Gesamtscore und kein automatisches Ranking verwendet.
 
-1. Problem verstehen
-2. Prozess einordnen
-3. Nutzung und betroffene Personen klären
-4. Nutzenhypothese messbar machen
-5. Daten- und Lösungsrahmen erfassen
-6. Angaben vor der Bewertung prüfen
+### 4. Delivery Readiness
 
-Die versionierte Bewertung betrachtet:
+Aus einer final positiven Freigabe kann ein versioniertes Delivery Package erzeugt werden.
 
-- wirtschaftlichen Nutzen
-- strategischen Beitrag
-- technische Machbarkeit
-- Datenreife
-- Risiko und Komplexität
-- Qualität, Aktualität und Abdeckung der Evidenz
-- unabhängige Prüfung
-- offene Annahmen
+Es bündelt:
 
-Aus der Evidenzbasis wird eine nachvollziehbare Confidence-Stufe abgeleitet. Bewertung und Freigabe bleiben getrennte Arbeitsschritte.
+* Problem- und Geschäftskontext
+* Zielbild
+* In-Scope und Out-of-Scope
+* Nutzer und Nutzungsszenarien
+* System-, Daten- und Integrationskontext
+* funktionale und nichtfunktionale Anforderungen
+* Security-, Datenschutz- und Rechtsanforderungen
+* Human Oversight, Logging, Betrieb und Support
+* MVP-Scope
+* Akzeptanzkriterien und Testfälle
+* Erfolgsmessung
+* Risiken, Annahmen und Abhängigkeiten
+* Architekturentscheidungen
+* initiales Backlog
+* Link zum externen Delivery-System
 
-Mögliche Entscheidungsstatus:
+Der Status verläuft über:
 
-- In Klärung
-- Bereit zur Bewertung
-- Zurückgestellt
-- Freigegeben
-- Freigegeben mit Auflagen
-- Nicht weiterverfolgt
+```text
+Entwurf → Bereit zur Übergabe → Übergeben
+```
 
-Positive Freigaben werden serverseitig gegen Nutzen, Machbarkeit, Datenreife, Risiko, Governance und erforderliche Fachprüfungen geprüft. Freigaben mit Auflagen benötigen eine zweite unabhängige Bestätigung.
+Übergebene Versionen sind unveränderlich. Änderungen erfolgen über eine neue Version.
 
-### Bearbeitbare Blocker
+---
 
-Offene Voraussetzungen werden als konkrete Aufgaben dargestellt:
+## Beispiel: Automatische Eingangsrechnungsprüfung
 
-- **Datenblocker** springen zum fehlenden Formularfeld.
-- **Prozessblocker** führen zur zuständigen Bewertung, Freigabe oder Governance-Prüfung.
+Der mitgelieferte Demo-Datensatz zeigt den vollständigen Arbeitsablauf:
 
-Dashboard, Detailseite und Entscheidungsansicht zeigen Anzahl, Hauptblocker und nächste Aktion.
+1. Im Value Stream **„Beschaffung bis Zahlung“** wird die Phase „Eingangsrechnung prüfen“ betrachtet.
+2. Die Prozessanalyse identifiziert manuelle Suche, Medienbrüche und Rückfragen als Bottlenecks.
+3. Organisatorische, regelbasierte und KI-gestützte Lösungsoptionen können verglichen werden.
+4. Eine kombinierte Regel- und Assistenzlösung wird als bevorzugte Option gewählt.
+5. Der daraus abgeleitete Use Case wird hinsichtlich Nutzen, Datenreife, Machbarkeit, Risiko und Governance bewertet.
+6. Nach der finalen Freigabe entsteht ein versioniertes Delivery Package mit MVP-Scope, Anforderungen und Akzeptanzkriterien.
+7. Die operative Umsetzung wird an ein externes Delivery-System übergeben.
 
-### Portfolio
+Damit wird nicht nur ein KI-Use-Case dokumentiert, sondern seine fachliche Herkunft und seine Umsetzungsreife nachvollziehbar gemacht.
 
-Die Portfolio-Sicht enthält:
-
-- kategorische 3×3-Matrix aus wirtschaftlichem Nutzen und technischer Machbarkeit
-- Entscheidungsstatus als Farbe
-- Confidence als Umrandungsstil
-- Filter nach Organisationseinheit, Lifecycle, Status, Lösungstyp und Confidence
-- gruppierte Landkarte nach Organisationseinheit, Lösungstyp, Lifecycle oder Status
-- separaten Bereich für nicht einordenbare Use Cases
-- kontrollierbares Einblenden nicht weiterverfolgter Vorhaben
-
-Es wird kein künstlicher Gesamtscore, kein automatisches Ranking und kein Bubble-Sizing verwendet.
-
-### Delivery
-
-Aus einer final positiven Freigabe kann ein versioniertes **Delivery Package** erzeugt werden.
-
-Es konsolidiert:
-
-- Problem- und Geschäftskontext
-- Ziel, Nutzer und Nutzungsszenarien
-- In-Scope und Out-of-Scope
-- Lösungs-, System-, Daten- und Integrationskontext
-- funktionale und nichtfunktionale Anforderungen
-- Security-, Datenschutz- und Rechtsanforderungen
-- menschliche Aufsicht, Logging, Betrieb und Support
-- MVP-Scope
-- Akzeptanzkriterien und Testfälle
-- Erfolgsmessung
-- Risiken, Annahmen und Abhängigkeiten
-- Architekturentscheidungen
-- initiales Backlog
-- Link zum externen Delivery-System
-
-Ein Package durchläuft `Entwurf → Bereit zur Übergabe → Übergeben`. Übergebene Versionen sind unveränderlich; Änderungen erfolgen über eine neue Version. Der Inhalt kann als Markdown exportiert werden.
-
-KI-Radar übernimmt keine Sprint-, Ressourcen- oder Aufgabenplanung. Die operative Umsetzung bleibt im jeweiligen Delivery-System.
+---
 
 ## TOGAF-light
 
-KI-Radar nutzt TOGAF ADM als pragmatischen Ordnungsrahmen, nicht als vollständiges Enterprise-Architecture-Repository:
+KI-Radar nutzt TOGAF ADM als pragmatischen Ordnungsrahmen. Es ist kein vollständiges Enterprise-Architecture-Repository und bildet kein umfassendes TOGAF-Metamodell ab.
 
-| ADM-Phase | Konkretes KI-Radar-Artefakt |
-|---|---|
-| A – Architecture Vision | Scope, strategisches Ziel, Stakeholder, Leitplanken, Auslöser und Ergebnis |
-| B – Business Architecture | Value Stream, Phasen, Rollen, Ist-Prozess, Regeln, Bottlenecks und Kennzahlen |
-| C – Information Systems | Anwendungen, Datenobjekte, Informationsflüsse und Integrationen |
-| D – Technology Architecture | Technologie- und Hosting-Leitplanken innerhalb der Lösungsoption |
-| E – Opportunities & Solutions | explizite organisatorische, klassische und KI-Lösungsoptionen |
-| F – Migration Planning | MVP-Scope, Akzeptanz, Risiken, Abhängigkeiten, Backlog und Delivery Package |
-| G/H | Entscheidungen, Versionen und Änderungen werden dokumentiert; kein vollständiges EA-Governance-Modul |
+| Bereich                   | Umsetzung in KI-Radar                                 |
+| ------------------------- | ----------------------------------------------------- |
+| Architecture Vision       | Scope, Ziel, Stakeholder und Leitplanken              |
+| Business Architecture     | Value Streams, Prozesse, Rollen und Bottlenecks       |
+| Information Systems       | Anwendungen, Datenobjekte und Integrationen           |
+| Technology Architecture   | Technologie-, Hosting- und Plattformbedingungen       |
+| Opportunities & Solutions | organisatorische, klassische und KI-Lösungsoptionen   |
+| Migration Planning        | MVP, Akzeptanz, Risiken, Backlog und Delivery Package |
+| Governance und Change     | Entscheidungen, Versionen und Änderungen              |
 
-Der TOGAF-Bezug ist nur dort sichtbar, wo tatsächlich entsprechende Artefakte erfasst werden.
+Der TOGAF-Bezug wird nur dort verwendet, wo tatsächlich entsprechende Architekturartefakte entstehen.
 
-## Lifecycle und Nutzenmessung
+Details: [Discovery & Architecture](docs/DISCOVERY_ARCHITECTURE.md)
 
-Operativer Lifecycle:
+---
 
-1. Idee
-2. Prüfung
-3. Pilot
-4. Betrieb
-5. Beendet
+## Architekturübersicht
 
-Jeder bewertungsreife Use Case besitzt eine primäre Erfolgsmetrik mit Baseline, Zielwert, Optimierungsrichtung, Einheit und Messmethode. Für Pilot und Go-live gelten verbindliche Voraussetzungen. Ist-Wert, Messzeitraum, Messdatum und Nachweis machen die Zielerreichung überprüfbar.
+```text
+Browser
+   │
+   ▼
+Django Modular Monolith
+   ├── Architecture
+   ├── Use Cases
+   ├── Governance
+   ├── Reviews
+   ├── Reporting
+   ├── Delivery
+   └── Accounts
+   │
+   ▼
+PostgreSQL
+```
+
+Optionale externe Systeme:
+
+```text
+OpenRouter · Sentry · Jira · Azure DevOps · GitHub · Confluence
+```
+
+KI-Radar bleibt fachlich und technisch ein klar abgegrenztes System:
+
+* Analyse und Entscheidung verbleiben in KI-Radar.
+* Die operative Delivery-Steuerung verbleibt in spezialisierten Werkzeugen.
+* Verbindliche Prüfungen werden serverseitig ausgeführt.
+* LLM-Funktionen sind optional und nicht entscheidungsbefugt.
+
+---
+
+## Zentrale Architekturentscheidungen
+
+Architekturentscheidungen werden als Architecture Decision Records dokumentiert. Sie halten nicht nur das Ergebnis, sondern auch Kontext, Trade-offs und Konsequenzen einer Entscheidung fest.
+
+### Dokumentierte ADRs
+
+| ADR                                           | Entscheidung                                                                  | Begründung                                                               |
+| --------------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| [0001](docs/adr/0001-django-monolith.md)      | Modularer Django-Monolith                                                     | geringe Deployment-, Authentifizierungs- und Berechtigungskomplexität    |
+| [0002](docs/adr/0002-history.md)              | Technische Historie und fachliche Entscheidungen werden getrennt dokumentiert | Auditierbarkeit ohne Vermischung von Datenänderung und Freigabe          |
+| [0003](docs/adr/0003-staging-same-host.md)    | Staging als separater Stack auf demselben Host                                | wirtschaftlicher Einzelbetrieb bei logischer Trennung                    |
+| [0004](docs/adr/0004-no-email-reminders.md)   | Noch kein produktiver E-Mail-Versand                                          | keine Anbieter- und Eskalationslogik ohne konkreten Betrieb vorwegnehmen |
+| [0005](docs/adr/0005-anonymization-ledger.md) | Restore-feste Anonymisierung über ein externes Ledger                         | spätere Backups dürfen Anonymisierungen nicht rückgängig machen          |
+
+### Weitere prägende Produktentscheidungen
+
+* Discovery bleibt optional und belastet bekannte Einzelvorhaben nicht mit unnötigen Architekturartefakten.
+* KI ist eine Lösungsoption unter mehreren und wird nicht automatisch bevorzugt.
+* Freigaben beruhen auf deterministischen Hard Gates, nicht auf LLM-Ausgaben.
+* Portfolio-Entscheidungen verwenden keine künstliche Gesamtnote.
+* Delivery Packages werden erst nach finaler Freigabe erzeugt.
+* Übergebene Package-Versionen sind unveränderlich.
+* KI-Radar ersetzt kein Projektmanagement- oder Delivery-System.
+
+---
 
 ## Rollen
 
-| Rolle | Verantwortung |
-|---|---|
-| Technischer Administrator | Betrieb, Benutzer und Stammdaten |
-| KI-Koordinator | übergreifende Analyse, Bewertung, Governance, Freigabe und Delivery-Handover |
-| Business Owner | fachliche Verantwortung sowie Pflege eigener Analysen, Use Cases und Package-Entwürfe |
-| Leser | lesender Zugriff auf nicht archivierte Inhalte |
+| Rolle                     | Verantwortung                                                        |
+| ------------------------- | -------------------------------------------------------------------- |
+| Technischer Administrator | Betrieb, Benutzer und Stammdaten                                     |
+| KI-Koordinator            | Analyse, Bewertung, Governance, Freigaben und Delivery-Handover      |
+| Business Owner            | fachliche Verantwortung für Prozesse, Use Cases und Package-Entwürfe |
+| Leser                     | lesender Zugriff auf nicht archivierte Inhalte                       |
 
 Berechtigungen und fachliche Gates werden serverseitig geprüft.
 
-## Optionaler Review-Copilot
-
-Optional kann über OpenRouter ein semantischer Review-Copilot aktiviert werden. Er liefert ausschließlich Hinweise und darf keine Freigabe, Lifecycle-Entscheidung oder rechtliche Klassifizierung vornehmen. Ohne API-Key funktionieren alle verbindlichen Funktionen vollständig.
+---
 
 ## Bewusste Nicht-Ziele
 
 KI-Radar ist kein:
 
-- Projektmanagement- oder Ressourcenplanungssystem
-- BPMN-Modellierer
-- vollständiges Enterprise-Architecture-Repository
-- automatisches Priorisierungs- oder Budgetoptimierungssystem
-- automatisches AI-Act-Klassifizierungssystem
-- Ersatz für Datenschutz-, Rechts- oder Sicherheitsprüfungen
-- autonomes LLM-Entscheidungssystem
-- Multi-Tenant-SaaS
+* Projektmanagement- oder Ressourcenplanungssystem
+* BPMN-Modellierer
+* vollständiges Enterprise-Architecture-Repository
+* automatisches Priorisierungs- oder Budgetoptimierungssystem
+* automatisches AI-Act-Klassifizierungssystem
+* Ersatz für Datenschutz-, Rechts- oder Sicherheitsprüfungen
+* autonomes LLM-Entscheidungssystem
+* Multi-Tenant-SaaS
+
+Der Schwerpunkt liegt auf der fachlich begründeten Auswahl, belastbaren Entscheidung und strukturierten Übergabe von KI-Vorhaben.
+
+---
 
 ## Technischer Aufbau
 
-- Python 3.13
-- Django 5.2 LTS
-- PostgreSQL
-- serverseitige Django-Templates und Bootstrap
-- modularer Monolith mit separaten Apps für Architecture, Use Cases, Governance, Reporting und Delivery
-- Gunicorn und Nginx
-- Docker Compose für lokal, Staging und Produktion
-- `django-simple-history`
-- optional OpenRouter und Sentry
+* Python 3.13
+* Django 5.2 LTS
+* PostgreSQL
+* serverseitige Django-Templates
+* Bootstrap
+* modularer Monolith
+* Gunicorn und Nginx
+* Docker Compose für lokale Entwicklung, Staging und Produktion
+* `django-simple-history`
+* optional OpenRouter
+* optional Sentry
+
+---
+
+## Qualitätssicherung
+
+Die CI prüft unter anderem:
+
+* Lockfile-Konsistenz
+* Ruff Lint und Format
+* Django System Check
+* fehlende Migrationen
+* Unit- und Integrationstests mit PostgreSQL
+* Berechtigungen und serverseitige Hard Gates
+* Security-Prüfung mit Bandit
+* Dependency Audit
+* lokale, Staging- und Produktionskonfiguration
+* Produktions- und Entwicklungs-Docker-Images
+
+Die automatisierten Tests decken insbesondere ab:
+
+* Value Streams und Prozessanalysen
+* Lösungsoptionen und Herkunftsketten
+* Use-Case-Intake
+* Bewertungen und Freigaben
+* Governance
+* Lifecycle-Übergänge
+* Portfolio
+* Delivery Packages
+* Rollen und Berechtigungen
+* Anonymisierung
+* Demo-Daten und Betriebsfunktionen
+
+---
 
 ## Schnellstart
+
+### Voraussetzungen
+
+* Git
+* Docker Desktop beziehungsweise Docker Engine
+* Docker Compose
+
+### Anwendung starten
 
 ```powershell
 git clone https://github.com/Satte882/KI-UseCase-Radar.git
 cd KI-UseCase-Radar
+
 Copy-Item .env.example .env
 docker compose -f compose.local.yml up --build
 ```
@@ -254,31 +334,51 @@ Anwendung:
 http://127.0.0.1:8000
 ```
 
-Demo-Daten und weitere lokale Schritte stehen in [SETUP.md](SETUP.md).
+### Demo-Daten anlegen
 
-## Qualitätssicherung
+```powershell
+docker compose -f compose.local.yml exec app `
+  python manage.py seed_demo_data --password "<lokales-demo-passwort>"
+```
 
-Die CI prüft unter anderem:
+Der Demo-Datensatz enthält einen vollständigen Ablauf von der Value-Stream-Analyse bis zum Delivery Package.
 
-- Lockfile-Konsistenz
-- Ruff Lint und Format
-- Django System Check
-- fehlende Migrationen
-- Unit- und Integrationstests mit PostgreSQL
-- Bandit und Dependency Audit
-- lokale, Staging- und Produktions-Compose-Konfiguration
-- Produktions- und Entwicklungs-Docker-Images
+Weitere Informationen: [Lokales Setup](SETUP.md)
+
+---
+
+## Reifegrad und Einsatzgrenzen
+
+KI-Radar ist eine funktionsfähige Single-Tenant-Referenzimplementierung für den internen Einsatz in einer Organisation.
+
+Vor einer extern erreichbaren Produktivinstallation müssen abhängig vom konkreten Unternehmen insbesondere geklärt werden:
+
+* Unternehmens-SSO und MFA
+* Domain, DNS und TLS
+* E-Mail- und Eskalationskanäle
+* externes Monitoring und Alarmierung
+* Offsite-Backups
+* Datenschutz- und Aufbewahrungsvorgaben
+* Lizenz- und Betriebsmodell
+
+Ohne SSO sollte der Zugriff auf ein internes Netz oder VPN beschränkt bleiben.
+
+---
 
 ## Dokumentation
 
-- [Discovery & Architecture](docs/DISCOVERY_ARCHITECTURE.md)
-- [Lokales Setup](SETUP.md)
-- [Betrieb](docs/OPERATIONS.md)
-- [Backup und Restore](docs/BACKUP_RESTORE.md)
-- [Monitoring](docs/MONITORING.md)
-- [Security](docs/SECURITY.md)
-- [Architecture Decision Records](docs/adr/)
+* [Discovery & Architecture](docs/DISCOVERY_ARCHITECTURE.md)
+* [Lokales Setup](SETUP.md)
+* [Security](docs/SECURITY.md)
+* [Betrieb](docs/OPERATIONS.md)
+* [Backup und Restore](docs/BACKUP_RESTORE.md)
+* [Monitoring](docs/MONITORING.md)
+* [Architecture Decision Records](docs/adr/)
+* [Offene Betriebs- und Konfigurationsentscheidungen](OPEN_QUESTIONS.md)
+
+---
 
 ## Grundprinzip
 
-> KI-Radar bewertet nicht, ob eine Idee modern klingt. Es macht sichtbar, ob ein Vorhaben aus einem relevanten Geschäftsproblem entsteht, messbar, technisch realistisch, ausreichend belegt, verantwortbar entscheidbar und für Delivery konkret genug ist.
+> KI-Radar bewertet nicht, ob eine Idee modern klingt.
+> Es macht sichtbar, ob ein Vorhaben aus einem relevanten Geschäftsproblem entsteht, messbar, technisch realistisch, ausreichend belegt, verantwortbar entscheidbar und für Delivery konkret genug ist.
