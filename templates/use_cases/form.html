@@ -2,21 +2,22 @@
 {% block title %}{{ title }} – KI-Radar{% endblock %}
 {% block content %}
 <div class="page-header">
-  <div><div class="eyebrow mb-2">Use-Case-Daten</div><h1 class="page-title">{{ title }}</h1><p class="page-subtitle">Die strukturierte Erfolgsmetrik wird erst für Pilotstart und Go-live verbindlich.</p></div>
+  <div><div class="eyebrow mb-2">Use-Case-Daten</div><h1 class="page-title">{{ title }}</h1><p class="page-subtitle">Strategiebeitrag, Bewertungsevidenz und Nutzenmessung bilden gemeinsam die Entscheidungsgrundlage.</p></div>
 </div>
 <form method="post">{% csrf_token %}{{ form.non_field_errors }}
   {% for field in form %}
     {% if field.name == 'title' %}<div class="form-section"><div class="section-title">Fachlicher Kontext</div><div class="row g-3">
     {% elif field.name == 'solution_type' %}</div></div><div class="form-section"><div class="section-title">Lösung und Daten</div><div class="row g-3">
+    {% elif field.name == 'strategic_objective' %}</div></div><div class="form-section"><div class="section-title">Strategische Einordnung</div><p class="text-muted small">Die Zuordnung beschreibt nicht nur ein Schlagwort, sondern den erwarteten Wirkzusammenhang zum Unternehmensziel.</p><div class="row g-3">
     {% elif field.name == 'expected_benefit' %}</div></div><div class="form-section"><div class="section-title">Nutzenhypothese</div><div class="row g-3">
-    {% elif field.name == 'metric_name' %}</div></div><div class="form-section decision-panel"><div class="section-title">Primäre Erfolgsmetrik</div><p class="text-muted small">Genau eine Kennzahl verbindet Baseline, Ziel und gemessenes Ergebnis. Diese Angaben bilden die verbindliche Entscheidungsgrundlage.</p><div class="row g-3">
+    {% elif field.name == 'metric_name' %}</div></div><div class="form-section decision-panel"><div class="section-title">Primäre Erfolgsmetrik</div><p class="text-muted small">Genau eine Kennzahl verbindet Baseline, Ziel und gemessenes Ergebnis. Neue Ist-Werte werden vorzugsweise als versionierte Nutzenmessungen erfasst.</p><div class="row g-3">
     {% elif field.name == 'baseline' %}</div></div><div class="form-section"><div class="section-title">Ergänzende qualitative Beschreibung</div><p class="text-muted small">Diese Freitexte bleiben für Kontext und Migration bestehender Einträge erhalten. Verbindliche Gates nutzen die strukturierte Metrik.</p><div class="row g-3">
     {% elif field.name == 'one_time_cost' %}</div></div><div class="form-section"><div class="section-title">Kosten</div><div class="row g-3">
-    {% elif field.name == 'business_value' %}</div></div><div class="form-section"><div class="section-title">Qualitative Einordnung</div><div class="row g-3">
+    {% elif field.name == 'business_value' %}</div></div><div class="form-section"><div class="section-title">Aktuelle qualitative Einordnung</div><p class="text-muted small">Diese Werte werden beim Speichern einer evidenzbasierten Bewertung automatisch auf deren neuesten Stand gebracht.</p><div class="row g-3">
     {% elif field.name == 'privacy_review_completed' %}</div></div><div class="form-section"><div class="section-title">Freigaben und Betrieb</div><div class="row g-3">
     {% endif %}
 
-    <div class="{% if field.name == 'problem_statement' or field.name == 'summary' or field.name == 'target_users' or field.name == 'source_systems' or field.name == 'data_sources' or field.name == 'interface_description' or field.name == 'intended_users' or field.name == 'intended_purpose' or field.name == 'expected_benefit' or field.name == 'metric_measurement_method' or field.name == 'baseline' or field.name == 'success_criterion' or field.name == 'realized_result' or field.name == 'human_oversight' or field.name == 'support_responsibility' %}col-12{% else %}col-md-6{% endif %}">
+    <div class="{% if field.name == 'problem_statement' or field.name == 'summary' or field.name == 'target_users' or field.name == 'source_systems' or field.name == 'data_sources' or field.name == 'interface_description' or field.name == 'intended_users' or field.name == 'intended_purpose' or field.name == 'strategy_contribution' or field.name == 'expected_benefit' or field.name == 'metric_measurement_method' or field.name == 'baseline' or field.name == 'success_criterion' or field.name == 'realized_result' or field.name == 'human_oversight' or field.name == 'support_responsibility' %}col-12{% else %}col-md-6{% endif %}">
       {% if field.field.widget.input_type == 'checkbox' %}<div class="form-check mt-4">{{ field }}<label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label></div>
       {% else %}<label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>{{ field }}{% endif %}
       <div class="text-danger small">{{ field.errors }}</div>{% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}

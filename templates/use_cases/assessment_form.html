@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Bewertung {{ use_case.short_id }} – KI-Radar{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><div class="eyebrow mb-2">{{ use_case.short_id }} · Entscheidungsevidenz</div><h1 class="page-title">Evidenzbasierte Bewertung</h1><p class="page-subtitle">Jede Ausprägung benötigt eine Begründung. Die Evidenzsicherheit trennt Fakten von Annahmen.</p></div>
+</div>
+<form method="post">{% csrf_token %}{{ form.non_field_errors }}
+  <div class="form-section">
+    <div class="section-title">Bewertungsstand</div>
+    <div class="row g-3">
+      {% include "components/form_field.html" with field=form.assessment_date col="col-md-4" %}
+      {% include "components/form_field.html" with field=form.overall_rationale col="col-md-8" %}
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="section-title">Business Value</div>
+    <div class="row g-3">
+      {% include "components/form_field.html" with field=form.business_value col="col-md-3" %}
+      {% include "components/form_field.html" with field=form.business_value_confidence col="col-md-3" %}
+      {% include "components/form_field.html" with field=form.business_value_rationale col="col-md-6" %}
+      {% include "components/form_field.html" with field=form.business_value_evidence_url %}
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="section-title">Strategischer Fit</div>
+    <div class="row g-3">
+      {% include "components/form_field.html" with field=form.strategic_fit col="col-md-3" %}
+      {% include "components/form_field.html" with field=form.strategic_fit_confidence col="col-md-3" %}
+      {% include "components/form_field.html" with field=form.strategic_fit_rationale col="col-md-6" %}
+      {% include "components/form_field.html" with field=form.strategic_fit_evidence_url %}
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="section-title">Technische Machbarkeit</div>
+    <div class="row g-3">
+      {% include "components/form_field.html" with field=form.technical_feasibility col="col-md-3" %}
+      {% include "components/form_field.html" with field=form.technical_feasibility_confidence col="col-md-3" %}
+      {% include "components/form_field.html" with field=form.technical_feasibility_rationale col="col-md-6" %}
+      {% include "components/form_field.html" with field=form.technical_feasibility_evidence_url %}
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="section-title">Datenreife</div>
+    <div class="row g-3">
+      {% include "components/form_field.html" with field=form.data_readiness col="col-md-3" %}
+      {% include "components/form_field.html" with field=form.data_readiness_confidence col="col-md-3" %}
+      {% include "components/form_field.html" with field=form.data_readiness_rationale col="col-md-6" %}
+      {% include "components/form_field.html" with field=form.data_readiness_evidence_url %}
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="section-title">Risiko und Komplexität</div>
+    <div class="row g-3">
+      {% include "components/form_field.html" with field=form.risk_complexity col="col-md-3" %}
+      {% include "components/form_field.html" with field=form.risk_complexity_confidence col="col-md-3" %}
+      {% include "components/form_field.html" with field=form.risk_complexity_rationale col="col-md-6" %}
+      {% include "components/form_field.html" with field=form.risk_complexity_evidence_url %}
+    </div>
+  </div>
+
+  <div class="d-flex gap-2 justify-content-end"><a class="btn btn-outline-secondary" href="{{ use_case.get_absolute_url }}">Abbrechen</a><button class="btn btn-primary px-4">Neue Version speichern</button></div>
+</form>
+{% endblock %}

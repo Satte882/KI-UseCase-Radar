@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Nutzenmessung {{ use_case.short_id }} – KI-Radar{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><div class="eyebrow mb-2">{{ use_case.short_id }} · Nutzenrealisierung</div><h1 class="page-title">Nutzenmessung erfassen</h1><p class="page-subtitle">{{ use_case.metric_name }} · Baseline {{ use_case.metric_baseline|default_if_none:"–" }} · Ziel {{ use_case.metric_target|default_if_none:"–" }} {{ use_case.metric_unit }}</p></div>
+</div>
+<form method="post">{% csrf_token %}{{ form.non_field_errors }}
+  <div class="form-section decision-panel">
+    <div class="section-title">Messwert und Nachweis</div>
+    <div class="row g-3">
+      {% include "components/form_field.html" with field=form.measured_at col="col-md-4" %}
+      {% include "components/form_field.html" with field=form.period col="col-md-4" %}
+      {% include "components/form_field.html" with field=form.actual_value col="col-md-4" %}
+      {% include "components/form_field.html" with field=form.method %}
+      {% include "components/form_field.html" with field=form.evidence_url %}
+    </div>
+  </div>
+  <div class="form-section">
+    <div class="section-title">Lernen und Entscheidung</div>
+    <div class="row g-3">
+      {% include "components/form_field.html" with field=form.variance_reason col="col-md-6" %}
+      {% include "components/form_field.html" with field=form.decision_consequence col="col-md-6" %}
+    </div>
+  </div>
+  <div class="d-flex gap-2 justify-content-end"><a class="btn btn-outline-secondary" href="{{ use_case.get_absolute_url }}">Abbrechen</a><button class="btn btn-primary px-4">Messung speichern</button></div>
+</form>
+{% endblock %}

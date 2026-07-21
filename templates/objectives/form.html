@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} – KI-Radar{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><div class="eyebrow mb-2">Portfolioausrichtung</div><h1 class="page-title">{{ title }}</h1><p class="page-subtitle">Strategische Ziele bilden den Referenzpunkt für Priorisierung und spätere Nutzenbewertung.</p></div>
+</div>
+<form method="post">{% csrf_token %}{{ form.non_field_errors }}
+  <div class="form-section">
+    <div class="row g-3">
+      {% for field in form %}
+        {% include "components/form_field.html" with field=field col="col-md-6" %}
+      {% endfor %}
+    </div>
+  </div>
+  <div class="d-flex gap-2 justify-content-end"><a class="btn btn-outline-secondary" href="{% url 'use_cases:objective_list' %}">Abbrechen</a><button class="btn btn-primary px-4">Speichern</button></div>
+</form>
+{% endblock %}

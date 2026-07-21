@@ -23,8 +23,11 @@
       <a class="sidebar-link {% if request.resolver_match.namespace == 'reporting' %}active{% endif %}" href="{% url 'reporting:dashboard' %}">
         <span class="nav-icon">⌁</span> Entscheidungen
       </a>
-      <a class="sidebar-link {% if request.resolver_match.namespace == 'use_cases' %}active{% endif %}" href="{% url 'use_cases:list' %}">
+      <a class="sidebar-link {% if request.resolver_match.namespace == 'use_cases' and 'objective' not in request.resolver_match.url_name %}active{% endif %}" href="{% url 'use_cases:list' %}">
         <span class="nav-icon">◫</span> Use Cases
+      </a>
+      <a class="sidebar-link {% if 'objective' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'use_cases:objective_list' %}">
+        <span class="nav-icon">◎</span> Strategische Ziele
       </a>
       {% if nav_is_coordinator %}
       <a class="sidebar-link {% if request.resolver_match.namespace == 'reviews' %}active{% endif %}" href="{% url 'reviews:monthly' %}">
@@ -46,7 +49,7 @@
   </aside>
   <div class="app-main">
     <header class="app-topbar">
-      <div><span class="eyebrow">KI-Portfolio · Governance · Evidenz</span></div>
+      <div><span class="eyebrow">Strategie · Entscheidung · Nutzenrealisierung</span></div>
       <div class="topbar-status"><span class="status-dot"></span> System bereit</div>
     </header>
     <main class="app-content">

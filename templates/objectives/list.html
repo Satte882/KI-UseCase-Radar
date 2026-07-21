@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Strategische Ziele – KI-Radar{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><div class="eyebrow mb-2">Portfolioausrichtung</div><h1 class="page-title">Strategische Ziele</h1><p class="page-subtitle">Aktive Unternehmensziele und die daran geknüpften KI-Investitionen.</p></div>
+  {% if can_manage %}<a class="btn btn-primary" href="{% url 'use_cases:objective_create' %}">Ziel anlegen</a>{% endif %}
+</div>
+<div class="row g-4">
+  {% for objective in objectives %}
+  <div class="col-lg-6">
+    <div class="app-card h-100">
+      <div class="card-header d-flex justify-content-between align-items-start gap-3">
+        <div><strong>{{ objective.title }}</strong><div class="small text-muted mt-1">{% if objective.owner %}{{ objective.owner.get_display_name }}{% else %}Keine verantwortliche Person{% endif %}</div></div>
+        <span class="badge {% if objective.is_active %}state-ready{% else %}badge-soft{% endif %}">{% if objective.is_active %}Aktiv{% else %}Inaktiv{% endif %}</span>
+      </div>
+      <div class="card-body">
+        <p>{{ objective.description|default:"Keine Beschreibung hinterlegt." }}</p>
+        <dl class="row small mb-3">
+          <dt class="col-sm-4 text-muted">Gültigkeit</dt><dd class="col-sm-8">{{ objective.active_from|date:"d.m.Y"|default:"offen" }} – {{ objective.active_until|date:"d.m.Y"|default:"offen" }}</dd>
+          <dt class="col-sm-4 text-muted">Ziel-KPI</dt><dd class="col-sm-8">{{ objective.target_kpi|default:"–" }}{% if objective.target_value %} · {{ objective.target_value }}{% endif %}</dd>
+          <dt class="col-sm-4 text-muted">Use Cases</dt><dd class="col-sm-8">{{ objective.use_cases.count }}</dd>
+        </dl>
+        <div class="d-flex flex-wrap gap-2">
+          {% for item in objective.use_cases.all|slice:":5" %}<a class="badge badge-soft text-decoration-none" href="{{ item.get_absolute_url }}">{{ item.short_id }}</a>{% empty %}<span class="text-muted small">Noch keine Use Cases verknüpft.</span>{% endfor %}
+        </div>
+      </div>
+      {% if can_manage %}<div class="card-footer bg-transparent border-0 pt-0"><a class="btn btn-outline-secondary btn-sm" href="{% url 'use_cases:objective_edit' objective.pk %}">Bearbeiten</a></div>{% endif %}
+    </div>
+  </div>
+  {% empty %}<div class="col-12"><div class="app-card"><div class="card-body text-muted text-center py-5">Noch keine strategischen Ziele angelegt.</div></div></div>{% endfor %}
+</div>
+{% endblock %}

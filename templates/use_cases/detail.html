@@ -11,10 +11,13 @@
       <span class="badge badge-soft">Priorität {{ use_case.get_priority_display }}</span>
       <span class="badge state-{{ decision_check.state }}">{{ decision_check.state_label }}</span>
       <span class="badge badge-soft">{{ use_case.metric_result_label }}</span>
+      {% if latest_assessment %}<span class="badge badge-soft">Bewertung v{{ latest_assessment.version }}</span>{% endif %}
     </div>
   </div>
   <div class="d-flex flex-wrap gap-2">
     {% if can_edit %}<a class="btn btn-outline-secondary" href="{% url 'use_cases:edit' use_case.pk %}">Bearbeiten</a>{% endif %}
+    {% if can_assess %}<a class="btn btn-outline-secondary" href="{% url 'use_cases:assessment_create' use_case.pk %}">Bewertung erfassen</a>{% endif %}
+    {% if can_edit %}<a class="btn btn-outline-secondary" href="{% url 'use_cases:benefit_measurement_create' use_case.pk %}">Nutzen messen</a>{% endif %}
     {% if nav_is_coordinator %}<a class="btn btn-primary" href="{% url 'reviews:create' use_case.pk %}">Entscheidung dokumentieren</a>{% endif %}
   </div>
 </div>
@@ -40,7 +43,69 @@
     </div>
 
     <div class="app-card mb-4">
-      <div class="card-header"><strong>Primäre Erfolgsmetrik</strong><div class="small text-muted mt-1">Verbindliche Ziel-gegen-Ergebnis-Betrachtung</div></div>
+      <div class="card-header"><strong>Strategischer Beitrag</strong><div class="small text-muted mt-1">Verbindung zwischen Unternehmensziel und Investitionsentscheidung</div></div>
+      <div class="card-body">
+        {% if use_case.strategic_objective %}
+          <div class="d-flex justify-content-between gap-3 mb-3">
+            <div>
+              <div class="section-title">Strategisches Ziel</div>
+              <h3 class="h5 mb-1">{{ use_case.strategic_objective.title }}</h3>
+              <div class="small text-muted">{{ use_case.strategic_objective.description|default:"Keine Beschreibung hinterlegt." }}</div>
+            </div>
+            {% if use_case.strategic_objective.target_kpi %}<span class="badge badge-soft align-self-start">{{ use_case.strategic_objective.target_kpi }} · {{ use_case.strategic_objective.target_value|default:"Zielwert offen" }}</span>{% endif %}
+          </div>
+          <div class="section-title">Beitrag des Use Cases</div>
+          <p class="mb-0">{{ use_case.strategy_contribution|default:"Noch nicht beschrieben." }}</p>
+        {% else %}
+          <p class="text-muted mb-0">Der Use Case ist noch keinem strategischen Ziel zugeordnet.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="app-card mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <div><strong>Evidenzbasierte Bewertung</strong><div class="small text-muted mt-1">Versionierte Einschätzung je Kriterium mit Begründung und Evidenzsicherheit</div></div>
+        {% if latest_assessment %}<span class="badge badge-soft">v{{ latest_assessment.version }} · {{ latest_assessment.assessment_date|date:"d.m.Y" }}</span>{% endif %}
+      </div>
+      <div class="card-body">
+        {% if latest_assessment %}
+          <div class="table-responsive">
+            <table class="table align-middle mb-3">
+              <thead><tr><th>Kriterium</th><th>Ausprägung</th><th>Sicherheit</th><th>Begründung</th><th>Nachweis</th></tr></thead>
+              <tbody>
+                {% for row in latest_assessment.criterion_rows %}
+                <tr>
+                  <td><strong>{{ row.label }}</strong></td>
+                  <td>{{ row.rating }}</td>
+                  <td>{{ row.confidence }}</td>
+                  <td>{{ row.rationale }}</td>
+                  <td>{% if row.evidence_url %}<a href="{{ row.evidence_url }}" target="_blank" rel="noopener noreferrer">Öffnen</a>{% else %}–{% endif %}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% if latest_assessment.overall_rationale %}<div class="section-title">Gesamtbegründung</div><p class="mb-3">{{ latest_assessment.overall_rationale }}</p>{% endif %}
+          <div class="small text-muted">Erfasst durch {{ latest_assessment.assessed_by.get_display_name|default:"System" }}. Frühere Versionen bleiben erhalten.</div>
+        {% else %}
+          <p class="text-muted mb-0">Noch keine versionierte Bewertung dokumentiert.</p>
+        {% endif %}
+      </div>
+      {% if use_case.decision_assessments.all %}
+      <div class="list-group list-group-flush">
+        {% for assessment in use_case.decision_assessments.all %}
+          {% if not forloop.first %}
+          <div class="list-group-item bg-transparent d-flex justify-content-between">
+            <span>Bewertung v{{ assessment.version }}</span><span class="small text-muted">{{ assessment.assessment_date|date:"d.m.Y" }} · Mindest-Sicherheit {{ assessment.minimum_confidence_label }}</span>
+          </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="app-card mb-4">
+      <div class="card-header"><strong>Primäre Erfolgsmetrik</strong><div class="small text-muted mt-1">Zieldefinition und fortlaufende Nutzenrealisierung</div></div>
       <div class="card-body">
         {% if use_case.metric_name %}
         <div class="d-flex justify-content-between gap-3 align-items-start mb-3">
@@ -50,7 +115,7 @@
         <div class="kpi-strip mb-3">
           <div class="kpi-cell"><small>Baseline</small><strong>{{ use_case.metric_baseline|default_if_none:"–" }} {{ use_case.metric_unit }}</strong></div>
           <div class="kpi-cell"><small>Ziel</small><strong>{{ use_case.metric_target|default_if_none:"–" }} {{ use_case.metric_unit }}</strong></div>
-          <div class="kpi-cell"><small>Ist</small><strong>{{ use_case.metric_actual|default_if_none:"–" }} {{ use_case.metric_unit }}</strong></div>
+          <div class="kpi-cell"><small>Aktuell</small><strong>{{ use_case.metric_actual|default_if_none:"–" }} {{ use_case.metric_unit }}</strong></div>
         </div>
         <dl class="row mb-0 small">
           <dt class="col-sm-3 text-muted">Messmethode</dt><dd class="col-sm-9">{{ use_case.metric_measurement_method|default:"–" }}</dd>
@@ -59,6 +124,19 @@
           <dt class="col-sm-3 text-muted">Nachweis</dt><dd class="col-sm-9">{% if use_case.metric_evidence_url %}<a href="{{ use_case.metric_evidence_url }}" target="_blank" rel="noopener noreferrer">Messnachweis öffnen</a>{% else %}–{% endif %}</dd>
         </dl>
         {% else %}<p class="text-muted mb-0">Noch keine strukturierte Erfolgsmetrik definiert.</p>{% endif %}
+      </div>
+      <div class="list-group list-group-flush">
+        {% for measurement in use_case.benefit_measurements.all %}
+        <div class="list-group-item bg-transparent py-3">
+          <div class="d-flex justify-content-between gap-3">
+            <div><strong>{{ measurement.actual_value }} {{ use_case.metric_unit }}</strong> <span class="badge {% if measurement.result == 'achieved' %}state-ready{% else %}state-review{% endif %}">{{ measurement.result_label }}</span></div>
+            <span class="small text-muted">{{ measurement.measured_at|date:"d.m.Y" }}</span>
+          </div>
+          <div class="small text-muted mt-1">{{ measurement.period }} · {{ measurement.method }}</div>
+          {% if measurement.variance_reason %}<div class="small mt-2"><strong>Abweichung:</strong> {{ measurement.variance_reason }}</div>{% endif %}
+          {% if measurement.decision_consequence %}<div class="small mt-1"><strong>Konsequenz:</strong> {{ measurement.decision_consequence }}</div>{% endif %}
+        </div>
+        {% empty %}<div class="list-group-item bg-transparent text-muted">Noch keine versionierte Nutzenmessung dokumentiert.</div>{% endfor %}
       </div>
     </div>
 
@@ -71,7 +149,7 @@
       </div>
       <div class="card-body">
         {% if copilot_analysis %}<div class="copilot-box">{{ copilot_analysis }}</div>
-        {% elif copilot_enabled %}<p class="text-muted mb-0">Der Copilot prüft die semantische Konsistenz von Problem, Nutzen, Metrik, Ziel, Ergebnis und Kosten. Seine Hinweise sind nicht bindend.</p>
+        {% elif copilot_enabled %}<p class="text-muted mb-0">Der Copilot prüft die semantische Konsistenz von Problem, Strategie, Nutzen, Metrik, Ziel, Ergebnis und Kosten. Seine Hinweise sind nicht bindend.</p>
         {% else %}<p class="text-muted mb-0">OpenRouter ist nicht konfiguriert. Setze <code>OPENROUTER_API_KEY</code>, um die optionale Analyse zu aktivieren.</p>{% endif %}
       </div>
     </div>

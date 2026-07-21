@@ -5,9 +5,10 @@
   <div>
     <div class="eyebrow mb-2">Portfolio-Steuerung</div>
     <h1 class="page-title">Entscheidungswarteschlange</h1>
-    <p class="page-subtitle">Wo muss heute eingegriffen werden – und ist die Entscheidungsgrundlage belastbar?</p>
+    <p class="page-subtitle">Strategiebeitrag, Belastbarkeit der Bewertung und realisierte Wirkung je Vorhaben.</p>
   </div>
   <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary" href="{% url 'use_cases:objective_list' %}">Strategische Ziele</a>
     <a class="btn btn-outline-secondary" href="{% url 'use_cases:list' %}">Alle Use Cases</a>
     {% if nav_is_coordinator %}<a class="btn btn-primary" href="{% url 'reviews:monthly' %}">Monatsreview starten</a>{% endif %}
   </div>
@@ -15,9 +16,11 @@
 
 <div class="metric-grid">
   <div class="app-card metric-card"><div class="metric-label">Aktive Vorhaben</div><div class="metric-value">{{ active_total }}</div><div class="metric-note">Prüfung, Pilot und Betrieb</div></div>
+  <div class="app-card metric-card"><div class="metric-label">Strategisch verknüpft</div><div class="metric-value">{{ strategy_linked_total }}</div><div class="metric-note">Mit nachvollziehbarem Unternehmensziel</div></div>
+  <div class="app-card metric-card"><div class="metric-label">Evidenz bewertet</div><div class="metric-value">{{ assessed_total }}</div><div class="metric-note">Mindestens eine versionierte Bewertung</div></div>
   <div class="app-card metric-card"><div class="metric-label">Blockiert</div><div class="metric-value">{{ blocked_total }}</div><div class="metric-note">Pflichtangaben oder Freigaben fehlen</div></div>
   <div class="app-card metric-card"><div class="metric-label">Überfällig</div><div class="metric-value">{{ overdue_total }}</div><div class="metric-note">Entscheidungstermin überschritten</div></div>
-  <div class="app-card metric-card"><div class="metric-label">Nutzen gemessen</div><div class="metric-value">{{ measured_total }}</div><div class="metric-note">Mit strukturiertem Ist-Wert</div></div>
+  <div class="app-card metric-card"><div class="metric-label">Nutzen gemessen</div><div class="metric-value">{{ measured_total }}</div><div class="metric-note">Mit Ist-Wert oder Messhistorie</div></div>
   <div class="app-card metric-card"><div class="metric-label">Ziel erreicht</div><div class="metric-value">{{ achieved_total }}</div><div class="metric-note">Primäre Erfolgsmetrik erfüllt</div></div>
 </div>
 
@@ -28,11 +31,12 @@
   </div>
   <div class="table-responsive">
     <table class="table table-hover align-middle">
-      <thead><tr><th>Use Case</th><th>Phase</th><th>Anstehende Entscheidung</th><th>Reife</th><th>Hauptblocker / Hinweis</th><th>Fällig</th><th>Owner</th></tr></thead>
+      <thead><tr><th>Use Case</th><th>Strategisches Ziel</th><th>Phase</th><th>Anstehende Entscheidung</th><th>Reife</th><th>Hauptblocker / Hinweis</th><th>Fällig</th></tr></thead>
       <tbody>
       {% for item in decision_queue %}
       <tr>
-        <td><a href="{{ item.get_absolute_url }}">{{ item.short_id }} · {{ item.title }}</a><div class="small text-muted">{{ item.business_unit }}</div></td>
+        <td><a href="{{ item.get_absolute_url }}">{{ item.short_id }} · {{ item.title }}</a><div class="small text-muted">{{ item.business_unit }} · {{ item.business_owner.get_display_name }}</div></td>
+        <td>{% if item.strategic_objective %}{{ item.strategic_objective.title }}{% else %}<span class="text-muted">Nicht verknüpft</span>{% endif %}</td>
         <td><span class="badge badge-soft">{{ item.get_status_display }}</span></td>
         <td><strong>{{ item.decision_check.title }}</strong></td>
         <td><span class="badge state-{{ item.decision_check.state }}">{{ item.decision_check.state_label }}</span></td>
@@ -40,7 +44,6 @@
           {% if item.decision_check.blockers %}{{ item.decision_check.blockers.0 }}{% elif item.decision_check.warnings %}{{ item.decision_check.warnings.0 }}{% else %}<span class="text-muted">Keine offenen Blocker</span>{% endif %}
         </td>
         <td>{% if item.decision_due %}{{ item.decision_due|date:"d.m.Y" }}{% else %}<span class="text-muted">–</span>{% endif %}</td>
-        <td>{{ item.business_owner.get_display_name }}</td>
       </tr>
       {% empty %}<tr><td colspan="7" class="text-muted py-5 text-center">Keine aktiven Entscheidungen vorhanden.</td></tr>{% endfor %}
       </tbody>

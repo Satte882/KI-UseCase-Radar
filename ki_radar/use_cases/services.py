@@ -7,7 +7,8 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
-from .models import UseCase
+from .models import DecisionAssessment, UseCase
+
 
 STATUS_ORDER = {
     UseCase.Status.IDEA: 0,
@@ -114,9 +115,34 @@ def _missing_fields(use_case: UseCase, field_names: list[str]) -> list[str]:
         value = getattr(use_case, field_name)
         if value in (None, ""):
             missing.append(
-                FIELD_LABELS.get(field_name, str(use_case._meta.get_field(field_name).verbose_name))
+                FIELD_LABELS.get(
+                    field_name, str(use_case._meta.get_field(field_name).verbose_name)
+                )
             )
     return missing
+
+
+def _portfolio_quality_warnings(use_case: UseCase) -> list[str]:
+    warnings = []
+    if not use_case.strategic_objective_id:
+        warnings.append(
+            "Kein strategisches Ziel verknüpft; die Portfolio-Relevanz ist nicht nachvollziehbar."
+        )
+    elif not use_case.strategy_contribution:
+        warnings.append("Der konkrete Beitrag zum strategischen Ziel ist nicht beschrieben.")
+
+    latest_assessment = use_case.decision_assessments.first()
+    if not latest_assessment:
+        warnings.append(
+            "Noch keine versionierte Bewertung mit Begründung, Evidenz und Sicherheit dokumentiert."
+        )
+    else:
+        if latest_assessment.minimum_confidence == DecisionAssessment.Confidence.LOW:
+            warnings.append("Mindestens ein Bewertungskriterium hat niedrige Evidenzsicherheit.")
+        age = (timezone.localdate() - latest_assessment.assessment_date).days
+        if age > 180:
+            warnings.append("Die letzte evidenzbasierte Bewertung ist älter als 180 Tage.")
+    return warnings
 
 
 def check_pilot_start(use_case: UseCase) -> DecisionCheck:
@@ -128,7 +154,7 @@ def check_pilot_start(use_case: UseCase) -> DecisionCheck:
             PILOT_METRIC_REQUIREMENTS,
         ),
     )
-    warnings = []
+    warnings = _portfolio_quality_warnings(use_case)
     if not use_case.governance_assessments.exists():
         blockers.append("Governance-Screening")
     if (
@@ -180,6 +206,12 @@ def check_go_live(use_case: UseCase) -> DecisionCheck:
             "Das Pilotziel wurde nicht erreicht. Ein Go-live benötigt eine ausdrückliche "
             "Begründung."
         )
+    warnings.extend(_portfolio_quality_warnings(use_case))
+    if not use_case.benefit_measurements.exists():
+        warnings.append(
+            "Der Ist-Wert wurde noch nicht als versionierte Nutzenmessung mit "
+            "Abweichungsursache dokumentiert."
+        )
     if use_case.planned_pilot_end and use_case.planned_pilot_end > timezone.localdate():
         warnings.append("Der geplante Pilotzeitraum ist noch nicht beendet.")
     state = "blocked" if blockers else ("review" if warnings else "ready")
@@ -214,11 +246,15 @@ def current_decision_check(use_case: UseCase) -> DecisionCheck:
     if use_case.status == UseCase.Status.PILOT:
         return check_go_live(use_case)
     if use_case.status == UseCase.Status.OPERATION:
-        warnings = []
+        warnings = _portfolio_quality_warnings(use_case)
         today = timezone.localdate()
         if use_case.next_review_date and use_case.next_review_date < today:
             warnings.append("Die Betriebsüberprüfung ist überfällig.")
-        if use_case.metric_measured_at and (today - use_case.metric_measured_at).days > 180:
+        latest_measurement = use_case.benefit_measurements.first()
+        measured_at = latest_measurement.measured_at if latest_measurement else use_case.metric_measured_at
+        if not measured_at:
+            warnings.append("Im Betrieb wurde noch keine Nutzenmessung dokumentiert.")
+        elif (today - measured_at).days > 180:
             warnings.append("Die letzte Nutzenmessung ist älter als 180 Tage.")
         return DecisionCheck(
             target_status=UseCase.Status.OPERATION,
