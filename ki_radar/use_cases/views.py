@@ -20,6 +20,7 @@ from ki_radar.accounts.permissions import is_coordinator
 from .blockers import build_blocker_details
 from .copilot import CopilotUnavailable, analyze_use_case
 from .forms import UseCaseForm
+from .journey import build_use_case_journey
 from .models import UseCase
 from .permissions import can_create_use_case, can_edit_use_case, can_view_use_case
 from .services import current_decision_check, decision_due_date
@@ -108,6 +109,7 @@ def _detail_context(request, use_case: UseCase, *, copilot_analysis: str = "") -
     return {
         "use_case": use_case,
         "architecture_origin": architecture_origin,
+        "journey": build_use_case_journey(use_case, request.user),
         "history": history,
         "can_edit": can_edit_use_case(request.user, use_case),
         "decision_check": decision_check,
@@ -136,6 +138,7 @@ def use_case_detail(request, pk):
             "evidence_links",
             "decision_assessments",
             "approval_decisions",
+            "delivery_packages",
         ),
         pk=pk,
     )
@@ -158,6 +161,7 @@ def use_case_copilot(request, pk):
             "evidence_links",
             "decision_assessments",
             "approval_decisions",
+            "delivery_packages",
         ),
         pk=pk,
     )
