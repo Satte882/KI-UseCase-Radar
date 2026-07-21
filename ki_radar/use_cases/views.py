@@ -14,7 +14,6 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-
 from ki_radar.accounts.models import BusinessUnit
 from ki_radar.accounts.permissions import is_coordinator
 
@@ -75,9 +74,7 @@ def use_case_list(request):
     today = timezone.localdate()
     review_state = request.GET.get("review_state", "")
     if review_state == "overdue":
-        queryset = queryset.filter(next_review_date__lt=today).exclude(
-            status=UseCase.Status.ENDED
-        )
+        queryset = queryset.filter(next_review_date__lt=today).exclude(status=UseCase.Status.ENDED)
     elif review_state == "due_30":
         queryset = queryset.filter(
             next_review_date__gte=today,
@@ -94,17 +91,15 @@ def use_case_list(request):
         item.decision_due = decision_due_date(item)
 
     user_model = get_user_model()
-    active_users = user_model.objects.filter(
-        is_active=True, is_anonymized=False
-    ).order_by("last_name", "first_name", "username")
+    active_users = user_model.objects.filter(is_active=True, is_anonymized=False).order_by(
+        "last_name", "first_name", "username"
+    )
     context = {
         "use_cases": use_cases,
         "status_choices": UseCase.Status.choices,
         "level_choices": UseCase.Level.choices,
         "business_units": BusinessUnit.objects.filter(is_active=True).order_by("name"),
-        "strategic_objectives": StrategicObjective.objects.filter(
-            is_active=True
-        ).order_by("title"),
+        "strategic_objectives": StrategicObjective.objects.filter(is_active=True).order_by("title"),
         "active_users": active_users,
         "can_create": can_create_use_case(request.user),
     }
@@ -112,9 +107,7 @@ def use_case_list(request):
 
 
 def _detail_context(request, use_case: UseCase, *, copilot_analysis: str = "") -> dict:
-    history = use_case.history.select_related("history_user").order_by("-history_date")[
-        :50
-    ]
+    history = use_case.history.select_related("history_user").order_by("-history_date")[:50]
     latest_assessment = use_case.decision_assessments.first()
     return {
         "use_case": use_case,
@@ -199,9 +192,7 @@ def use_case_create(request):
             return redirect(use_case)
     else:
         form = UseCaseForm(current_user=request.user)
-    return render(
-        request, "use_cases/form.html", {"form": form, "title": "Use Case anlegen"}
-    )
+    return render(request, "use_cases/form.html", {"form": form, "title": "Use Case anlegen"})
 
 
 @login_required
@@ -239,13 +230,11 @@ def decision_assessment_create(request, pk):
         form = DecisionAssessmentForm(request.POST, use_case=use_case)
         if form.is_valid():
             with transaction.atomic():
-                locked_use_case = UseCase.objects.select_for_update().get(
-                    pk=use_case.pk
-                )
+                locked_use_case = UseCase.objects.select_for_update().get(pk=use_case.pk)
                 latest_version = (
-                    DecisionAssessment.objects.filter(
-                        use_case=locked_use_case
-                    ).aggregate(latest=Max("version"))["latest"]
+                    DecisionAssessment.objects.filter(use_case=locked_use_case).aggregate(
+                        latest=Max("version")
+                    )["latest"]
                     or 0
                 )
                 assessment = form.save(commit=False)
@@ -305,9 +294,7 @@ def benefit_measurement_create(request, pk):
         form = BenefitMeasurementForm(request.POST, use_case=use_case)
         if form.is_valid():
             with transaction.atomic():
-                locked_use_case = UseCase.objects.select_for_update().get(
-                    pk=use_case.pk
-                )
+                locked_use_case = UseCase.objects.select_for_update().get(pk=use_case.pk)
                 measurement = form.save(commit=False)
                 measurement.use_case = locked_use_case
                 measurement.created_by = request.user
@@ -346,9 +333,7 @@ def benefit_measurement_create(request, pk):
 
 @login_required
 def strategic_objective_list(request):
-    objectives = StrategicObjective.objects.select_related("owner").prefetch_related(
-        "use_cases"
-    )
+    objectives = StrategicObjective.objects.select_related("owner").prefetch_related("use_cases")
     return render(
         request,
         "objectives/list.html",
@@ -367,9 +352,7 @@ def strategic_objective_create(request):
         form = StrategicObjectiveForm(request.POST)
         if form.is_valid():
             objective = form.save()
-            messages.success(
-                request, f"Strategisches Ziel '{objective.title}' wurde angelegt."
-            )
+            messages.success(request, f"Strategisches Ziel '{objective.title}' wurde angelegt.")
             return redirect("use_cases:objective_list")
     else:
         form = StrategicObjectiveForm()
@@ -389,9 +372,7 @@ def strategic_objective_edit(request, pk):
         form = StrategicObjectiveForm(request.POST, instance=objective)
         if form.is_valid():
             objective = form.save()
-            messages.success(
-                request, f"Strategisches Ziel '{objective.title}' wurde aktualisiert."
-            )
+            messages.success(request, f"Strategisches Ziel '{objective.title}' wurde aktualisiert.")
             return redirect("use_cases:objective_list")
     else:
         form = StrategicObjectiveForm(instance=objective)
@@ -442,15 +423,11 @@ def export_csv(request):
                 use_case.get_status_display(),
                 use_case.business_unit.name,
                 use_case.business_owner.get_display_name(),
-                use_case.strategic_objective.title
-                if use_case.strategic_objective
-                else "",
+                use_case.strategic_objective.title if use_case.strategic_objective else "",
                 decision.title,
                 decision.state_label,
                 use_case.metric_name,
-                use_case.metric_baseline
-                if use_case.metric_baseline is not None
-                else "",
+                use_case.metric_baseline if use_case.metric_baseline is not None else "",
                 use_case.metric_target if use_case.metric_target is not None else "",
                 use_case.metric_actual if use_case.metric_actual is not None else "",
                 use_case.metric_unit,

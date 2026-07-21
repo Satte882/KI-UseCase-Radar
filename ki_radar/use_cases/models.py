@@ -5,10 +5,9 @@ from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.urls import reverse
-from simple_history.models import HistoricalRecords
-
 from ki_radar.accounts.models import BusinessUnit
 from ki_radar.core.models import TimeStampedModel
+from simple_history.models import HistoricalRecords
 
 
 class UseCaseCounter(models.Model):
@@ -38,7 +37,8 @@ class StrategicObjective(TimeStampedModel):
         ordering = ["-is_active", "title"]
         indexes = [
             models.Index(
-                fields=["is_active", "active_until"], name="use_cases_obj_active_until_idx"
+                fields=["is_active", "active_until"],
+                name="use_cases_obj_active_until_idx",
             )
         ]
 
@@ -116,7 +116,9 @@ class UseCase(TimeStampedModel):
         related_name="submitted_use_cases",
     )
     business_owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="owned_use_cases"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="owned_use_cases",
     )
     coordinator = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -212,10 +214,18 @@ class UseCase(TimeStampedModel):
     metric_evidence_url = models.URLField(blank=True, verbose_name="Messnachweis")
 
     one_time_cost = models.DecimalField(
-        max_digits=12, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(0)]
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0)],
     )
     recurring_cost = models.DecimalField(
-        max_digits=12, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(0)]
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0)],
     )
 
     business_value = models.CharField(max_length=10, choices=Level.choices, default=Level.MEDIUM)
@@ -247,13 +257,16 @@ class UseCase(TimeStampedModel):
         ordering = ["-updated_at"]
         indexes = [
             models.Index(
-                fields=["status", "next_review_date"], name="use_cases_u_status_166548_idx"
+                fields=["status", "next_review_date"],
+                name="use_cases_u_status_166548_idx",
             ),
             models.Index(
-                fields=["business_unit", "status"], name="use_cases_u_busines_130cef_idx"
+                fields=["business_unit", "status"],
+                name="use_cases_u_busines_130cef_idx",
             ),
             models.Index(
-                fields=["strategic_objective", "status"], name="usecase_strategy_status_idx"
+                fields=["strategic_objective", "status"],
+                name="usecase_strategy_status_idx",
             ),
         ]
 
@@ -295,7 +308,11 @@ class UseCase(TimeStampedModel):
     def recommendation(self) -> str:
         high_positive = sum(
             x == self.Level.HIGH
-            for x in [self.business_value, self.technical_feasibility, self.data_readiness]
+            for x in [
+                self.business_value,
+                self.technical_feasibility,
+                self.data_readiness,
+            ]
         )
         if self.risk_complexity == self.Level.HIGH or self.data_readiness == self.Level.LOW:
             return "Weitere Klärung erforderlich"
@@ -353,7 +370,8 @@ class DecisionAssessment(TimeStampedModel):
         ordering = ["-version"]
         constraints = [
             models.UniqueConstraint(
-                fields=["use_case", "version"], name="unique_assessment_version_per_use_case"
+                fields=["use_case", "version"],
+                name="unique_assessment_version_per_use_case",
             )
         ]
         indexes = [
@@ -364,7 +382,7 @@ class DecisionAssessment(TimeStampedModel):
         ]
 
     def __str__(self) -> str:
-        return f"{self.use_case.short_id} – Bewertung v{self.version}"
+        return f"{self.use_case.short_id} - Bewertung v{self.version}"
 
     @property
     def minimum_confidence(self) -> str:
@@ -375,7 +393,11 @@ class DecisionAssessment(TimeStampedModel):
             self.data_readiness_confidence,
             self.risk_complexity_confidence,
         ]
-        order = {self.Confidence.LOW: 0, self.Confidence.MEDIUM: 1, self.Confidence.HIGH: 2}
+        order = {
+            self.Confidence.LOW: 0,
+            self.Confidence.MEDIUM: 1,
+            self.Confidence.HIGH: 2,
+        }
         return min(values, key=order.get)
 
     @property
@@ -424,13 +446,11 @@ class BenefitMeasurement(TimeStampedModel):
     class Meta:
         ordering = ["-measured_at", "-created_at"]
         indexes = [
-            models.Index(
-                fields=["use_case", "-measured_at"], name="use_cases_benefit_date_idx"
-            )
+            models.Index(fields=["use_case", "-measured_at"], name="use_cases_benefit_date_idx")
         ]
 
     def __str__(self) -> str:
-        return f"{self.use_case.short_id} – {self.measured_at}"
+        return f"{self.use_case.short_id} - {self.measured_at}"
 
     @property
     def result(self) -> str:

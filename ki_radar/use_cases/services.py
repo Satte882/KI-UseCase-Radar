@@ -9,7 +9,6 @@ from django.utils import timezone
 
 from .models import DecisionAssessment, UseCase
 
-
 STATUS_ORDER = {
     UseCase.Status.IDEA: 0,
     UseCase.Status.REVIEW: 1,
@@ -115,9 +114,7 @@ def _missing_fields(use_case: UseCase, field_names: list[str]) -> list[str]:
         value = getattr(use_case, field_name)
         if value in (None, ""):
             missing.append(
-                FIELD_LABELS.get(
-                    field_name, str(use_case._meta.get_field(field_name).verbose_name)
-                )
+                FIELD_LABELS.get(field_name, str(use_case._meta.get_field(field_name).verbose_name))
             )
     return missing
 
@@ -129,9 +126,7 @@ def _portfolio_quality_warnings(use_case: UseCase) -> list[str]:
             "Kein strategisches Ziel verknüpft; die Portfolio-Relevanz ist nicht nachvollziehbar."
         )
     elif not use_case.strategy_contribution:
-        warnings.append(
-            "Der konkrete Beitrag zum strategischen Ziel ist nicht beschrieben."
-        )
+        warnings.append("Der konkrete Beitrag zum strategischen Ziel ist nicht beschrieben.")
 
     latest_assessment = use_case.decision_assessments.first()
     if not latest_assessment:
@@ -140,14 +135,10 @@ def _portfolio_quality_warnings(use_case: UseCase) -> list[str]:
         )
     else:
         if latest_assessment.minimum_confidence == DecisionAssessment.Confidence.LOW:
-            warnings.append(
-                "Mindestens ein Bewertungskriterium hat niedrige Evidenzsicherheit."
-            )
+            warnings.append("Mindestens ein Bewertungskriterium hat niedrige Evidenzsicherheit.")
         age = (timezone.localdate() - latest_assessment.assessment_date).days
         if age > 180:
-            warnings.append(
-                "Die letzte evidenzbasierte Bewertung ist älter als 180 Tage."
-            )
+            warnings.append("Die letzte evidenzbasierte Bewertung ist älter als 180 Tage.")
     return warnings
 
 
@@ -168,9 +159,7 @@ def check_pilot_start(use_case: UseCase) -> DecisionCheck:
         and use_case.metric_target is not None
         and use_case.metric_baseline == use_case.metric_target
     ):
-        warnings.append(
-            "Baseline und Zielwert sind identisch; die Nutzenhypothese prüfen."
-        )
+        warnings.append("Baseline und Zielwert sind identisch; die Nutzenhypothese prüfen.")
     if use_case.planned_pilot_end and use_case.planned_pilot_end < timezone.localdate():
         warnings.append("Das geplante Pilotende liegt bereits in der Vergangenheit.")
     state = "blocked" if blockers else ("review" if warnings else "ready")
@@ -212,9 +201,7 @@ def check_go_live(use_case: UseCase) -> DecisionCheck:
             "Rechtsprüfung",
         ),
     ]
-    blockers.extend(
-        label for required, completed, label in checks if required and not completed
-    )
+    blockers.extend(label for required, completed, label in checks if required and not completed)
     if use_case.metric_result == UseCase.MetricResult.NOT_ACHIEVED:
         warnings.append(
             "Das Pilotziel wurde nicht erreicht. Ein Go-live benötigt eine ausdrückliche "
@@ -266,9 +253,7 @@ def current_decision_check(use_case: UseCase) -> DecisionCheck:
             warnings.append("Die Betriebsüberprüfung ist überfällig.")
         latest_measurement = use_case.benefit_measurements.first()
         measured_at = (
-            latest_measurement.measured_at
-            if latest_measurement
-            else use_case.metric_measured_at
+            latest_measurement.measured_at if latest_measurement else use_case.metric_measured_at
         )
         if not measured_at:
             warnings.append("Im Betrieb wurde noch keine Nutzenmessung dokumentiert.")

@@ -1,7 +1,6 @@
 from django import forms
 from django.contrib.auth import get_user_model
 from django.db.models import Q
-
 from ki_radar.accounts.models import BusinessUnit
 from ki_radar.accounts.permissions import is_coordinator
 
@@ -90,7 +89,9 @@ class UseCaseForm(forms.ModelForm):
             "support_responsibility": forms.Textarea(attrs={"rows": 2}),
         }
         help_texts = {
-            "strategic_objective": "Welches aktive Unternehmensziel wird durch den Use Case unterstützt?",
+            "strategic_objective": (
+                "Welches aktive Unternehmensziel wird durch den Use Case unterstützt?"
+            ),
             "strategy_contribution": (
                 "Konkreter Wirkzusammenhang zwischen Use Case, Ziel und erwarteter Veränderung."
             ),
@@ -177,9 +178,7 @@ class UseCaseForm(forms.ModelForm):
         ]:
             if field_name in self.fields:
                 self.fields[field_name].widget.attrs["class"] = "form-select"
-        self.fields["business_unit"].queryset = BusinessUnit.objects.filter(
-            is_active=True
-        )
+        self.fields["business_unit"].queryset = BusinessUnit.objects.filter(is_active=True)
         objectives = StrategicObjective.objects.filter(is_active=True)
         if self.instance.pk and self.instance.strategic_objective_id:
             objectives = StrategicObjective.objects.filter(
@@ -187,9 +186,9 @@ class UseCaseForm(forms.ModelForm):
             )
         self.fields["strategic_objective"].queryset = objectives.order_by("title")
         user_model = get_user_model()
-        active_users = user_model.objects.filter(
-            is_active=True, is_anonymized=False
-        ).order_by("last_name", "first_name", "username")
+        active_users = user_model.objects.filter(is_active=True, is_anonymized=False).order_by(
+            "last_name", "first_name", "username"
+        )
         for name in ["business_owner", "coordinator", "technical_owner"]:
             self.fields[name].queryset = active_users
         self.fields["business_owner"].required = True
@@ -228,9 +227,7 @@ class UseCaseForm(forms.ModelForm):
                 ("metric_actual", actual),
             ]:
                 if value is not None and not 0 <= value <= 100:
-                    self.add_error(
-                        field_name, "Prozentwerte müssen zwischen 0 und 100 liegen."
-                    )
+                    self.add_error(field_name, "Prozentwerte müssen zwischen 0 und 100 liegen.")
         if baseline is not None and target is not None:
             if baseline == target:
                 self.add_error(
@@ -247,9 +244,7 @@ class UseCaseForm(forms.ModelForm):
                     "metric_target",
                     "Bei 'Höher ist besser' muss der Zielwert über der Baseline liegen.",
                 )
-        if cleaned.get("strategic_objective") and not cleaned.get(
-            "strategy_contribution"
-        ):
+        if cleaned.get("strategic_objective") and not cleaned.get("strategy_contribution"):
             self.add_error(
                 "strategy_contribution",
                 "Der konkrete Beitrag zum gewählten strategischen Ziel muss beschrieben werden.",
@@ -307,9 +302,7 @@ class StrategicObjectiveForm(forms.ModelForm):
         active_from = cleaned.get("active_from")
         active_until = cleaned.get("active_until")
         if active_from and active_until and active_until < active_from:
-            self.add_error(
-                "active_until", "Das Enddatum darf nicht vor dem Startdatum liegen."
-            )
+            self.add_error("active_until", "Das Enddatum darf nicht vor dem Startdatum liegen.")
         return cleaned
 
 
@@ -396,16 +389,12 @@ class DecisionAssessmentForm(forms.ModelForm):
             self.fields["assessment_date"].initial = timezone.localdate()
             if use_case:
                 self.fields["business_value"].initial = use_case.business_value
-                self.fields[
-                    "technical_feasibility"
-                ].initial = use_case.technical_feasibility
+                self.fields["technical_feasibility"].initial = use_case.technical_feasibility
                 self.fields["data_readiness"].initial = use_case.data_readiness
                 self.fields["risk_complexity"].initial = use_case.risk_complexity
                 self.fields["strategic_fit"].initial = UseCase.Level.MEDIUM
             for name in self.criterion_names:
-                self.fields[
-                    f"{name}_confidence"
-                ].initial = DecisionAssessment.Confidence.MEDIUM
+                self.fields[f"{name}_confidence"].initial = DecisionAssessment.Confidence.MEDIUM
 
 
 class BenefitMeasurementForm(forms.ModelForm):
@@ -450,9 +439,10 @@ class BenefitMeasurementForm(forms.ModelForm):
 
     def clean_actual_value(self):
         value = self.cleaned_data["actual_value"]
-        if self.use_case and self.use_case.metric_type == UseCase.MetricType.PERCENT:
-            if not 0 <= value <= 100:
-                raise forms.ValidationError(
-                    "Prozentwerte müssen zwischen 0 und 100 liegen."
-                )
+        if (
+            self.use_case
+            and self.use_case.metric_type == UseCase.MetricType.PERCENT
+            and not 0 <= value <= 100
+        ):
+            raise forms.ValidationError("Prozentwerte müssen zwischen 0 und 100 liegen.")
         return value
