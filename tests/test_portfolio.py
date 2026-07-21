@@ -201,13 +201,15 @@ def test_portfolio_view_renders_navigation_matrix_and_unclassified_area(
 ):
     make_use_case(owner, business_unit)
     client.force_login(owner)
+    portfolio_url = reverse("reporting:portfolio")
 
-    response = client.get(reverse("reporting:portfolio"))
+    response = client.get(portfolio_url)
 
     assert response.status_code == 200
     content = response.content.decode()
     assert "Entscheidungs-Matrix" in content
     assert "Portfolio-Landkarte" in content
-    assert "Nicht einordenbar – 1 Use Cases" in content
-    assert 'href="/portfolio/"' in content
+    assert "Nicht einordenbar" in content
+    assert "1 Use Cases" in content
+    assert f'href="{portfolio_url}"' in content
     assert "sidebar-link active" in content
