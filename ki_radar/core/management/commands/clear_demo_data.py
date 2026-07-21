@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 
+from ki_radar.core.demo_architecture_data import clear_demo_architecture_data
 from ki_radar.core.demo_data import clear_demo_data
 
 
@@ -7,6 +8,7 @@ class Command(BaseCommand):
     help = "Remove only the KI-Radar demo dataset created by seed_demo_data."
 
     def handle(self, *args, **options):
+        architecture_counts = clear_demo_architecture_data()
         counts = clear_demo_data()
         self.stdout.write(
             self.style.SUCCESS(
@@ -15,6 +17,8 @@ class Command(BaseCommand):
                 f"{counts['users']} Benutzer, "
                 f"{counts['use_cases']} Use Cases, "
                 f"{counts['governance_assessments']} Governance-Screenings, "
-                f"{counts['reviews']} Reviews."
+                f"{counts['reviews']} Reviews, "
+                f"{architecture_counts['value_streams']} Architecture-Objekte und "
+                f"{architecture_counts['architecture_origins']} Herkunftsverknüpfungen."
             )
         )
