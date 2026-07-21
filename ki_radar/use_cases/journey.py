@@ -594,7 +594,11 @@ def build_value_stream_journey(value_stream: ValueStream, user) -> JourneyState:
         preferred = analysis.solution_options.filter(
             recommendation=SolutionOption.Recommendation.PREFERRED
         ).first()
-        if _missing_process_fields(analysis) or preferred is None or not analysis.use_case_origins.exists():
+        if (
+            _missing_process_fields(analysis)
+            or preferred is None
+            or not analysis.use_case_origins.exists()
+        ):
             return build_process_analysis_journey(analysis, user)
     if analyses:
         return build_process_analysis_journey(analyses[0], user)

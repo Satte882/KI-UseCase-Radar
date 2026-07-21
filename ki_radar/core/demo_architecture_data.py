@@ -266,7 +266,9 @@ def _seed_invoice_golden_path() -> tuple[ValueStream, ProcessAnalysis, int, int]
     return value_stream, process, 1, 1
 
 
-def _seed_incomplete_supplier_discovery(reference_use_case: UseCase) -> tuple[ValueStream, ProcessAnalysis]:
+def _seed_incomplete_supplier_discovery(
+    reference_use_case: UseCase,
+) -> tuple[ValueStream, ProcessAnalysis]:
     owner = reference_use_case.business_owner
     coordinator = reference_use_case.coordinator
     value_stream = _upsert_value_stream(
@@ -325,7 +327,9 @@ def _seed_incomplete_supplier_discovery(reference_use_case: UseCase) -> tuple[Va
     return value_stream, process
 
 
-def _seed_non_ai_order_approval(reference_use_case: UseCase) -> tuple[ValueStream, ProcessAnalysis, int]:
+def _seed_non_ai_order_approval(
+    reference_use_case: UseCase,
+) -> tuple[ValueStream, ProcessAnalysis, int]:
     owner = reference_use_case.business_owner
     coordinator = reference_use_case.coordinator
     value_stream = _upsert_value_stream(
@@ -591,7 +595,9 @@ def clear_demo_architecture_data() -> dict[str, int]:
     )
     origin_count, _ = UseCaseOrigin.objects.filter(stage__value_stream__in=stream_filter).delete()
     process_count = ProcessAnalysis.objects.filter(stage__value_stream__in=stream_filter).count()
-    option_count = SolutionOption.objects.filter(process_analysis__stage__value_stream__in=stream_filter).count()
+    option_count = SolutionOption.objects.filter(
+        process_analysis__stage__value_stream__in=stream_filter
+    ).count()
     stream_count, _ = stream_filter.delete()
     return {
         "delivery_packages": delivery_count,

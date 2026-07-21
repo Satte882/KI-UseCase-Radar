@@ -76,9 +76,7 @@ def test_incomplete_supplier_discovery_points_to_missing_process_information(see
 def test_non_ai_preferred_option_finishes_discovery_without_use_case(seeded_demo):
     value_stream = ValueStream.objects.get(demo_key=ORDER_STREAM_KEY)
     process = ProcessAnalysis.objects.get(stage__value_stream=value_stream)
-    preferred = process.solution_options.get(
-        recommendation=SolutionOption.Recommendation.PREFERRED
-    )
+    preferred = process.solution_options.get(recommendation=SolutionOption.Recommendation.PREFERRED)
 
     journey = build_process_analysis_journey(process, seeded_demo)
     steps = {step.key: step for step in journey.steps}
@@ -164,7 +162,9 @@ def test_demo_key_survives_title_change_and_cleanup(seeded_demo):
 @pytest.mark.django_db
 def test_guided_components_are_visible_on_detail_pages(client, seeded_demo):
     use_case = UseCase.objects.get(demo_key=INVOICE_USE_CASE_KEY)
-    supplier_process = ProcessAnalysis.objects.get(stage__value_stream__demo_key=SUPPLIER_STREAM_KEY)
+    supplier_process = ProcessAnalysis.objects.get(
+        stage__value_stream__demo_key=SUPPLIER_STREAM_KEY
+    )
     client.force_login(seeded_demo)
 
     use_case_response = client.get(use_case.get_absolute_url())
