@@ -90,6 +90,122 @@ class ValueStreamStage(TimeStampedModel):
         return self.value_stream.get_absolute_url()
 
 
+class ProcessAnalysis(TimeStampedModel):
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Entwurf"
+        VALIDATED = "validated", "Ist-Prozess validiert"
+        TARGET_DEFINED = "target_defined", "Zielbild beschrieben"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    stage = models.ForeignKey(
+        ValueStreamStage,
+        on_delete=models.CASCADE,
+        related_name="process_analyses",
+    )
+    name = models.CharField(max_length=200)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
+    scope_start = models.TextField(verbose_name="Prozessstart")
+    scope_end = models.TextField(verbose_name="Prozessende")
+    trigger = models.TextField(verbose_name="Auslöser")
+    outcome = models.TextField(verbose_name="Ergebnis")
+    current_flow = models.TextField(verbose_name="Ist-Ablauf")
+    roles = models.TextField(verbose_name="Rollen und Verantwortlichkeiten")
+    systems = models.TextField(verbose_name="Anwendungen und Arbeitsmittel")
+    data_objects = models.TextField(verbose_name="Datenobjekte und Dokumente")
+    business_rules = models.TextField(blank=True, verbose_name="Geschäftsregeln")
+    handoffs = models.TextField(blank=True, verbose_name="Übergaben und Schnittstellen")
+    bottlenecks = models.TextField(verbose_name="Bottlenecks und Ursachen")
+    exceptions = models.TextField(blank=True, verbose_name="Ausnahmen und Fehlerfälle")
+    baseline_metrics = models.TextField(verbose_name="Baseline und Prozesskennzahlen")
+    target_state_principles = models.TextField(
+        blank=True,
+        verbose_name="Prinzipien für den Soll-Prozess",
+    )
+    analyzed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="process_analyses",
+    )
+
+    class Meta:
+        ordering = ["stage__sequence", "name"]
+
+    def __str__(self) -> str:
+        return self.name
+
+    def get_absolute_url(self):
+        return reverse("architecture:process_analysis_detail", kwargs={"pk": self.pk})
+
+
+class SolutionOption(TimeStampedModel):
+    class OptionType(models.TextChoices):
+        ORGANIZATIONAL = "organizational", "Organisatorische Änderung"
+        RULE_AUTOMATION = "rule_automation", "Regelbasierte Automatisierung"
+        STANDARD_SOFTWARE = "standard_software", "Standardsoftware"
+        CUSTOM_SOFTWARE = "custom_software", "Individuelle Software"
+        ANALYTICS_ML = "analytics_ml", "Analytics oder Machine Learning"
+        GENERATIVE_AI = "generative_ai", "Generative KI"
+        ASSISTANT = "assistant", "Assistenzsystem"
+        NO_TECH = "no_tech", "Keine technische Lösung"
+        OTHER = "other", "Sonstige Option"
+
+    class Recommendation(models.TextChoices):
+        CANDIDATE = "candidate", "Kandidat"
+        PREFERRED = "preferred", "Bevorzugte Option"
+        REJECTED = "rejected", "Verworfen"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    process_analysis = models.ForeignKey(
+        ProcessAnalysis,
+        on_delete=models.CASCADE,
+        related_name="solution_options",
+    )
+    name = models.CharField(max_length=200)
+    option_type = models.CharField(max_length=30, choices=OptionType.choices)
+    recommendation = models.CharField(
+        max_length=20,
+        choices=Recommendation.choices,
+        default=Recommendation.CANDIDATE,
+    )
+    description = models.TextField(verbose_name="Lösungsbeschreibung")
+    expected_value = models.TextField(verbose_name="Erwarteter Beitrag")
+    feasibility = models.CharField(
+        max_length=10,
+        choices=[("low", "Niedrig"), ("medium", "Mittel"), ("high", "Hoch")],
+        default="medium",
+        verbose_name="Machbarkeit",
+    )
+    data_requirements = models.TextField(blank=True, verbose_name="Datenanforderungen")
+    application_impact = models.TextField(blank=True, verbose_name="Auswirkung auf Anwendungen")
+    integration_impact = models.TextField(blank=True, verbose_name="Integrationen")
+    technology_constraints = models.TextField(blank=True, verbose_name="Technologieleitplanken")
+    risks = models.TextField(blank=True, verbose_name="Risiken und Nachteile")
+    architecture_fit = models.TextField(blank=True, verbose_name="Begründung und Architecture Fit")
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="solution_options",
+    )
+
+    class Meta:
+        ordering = ["recommendation", "name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["process_analysis"],
+                condition=models.Q(recommendation="preferred"),
+                name="single_preferred_solution_per_process",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return self.name
+
+    def get_absolute_url(self):
+        return self.process_analysis.get_absolute_url()
+
+
 class UseCaseOrigin(TimeStampedModel):
     use_case = models.OneToOneField(
         "use_cases.UseCase",
@@ -98,6 +214,20 @@ class UseCaseOrigin(TimeStampedModel):
     )
     stage = models.ForeignKey(
         ValueStreamStage,
+        on_delete=models.PROTECT,
+        related_name="use_case_origins",
+    )
+    process_analysis = models.ForeignKey(
+        ProcessAnalysis,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="use_case_origins",
+    )
+    solution_option = models.ForeignKey(
+        SolutionOption,
+        null=True,
+        blank=True,
         on_delete=models.PROTECT,
         related_name="use_case_origins",
     )
