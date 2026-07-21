@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Bewertung – {{ use_case.short_id }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><div class="eyebrow mb-2">{{ use_case.short_id }} · Strukturierte Bewertung</div><h1 class="page-title">{{ use_case.title }}</h1><p class="page-subtitle">Confidence wird aus Evidenzqualität, Aktualität, Abdeckung, unabhängiger Prüfung und geklärten Annahmen hergeleitet.</p></div>
+</div>
+<form method="post">{% csrf_token %}
+  <div class="app-card mb-4">
+    <div class="card-header"><strong>Fachliche Bewertung</strong></div>
+    <div class="card-body"><div class="row g-3">
+      {% for field in form %}
+      {% if field.name == 'evidence_quality' %}</div></div></div><div class="app-card mb-4"><div class="card-header"><strong>Belastbarkeit der Evidenz</strong><div class="small text-muted mt-1">Keine freie Confidence-Auswahl: Das System leitet die Stufe deterministisch aus diesen Faktoren ab.</div></div><div class="card-body"><div class="row g-3">{% endif %}
+      {% if field.name == 'evidence_url' %}</div></div></div><div class="app-card mb-4"><div class="card-header"><strong>Nachweis und Empfehlung</strong></div><div class="card-body"><div class="row g-3">{% endif %}
+      <div class="{% if field.name == 'rationale' or field.name == 'evidence_url' or field.field.widget.input_type == 'checkbox' %}col-12{% else %}col-md-6{% endif %}">
+        {% if field.field.widget.input_type == 'checkbox' %}<div class="form-check mt-3">{{ field }}<label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label></div>
+        {% else %}<label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>{{ field }}{% endif %}
+        <div class="text-danger small">{{ field.errors }}</div>{% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+      </div>
+      {% endfor %}
+    </div></div></div>
+  <div class="d-flex justify-content-end gap-2"><a class="btn btn-outline-secondary" href="{{ use_case.get_absolute_url }}">Abbrechen</a><button class="btn btn-primary">Bewertung speichern</button></div>
+</form>
+{% endblock %}

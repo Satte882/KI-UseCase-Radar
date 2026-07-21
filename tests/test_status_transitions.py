@@ -31,6 +31,7 @@ def test_transition_to_pilot_requires_fields_and_governance(use_case, coordinato
 
 @pytest.mark.django_db
 def test_transition_to_pilot_succeeds(use_case, coordinator):
+    use_case.decision_status = UseCase.DecisionStatus.APPROVED
     use_case.data_sources = "Wissensbasis"
     use_case.next_review_date = timezone.localdate()
     use_case.planned_pilot_end = timezone.localdate()

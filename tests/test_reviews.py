@@ -27,6 +27,7 @@ def use_case(owner, business_unit):
 def prepare_failed_pilot(use_case, coordinator):
     today = timezone.localdate()
     use_case.status = UseCase.Status.PILOT
+    use_case.decision_status = UseCase.DecisionStatus.APPROVED
     use_case.data_sources = "ERP und Dokumentenablage"
     use_case.planned_pilot_end = today
     use_case.technical_owner = coordinator
@@ -138,6 +139,7 @@ def test_continue_review_keeps_status(client, coordinator, use_case):
 @pytest.mark.django_db
 def test_review_can_supply_required_review_date_for_pilot_transition(coordinator, use_case):
     today = timezone.localdate()
+    use_case.decision_status = UseCase.DecisionStatus.APPROVED
     use_case.data_sources = "Freigegebene Wissensbasis"
     use_case.planned_pilot_end = today
     use_case.metric_name = "Bearbeitungszeit"

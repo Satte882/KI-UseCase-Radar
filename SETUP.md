@@ -1,4 +1,4 @@
-# KI-Radar lokal unter Windows 11 starten
+# KI-Radar lokal starten
 
 ## 1. Voraussetzungen
 
@@ -36,7 +36,7 @@ Copy-Item .env.example .env
 Für den optionalen semantischen Review-Copilot in `.env` eintragen:
 
 ```dotenv
-OPENROUTER_API_KEY=dein_openrouter_api_key
+OPENROUTER_API_KEY=<eigener-key>
 ```
 
 Optional kann ein konkretes OpenRouter-Modell gewählt werden:
@@ -54,6 +54,9 @@ Die `.env` ist durch `.gitignore` vom Repository ausgeschlossen und darf nicht c
 ```powershell
 docker compose -f compose.local.yml up --build
 ```
+
+Docker Compose liest die `.env` im Repository-Stamm automatisch und reicht die
+OpenRouter-Variablen an den App-Container weiter.
 
 Beim Start werden automatisch:
 
@@ -146,26 +149,58 @@ docker build -t ki-radar:local .
 
 ## 9. Native Entwicklung mit uv
 
-Nur PostgreSQL starten:
+Bei der nativen Ausführung lädt Django die `.env` nicht automatisch. Zuerst nur
+PostgreSQL starten und die Python-Abhängigkeiten synchronisieren:
 
-```powershell
+```text
 docker compose -f compose.local.yml up -d db
 uv sync --frozen --dev
 ```
 
-Umgebungsvariablen für PowerShell setzen, danach:
+Die `.env.example` verwendet für die native Verbindung den Host-Port `5433`.
+Unter Linux und macOS die Prozessumgebung so laden:
 
-```powershell
+```bash
+cp .env.example .env  # nur falls noch keine .env vorhanden ist
+set -a
+source .env
+set +a
+
 uv run python manage.py migrate
-uv run python manage.py seed_roles
+uv run pytest -q
 uv run python manage.py runserver
 ```
 
-Für den Copilot zusätzlich:
+Unter PowerShell die Einträge sicher zeilenweise in die Prozessumgebung laden:
 
 ```powershell
-$env:OPENROUTER_API_KEY = "dein_openrouter_api_key"
-$env:OPENROUTER_MODEL = ""
+$envFile = ".env"
+Get-Content -LiteralPath $envFile | ForEach-Object {
+    $line = $_.Trim()
+
+    if ($line -and -not $line.StartsWith("#") -and $line.Contains("=")) {
+        $name, $value = $line -split "=", 2
+
+        if ($name) {
+            [Environment]::SetEnvironmentVariable(
+                $name.Trim(),
+                $value,
+                "Process"
+            )
+        }
+    }
+}
+
+uv run python manage.py migrate
+uv run python manage.py seed_roles
+uv run pytest -q
+uv run python manage.py runserver
+```
+
+Für den optionalen Copilot genügt in der `.env`:
+
+```dotenv
+OPENROUTER_API_KEY=<eigener-key>
 ```
 
 ## 10. Health-Checks

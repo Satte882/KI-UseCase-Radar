@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Use Case aufnehmen – KI-Radar{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="eyebrow mb-2">Geführte Use-Case-Aufnahme · Schritt {{ step }} von {{ total_steps }}</div>
+    <h1 class="page-title">{{ step_config.title }}</h1>
+    <p class="page-subtitle">{{ step_config.subtitle }}</p>
+  </div>
+</div>
+
+<div class="progress mb-4" role="progressbar" aria-label="Fortschritt" aria-valuenow="{{ step }}" aria-valuemin="1" aria-valuemax="{{ total_steps }}">
+  <div class="progress-bar {{ progress_class }}"></div>
+</div>
+
+<div class="app-card mb-4">
+  {% if form %}
+  <form method="post">
+    {% csrf_token %}
+    <div class="card-body">
+      {{ form.non_field_errors }}
+      {% if step_config.example %}
+      <div class="alert alert-info"><strong>Orientierung:</strong> {{ step_config.example }}</div>
+      {% endif %}
+      <div class="row g-3">
+        {% for field in form %}
+        <div class="{% if field.field.widget.input_type == 'checkbox' %}col-12{% else %}col-12{% endif %}">
+          {% if field.field.widget.input_type == 'checkbox' %}
+          <div class="form-check mt-2">{{ field }}<label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label></div>
+          {% else %}
+          <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+          {{ field }}
+          {% endif %}
+          <div class="text-danger small">{{ field.errors }}</div>
+          {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="card-footer d-flex justify-content-between gap-2">
+      <div>{% if previous_step %}<a class="btn btn-outline-secondary" href="{% url 'use_cases:intake_step' previous_step %}">Zurück</a>{% endif %}</div>
+      <button class="btn btn-primary">Weiter</button>
+    </div>
+  </form>
+  {% else %}
+  <form method="post">
+    {% csrf_token %}
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
+        <div><div class="section-title">Entscheidungsreife</div><h2 class="h4 mb-1">{{ candidate.title }}</h2><div class="text-muted">{{ candidate.business_unit }} · {{ candidate.affected_process }}</div></div>
+        <span class="badge {% if blockers %}state-blocked{% else %}state-ready{% endif %}">{% if blockers %}Weitere Klärung erforderlich{% else %}Bereit zur Bewertung{% endif %}</span>
+      </div>
+      {% if blockers %}
+      <div class="alert alert-danger"><strong>Fehlende Pflichtangaben:</strong><ul class="mb-0 mt-2">{% for blocker in blockers %}<li>{{ blocker }}</li>{% endfor %}</ul></div>
+      {% endif %}
+      <div class="row g-4">
+        <div class="col-md-6"><div class="section-title">Problem</div><p>{{ candidate.problem_statement }}</p></div>
+        <div class="col-md-6"><div class="section-title">Prozess</div><p>{{ candidate.affected_process }}</p><p class="small text-muted">{{ candidate.summary }}</p></div>
+        <div class="col-md-6"><div class="section-title">Erwarteter Nutzen</div><p>{{ candidate.expected_benefit }}</p></div>
+        <div class="col-md-6"><div class="section-title">Primäre Kennzahl</div><p>{{ candidate.metric_name }}: {{ candidate.metric_baseline }} → {{ candidate.metric_target }} {{ candidate.metric_unit }}</p></div>
+        <div class="col-md-6"><div class="section-title">Daten</div><p>{{ candidate.data_sources }}</p></div>
+        <div class="col-md-6">
+          <div class="section-title">Erforderliche Prüfungen</div>
+          <dl class="review-requirements mb-0">
+            <dt>Datenschutz</dt>
+            <dd>{% if candidate.privacy_review_required %}Erforderlich{% else %}Nicht erforderlich{% endif %}</dd>
+            <dt>Informationssicherheit</dt>
+            <dd>{% if candidate.security_review_required %}Erforderlich{% else %}Nicht erforderlich{% endif %}</dd>
+            <dt>Recht</dt>
+            <dd>{% if candidate.legal_review_required %}Erforderlich{% else %}Nicht erforderlich{% endif %}</dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+    <div class="card-footer d-flex justify-content-between gap-2">
+      <a class="btn btn-outline-secondary" href="{% url 'use_cases:intake_step' 5 %}">Zurück</a>
+      <button class="btn btn-primary" {% if blockers %}disabled{% endif %}>Use Case anlegen und zur Bewertung übergeben</button>
+    </div>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

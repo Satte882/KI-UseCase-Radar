@@ -5,6 +5,7 @@ from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.urls import reverse
+from django.utils import timezone
 from simple_history.models import HistoricalRecords
 
 from ki_radar.accounts.models import BusinessUnit
@@ -25,6 +26,17 @@ class UseCase(TimeStampedModel):
         PILOT = "pilot", "Pilot"
         OPERATION = "operation", "Betrieb"
         ENDED = "ended", "Beendet"
+
+    class DecisionStatus(models.TextChoices):
+        CLARIFICATION = "clarification", "In Klärung"
+        READY = "ready", "Bereit zur Bewertung"
+        DEFERRED = "deferred", "Zurückgestellt"
+        APPROVED = "approved", "Freigegeben"
+        APPROVED_WITH_CONDITIONS = (
+            "approved_with_conditions",
+            "Freigegeben mit Auflagen",
+        )
+        NOT_PURSUED = "not_pursued", "Nicht weiterverfolgt"
 
     class Level(models.TextChoices):
         LOW = "low", "Niedrig"
@@ -107,6 +119,13 @@ class UseCase(TimeStampedModel):
 
     status = models.CharField(
         max_length=20, choices=Status.choices, default=Status.IDEA, db_index=True
+    )
+    decision_status = models.CharField(
+        max_length=30,
+        choices=DecisionStatus.choices,
+        default=DecisionStatus.CLARIFICATION,
+        db_index=True,
+        verbose_name="Entscheidungsstatus",
     )
     priority = models.CharField(max_length=20, choices=Priority.choices, default=Priority.NORMAL)
     next_review_date = models.DateField(null=True, blank=True, db_index=True)
@@ -212,6 +231,7 @@ class UseCase(TimeStampedModel):
         indexes = [
             models.Index(fields=["status", "next_review_date"]),
             models.Index(fields=["business_unit", "status"]),
+            models.Index(fields=["decision_status", "updated_at"]),
         ]
 
     def __str__(self) -> str:
@@ -259,3 +279,144 @@ class UseCase(TimeStampedModel):
         if high_positive >= 2 and self.risk_complexity != self.Level.HIGH:
             return "Bevorzugt prüfen"
         return "Vorläufig zurückstellen"
+
+
+class DecisionAssessment(TimeStampedModel):
+    class EvidenceQuality(models.IntegerChoices):
+        ASSUMPTION = 1, "Unbestätigte Annahme"
+        EXPERT_OPINION = 2, "Fachliche Einschätzung"
+        SAMPLE = 3, "Stichprobe oder Einzelmessung"
+        REPRESENTATIVE = 4, "Repräsentative Messung"
+        INDEPENDENT = 5, "Unabhängig bestätigte Messung"
+
+    class ConfidenceFactor(models.IntegerChoices):
+        CRITICAL = 1, "Unzureichend"
+        LIMITED = 2, "Eingeschränkt"
+        SOLID = 3, "Belastbar"
+        STRONG = 4, "Sehr belastbar"
+
+    class Recommendation(models.TextChoices):
+        DEFERRED = UseCase.DecisionStatus.DEFERRED, "Zurückstellen"
+        APPROVED = UseCase.DecisionStatus.APPROVED, "Freigeben"
+        APPROVED_WITH_CONDITIONS = (
+            UseCase.DecisionStatus.APPROVED_WITH_CONDITIONS,
+            "Mit Auflagen freigeben",
+        )
+        NOT_PURSUED = UseCase.DecisionStatus.NOT_PURSUED, "Nicht weiterverfolgen"
+
+    use_case = models.ForeignKey(
+        UseCase, on_delete=models.CASCADE, related_name="decision_assessments"
+    )
+    version = models.PositiveIntegerField()
+    assessment_date = models.DateField(default=timezone.localdate)
+    assessed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="decision_assessments",
+    )
+    business_value = models.CharField(max_length=10, choices=UseCase.Level.choices)
+    strategic_fit = models.CharField(max_length=10, choices=UseCase.Level.choices)
+    technical_feasibility = models.CharField(max_length=10, choices=UseCase.Level.choices)
+    data_readiness = models.CharField(max_length=10, choices=UseCase.Level.choices)
+    risk_complexity = models.CharField(max_length=10, choices=UseCase.Level.choices)
+    evidence_quality = models.PositiveSmallIntegerField(choices=EvidenceQuality.choices)
+    evidence_recency = models.PositiveSmallIntegerField(choices=ConfidenceFactor.choices)
+    evidence_coverage = models.PositiveSmallIntegerField(choices=ConfidenceFactor.choices)
+    independent_review = models.PositiveSmallIntegerField(choices=ConfidenceFactor.choices)
+    assumptions_resolved = models.PositiveSmallIntegerField(choices=ConfidenceFactor.choices)
+    evidence_url = models.URLField()
+    rationale = models.TextField()
+    governance_precheck_completed = models.BooleanField(
+        default=False,
+        verbose_name="Governance-Vorprüfung durchgeführt",
+    )
+    recommendation = models.CharField(max_length=30, choices=Recommendation.choices)
+
+    class Meta:
+        ordering = ["-version"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["use_case", "version"],
+                name="unique_decision_assessment_version",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.use_case.short_id} - Bewertung v{self.version}"
+
+    @property
+    def confidence_level(self) -> str:
+        factors = [
+            self.evidence_recency,
+            self.evidence_coverage,
+            self.independent_review,
+            self.assumptions_resolved,
+        ]
+        if self.evidence_quality >= self.EvidenceQuality.REPRESENTATIVE and all(
+            value >= self.ConfidenceFactor.SOLID for value in factors
+        ):
+            return UseCase.Level.HIGH
+        if self.evidence_quality >= self.EvidenceQuality.EXPERT_OPINION and all(
+            value >= self.ConfidenceFactor.LIMITED for value in factors
+        ):
+            return UseCase.Level.MEDIUM
+        return UseCase.Level.LOW
+
+    @property
+    def confidence_label(self) -> str:
+        return UseCase.Level(self.confidence_level).label
+
+
+class ApprovalDecision(TimeStampedModel):
+    use_case = models.ForeignKey(
+        UseCase, on_delete=models.CASCADE, related_name="approval_decisions"
+    )
+    assessment = models.ForeignKey(
+        DecisionAssessment,
+        on_delete=models.PROTECT,
+        related_name="approval_decisions",
+    )
+    decision_status = models.CharField(max_length=30, choices=UseCase.DecisionStatus.choices)
+    rationale = models.TextField()
+    decided_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="approval_decisions",
+    )
+    governance_confirmed = models.BooleanField(default=False)
+    conditions = models.TextField(blank=True)
+    condition_owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="decision_conditions",
+    )
+    condition_due_date = models.DateField(null=True, blank=True)
+    second_approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="second_approval_decisions",
+    )
+    finalized_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"{self.use_case.short_id} - {self.get_decision_status_display()}"
+
+    @property
+    def is_pending_second_approval(self) -> bool:
+        return (
+            self.decision_status == UseCase.DecisionStatus.APPROVED_WITH_CONDITIONS
+            and self.finalized_at is None
+        )
+
+    @property
+    def is_final(self) -> bool:
+        return self.finalized_at is not None
