@@ -3,6 +3,20 @@ from django.urls import path
 from . import views
 
 app_name = "architecture"
+
+
+def _stage_create_from_journey(request, stream_pk):
+    return views.stage_create(request, value_stream_id=stream_pk)
+
+
+def _process_create_from_journey(request, stage_pk):
+    return views.process_analysis_create(request, stage_id=stage_pk)
+
+
+def _option_create_from_journey(request, process_pk):
+    return views.solution_option_create(request, process_analysis_id=process_pk)
+
+
 urlpatterns = [
     path("", views.value_stream_list, name="value_stream_list"),
     path("new/", views.value_stream_create, name="value_stream_create"),
@@ -11,6 +25,11 @@ urlpatterns = [
     path(
         "<uuid:value_stream_id>/stages/new/",
         views.stage_create,
+        name="stage_create",
+    ),
+    path(
+        "<uuid:stream_pk>/stages/new/",
+        _stage_create_from_journey,
         name="stage_create",
     ),
     path("stages/<uuid:pk>/edit/", views.stage_update, name="stage_update"),
@@ -22,6 +41,11 @@ urlpatterns = [
     path(
         "stages/<uuid:stage_id>/processes/new/",
         views.process_analysis_create,
+        name="process_analysis_create",
+    ),
+    path(
+        "stages/<uuid:stage_pk>/processes/new/",
+        _process_create_from_journey,
         name="process_analysis_create",
     ),
     path(
@@ -37,6 +61,11 @@ urlpatterns = [
     path(
         "processes/<uuid:process_analysis_id>/options/new/",
         views.solution_option_create,
+        name="solution_option_create",
+    ),
+    path(
+        "processes/<uuid:process_pk>/options/new/",
+        _option_create_from_journey,
         name="solution_option_create",
     ),
     path(
