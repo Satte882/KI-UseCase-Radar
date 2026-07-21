@@ -1,0 +1,44 @@
+name: PR Targeted Patch
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.head_ref == 'feature/guided-journey-demo-scenarios'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          show-progress: false
+      - name: Preserve customer-service lifecycle state
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path("ki_radar/core/demo_architecture_data.py")
+          text = path.read_text(encoding="utf-8")
+          old = """    customer.status = UseCase.Status.PILOT
+    customer.decision_status = UseCase.DecisionStatus.READY
+    customer.save(update_fields=[\"status\", \"decision_status\", \"updated_at\"])
+"""
+          new = """    customer.decision_status = UseCase.DecisionStatus.READY
+    customer.save(update_fields=[\"decision_status\", \"updated_at\"])
+"""
+          if old not in text:
+              raise SystemExit("Expected customer-service status block not found")
+          path.write_text(text.replace(old, new, 1), encoding="utf-8")
+      - name: Commit patch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ki_radar/core/demo_architecture_data.py
+          git commit -m "Preserve customer service operation state"
+          git push origin HEAD:${{ github.head_ref }}
