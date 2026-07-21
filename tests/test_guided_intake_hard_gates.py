@@ -211,9 +211,7 @@ def test_conditional_approval_requires_second_independent_person(
     create_decision_assessment(
         use_case=decision_ready_use_case,
         actor=coordinator,
-        data=assessment_data(
-            recommendation=UseCase.DecisionStatus.APPROVED_WITH_CONDITIONS
-        ),
+        data=assessment_data(recommendation=UseCase.DecisionStatus.APPROVED_WITH_CONDITIONS),
     )
     decision = submit_approval_decision(
         use_case=decision_ready_use_case,

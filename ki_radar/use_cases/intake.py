@@ -6,7 +6,6 @@ from ki_radar.accounts.models import BusinessUnit
 
 from .models import UseCase
 
-
 FORM_CONTROL = "form-control"
 FORM_SELECT = "form-select"
 
@@ -185,7 +184,9 @@ WIZARD_STEPS = {
     },
     5: {
         "title": "Daten- und Lösungsrahmen",
-        "subtitle": "Für die Aufnahme genügt ein belastbarer Rahmen; Architekturdetails folgen später.",
+        "subtitle": (
+            "Für die Aufnahme genügt ein belastbarer Rahmen; Architekturdetails folgen später."
+        ),
         "form": DataStepForm,
     },
     6: {

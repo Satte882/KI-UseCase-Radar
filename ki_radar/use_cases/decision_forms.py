@@ -117,8 +117,10 @@ class ApprovalDecisionForm(forms.ModelForm):
             ),
             (UseCase.DecisionStatus.NOT_PURSUED, UseCase.DecisionStatus.NOT_PURSUED.label),
         ]
-        users = get_user_model().objects.filter(is_active=True, is_anonymized=False).order_by(
-            "last_name", "first_name", "username"
+        users = (
+            get_user_model()
+            .objects.filter(is_active=True, is_anonymized=False)
+            .order_by("last_name", "first_name", "username")
         )
         self.fields["condition_owner"].queryset = users
         for field in self.fields.values():

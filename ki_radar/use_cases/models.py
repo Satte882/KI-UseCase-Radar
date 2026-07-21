@@ -343,7 +343,7 @@ class DecisionAssessment(TimeStampedModel):
         ]
 
     def __str__(self) -> str:
-        return f"{self.use_case.short_id} – Bewertung v{self.version}"
+        return f"{self.use_case.short_id} - Bewertung v{self.version}"
 
     @property
     def confidence_level(self) -> str:
@@ -353,14 +353,12 @@ class DecisionAssessment(TimeStampedModel):
             self.independent_review,
             self.assumptions_resolved,
         ]
-        if (
-            self.evidence_quality >= self.EvidenceQuality.REPRESENTATIVE
-            and all(value >= self.ConfidenceFactor.SOLID for value in factors)
+        if self.evidence_quality >= self.EvidenceQuality.REPRESENTATIVE and all(
+            value >= self.ConfidenceFactor.SOLID for value in factors
         ):
             return UseCase.Level.HIGH
-        if (
-            self.evidence_quality >= self.EvidenceQuality.EXPERT_OPINION
-            and all(value >= self.ConfidenceFactor.LIMITED for value in factors)
+        if self.evidence_quality >= self.EvidenceQuality.EXPERT_OPINION and all(
+            value >= self.ConfidenceFactor.LIMITED for value in factors
         ):
             return UseCase.Level.MEDIUM
         return UseCase.Level.LOW
@@ -410,7 +408,7 @@ class ApprovalDecision(TimeStampedModel):
         ordering = ["-created_at"]
 
     def __str__(self) -> str:
-        return f"{self.use_case.short_id} – {self.get_decision_status_display()}"
+        return f"{self.use_case.short_id} - {self.get_decision_status_display()}"
 
     @property
     def is_pending_second_approval(self) -> bool:

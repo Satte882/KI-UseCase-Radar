@@ -173,9 +173,7 @@ def test_owner_cannot_be_second_conditional_approver(owner, coordinator, busines
     create_decision_assessment(
         use_case=use_case,
         actor=coordinator,
-        data=assessment_data(
-            recommendation=UseCase.DecisionStatus.APPROVED_WITH_CONDITIONS
-        ),
+        data=assessment_data(recommendation=UseCase.DecisionStatus.APPROVED_WITH_CONDITIONS),
     )
     decision = submit_approval_decision(
         use_case=use_case,
