@@ -39,8 +39,12 @@ class ValueStream(TimeStampedModel):
         verbose_name="Strategisches Ziel",
     )
     stakeholders = models.TextField(blank=True, verbose_name="Stakeholder")
-    constraints = models.TextField(blank=True, verbose_name="Leitplanken und Einschränkungen")
-    status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
+    constraints = models.TextField(
+        blank=True, verbose_name="Leitplanken und Einschränkungen"
+    )
+    status = models.CharField(
+        max_length=20, choices=Status.choices, default=Status.DRAFT
+    )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
@@ -72,7 +76,9 @@ class ValueStreamStage(TimeStampedModel):
     systems = models.TextField(blank=True, verbose_name="Systeme")
     documents = models.TextField(blank=True, verbose_name="Daten und Dokumente")
     pain_points = models.TextField(blank=True, verbose_name="Probleme und Engpässe")
-    baseline_metrics = models.TextField(blank=True, verbose_name="Kennzahlen und Baseline")
+    baseline_metrics = models.TextField(
+        blank=True, verbose_name="Kennzahlen und Baseline"
+    )
 
     class Meta:
         ordering = ["sequence", "created_at"]
