@@ -1,0 +1,196 @@
+from decimal import Decimal
+
+from django import forms
+
+from ki_radar.accounts.models import BusinessUnit
+
+from .models import UseCase
+
+
+FORM_CONTROL = "form-control"
+FORM_SELECT = "form-select"
+
+
+class IntakeStepForm(forms.Form):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs.setdefault("class", FORM_CONTROL)
+            if isinstance(field.widget, forms.Select):
+                field.widget.attrs["class"] = FORM_SELECT
+            if isinstance(field.widget, forms.CheckboxInput):
+                field.widget.attrs["class"] = "form-check-input"
+
+
+class ProblemStepForm(IntakeStepForm):
+    title = forms.CharField(max_length=200, label="Kurztitel")
+    business_unit = forms.ModelChoiceField(
+        queryset=BusinessUnit.objects.none(), label="Organisationseinheit"
+    )
+    problem_statement = forms.CharField(
+        label="Welches Problem soll gelöst werden?",
+        widget=forms.Textarea(attrs={"rows": 5}),
+        help_text=(
+            "Beschreiben Sie beobachtbare Auswirkungen. Vermeiden Sie reine Lösungswünsche wie "
+            "„Wir benötigen einen Chatbot“."
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["business_unit"].queryset = BusinessUnit.objects.filter(is_active=True)
+
+    def clean_problem_statement(self):
+        value = self.cleaned_data["problem_statement"].strip()
+        technology_only = ["chatbot", "ki-tool", "ki tool", "copilot", "llm"]
+        if len(value.split()) < 8 and any(term in value.lower() for term in technology_only):
+            raise forms.ValidationError(
+                "Bitte beschreiben Sie das konkrete Problem und seine Auswirkung, nicht nur eine "
+                "gewünschte Technologie."
+            )
+        return value
+
+
+class ProcessStepForm(IntakeStepForm):
+    affected_process = forms.CharField(max_length=200, label="Betroffener Prozess")
+    summary = forms.CharField(
+        label="Heutiger Ablauf und Auslöser",
+        widget=forms.Textarea(attrs={"rows": 4}),
+        help_text="Was löst den Vorgang aus, was geschieht heute und welches Ergebnis entsteht?",
+    )
+    target_users = forms.CharField(
+        label="Beteiligte und betroffene Personen",
+        widget=forms.Textarea(attrs={"rows": 3}),
+    )
+    source_systems = forms.CharField(
+        required=False,
+        label="Heute verwendete Systeme und Dokumente",
+        widget=forms.Textarea(attrs={"rows": 3}),
+    )
+
+
+class AffectedPeopleStepForm(IntakeStepForm):
+    intended_users = forms.CharField(
+        label="Wer würde die Lösung unmittelbar nutzen?",
+        widget=forms.Textarea(attrs={"rows": 3}),
+    )
+    intended_purpose = forms.CharField(
+        label="Wozu darf die Lösung eingesetzt werden?",
+        widget=forms.Textarea(attrs={"rows": 3}),
+    )
+    privacy_review_required = forms.BooleanField(
+        required=False,
+        label="Personenbezogene oder sensible Daten sind betroffen",
+    )
+    security_review_required = forms.BooleanField(
+        required=False,
+        label="Externe Systeme, Cloud-Dienste oder schützenswerte Informationen sind betroffen",
+    )
+    legal_review_required = forms.BooleanField(
+        required=False,
+        label="Die Lösung beeinflusst Rechte, Verträge oder Entscheidungen über Personen",
+    )
+
+
+class BenefitStepForm(IntakeStepForm):
+    expected_benefit = forms.CharField(
+        label="Welche messbare Verbesserung wird erwartet?",
+        widget=forms.Textarea(attrs={"rows": 4}),
+    )
+    metric_name = forms.CharField(max_length=200, label="Primäre Erfolgsmetrik")
+    metric_type = forms.ChoiceField(choices=UseCase.MetricType.choices, label="Metriktyp")
+    metric_direction = forms.ChoiceField(
+        choices=UseCase.MetricDirection.choices,
+        label="Optimierungsrichtung",
+    )
+    metric_unit = forms.CharField(max_length=80, label="Einheit")
+    metric_baseline = forms.DecimalField(max_digits=14, decimal_places=4, label="Baseline-Wert")
+    metric_target = forms.DecimalField(max_digits=14, decimal_places=4, label="Zielwert")
+    metric_measurement_method = forms.CharField(
+        label="Messmethode",
+        widget=forms.Textarea(attrs={"rows": 3}),
+        help_text="Wie, wann und mit welcher Stichprobe wird die Kennzahl erhoben?",
+    )
+
+    def clean(self):
+        cleaned = super().clean()
+        baseline = cleaned.get("metric_baseline")
+        target = cleaned.get("metric_target")
+        direction = cleaned.get("metric_direction")
+        metric_type = cleaned.get("metric_type")
+        if baseline is None or target is None:
+            return cleaned
+        if metric_type == UseCase.MetricType.PERCENT:
+            for field_name, value in [
+                ("metric_baseline", baseline),
+                ("metric_target", target),
+            ]:
+                if value < Decimal("0") or value > Decimal("100"):
+                    self.add_error(field_name, "Prozentwerte müssen zwischen 0 und 100 liegen.")
+        if baseline == target:
+            self.add_error(
+                "metric_target",
+                "Der Zielwert muss sich von der Baseline unterscheiden.",
+            )
+        elif direction == UseCase.MetricDirection.LOWER and target > baseline:
+            self.add_error(
+                "metric_target",
+                "Bei „Niedriger ist besser“ muss der Zielwert unter der Baseline liegen.",
+            )
+        elif direction == UseCase.MetricDirection.HIGHER and target < baseline:
+            self.add_error(
+                "metric_target",
+                "Bei „Höher ist besser“ muss der Zielwert über der Baseline liegen.",
+            )
+        return cleaned
+
+
+class DataStepForm(IntakeStepForm):
+    data_sources = forms.CharField(
+        label="Benötigte Daten und bekannte Datenquellen",
+        widget=forms.Textarea(attrs={"rows": 4}),
+    )
+    solution_type = forms.ChoiceField(choices=UseCase.SolutionType.choices, label="Lösungsrahmen")
+    hosting_type = forms.ChoiceField(choices=UseCase.HostingType.choices, label="Hosting-Rahmen")
+
+
+WIZARD_STEPS = {
+    1: {
+        "title": "Problem verstehen",
+        "subtitle": "Ausgangspunkt ist ein beobachtbares Problem, nicht eine Technologie.",
+        "form": ProblemStepForm,
+        "example": (
+            "Beispiel: Mitarbeitende benötigen durchschnittlich 20 Minuten, um relevante "
+            "Informationen in mehreren Richtliniendokumenten zu finden."
+        ),
+    },
+    2: {
+        "title": "Prozess einordnen",
+        "subtitle": "Ordnen Sie Problem, Auslöser, Beteiligte und heutige Arbeitsmittel ein.",
+        "form": ProcessStepForm,
+    },
+    3: {
+        "title": "Nutzung und Betroffene klären",
+        "subtitle": "Die Antworten bestimmen, welche Governance-Prüfungen erforderlich sind.",
+        "form": AffectedPeopleStepForm,
+    },
+    4: {
+        "title": "Nutzenhypothese messbar machen",
+        "subtitle": "Eine Kennzahl verbindet Ausgangslage, Ziel und spätere Entscheidung.",
+        "form": BenefitStepForm,
+        "example": (
+            "Beispiel: Die Bearbeitungszeit sinkt von 30 auf höchstens 15 Minuten je Vorgang, "
+            "gemessen über vier Wochen."
+        ),
+    },
+    5: {
+        "title": "Daten- und Lösungsrahmen",
+        "subtitle": "Für die Aufnahme genügt ein belastbarer Rahmen; Architekturdetails folgen später.",
+        "form": DataStepForm,
+    },
+    6: {
+        "title": "Vorprüfung",
+        "subtitle": "Prüfen Sie die Angaben, bevor der Use Case zur Bewertung übergeben wird.",
+        "form": None,
+    },
+}
