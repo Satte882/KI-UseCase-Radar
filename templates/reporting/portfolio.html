@@ -47,24 +47,26 @@
   </div>
   <div class="card-body">
     {% if not show_not_pursued and not_pursued_total %}<div class="alert alert-secondary"><strong>{{ not_pursued_total }} nicht weiterverfolgte Use Cases sind ausgeblendet.</strong> Sie können über den Filter kontrolliert eingeblendet werden, erscheinen dann bewusst optisch zurückgenommen.</div>{% endif %}
-    <div class="portfolio-matrix" role="table" aria-label="Portfolio-Matrix wirtschaftlicher Nutzen und technische Machbarkeit">
-      <div class="matrix-corner" role="columnheader">Nutzen ↓ / Machbarkeit →</div>
-      {% for column in matrix_rows.0.cells %}<div class="matrix-axis" role="columnheader">{{ column.technical_label }}</div>{% endfor %}
-      {% for row in matrix_rows %}
-        <div class="matrix-axis matrix-axis-y" role="rowheader">{{ row.business_label }}</div>
-        {% for cell in row.cells %}
-        <section class="matrix-cell" role="cell" aria-label="Nutzen {{ row.business_label }}, Machbarkeit {{ cell.technical_label }}">
-          <div class="matrix-cell-heading"><strong>{{ cell.hint }}</strong><span>{{ cell.items|length }}</span></div>
-          <div class="matrix-items">
-          {% for item in cell.items %}
-            <a class="portfolio-chip portfolio-status-{{ item.decision_status }} confidence-{{ item.portfolio_confidence }}{% if item.portfolio_is_not_pursued %} portfolio-chip-muted{% endif %}" href="{{ item.get_absolute_url }}" title="{{ item.short_id }} · {{ item.title }} · {{ item.get_decision_status_display }} · Confidence {{ item.portfolio_confidence_label }}">
-              {% if item.portfolio_confidence == 'low' %}<span aria-hidden="true">⚠</span>{% endif %}<span>{{ item.short_id }}</span><strong>{{ item.title|truncatechars:42 }}</strong>
-            </a>
-          {% empty %}<span class="matrix-empty">Keine Use Cases</span>{% endfor %}
-          </div>
-        </section>
+    <div class="portfolio-matrix-scroll">
+      <div class="portfolio-matrix" role="table" aria-label="Portfolio-Matrix wirtschaftlicher Nutzen und technische Machbarkeit">
+        <div class="matrix-corner" role="columnheader">Nutzen ↓ / Machbarkeit →</div>
+        {% for column in matrix_rows.0.cells %}<div class="matrix-axis" role="columnheader">{{ column.technical_label }}</div>{% endfor %}
+        {% for row in matrix_rows %}
+          <div class="matrix-axis matrix-axis-y" role="rowheader">{{ row.business_label }}</div>
+          {% for cell in row.cells %}
+          <section class="matrix-cell" role="cell" aria-label="Nutzen {{ row.business_label }}, Machbarkeit {{ cell.technical_label }}">
+            <div class="matrix-cell-heading"><strong>{{ cell.hint }}</strong><span>{{ cell.items|length }}</span></div>
+            <div class="matrix-items">
+            {% for item in cell.items %}
+              <a class="portfolio-chip portfolio-status-{{ item.decision_status }} confidence-{{ item.portfolio_confidence }}{% if item.portfolio_is_not_pursued %} portfolio-chip-muted{% endif %}" href="{{ item.get_absolute_url }}" title="{{ item.short_id }} · {{ item.title }} · {{ item.get_decision_status_display }} · Confidence {{ item.portfolio_confidence_label }}">
+                <span class="portfolio-chip-id">{% if item.portfolio_confidence == 'low' %}<span aria-hidden="true">⚠</span> {% endif %}{{ item.short_id }}</span><strong>{{ item.title|truncatechars:42 }}</strong>
+              </a>
+            {% empty %}<span class="matrix-empty">Keine Use Cases</span>{% endfor %}
+            </div>
+          </section>
+          {% endfor %}
         {% endfor %}
-      {% endfor %}
+      </div>
     </div>
     <div class="portfolio-status-legend mt-3">
       {% for value, label in decision_status_choices %}<span class="portfolio-status-key portfolio-status-{{ value }}">{{ label }}</span>{% endfor %}
@@ -77,7 +79,7 @@
   <div class="table-responsive">
     <table class="table align-middle">
       <thead><tr><th>Use Case</th><th>Organisationseinheit</th><th>Nutzen</th><th>Machbarkeit</th><th>Confidence</th><th>Entscheidungsstatus</th></tr></thead>
-      <tbody>{% for item in classified_items %}<tr><td><a href="{{ item.get_absolute_url }}">{{ item.short_id }} · {{ item.title }}</a></td><td>{{ item.business_unit }}</td><td>{{ item.portfolio_business_value|capfirst }}</td><td>{{ item.portfolio_technical_feasibility|capfirst }}</td><td>{{ item.portfolio_confidence_label }}</td><td>{{ item.get_decision_status_display }}</td></tr>{% empty %}<tr><td colspan="6" class="text-center text-muted py-4">Keine einordenbaren Use Cases im aktuellen Filter.</td></tr>{% endfor %}</tbody>
+      <tbody>{% for item in classified_items %}<tr><td><a href="{{ item.get_absolute_url }}">{{ item.short_id }} · {{ item.title }}</a></td><td>{{ item.business_unit }}</td><td>{{ item.portfolio_business_value_label }}</td><td>{{ item.portfolio_technical_feasibility_label }}</td><td>{{ item.portfolio_confidence_label }}</td><td>{{ item.get_decision_status_display }}</td></tr>{% empty %}<tr><td colspan="6" class="text-center text-muted py-4">Keine einordenbaren Use Cases im aktuellen Filter.</td></tr>{% endfor %}</tbody>
     </table>
   </div>
 </div>
