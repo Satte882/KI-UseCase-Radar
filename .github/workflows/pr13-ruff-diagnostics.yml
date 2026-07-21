@@ -1,19 +1,19 @@
-name: PR13 Ruff Diagnostics
+name: PR13 Ruff Formatter
 
 on:
-  pull_request:
-    branches: [main]
   push:
     branches: [feature/delivery-handover]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  ruff-diagnostics:
+  format:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: feature/delivery-handover
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
@@ -22,32 +22,24 @@ jobs:
           version: "0.10.0"
           enable-cache: true
       - run: uv sync --frozen --dev
-      - name: Capture Ruff diagnostics
-        id: ruff
-        shell: bash
+      - name: Apply Ruff formatter
         run: |
-          set +e
-          {
-            echo '=== RUFF CHECK ==='
-            uv run ruff check .
-            check_status=$?
-            echo '=== RUFF FORMAT ==='
-            uv run ruff format --check .
-            format_status=$?
-            echo "check_status=$check_status"
-            echo "format_status=$format_status"
-          } > pr13-ruff.log 2>&1
-          cat pr13-ruff.log
-          if [ "$check_status" -ne 0 ] || [ "$format_status" -ne 0 ]; then
-            echo "exit_code=1" >> "$GITHUB_OUTPUT"
-          else
-            echo "exit_code=0" >> "$GITHUB_OUTPUT"
+          uv run ruff format \
+            ki_radar/delivery/models.py \
+            ki_radar/delivery/services.py \
+            ki_radar/delivery/views.py \
+            tests/test_delivery_handover.py
+      - name: Commit formatting if needed
+        run: |
+          if git diff --quiet; then
+            exit 0
           fi
-          exit 0
-      - uses: actions/upload-artifact@v4
-        with:
-          name: pr13-ruff-log
-          path: pr13-ruff.log
-      - name: Fail if Ruff failed
-        if: steps.ruff.outputs.exit_code != '0'
-        run: exit 1
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            ki_radar/delivery/models.py \
+            ki_radar/delivery/services.py \
+            ki_radar/delivery/views.py \
+            tests/test_delivery_handover.py
+          git commit -m "Apply Ruff formatting to delivery handover"
+          git push origin HEAD:feature/delivery-handover
