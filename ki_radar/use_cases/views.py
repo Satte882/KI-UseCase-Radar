@@ -17,6 +17,7 @@ from django.views.decorators.http import require_POST
 from ki_radar.accounts.models import BusinessUnit
 from ki_radar.accounts.permissions import is_coordinator
 
+from .blockers import build_blocker_details
 from .copilot import CopilotUnavailable, analyze_use_case
 from .forms import UseCaseForm
 from .models import UseCase
@@ -78,6 +79,7 @@ def use_case_list(request):
     use_cases = list(queryset)
     for item in use_cases:
         item.decision_check = current_decision_check(item)
+        item.blocker_details = build_blocker_details(item, item.decision_check.blockers)
         item.decision_due = decision_due_date(item)
 
     user_model = get_user_model()
@@ -97,11 +99,15 @@ def use_case_list(request):
 
 def _detail_context(request, use_case: UseCase, *, copilot_analysis: str = "") -> dict:
     history = use_case.history.select_related("history_user").order_by("-history_date")[:50]
+    decision_check = current_decision_check(use_case)
+    blocker_details = build_blocker_details(use_case, decision_check.blockers)
     return {
         "use_case": use_case,
         "history": history,
         "can_edit": can_edit_use_case(request.user, use_case),
-        "decision_check": current_decision_check(use_case),
+        "decision_check": decision_check,
+        "blocker_details": blocker_details,
+        "first_blocker": blocker_details[0] if blocker_details else None,
         "decision_due": decision_due_date(use_case),
         "copilot_analysis": copilot_analysis,
         "copilot_enabled": bool(os.getenv("OPENROUTER_API_KEY")),
@@ -113,7 +119,13 @@ def use_case_detail(request, pk):
     use_case = get_object_or_404(
         UseCase.objects.select_related(
             "business_unit", "business_owner", "coordinator", "technical_owner"
-        ).prefetch_related("governance_assessments", "reviews", "evidence_links"),
+        ).prefetch_related(
+            "governance_assessments",
+            "reviews",
+            "evidence_links",
+            "decision_assessments",
+            "approval_decisions",
+        ),
         pk=pk,
     )
     if not can_view_use_case(request.user, use_case):
@@ -129,7 +141,13 @@ def use_case_copilot(request, pk):
     use_case = get_object_or_404(
         UseCase.objects.select_related(
             "business_unit", "business_owner", "coordinator", "technical_owner"
-        ).prefetch_related("governance_assessments", "reviews", "evidence_links"),
+        ).prefetch_related(
+            "governance_assessments",
+            "reviews",
+            "evidence_links",
+            "decision_assessments",
+            "approval_decisions",
+        ),
         pk=pk,
     )
     try:
@@ -174,10 +192,17 @@ def use_case_edit(request, pk):
             return redirect(use_case)
     else:
         form = UseCaseForm(instance=use_case, current_user=request.user)
+    requested_highlight = request.GET.get("highlight", "")
+    highlight_field = requested_highlight if requested_highlight in form.fields else ""
     return render(
         request,
         "use_cases/form.html",
-        {"form": form, "title": f"{use_case.short_id} bearbeiten", "use_case": use_case},
+        {
+            "form": form,
+            "title": f"{use_case.short_id} bearbeiten",
+            "use_case": use_case,
+            "highlight_field": highlight_field,
+        },
     )
 
 
