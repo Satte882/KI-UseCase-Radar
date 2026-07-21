@@ -6,6 +6,4 @@ def can_manage_architecture(user) -> bool:
 
 
 def can_edit_value_stream(user, value_stream) -> bool:
-    return is_coordinator(user) or (
-        is_business_owner(user) and value_stream.owner_id == user.id
-    )
+    return is_coordinator(user) or (is_business_owner(user) and value_stream.owner_id == user.id)
