@@ -248,3 +248,24 @@ def test_clear_demo_data_keeps_manual_data_with_demo_like_prefix():
     assert BusinessUnit.objects.filter(pk=manual_unit.pk).exists()
     assert User.objects.filter(pk=manual_user.pk).exists()
     assert UseCase.objects.filter(pk=manual_use_case.pk).exists()
+
+
+@pytest.mark.django_db
+def test_clear_demo_data_keeps_demo_user_referenced_by_manual_use_case():
+    call_command("seed_demo_data")
+    demo_user = User.objects.get(username="demo_ki_koordinator")
+    manual_unit = BusinessUnit.objects.create(name="Manuelle Einheit mit Demo-Owner")
+    manual_use_case = UseCase.objects.create(
+        title="Manueller Use Case mit Demo-Owner",
+        problem_statement="Nicht Teil des Demo-Datensatzes.",
+        business_unit=manual_unit,
+        affected_process="Manueller Prozess",
+        business_owner=demo_user,
+        expected_benefit="Manueller Nutzen",
+    )
+
+    call_command("clear_demo_data")
+
+    assert User.objects.filter(pk=demo_user.pk).exists()
+    assert UseCase.objects.filter(pk=manual_use_case.pk).exists()
+    assert UseCase.objects.filter(title__in=demo_use_case_titles()).count() == 0

@@ -7,7 +7,7 @@ from datetime import timedelta
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -101,8 +101,13 @@ def _detail_context(request, use_case: UseCase, *, copilot_analysis: str = "") -
     history = use_case.history.select_related("history_user").order_by("-history_date")[:50]
     decision_check = current_decision_check(use_case)
     blocker_details = build_blocker_details(use_case, decision_check.blockers)
+    try:
+        architecture_origin = use_case.architecture_origin
+    except ObjectDoesNotExist:
+        architecture_origin = None
     return {
         "use_case": use_case,
+        "architecture_origin": architecture_origin,
         "history": history,
         "can_edit": can_edit_use_case(request.user, use_case),
         "decision_check": decision_check,
@@ -118,7 +123,13 @@ def _detail_context(request, use_case: UseCase, *, copilot_analysis: str = "") -
 def use_case_detail(request, pk):
     use_case = get_object_or_404(
         UseCase.objects.select_related(
-            "business_unit", "business_owner", "coordinator", "technical_owner"
+            "business_unit",
+            "business_owner",
+            "coordinator",
+            "technical_owner",
+            "architecture_origin__stage__value_stream",
+            "architecture_origin__process_analysis",
+            "architecture_origin__solution_option",
         ).prefetch_related(
             "governance_assessments",
             "reviews",
