@@ -172,6 +172,61 @@ def test_landscape_grouping_and_business_unit_filter(owner, coordinator, busines
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize("business_unit_value", ["invalid", "0", "-1", "1.5", "1e3", "   "])
+def test_invalid_business_unit_filter_is_ignored(business_unit_value, owner, business_unit):
+    make_use_case(owner, business_unit)
+
+    context = build_portfolio_context({"business_unit": business_unit_value})
+
+    assert context["selected"]["business_unit"] == ""
+    assert context["visible_total"] == 1
+
+
+@pytest.mark.django_db
+def test_business_unit_filter_accepts_existing_and_missing_positive_ids(owner, business_unit):
+    second_unit = BusinessUnit.objects.create(name="Organisationseinheit B")
+    first = make_use_case(owner, business_unit)
+    second = make_use_case(owner, second_unit, title="Rechnungen klassifizieren")
+
+    filtered = build_portfolio_context({"business_unit": str(second_unit.pk)})
+    missing = build_portfolio_context({"business_unit": "999999999"})
+
+    assert filtered["selected"]["business_unit"] == str(second_unit.pk)
+    assert filtered["visible_total"] == 1
+    assert filtered["unclassified_items"][0]["item"] == second
+    assert first not in [entry["item"] for entry in filtered["unclassified_items"]]
+    assert missing["selected"]["business_unit"] == "999999999"
+    assert missing["visible_total"] == 0
+
+
+@pytest.mark.django_db
+def test_portfolio_view_ignores_invalid_filters_and_falls_back_to_default_group(
+    client,
+    owner,
+    business_unit,
+):
+    make_use_case(owner, business_unit)
+    client.force_login(owner)
+
+    response = client.get(
+        reverse("reporting:portfolio"),
+        {
+            "business_unit": "invalid",
+            "lifecycle": "invalid",
+            "decision_status": "invalid",
+            "solution_type": "invalid",
+            "confidence": "invalid",
+            "group": "invalid",
+        },
+    )
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "Portfolio-Landkarte nach Organisationseinheit" in content
+    assert "1 Use Cases" in content
+
+
+@pytest.mark.django_db
 def test_matrix_and_landscape_queries_are_bounded(owner, coordinator, business_unit):
     for index in range(5):
         use_case = make_use_case(owner, business_unit, title=f"Use Case {index}")

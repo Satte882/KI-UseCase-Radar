@@ -105,8 +105,12 @@ def annotated_portfolio_queryset() -> QuerySet[UseCase]:
 
 
 def _selected_filters(params: Mapping[str, str]) -> dict[str, str]:
+    business_unit = str(params.get("business_unit", "")).strip()
+    if not business_unit.isdecimal() or int(business_unit) <= 0:
+        business_unit = ""
+
     return {
-        "business_unit": str(params.get("business_unit", "")).strip(),
+        "business_unit": business_unit,
         "lifecycle": str(params.get("lifecycle", "")).strip(),
         "decision_status": str(params.get("decision_status", "")).strip(),
         "solution_type": str(params.get("solution_type", "")).strip(),
