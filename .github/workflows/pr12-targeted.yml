@@ -1,6 +1,8 @@
 name: PR12 Targeted Diagnostics
 
 on:
+  pull_request:
+    branches: [main]
   push:
     branches: [feature/process-analysis-solutions]
 
