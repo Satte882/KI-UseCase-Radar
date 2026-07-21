@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Entscheidung – {{ use_case.short_id }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><div class="eyebrow mb-2">{{ use_case.short_id }} · Verbindliche Entscheidung</div><h1 class="page-title">{{ use_case.title }}</h1><p class="page-subtitle">Bewertung und Entscheidung sind personell getrennt. Positive Entscheidungen werden zusätzlich gegen Pflicht-Evidenz und Governance-Prüfungen validiert.</p></div>
+</div>
+<div class="row g-4">
+  <div class="col-xl-5">
+    <div class="app-card mb-4">
+      <div class="card-header d-flex justify-content-between"><strong>Bewertung v{{ assessment.version }}</strong><span class="badge {% if assessment.confidence_level == 'low' %}state-blocked{% elif assessment.confidence_level == 'medium' %}state-review{% else %}state-ready{% endif %}">Confidence {{ assessment.confidence_label }}</span></div>
+      <div class="card-body">
+        <dl class="row mb-0 small">
+          <dt class="col-6 text-muted">Bewertende Person</dt><dd class="col-6">{{ assessment.assessed_by.get_display_name }}</dd>
+          <dt class="col-6 text-muted">Wirtschaftlicher Nutzen</dt><dd class="col-6">{{ assessment.get_business_value_display }}</dd>
+          <dt class="col-6 text-muted">Strategischer Beitrag</dt><dd class="col-6">{{ assessment.get_strategic_fit_display }}</dd>
+          <dt class="col-6 text-muted">Technische Machbarkeit</dt><dd class="col-6">{{ assessment.get_technical_feasibility_display }}</dd>
+          <dt class="col-6 text-muted">Datenreife</dt><dd class="col-6">{{ assessment.get_data_readiness_display }}</dd>
+          <dt class="col-6 text-muted">Risiko und Komplexität</dt><dd class="col-6">{{ assessment.get_risk_complexity_display }}</dd>
+          <dt class="col-6 text-muted">Empfehlung</dt><dd class="col-6">{{ assessment.get_recommendation_display }}</dd>
+        </dl>
+        <hr><p class="small mb-2">{{ assessment.rationale }}</p><a href="{{ assessment.evidence_url }}" target="_blank" rel="noopener noreferrer">Nachweis öffnen</a>
+      </div>
+    </div>
+    <div class="app-card decision-panel">
+      <div class="card-header"><strong>{{ approval_check.state_label }}</strong></div>
+      <div class="card-body">
+        {% if approval_check.blockers %}<div class="section-title">Verbindliche Blocker</div><ul class="decision-list">{% for blocker in approval_check.blockers %}<li>{{ blocker }}</li>{% endfor %}</ul>{% endif %}
+        {% if approval_check.warnings %}<div class="section-title {% if approval_check.blockers %}mt-3{% endif %}">Abweichungshinweise</div><ul class="decision-list">{% for warning in approval_check.warnings %}<li>{{ warning }}</li>{% endfor %}</ul>{% endif %}
+        {% if not approval_check.blockers and not approval_check.warnings %}<p class="text-muted mb-0">Die aktuell gewählte Entscheidung erfüllt alle strukturierten Voraussetzungen.</p>{% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-7">
+    <form method="post">{% csrf_token %}
+      <div class="app-card">
+        <div class="card-header"><strong>Entscheidung dokumentieren</strong></div>
+        <div class="card-body"><div class="row g-3">
+          {{ form.non_field_errors }}
+          {% for field in form %}
+          <div class="{% if field.name == 'rationale' or field.name == 'conditions' or field.field.widget.input_type == 'checkbox' %}col-12{% else %}col-md-6{% endif %}">
+            {% if field.field.widget.input_type == 'checkbox' %}<div class="form-check mt-3">{{ field }}<label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label></div>
+            {% else %}<label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>{{ field }}{% endif %}
+            <div class="text-danger small">{{ field.errors }}</div>{% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+          </div>
+          {% endfor %}
+        </div></div>
+        <div class="card-footer d-flex justify-content-end gap-2"><a class="btn btn-outline-secondary" href="{{ use_case.get_absolute_url }}">Abbrechen</a><button class="btn btn-primary">Entscheidung prüfen und speichern</button></div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
