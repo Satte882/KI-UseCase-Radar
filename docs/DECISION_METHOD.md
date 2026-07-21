@@ -17,7 +17,7 @@ KI-Radar trennt die fachliche Bewertung eines Use Cases von der verbindlichen En
 
 ### Fachlich verantwortliche Person
 
-Erfasst Problem, Prozess, Nutzenhypothese und Datenrahmen. Sie kann keine verbindliche Freigabe erteilen.
+Erfasst Problem, Prozess, Nutzenhypothese und Datenrahmen. Sie kann keine verbindliche Freigabe für den eigenen Use Case erteilen oder als zweite freigebende Person auftreten.
 
 ### Bewertende Person
 
@@ -25,7 +25,7 @@ Bewertet wirtschaftlichen Nutzen, strategischen Beitrag, technische Machbarkeit,
 
 ### Entscheidungsverantwortliche Person
 
-Prüft Bewertung, hergeleitete Confidence, Governance-Vorprüfung und Pflichtprüfungen. Sie muss von der bewertenden Person verschieden sein.
+Prüft Bewertung, hergeleitete Confidence, Governance-Vorprüfung und Pflichtprüfungen. Sie muss von der bewertenden und der fachlich verantwortlichen Person verschieden sein.
 
 ### Governance-Fallback
 
@@ -54,7 +54,10 @@ Eine positive Entscheidung ist serverseitig ausgeschlossen, wenn mindestens eine
 - Pflichtangaben aus der geführten Aufnahme fehlen
 - keine aktuelle strukturierte Bewertung existiert
 - bewertende und entscheidende Person sind identisch
+- fachlich verantwortliche und entscheidende Person sind identisch
 - Confidence ist niedrig
+- technische Machbarkeit oder Datenreife ist niedrig
+- Risiko und Komplexität ist hoch
 - Governance-Vorprüfung wurde nicht durchgeführt oder separat bestätigt
 - eine als erforderlich markierte Datenschutz-, Informationssicherheits- oder Rechtsprüfung ist offen
 
@@ -63,7 +66,11 @@ Für `Freigegeben mit Auflagen` gelten zusätzlich:
 - Auflage, verantwortliche Person und Fälligkeit sind Pflicht
 - die erste Entscheidung verändert den Use-Case-Status noch nicht
 - eine zweite berechtigte Person muss bestätigen
-- die zweite Person muss von bewertender und zuerst entscheidender Person verschieden sein
+- die zweite Person muss von bewertender, fachlich verantwortlicher und zuerst entscheidender Person verschieden sein
+
+## Kopplung an den Lifecycle
+
+Der Wechsel in `Pilot` oder `Betrieb` ist nur möglich, wenn der Entscheidungsstatus `Freigegeben` oder `Freigegeben mit Auflagen` lautet. Die bestehende Lifecycle-Prüfung bleibt zusätzlich aktiv; eine Freigabe ersetzt daher weder Governance-Screening noch Metrik-, Betriebs- oder Go-live-Anforderungen.
 
 ## Versionierung
 
