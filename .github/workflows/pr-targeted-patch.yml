@@ -25,16 +25,14 @@ jobs:
 
           path = Path("ki_radar/core/demo_architecture_data.py")
           text = path.read_text(encoding="utf-8")
-          old = '''    customer.status = UseCase.Status.PILOT
-              customer.decision_status = UseCase.DecisionStatus.READY
-              customer.save(update_fields=["status", "decision_status", "updated_at"])
-          '''
-          new = '''    customer.decision_status = UseCase.DecisionStatus.READY
-              customer.save(update_fields=["decision_status", "updated_at"])
-          '''
-          if old not in text:
+          status_line = "    customer.status = UseCase.Status.PILOT\n"
+          update_fields = '["status", "decision_status", "updated_at"]'
+          replacement_fields = '["decision_status", "updated_at"]'
+          if status_line not in text or update_fields not in text:
               raise SystemExit("Expected customer-service status block not found")
-          path.write_text(text.replace(old, new, 1), encoding="utf-8")
+          text = text.replace(status_line, "", 1)
+          text = text.replace(update_fields, replacement_fields, 1)
+          path.write_text(text, encoding="utf-8")
           PY
       - name: Commit patch
         shell: bash
