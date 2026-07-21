@@ -24,8 +24,7 @@ def test_architecture_demo_seed_is_idempotent_and_clearable():
     assert first == second
     assert ValueStream.objects.filter(name=INVOICE_STREAM_NAME).count() == 1
     assert (
-        ProcessAnalysis.objects.filter(stage__value_stream__name=INVOICE_STREAM_NAME).count()
-        == 1
+        ProcessAnalysis.objects.filter(stage__value_stream__name=INVOICE_STREAM_NAME).count() == 1
     )
     assert (
         SolutionOption.objects.filter(
