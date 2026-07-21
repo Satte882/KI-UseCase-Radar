@@ -18,22 +18,24 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           show-progress: false
       - name: Preserve customer-service lifecycle state
-        shell: python
+        shell: bash
         run: |
+          python - <<'PY'
           from pathlib import Path
 
           path = Path("ki_radar/core/demo_architecture_data.py")
           text = path.read_text(encoding="utf-8")
-          old = """    customer.status = UseCase.Status.PILOT
-    customer.decision_status = UseCase.DecisionStatus.READY
-    customer.save(update_fields=[\"status\", \"decision_status\", \"updated_at\"])
-"""
-          new = """    customer.decision_status = UseCase.DecisionStatus.READY
-    customer.save(update_fields=[\"decision_status\", \"updated_at\"])
-"""
+          old = '''    customer.status = UseCase.Status.PILOT
+              customer.decision_status = UseCase.DecisionStatus.READY
+              customer.save(update_fields=["status", "decision_status", "updated_at"])
+          '''
+          new = '''    customer.decision_status = UseCase.DecisionStatus.READY
+              customer.save(update_fields=["decision_status", "updated_at"])
+          '''
           if old not in text:
               raise SystemExit("Expected customer-service status block not found")
           path.write_text(text.replace(old, new, 1), encoding="utf-8")
+          PY
       - name: Commit patch
         shell: bash
         run: |
