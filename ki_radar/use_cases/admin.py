@@ -25,11 +25,22 @@ class UseCaseAdmin(SimpleHistoryAdmin):
         "risk_complexity",
     )
     search_fields = ("short_id", "title", "problem_statement", "expected_benefit")
-    readonly_fields = ("short_id", "created_at", "updated_at")
+    readonly_fields = ("short_id", "decision_status", "created_at", "updated_at")
+
+
+class AuditOnlyDecisionAdmin(admin.ModelAdmin):
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(DecisionAssessment)
-class DecisionAssessmentAdmin(admin.ModelAdmin):
+class DecisionAssessmentAdmin(AuditOnlyDecisionAdmin):
     list_display = (
         "use_case",
         "version",
@@ -42,7 +53,7 @@ class DecisionAssessmentAdmin(admin.ModelAdmin):
 
 
 @admin.register(ApprovalDecision)
-class ApprovalDecisionAdmin(admin.ModelAdmin):
+class ApprovalDecisionAdmin(AuditOnlyDecisionAdmin):
     list_display = (
         "use_case",
         "decision_status",
