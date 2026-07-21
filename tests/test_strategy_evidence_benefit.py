@@ -79,9 +79,7 @@ def assessment_payload(*, business_value=UseCase.Level.HIGH):
 
 
 @pytest.mark.django_db
-def test_assessment_is_versioned_and_syncs_current_ratings(
-    client, coordinator, strategy_use_case
-):
+def test_assessment_is_versioned_and_syncs_current_ratings(client, coordinator, strategy_use_case):
     client.force_login(coordinator)
 
     response = client.post(
@@ -115,17 +113,13 @@ def test_assessment_is_versioned_and_syncs_current_ratings(
 def test_only_coordinator_can_create_assessment(client, owner, strategy_use_case):
     client.force_login(owner)
 
-    response = client.get(
-        reverse("use_cases:assessment_create", args=[strategy_use_case.pk])
-    )
+    response = client.get(reverse("use_cases:assessment_create", args=[strategy_use_case.pk]))
 
     assert response.status_code == 403
 
 
 @pytest.mark.django_db
-def test_benefit_measurement_updates_current_metric_snapshot(
-    client, owner, strategy_use_case
-):
+def test_benefit_measurement_updates_current_metric_snapshot(client, owner, strategy_use_case):
     client.force_login(owner)
     measured_at = timezone.localdate()
 
@@ -153,9 +147,7 @@ def test_benefit_measurement_updates_current_metric_snapshot(
 
 
 @pytest.mark.django_db
-def test_pilot_check_surfaces_missing_strategy_and_assessment(
-    owner, coordinator, business_unit
-):
+def test_pilot_check_surfaces_missing_strategy_and_assessment(owner, coordinator, business_unit):
     use_case = UseCase.objects.create(
         title="Assistent",
         problem_statement="Wissen ist verteilt.",
