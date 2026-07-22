@@ -46,9 +46,15 @@ def _aggregate_state(raw_steps, keys):
 
 def _is_outcome_workspace(journey, request):
     resolver = request.resolver_match
-    if resolver and resolver.namespace == "reporting" and resolver.url_name == "outcome_workspace":
-        return True
-    return bool(journey and any(step.key in OUTCOME_STEP_KEYS for step in journey.steps))
+    is_outcome_route = bool(
+        resolver
+        and resolver.namespace == "reporting"
+        and resolver.url_name == "outcome_workspace"
+    )
+    has_outcome_steps = bool(
+        journey and any(step.key in OUTCOME_STEP_KEYS for step in journey.steps)
+    )
+    return is_outcome_route or has_outcome_steps
 
 
 def _workflow_definition(journey, request):
