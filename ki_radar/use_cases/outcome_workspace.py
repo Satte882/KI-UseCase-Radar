@@ -5,9 +5,18 @@ from urllib.parse import urlencode
 from django.urls import reverse
 
 from ki_radar.delivery.models import DeliveryPackage
+from ki_radar.delivery.services import current_delivery_package, current_handed_over_package
 
 from .models import UseCase
-from .workflow import JourneyState, JourneyStep, _state, build_use_case_journey
+from .permissions import can_start_pilot
+from .services import check_pilot_start
+from .workflow import (
+    JourneyState,
+    JourneyStep,
+    _state,
+    build_use_case_journey,
+    pilot_start_url,
+)
 
 OUTCOME_STAGES = (
     ("pilot", "Pilot", "pilot"),
@@ -42,7 +51,7 @@ def _handover_step(package: DeliveryPackage | None) -> JourneyStep:
             state="upcoming",
             reason="Die verbindliche Übergabe beginnt nach einem vollständigen Delivery Package.",
         )
-    if package.status == DeliveryPackage.Status.HANDED_OVER:
+    if package.status == DeliveryPackage.Status.HANDED_OVER and package.handed_over_at:
         return JourneyStep(
             key="handover",
             label="Übergabe",
@@ -50,6 +59,15 @@ def _handover_step(package: DeliveryPackage | None) -> JourneyStep:
             url=package.get_absolute_url(),
             action_label="Übergabe öffnen",
             reason=f"Delivery Package v{package.version} wurde verbindlich übergeben.",
+        )
+    if package.status == DeliveryPackage.Status.HANDED_OVER:
+        return JourneyStep(
+            key="handover",
+            label="Übergabe",
+            state="blocked",
+            url=package.get_absolute_url(),
+            action_label="Übergabe prüfen",
+            reason="Der Übergabestatus besitzt keinen verbindlichen Übergabezeitpunkt.",
         )
     return JourneyStep(
         key="handover",
@@ -69,6 +87,7 @@ def _pilot_step(
     use_case: UseCase,
     *,
     handed_over: bool,
+    user,
 ) -> JourneyStep:
     url = outcome_workspace_url("pilot", use_case=use_case)
     if not handed_over:
@@ -104,16 +123,19 @@ def _pilot_step(
                 "bereits im Betrieb."
             ),
         )
+    check = check_pilot_start(use_case)
+    allowed = can_start_pilot(user, use_case)
+    reason = "Die Übergabe ist erfolgt; der tatsächliche Pilotbeginn muss bestätigt werden."
+    if not allowed:
+        reason += " Nur ein KI-Koordinator oder der zuständige Business Owner darf starten."
     return JourneyStep(
         key="pilot",
         label="Pilot",
-        state="current",
-        url=url,
-        action_label="Pilotstatus prüfen",
-        reason=(
-            "Die Übergabe ist erfolgt; Pilotstatus und Review-Termin müssen fachlich "
-            "bestätigt werden."
-        ),
+        state="blocked" if check.blockers else "current",
+        url=pilot_start_url(use_case) if allowed else None,
+        action_label="Pilot starten" if allowed else "",
+        reason=reason,
+        details=tuple(check.blockers),
     )
 
 
@@ -254,13 +276,13 @@ def build_outcome_workspace_journey(
     """Extend the existing journey; do not create a second status engine."""
 
     selection_journey = build_use_case_journey(use_case, user)
-    package = use_case.delivery_packages.first()
-    handed_over = bool(package and package.status == DeliveryPackage.Status.HANDED_OVER)
+    package = current_delivery_package(use_case)
+    handed_over = current_handed_over_package(use_case) is not None
     measurement_complete = bool(use_case.metric_actual is not None and use_case.metric_evidence_url)
 
     outcome_steps = [
         _handover_step(package),
-        _pilot_step(use_case, handed_over=handed_over),
+        _pilot_step(use_case, handed_over=handed_over, user=user),
         _measurement_step(use_case, handed_over=handed_over),
         _outcome_decision_step(
             use_case,
