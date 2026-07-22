@@ -111,12 +111,11 @@ class ReviewForm(forms.ModelForm):
         if pilot_start_only:
             self.fields["decision"].initial = Review.Decision.START_PILOT
             self.fields["new_status"].initial = UseCase.Status.PILOT
-            for name in ["decision", "new_status"]:
+            for name in ["decision", "new_status", "go_live_exception_confirmed"]:
                 self.fields[name].disabled = True
                 self.fields[name].widget = forms.HiddenInput()
             self.fields["pilot_start"].required = True
             for name in [
-                "go_live_exception_confirmed",
                 "ending_reason",
                 "data_and_access_handling",
                 "replacement_solution",
@@ -135,7 +134,10 @@ class ReviewForm(forms.ModelForm):
         for name in ["decision", "new_status", "action_owner"]:
             if name in self.fields and not self.fields[name].widget.is_hidden:
                 self.fields[name].widget.attrs["class"] = "form-select"
-        if "go_live_exception_confirmed" in self.fields:
+        if (
+            "go_live_exception_confirmed" in self.fields
+            and not self.fields["go_live_exception_confirmed"].widget.is_hidden
+        ):
             self.fields["go_live_exception_confirmed"].widget.attrs["class"] = "form-check-input"
 
     def clean(self):
@@ -143,6 +145,7 @@ class ReviewForm(forms.ModelForm):
         if self.pilot_start_only:
             cleaned["decision"] = Review.Decision.START_PILOT
             cleaned["new_status"] = UseCase.Status.PILOT
+            cleaned["go_live_exception_confirmed"] = False
         decision = cleaned.get("decision")
         new_status = cleaned.get("new_status")
         expected = {
