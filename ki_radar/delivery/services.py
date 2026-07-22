@@ -50,7 +50,7 @@ def latest_final_approval(use_case: UseCase) -> ApprovalDecision | None:
 def current_delivery_package(use_case: UseCase) -> DeliveryPackage | None:
     """Return the latest Delivery Package version for the Use Case."""
 
-    return use_case.delivery_packages.first()
+    return DeliveryPackage.objects.filter(use_case_id=use_case.pk).first()
 
 
 def current_handed_over_package(use_case: UseCase) -> DeliveryPackage | None:
