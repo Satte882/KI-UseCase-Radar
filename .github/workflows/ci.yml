@@ -34,17 +34,13 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
-          from textwrap import dedent
 
           outcome_path = Path("ki_radar/use_cases/outcome_workspace.py")
           text = outcome_path.read_text(encoding="utf-8")
 
-          old = dedent('''
-          def _measurement_complete(use_case: UseCase) -> bool:
-              return not _measurement_missing(use_case)
-          ''').lstrip()
-          new = dedent('''
-          def _measurement_fields_complete(use_case: UseCase) -> bool:
+          helper_start = text.index("def _measurement_complete(use_case: UseCase) -> bool:")
+          helper_end = text.index("def _has_measurement_data", helper_start)
+          helper = """def _measurement_fields_complete(use_case: UseCase) -> bool:
               return not _measurement_missing(use_case)
 
 
@@ -60,51 +56,39 @@ jobs:
                   and use_case.pilot_start is not None
                   and use_case.metric_measured_at < use_case.pilot_start
               )
-          ''').lstrip()
-          if old not in text:
-              raise SystemExit("measurement helper pattern not found")
-          text = text.replace(old, new, 1)
 
-          old = dedent('''
-              if not handed_over or not pilot_started:
-                  return JourneyStep(
-                      key="measurement",
-                      label="Wirkungsmessung",
-                      state="blocked" if has_data else "upcoming",
-                      reason=(
-                          "Dateninkonsistenz: Messdaten liegen vor, obwohl Übergabe und "
-                          "Pilotbeginn nicht vollständig nachgewiesen sind."
+
+          """
+          text = text[:helper_start] + helper + text[helper_end:]
+
+          measurement_function = text.index("def _measurement_step")
+          block_start = text.index(
+              "    if not handed_over or not pilot_started:", measurement_function
+          )
+          block_end = text.index("    if measurement_complete:", block_start)
+          block = """    if not handed_over or not pilot_started:
+              lifecycle_requires_pilot = use_case.status in {
+                  UseCase.Status.PILOT,
+                  UseCase.Status.OPERATION,
+                  UseCase.Status.ENDED,
+              } or end_recorded
+              return JourneyStep(
+                  key="measurement",
+                  label="Wirkungsmessung",
+                  state="blocked" if lifecycle_requires_pilot else "upcoming",
+                  reason=(
+                      "Dateninkonsistenz: Der Lifecycle ist bereits fortgeschritten, obwohl "
+                      "Übergabe oder Pilotbeginn fehlen."
+                      if lifecycle_requires_pilot
+                      else (
+                          "Vorhandene Messwerte schließen keinen Pilot ab, solange kein "
+                          "verbindlicher Pilotbeginn dokumentiert ist."
                           if has_data
                           else "Die Wirkungsmessung folgt nach Übergabe und gestartetem Pilot."
-                      ),
-                      details=missing if has_data else (),
-                  )
-              if measurement_complete:
-          ''').lstrip('\n')
-          new = dedent('''
-              if not handed_over or not pilot_started:
-                  lifecycle_requires_pilot = use_case.status in {
-                      UseCase.Status.PILOT,
-                      UseCase.Status.OPERATION,
-                      UseCase.Status.ENDED,
-                  } or end_recorded
-                  return JourneyStep(
-                      key="measurement",
-                      label="Wirkungsmessung",
-                      state="blocked" if lifecycle_requires_pilot else "upcoming",
-                      reason=(
-                          "Dateninkonsistenz: Der Lifecycle ist bereits fortgeschritten, obwohl "
-                          "Übergabe oder Pilotbeginn fehlen."
-                          if lifecycle_requires_pilot
-                          else (
-                              "Vorhandene Messwerte schließen keinen Pilot ab, solange kein "
-                              "verbindlicher Pilotbeginn dokumentiert ist."
-                              if has_data
-                              else "Die Wirkungsmessung folgt nach Übergabe und gestartetem Pilot."
-                          )
-                      ),
-                      details=("Übergabe", "Pilotbeginn") if lifecycle_requires_pilot else (),
-                  )
+                      )
+                  ),
+                  details=("Übergabe", "Pilotbeginn") if lifecycle_requires_pilot else (),
+              )
               if _measurement_predates_pilot(use_case):
                   return JourneyStep(
                       key="measurement",
@@ -118,71 +102,59 @@ jobs:
                       ),
                       details=("Messdatum ab Pilotbeginn",),
                   )
-              if measurement_complete:
-          ''').lstrip('\n')
-          if old not in text:
-              raise SystemExit("measurement step pattern not found")
-          text = text.replace(old, new, 1)
-
-          old = dedent('''
-                  or pilot_started
-                  or _has_measurement_data(use_case)
-                  or go_live_recorded
-          ''').lstrip('\n')
-          new = dedent('''
-                  or pilot_started
-                  or go_live_recorded
-          ''').lstrip('\n')
-          if old not in text:
-              raise SystemExit("lifecycle advanced pattern not found")
-          text = text.replace(old, new, 1)
+          """
+          text = text[:block_start] + block + text[block_end:]
+          text = text.replace(
+              "        or _has_measurement_data(use_case)\n",
+              "",
+              1,
+          )
           outcome_path.write_text(text, encoding="utf-8")
 
           golden_path = Path("tests/test_delivery_to_pilot.py")
           text = golden_path.read_text(encoding="utf-8")
-          old = dedent('''
-              outcome = build_outcome_workspace_journey(use_case, coordinator)
-              outcome_steps = {step.key: step for step in outcome.steps}
-              assert outcome_steps["pilot"].state == "complete"
-              assert outcome_steps["measurement"].state == "complete"
-              assert outcome_steps["outcome_decision"].state == "current"
-          ''').lstrip('\n')
-          new = dedent('''
-              outcome = build_outcome_workspace_journey(use_case, coordinator)
+          block_start = text.index(
+              "    outcome = build_outcome_workspace_journey(use_case, coordinator)"
+          )
+          block_end = text.index("\n\n\n@pytest.mark.django_db", block_start)
+          block = """    outcome = build_outcome_workspace_journey(use_case, coordinator)
               outcome_steps = {step.key: step for step in outcome.steps}
               assert outcome_steps["pilot"].state == "current"
               assert outcome_steps["measurement"].state == "upcoming"
               assert outcome_steps["outcome_decision"].state == "upcoming"
               assert sum(step.state == "current" for step in outcome_steps.values()) == 1
-          ''').lstrip('\n')
-          if old not in text:
-              raise SystemExit("golden path expectation pattern not found")
-          golden_path.write_text(text.replace(old, new, 1), encoding="utf-8")
+          """
+          golden_path.write_text(
+              text[:block_start] + block.rstrip() + text[block_end:],
+              encoding="utf-8",
+          )
 
           consistency = Path("tests/test_outcome_journey_consistency.py")
           text = consistency.read_text(encoding="utf-8")
-          old = dedent('''
-          def _complete_measurement(use_case):
-              use_case.metric_actual = Decimal("2.8")
-              use_case.metric_measurement_period = "Mai bis Juni 2026"
-              use_case.metric_measured_at = timezone.localdate()
-          ''').lstrip()
-          new = dedent('''
-          def _complete_measurement(use_case, *, measured_at=None):
+          helper_start = text.index("def _complete_measurement")
+          helper_end = text.index("def _review", helper_start)
+          helper = """def _complete_measurement(use_case, *, measured_at=None):
               use_case.metric_actual = Decimal("2.8")
               use_case.metric_measurement_period = "Mai bis Juni 2026"
               use_case.metric_measured_at = measured_at or timezone.localdate()
-          ''').lstrip()
-          if old not in text:
-              raise SystemExit("measurement test helper pattern not found")
-          text = text.replace(old, new, 1)
+              use_case.metric_evidence_url = "https://example.invalid/evidence/pilot"
+              use_case.save(
+                  update_fields=[
+                      "metric_actual",
+                      "metric_measurement_period",
+                      "metric_measured_at",
+                      "metric_evidence_url",
+                      "updated_at",
+                  ]
+              )
 
-          marker = dedent('''
-          @pytest.mark.django_db
-          def test_selected_view_is_marked_independently_from_lifecycle_state(
-          ''').lstrip()
-          addition = dedent('''
-          @pytest.mark.django_db
+
+          """
+          text = text[:helper_start] + helper + text[helper_end:]
+
+          marker = "@pytest.mark.django_db\ndef test_selected_view_is_marked_independently"
+          marker_index = text.index(marker)
+          addition = """@pytest.mark.django_db
           def test_measurement_before_current_pilot_does_not_complete_pilot(
               coordinator,
               owner,
@@ -211,12 +183,11 @@ jobs:
               assert list(states.values()).count("current") == 1
 
 
-          @pytest.mark.django_db
-          def test_selected_view_is_marked_independently_from_lifecycle_state(
-          ''').lstrip()
-          if marker not in text:
-              raise SystemExit("selected view test marker not found")
-          consistency.write_text(text.replace(marker, addition, 1), encoding="utf-8")
+          """
+          consistency.write_text(
+              text[:marker_index] + addition + text[marker_index:],
+              encoding="utf-8",
+          )
           PY
 
           uv run ruff format \
