@@ -64,14 +64,7 @@ jobs:
         run: uv sync --frozen --dev
 
       - name: Ruff lint
-        run: uv run ruff check . > ruff-diagnostics.txt 2>&1
-
-      - name: Upload Ruff diagnostics
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ruff-outcome-workspace-diagnostics
-          path: ruff-diagnostics.txt
+        run: uv run ruff check .
 
       - name: Ruff format
         run: uv run ruff format --check .
