@@ -13,11 +13,11 @@ from ki_radar.core.demo_architecture_data import (
     SUPPLIER_STREAM_KEY,
 )
 from ki_radar.delivery.models import DeliveryPackage
-from ki_radar.use_cases.journey import (
+from ki_radar.use_cases.models import UseCase
+from ki_radar.use_cases.workflow import (
     build_process_analysis_journey,
     build_use_case_journey,
 )
-from ki_radar.use_cases.models import UseCase
 
 
 @pytest.fixture(autouse=True)
@@ -41,6 +41,7 @@ def test_invoice_demo_has_complete_discovery_chain_and_ready_delivery(seeded_dem
     assert journey.path_label.startswith("Aus Value Stream")
     assert list(steps) == [
         "value_stream",
+        "focus",
         "process",
         "solution",
         "use_case",
@@ -50,7 +51,15 @@ def test_invoice_demo_has_complete_discovery_chain_and_ready_delivery(seeded_dem
     ]
     assert all(
         steps[key].state == "complete"
-        for key in ["value_stream", "process", "solution", "use_case", "assessment", "approval"]
+        for key in [
+            "value_stream",
+            "focus",
+            "process",
+            "solution",
+            "use_case",
+            "assessment",
+            "approval",
+        ]
     )
     assert steps["delivery"].state == "current"
     assert journey.next_action == steps["delivery"]
@@ -85,6 +94,7 @@ def test_non_ai_preferred_option_finishes_discovery_without_use_case(seeded_demo
     assert process.use_case_origins.count() == 0
     assert journey.next_action is None
     assert "Nicht-KI-Lösung" in journey.completion_message
+    assert steps["focus"].state == "complete"
     assert steps["use_case"].state == "optional"
 
 
@@ -93,8 +103,11 @@ def test_direct_intake_with_missing_data_source_is_actionable(seeded_demo):
     use_case = UseCase.objects.get(demo_key=DIRECT_INTAKE_KEY)
 
     journey = build_use_case_journey(use_case, seeded_demo)
+    steps = {step.key: step for step in journey.steps}
 
     assert journey.path_label == "Direkter Intake"
+    assert steps["value_stream"].state == "optional"
+    assert steps["focus"].state == "optional"
     assert journey.next_action is not None
     assert journey.next_action.key == "use_case"
     assert journey.next_action.state == "blocked"
@@ -174,6 +187,7 @@ def test_guided_components_are_visible_on_detail_pages(client, seeded_demo):
     assert use_case_response.status_code == 200
     assert process_response.status_code == 200
     assert dashboard_response.status_code == 200
-    assert "Geführte Initiative Journey" in use_case_response.content.decode()
+    assert "End-to-End-Arbeitsmodell" in use_case_response.content.decode()
+    assert "Fokus &amp; Priorisierung" in use_case_response.content.decode()
     assert "Nächster Schritt" in process_response.content.decode()
     assert "Meine nächsten Schritte" in dashboard_response.content.decode()
