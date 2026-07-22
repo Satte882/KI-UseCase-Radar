@@ -1,8 +1,10 @@
 import os
 import secrets
+from datetime import timedelta
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
+from django.utils import timezone
 
 from ki_radar.core.demo_architecture_data import (
     DOCUMENT_USE_CASE_KEY,
@@ -12,6 +14,7 @@ from ki_radar.core.demo_architecture_data import (
 from ki_radar.core.demo_data import seed_demo_data
 from ki_radar.core.demo_decision_data import enrich_demo_metrics
 from ki_radar.core.demo_identity import assign_demo_identities, prepare_demo_identities
+from ki_radar.delivery.services import current_handed_over_package
 from ki_radar.use_cases.models import UseCase
 
 
@@ -44,9 +47,43 @@ class Command(BaseCommand):
         metric_count = enrich_demo_metrics()
         architecture_counts = seed_demo_architecture_data()
         assign_demo_identities()
-        UseCase.objects.filter(
-            demo_key__in=[INVOICE_USE_CASE_KEY, DOCUMENT_USE_CASE_KEY]
-        ).update(status=UseCase.Status.REVIEW)
+
+        today = timezone.localdate()
+        invoice = UseCase.objects.get(demo_key=INVOICE_USE_CASE_KEY)
+        invoice.status = UseCase.Status.REVIEW
+        invoice.pilot_start = None
+        invoice.planned_pilot_end = today + timedelta(days=30)
+        invoice.next_review_date = today + timedelta(days=14)
+        invoice.realized_result = ""
+        invoice.save(
+            update_fields=[
+                "status",
+                "pilot_start",
+                "planned_pilot_end",
+                "next_review_date",
+                "realized_result",
+                "updated_at",
+            ]
+        )
+
+        document = UseCase.objects.get(demo_key=DOCUMENT_USE_CASE_KEY)
+        document_package = current_handed_over_package(document)
+        if document_package is None:
+            raise CommandError("The document routing demo requires a handed-over Delivery Package.")
+        document.status = UseCase.Status.PILOT
+        document.pilot_start = timezone.localdate(document_package.handed_over_at)
+        document.planned_pilot_end = today + timedelta(days=30)
+        document.next_review_date = today + timedelta(days=14)
+        document.save(
+            update_fields=[
+                "status",
+                "pilot_start",
+                "planned_pilot_end",
+                "next_review_date",
+                "updated_at",
+            ]
+        )
+
         self.stdout.write(
             self.style.SUCCESS(
                 "Demo-Daten eingespielt: "
