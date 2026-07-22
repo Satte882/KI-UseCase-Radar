@@ -29,3 +29,31 @@ def test_form_guidance_contract_covers_examples_and_dynamic_states():
     assert "::placeholder" in stylesheet
     assert ".field-error .form-control.field-guidance-filled" in stylesheet
     assert ".field-attention .form-control.field-guidance-filled" not in stylesheet
+
+
+def test_form_guidance_uses_informative_examples_instead_of_repeating_labels():
+    script = (ROOT / "static" / "js" / "form-guidance.js").read_text(encoding="utf-8")
+
+    assert "kurze konkrete Angabe zu" not in script
+    assert "EXAMPLES[name] || inferredExample(control)" in script
+    assert "LABEL_EXAMPLES" in script
+    assert "TYPE_FALLBACKS" in script
+
+    assert "evidence_url:" in script
+    assert "Link zur freigegebenen Pilot-Auswertung" in script
+    assert "metric_evidence_url:" in script
+    assert "Link zum freigegebenen Messbericht" in script
+    assert "artifacts_url:" in script
+    assert "Link zum Systemkontext- oder Datenflussdiagramm" in script
+    assert "external_delivery_url:" in script
+    assert "Link zum Jira-Epic oder Azure-DevOps-Backlog" in script
+
+    assert "architecture_decisions:" in script
+    assert "SAP bleibt führend; Verarbeitung erfolgt in Azure" in script
+    assert "data_flows:" in script
+    assert "PDF aus Outlook → Extraktion → SAP-Abgleich" in script
+    assert "dependencies:" in script
+    assert "SAP-Schnittstelle, vollständige Stammdaten" in script
+
+    assert "Link zum freigegebenen Dokument, Arbeitsergebnis oder Dashboard" in script
+    assert "konkrete Ausgangslage, betroffene Schritte und erwartetes Ergebnis" in script
