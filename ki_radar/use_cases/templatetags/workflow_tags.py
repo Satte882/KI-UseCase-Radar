@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from urllib.parse import urlencode
+
 from django import template
 from django.urls import reverse
 
 register = template.Library()
 
-WORKFLOW = (
+SELECTION_WORKFLOW = (
     ("discovery", "Discovery", ("value_stream",)),
     ("focus", "Fokus & Priorisierung", ("focus",)),
     ("use_cases", "Use Cases", ("process", "solution", "use_case")),
@@ -13,6 +15,16 @@ WORKFLOW = (
     ("approval", "Freigabe", ("approval",)),
     ("delivery", "Delivery", ("delivery",)),
 )
+OUTCOME_WORKFLOW = (
+    ("handover", "Übergabe", ("handover",)),
+    ("pilot", "Pilot", ("pilot",)),
+    ("measurement", "Wirkung", ("measurement",)),
+    ("outcome_decision", "Ergebnisentscheidung", ("outcome_decision",)),
+    ("operation", "Betrieb", ("operation",)),
+    ("closure", "Abschluss", ("closure",)),
+)
+WORKFLOW = SELECTION_WORKFLOW
+OUTCOME_STEP_KEYS = {key for key, _label, _raw_keys in OUTCOME_WORKFLOW}
 
 
 def _aggregate_state(raw_steps, keys):
@@ -32,11 +44,30 @@ def _aggregate_state(raw_steps, keys):
     return "upcoming"
 
 
-def _route_states(request):
+def _is_outcome_workspace(journey, request):
+    resolver = request.resolver_match
+    if resolver and resolver.namespace == "reporting" and resolver.url_name == "outcome_workspace":
+        return True
+    return bool(journey and any(step.key in OUTCOME_STEP_KEYS for step in journey.steps))
+
+
+def _workflow_definition(journey, request):
+    if not _is_outcome_workspace(journey, request):
+        return [(*definition, False) for definition in SELECTION_WORKFLOW]
+    if request.GET.get("layout") == "continuous":
+        selection = [(*definition, False) for definition in SELECTION_WORKFLOW]
+        outcome = [
+            (*definition, index == 0) for index, definition in enumerate(OUTCOME_WORKFLOW)
+        ]
+        return [*selection, *outcome]
+    return [(*definition, False) for definition in OUTCOME_WORKFLOW]
+
+
+def _selection_route_states(request):
     resolver = request.resolver_match
     namespace = resolver.namespace if resolver else ""
     url_name = resolver.url_name if resolver else ""
-    states = {key: "context" for key, _label, _keys in WORKFLOW}
+    states = {key: "context" for key, _label, _keys in SELECTION_WORKFLOW}
 
     if namespace == "architecture":
         states["discovery"] = "current"
@@ -90,26 +121,71 @@ def _route_states(request):
     return states
 
 
-@register.simple_tag
-def workflow_steps(journey, request):
-    links = {
+def _outcome_route_states(request):
+    current_stage = request.GET.get("stage", "pilot")
+    stage_to_step = {
+        "pilot": "pilot",
+        "effect": "measurement",
+        "decision": "outcome_decision",
+        "operation": "operation",
+        "closure": "closure",
+    }
+    current_step = stage_to_step.get(current_stage, "pilot")
+    states = {key: "upcoming" for key, _label, _keys in OUTCOME_WORKFLOW}
+    states["handover"] = "context"
+    states[current_step] = "current"
+    return states
+
+
+def _outcome_link(request, stage):
+    query = {
+        "stage": stage,
+        "layout": "continuous" if request.GET.get("layout") == "continuous" else "split",
+    }
+    if request.GET.get("use_case"):
+        query["use_case"] = request.GET["use_case"]
+    return f"{reverse('reporting:outcome_workspace')}?{urlencode(query)}"
+
+
+def _links(request):
+    return {
         "discovery": reverse("architecture:value_stream_list"),
         "focus": reverse("architecture:value_stream_list"),
         "use_cases": reverse("use_cases:list"),
         "assessment": reverse("reporting:portfolio"),
         "approval": reverse("reporting:dashboard"),
         "delivery": reverse("delivery:package_list"),
+        "handover": _outcome_link(request, "pilot"),
+        "pilot": _outcome_link(request, "pilot"),
+        "measurement": _outcome_link(request, "effect"),
+        "outcome_decision": _outcome_link(request, "decision"),
+        "operation": _outcome_link(request, "operation"),
+        "closure": _outcome_link(request, "closure"),
     }
-    route_states = _route_states(request)
+
+
+@register.simple_tag
+def workflow_steps(journey, request):
+    definitions = _workflow_definition(journey, request)
+    links = _links(request)
     raw_steps = journey.steps if journey else ()
+    selection_states = _selection_route_states(request)
+    outcome_states = _outcome_route_states(request)
     result = []
-    for key, label, raw_keys in WORKFLOW:
+    for key, label, raw_keys, divider_before in definitions:
+        if journey:
+            state = _aggregate_state(raw_steps, raw_keys)
+        elif key in selection_states:
+            state = selection_states[key]
+        else:
+            state = outcome_states[key]
         result.append(
             {
                 "key": key,
                 "label": label,
-                "state": _aggregate_state(raw_steps, raw_keys) if journey else route_states[key],
+                "state": state,
                 "url": links[key],
+                "divider_before": divider_before,
             }
         )
     return result
@@ -121,4 +197,6 @@ def local_step_group(step_key):
         return "analysis"
     if step_key in {"use_case", "assessment", "approval", "delivery"}:
         return "initiative"
+    if step_key in OUTCOME_STEP_KEYS:
+        return "outcome"
     return ""
