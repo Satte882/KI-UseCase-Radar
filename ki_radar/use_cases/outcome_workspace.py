@@ -95,8 +95,7 @@ def _pilot_step(
             url=url,
             action_label="Pilotübersicht öffnen",
             reason=(
-                "Der Pilot läuft im externen Delivery-System; "
-                "KI-Radar hält den Review-Snapshot."
+                "Der Pilot läuft im externen Delivery-System; KI-Radar hält den Review-Snapshot."
             ),
         )
     if (
@@ -207,9 +206,7 @@ def _outcome_decision_step(
         state="current",
         url=outcome_workspace_url("decision", use_case=use_case, layout=layout),
         action_label="Entscheidungsrahmen prüfen",
-        reason=(
-            "UX-Spike: Scale-, Continue- oder Stop-Entscheidung wird noch nicht gespeichert."
-        ),
+        reason=("UX-Spike: Scale-, Continue- oder Stop-Entscheidung wird noch nicht gespeichert."),
     )
 
 
@@ -238,8 +235,7 @@ def _operation_step(use_case: UseCase, *, layout: str) -> JourneyStep:
         label="Betrieb",
         state="upcoming",
         reason=(
-            "Betriebsverantwortung wird erst nach einer positiven Ergebnisentscheidung "
-            "relevant."
+            "Betriebsverantwortung wird erst nach einer positiven Ergebnisentscheidung relevant."
         ),
     )
 
@@ -274,9 +270,7 @@ def build_outcome_workspace_journey(
     selection_journey = build_use_case_journey(use_case, user)
     package = use_case.delivery_packages.first()
     handed_over = bool(package and package.status == DeliveryPackage.Status.HANDED_OVER)
-    measurement_complete = bool(
-        use_case.metric_actual is not None and use_case.metric_evidence_url
-    )
+    measurement_complete = bool(use_case.metric_actual is not None and use_case.metric_evidence_url)
 
     outcome_steps = [
         _handover_step(package),
