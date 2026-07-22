@@ -1,9 +1,7 @@
 name: Format Preview
 
 on:
-  push:
-    branches:
-      - feature/outcome-workspace-ux-spike
+  pull_request:
 
 permissions:
   contents: read
