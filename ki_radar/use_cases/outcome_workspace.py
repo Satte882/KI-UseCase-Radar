@@ -62,8 +62,22 @@ def _measurement_missing(use_case: UseCase) -> tuple[str, ...]:
     )
 
 
-def _measurement_complete(use_case: UseCase) -> bool:
+def _measurement_fields_complete(use_case: UseCase) -> bool:
     return not _measurement_missing(use_case)
+
+
+def _measurement_complete(use_case: UseCase) -> bool:
+    if not _measurement_fields_complete(use_case) or use_case.pilot_start is None:
+        return False
+    return use_case.metric_measured_at >= use_case.pilot_start
+
+
+def _measurement_predates_pilot(use_case: UseCase) -> bool:
+    return bool(
+        _measurement_fields_complete(use_case)
+        and use_case.pilot_start is not None
+        and use_case.metric_measured_at < use_case.pilot_start
+    )
 
 
 def _has_measurement_data(use_case: UseCase) -> bool:
@@ -189,8 +203,9 @@ def _pilot_step(
                 url=url,
                 action_label="Pilot prüfen",
                 reason=(
-                    "Dateninkonsistenz: Ein Pilotstart ist dokumentiert, der "
-                    "Lifecycle-Status steht jedoch nicht auf Pilot, Betrieb oder Beendet."
+                    "Dateninkonsistenz: Ein Pilotstart ist dokumentiert, aber der "
+                    "Lifecycle-Status oder die Nachweise belegen keinen laufenden oder "
+                    "abgeschlossenen Pilot."
                 ),
             )
         return JourneyStep(
@@ -258,6 +273,19 @@ def _measurement_step(
                 else "Die Wirkungsmessung folgt nach Übergabe und gestartetem Pilot."
             ),
             details=missing if has_data else (),
+        )
+    if _measurement_predates_pilot(use_case):
+        return JourneyStep(
+            key="measurement",
+            label="Wirkungsmessung",
+            state="upcoming",
+            url=f"{edit_url}?highlight=metric_measured_at",
+            action_label="Messung für aktuellen Pilot aktualisieren",
+            reason=(
+                "Die vorhandene Messung stammt aus der Zeit vor dem aktuellen "
+                "Pilotbeginn und schließt diesen Pilot nicht ab."
+            ),
+            details=("Messdatum nach Pilotbeginn",),
         )
     if measurement_complete:
         return JourneyStep(
@@ -558,7 +586,6 @@ def build_outcome_workspace_journey(
             UseCase.Status.ENDED,
         }
         or pilot_started
-        or _has_measurement_data(use_case)
         or go_live_recorded
         or end_recorded
         or use_case.actual_end_date
