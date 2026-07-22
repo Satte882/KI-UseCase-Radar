@@ -263,3 +263,60 @@ docker compose -f compose.local.yml exec app `
 ### Port 8000 oder 5433 ist belegt
 
 In `compose.local.yml` den linken Host-Port ändern. Der Container-Port bleibt unverändert.
+
+## 13. Wo UI-Eingaben gespeichert werden
+
+Fachliche Eingaben aus der Weboberfläche werden nach erfolgreicher Validierung in der lokalen PostgreSQL-Datenbank gespeichert. Sie landen nicht in Python-, HTML- oder Konfigurationsdateien und werden nicht durch einen Git-Commit auf GitHub übertragen.
+
+Der lokale Docker-Compose-Stack verwendet das benannte Volume:
+
+```text
+local_db → /var/lib/postgresql/data
+```
+
+Da der Compose-Projektname `ki-radar-local` lautet, heißt das durch Docker verwaltete Volume normalerweise:
+
+```text
+ki-radar-local_local_db
+```
+
+Der konkrete physische Pfad wird von Docker Desktop beziehungsweise Docker Engine verwaltet und liegt nicht im Repository.
+
+### Was erhalten bleibt
+
+Diese Vorgänge lassen die lokale Datenbank normalerweise bestehen:
+
+```powershell
+docker compose -f compose.local.yml stop
+docker compose -f compose.local.yml down
+docker compose -f compose.local.yml up --build
+```
+
+Auch `git pull`, Branchwechsel, Merge und Code-Rebuild übertragen oder löschen die fachlichen Daten nicht. Git und PostgreSQL sind voneinander getrennt.
+
+### Was Daten löscht
+
+Der bereits in Abschnitt 11 dokumentierte Befehl
+
+```powershell
+docker compose -f compose.local.yml down -v
+```
+
+löscht das Datenbank-Volume und damit alle ausschließlich lokal gespeicherten Anwendungsdaten. Dasselbe gilt für das manuelle Löschen des Volumes in Docker Desktop.
+
+Persistenz im Volume ist kein Backup. Für das lokale Entwicklungssetup besteht keine automatisch zugesicherte externe Sicherung.
+
+### Volumes prüfen
+
+```powershell
+docker volume ls --filter name=ki-radar-local
+docker volume inspect ki-radar-local_local_db
+```
+
+Der tatsächliche Volumename kann abweichen, wenn beim Start ein anderer Compose-Projektname verwendet wurde.
+
+### Externe Übertragung durch den optionalen Copilot
+
+Ohne `OPENROUTER_API_KEY` werden keine Use-Case-Daten an OpenRouter gesendet. Wird der Review-Copilot ausdrücklich gestartet, überträgt die Anwendung ausgewählte Use-Case-Daten an die konfigurierte OpenRouter-API. Der Copilot ist optional und keine Freigabeinstanz.
+
+Die vollständige Übersicht zu gespeicherten Datenarten, Historie, Nachweislinks, Staging, Produktion, Backups und externen Übertragungen steht in [`docs/DATA_STORAGE.md`](docs/DATA_STORAGE.md).
