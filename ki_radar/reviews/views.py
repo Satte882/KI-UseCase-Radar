@@ -39,6 +39,7 @@ def review_create(request, use_case_id):
         form = ReviewForm(
             request.POST,
             use_case=use_case,
+            actor=request.user,
             pilot_start_only=pilot_start_only,
         )
         if form.is_valid():
@@ -55,6 +56,7 @@ def review_create(request, use_case_id):
     else:
         form = ReviewForm(
             use_case=use_case,
+            actor=request.user,
             pilot_start_only=pilot_start_only,
         )
     return render(

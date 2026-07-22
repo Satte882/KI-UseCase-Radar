@@ -2,7 +2,7 @@
 {% block title %}{{ title }} – KI-Radar{% endblock %}
 {% block content %}
 <div class="page-header">
-  <div><div class="eyebrow mb-2">Use-Case-Daten</div><h1 class="page-title">{{ title }}</h1><p class="page-subtitle">Die strukturierte Erfolgsmetrik wird erst für Pilotstart und Go-live verbindlich.</p></div>
+  <div><div class="eyebrow mb-2">Use-Case-Daten</div><h1 class="page-title">{{ title }}</h1><p class="page-subtitle">Primäre Erfolgsmetrik, Baseline, Ziel und Messmethode sind Voraussetzung für die finale Freigabe. Ist-Wert, Messzeitraum, Messdatum und Nachweis werden vor dem Go-live ergänzt.</p></div>
 </div>
 {% if highlight_field %}<div class="alert alert-warning" role="status"><strong>Offene Voraussetzung bearbeiten:</strong> Das relevante Feld ist nachfolgend mit einem Warnsymbol markiert.</div>{% endif %}
 <form method="post">{% csrf_token %}{{ form.non_field_errors }}

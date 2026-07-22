@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from ki_radar.use_cases.models import UseCase
+from ki_radar.use_cases.permissions import can_confirm_go_live_exception
 from ki_radar.use_cases.services import current_decision_check, validate_pilot_start_date
 
 from .models import Review
@@ -84,8 +85,16 @@ class ReviewForm(forms.ModelForm):
             "next_review_date": "Nächster Entscheidungstermin",
         }
 
-    def __init__(self, *args, use_case: UseCase, pilot_start_only: bool = False, **kwargs):
+    def __init__(
+        self,
+        *args,
+        use_case: UseCase,
+        actor=None,
+        pilot_start_only: bool = False,
+        **kwargs,
+    ):
         self.use_case = use_case
+        self.actor = actor
         self.pilot_start_only = pilot_start_only
         super().__init__(*args, **kwargs)
         today = timezone.localdate()
@@ -138,7 +147,14 @@ class ReviewForm(forms.ModelForm):
             "go_live_exception_confirmed" in self.fields
             and not self.fields["go_live_exception_confirmed"].widget.is_hidden
         ):
-            self.fields["go_live_exception_confirmed"].widget.attrs["class"] = "form-check-input"
+            exception_field = self.fields["go_live_exception_confirmed"]
+            exception_field.widget.attrs["class"] = "form-check-input"
+            if not can_confirm_go_live_exception(actor):
+                exception_field.disabled = True
+                exception_field.help_text = (
+                    "Eine Go-live-Ausnahme darf ausschließlich ein Mitglied der Gruppe "
+                    "KI-Koordinator bestätigen."
+                )
 
     def clean(self):
         cleaned = super().clean()
@@ -195,7 +211,12 @@ class ReviewForm(forms.ModelForm):
             decision == Review.Decision.GO_LIVE
             and self.use_case.metric_result == UseCase.MetricResult.NOT_ACHIEVED
         )
-        if exception_required and not cleaned.get("go_live_exception_confirmed"):
+        if exception_required and not can_confirm_go_live_exception(self.actor):
+            self.add_error(
+                "go_live_exception_confirmed",
+                "Nur ein KI-Koordinator darf die erforderliche Go-live-Ausnahme bestätigen.",
+            )
+        elif exception_required and not cleaned.get("go_live_exception_confirmed"):
             self.add_error(
                 "go_live_exception_confirmed",
                 "Die Ausnahme muss bei verfehltem Pilotziel ausdrücklich bestätigt werden.",
