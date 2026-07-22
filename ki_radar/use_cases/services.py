@@ -9,8 +9,10 @@ from django.db.models import Max
 from django.utils import timezone
 
 from ki_radar.accounts.permissions import is_coordinator
+from ki_radar.delivery.services import current_delivery_package, current_handed_over_package
 
 from .models import ApprovalDecision, DecisionAssessment, UseCase
+from .permissions import can_start_pilot
 
 STATUS_ORDER = {
     UseCase.Status.IDEA: 0,
@@ -19,6 +21,10 @@ STATUS_ORDER = {
     UseCase.Status.OPERATION: 3,
     UseCase.Status.ENDED: 4,
 }
+
+PILOT_STATUS_BLOCKER = "Lifecycle-Status Prüfung"
+PILOT_PACKAGE_BLOCKER = "Aktuelles Delivery Package"
+PILOT_HANDOVER_BLOCKER = "Verbindliche Übergabe des aktuellen Delivery Packages"
 
 
 @dataclass(frozen=True)
@@ -194,6 +200,13 @@ def check_pilot_start(use_case: UseCase) -> DecisionCheck:
         ),
     )
     warnings = []
+    if use_case.status != UseCase.Status.REVIEW:
+        blockers.append(PILOT_STATUS_BLOCKER)
+    package = current_delivery_package(use_case)
+    if package is None:
+        blockers.append(PILOT_PACKAGE_BLOCKER)
+    elif current_handed_over_package(use_case) is None:
+        blockers.append(PILOT_HANDOVER_BLOCKER)
     if use_case.decision_status not in APPROVAL_STATUSES:
         blockers.append("Positive Freigabeentscheidung")
     if not use_case.governance_assessments.exists():
@@ -331,9 +344,46 @@ def validate_target_status(use_case: UseCase, target_status: str) -> None:
         raise ValidationError("Für den Zielstatus fehlen: " + ", ".join(check.blockers))
 
 
+def validate_pilot_start_date(*, use_case: UseCase, pilot_start: date | None) -> None:
+    if pilot_start is None:
+        raise ValidationError("Der tatsächliche Pilotbeginn ist erforderlich.")
+    today = timezone.localdate()
+    if pilot_start > today:
+        raise ValidationError("Der tatsächliche Pilotbeginn darf nicht in der Zukunft liegen.")
+    package = current_handed_over_package(use_case)
+    if package is None:
+        raise ValidationError(
+            "Der Pilot kann erst nach der verbindlichen Übergabe des aktuellen "
+            "Delivery Packages gestartet werden."
+        )
+    handover_date = timezone.localdate(package.handed_over_at)
+    if pilot_start < handover_date:
+        raise ValidationError(
+            "Der tatsächliche Pilotbeginn darf nicht vor der verbindlichen Übergabe des "
+            "aktuellen Delivery Packages liegen."
+        )
+    if use_case.planned_pilot_end and use_case.planned_pilot_end < pilot_start:
+        raise ValidationError(
+            "Das geplante Pilotende darf nicht vor dem tatsächlichen Pilotbeginn liegen."
+        )
+
+
 @transaction.atomic
-def apply_status_transition(*, use_case: UseCase, target_status: str, actor) -> UseCase:
+def apply_status_transition(
+    *,
+    use_case: UseCase,
+    target_status: str,
+    actor,
+    pilot_start: date | None = None,
+) -> UseCase:
     validate_target_status(use_case, target_status)
+    if target_status == UseCase.Status.PILOT:
+        if not can_start_pilot(actor, use_case):
+            raise PermissionDenied(
+                "Nur ein KI-Koordinator oder der zuständige Business Owner darf den Pilot starten."
+            )
+        validate_pilot_start_date(use_case=use_case, pilot_start=pilot_start)
+        use_case.pilot_start = pilot_start
     use_case.status = target_status
     if target_status == UseCase.Status.ENDED and not use_case.actual_end_date:
         use_case.actual_end_date = timezone.localdate()
