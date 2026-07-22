@@ -11,11 +11,8 @@ from ki_radar.use_cases.blockers import build_blocker_details
 from ki_radar.use_cases.classification import UseCaseClassification
 from ki_radar.use_cases.models import UseCase
 from ki_radar.use_cases.outcome_workspace import (
-    OUTCOME_STAGES,
     build_outcome_workspace_journey,
     normalize_outcome_stage,
-    normalize_workspace_layout,
-    outcome_workspace_url,
 )
 from ki_radar.use_cases.services import (
     current_decision_check,
@@ -146,7 +143,6 @@ def portfolio(request):
 @login_required
 def outcome_workspace(request):
     active_stage = normalize_outcome_stage(request.GET.get("stage"))
-    layout = normalize_workspace_layout(request.GET.get("layout"))
     use_cases = list(
         UseCase.objects.filter(is_archived=False)
         .select_related("business_owner", "technical_owner", "business_unit")
@@ -181,43 +177,15 @@ def outcome_workspace(request):
         build_outcome_workspace_journey(
             selected_use_case,
             request.user,
-            layout=layout,
         )
         if selected_use_case
         else None
     )
-    stage_links = [
-        {
-            "key": stage,
-            "label": label,
-            "url": outcome_workspace_url(
-                stage,
-                use_case=selected_use_case,
-                layout=layout,
-            ),
-        }
-        for stage, label, _step_key in OUTCOME_STAGES
-    ]
-    layout_links = {
-        "split": outcome_workspace_url(
-            active_stage,
-            use_case=selected_use_case,
-            layout="split",
-        ),
-        "continuous": outcome_workspace_url(
-            active_stage,
-            use_case=selected_use_case,
-            layout="continuous",
-        ),
-    }
     context = {
         "active_stage": active_stage,
         "active_stage_copy": OUTCOME_STAGE_COPY[active_stage],
         "journey": journey,
-        "layout": layout,
-        "layout_links": layout_links,
         "selected_use_case": selected_use_case,
-        "stage_links": stage_links,
         "use_cases": use_cases,
         "pilot_total": sum(item.status == UseCase.Status.PILOT for item in use_cases),
         "measured_total": sum(item.metric_actual is not None for item in use_cases),

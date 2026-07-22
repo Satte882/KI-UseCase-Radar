@@ -1,15 +1,15 @@
-# Arbeitsraum 2: Wirkung & Betrieb
+# Wirkung & Betrieb
 
 ## Status dieses Inkrements
 
-Dieses Inkrement ist ein **UX- und Architektur-Spike**. Es führt noch kein neues fachliches Datenmodell für Pilotfortschritt, Ergebnisreviews, Skalierungsentscheidungen oder Betrieb ein.
+Dieses Inkrement finalisiert die Navigation und Informationshierarchie für Wirkung und Betrieb. Es führt kein neues fachliches Datenmodell für Pilotfortschritt, Ergebnisreviews, Skalierungsentscheidungen oder Betrieb ein.
 
 Ziele:
 
 1. die Systemgrenze zu Jira, Azure DevOps, GitHub und ähnlichen Delivery-Systemen verbindlich festlegen,
 2. den zweiten Arbeitsraum in die bestehende `JourneyState`-/`JourneyStep`-Logik integrieren,
-3. zwei Varianten der stabilen Hauptleiste im echten Browser vergleichbar machen,
-4. den nächsten fachlichen PR auf einen kleinen, abnehmbaren Umfang begrenzen.
+3. eine fokussierte Hauptleiste für den zweiten Arbeitsraum bereitstellen,
+4. die nächsten fachlichen Inkremente auf einen kleinen, abnehmbaren Umfang begrenzen.
 
 ## Systemgrenze
 
@@ -81,9 +81,9 @@ Der zweite Arbeitsraum verwendet weiterhin:
 
 Die bestehende Auswahl- und Freigabe-Journey bleibt Teil desselben Objekts. Es gibt keine zweite Journey-Engine und keine unabhängige Template-Statuslogik.
 
-## Zwei UX-Varianten
+## Navigationsentscheidung: getrennter Arbeitsraum
 
-### Variante A: getrennter Arbeitsraum
+Nach der lokalen Desktop- und Mobile-Abnahme wurde die fokussierte Variante A ausgewählt.
 
 Beim Wechsel zu Wirkung & Betrieb zeigt die stabile Hauptleiste nur:
 
@@ -91,29 +91,14 @@ Beim Wechsel zu Wirkung & Betrieb zeigt die stabile Hauptleiste nur:
 Übergabe → Pilot → Wirkung → Ergebnisentscheidung → Betrieb → Abschluss
 ```
 
-Vorteil: klare Fokussierung und kurze Leiste.
-
-Zu prüfen: Verliert der Nutzer den Zusammenhang zur ursprünglichen Auswahl und Freigabe?
-
-### Variante B: durchgängiger Lebenszyklus
-
-Die Hauptleiste zeigt beide Segmente und markiert die Grenze visuell:
-
-```text
-Discovery → Fokus → Use Cases → Bewertung → Freigabe → Delivery
-║
-Übergabe → Pilot → Wirkung → Ergebnisentscheidung → Betrieb → Abschluss
-```
-
-Vorteil: der Gesamtkontext bleibt sichtbar.
-
-Zu prüfen: Ist die Leiste auf Desktop und Mobile noch verständlich und bedienbar?
-
-Die Varianten können im UX-Spike direkt umgeschaltet werden. Erst nach lokaler Browserabnahme wird eine Variante zum Standard.
+Die Trennung reduziert die Breite der stabilen Hauptleiste und hält den aktuellen Aufgabenraum
+auf Desktop und Mobile schneller erfassbar. Der Zusammenhang zur Auswahl und Freigabe bleibt
+über die deutlich getrennten Arbeitsräume in der Sidebar erhalten. Die zuvor angebotene
+durchgängige Vergleichsvariante ist nicht mehr Bestandteil der Oberfläche.
 
 ## Bereits genutzte Daten
 
-Der Spike verwendet ausschließlich bestehende Daten:
+Der Bereich verwendet ausschließlich bestehende Daten:
 
 - Use-Case-Lifecycle,
 - Pilotbeginn und geplantes Pilotende,
@@ -124,11 +109,11 @@ Der Spike verwendet ausschließlich bestehende Daten:
 - Business Owner, Technical Owner und Support-Verantwortung,
 - Abschlussinformationen am Use Case.
 
-Der Spike erzeugt keine Migration.
+Das Inkrement erzeugt keine Migration.
 
 ## Bewusste Nicht-Ziele
 
-Dieser PR implementiert nicht:
+Dieses Inkrement implementiert nicht:
 
 - ein neues Pilot-Datenmodell,
 - Fortschrittsprozente,
@@ -153,11 +138,11 @@ Dieser PR implementiert nicht:
 
 Jedes Inkrement erhält einen eigenen Branch, eigenen PR, eigene Tests und eine getrennte fachliche Abnahme.
 
-## Abnahmekriterien für diesen Spike
+## Abnahmekriterien
 
 - Die Sidebar zeigt zwei klar getrennte Arbeitsräume.
 - Der zweite Arbeitsraum nutzt die gesamte verfügbare Inhaltsbreite.
-- Beide Hauptleistenvarianten sind ohne Codeänderung umschaltbar.
+- Die Hauptleiste zeigt im zweiten Arbeitsraum nur Übergabe bis Abschluss.
 - Desktop und Mobile bleiben bedienbar.
 - Die Systemgrenze ist auf der Seite und in dieser Dokumentation sichtbar.
 - Es entsteht kein neues Datenmodell und keine Migration.

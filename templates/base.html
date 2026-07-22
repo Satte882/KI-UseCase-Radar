@@ -11,7 +11,6 @@
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
   <link rel="stylesheet" href="{% static 'css/context-topbar.css' %}">
   <link rel="stylesheet" href="{% static 'css/sidebar-journey.css' %}">
-  <link rel="stylesheet" href="{% static 'css/workspace-variants.css' %}">
   <link rel="stylesheet" href="{% static 'css/form-guidance.css' %}">
   <link rel="stylesheet" href="{% static 'css/architecture.css' %}">
   <link rel="stylesheet" href="{% static 'css/delivery.css' %}">
@@ -80,7 +79,7 @@
 
       <div class="sidebar-workspace-separator" role="separator" aria-label="Trennung der Arbeitsräume"></div>
       <div class="nav-caption nav-caption-workspace">
-        <span>Wirkung &amp; Betrieb</span><small>UX-Spike</small>
+        <span>Wirkung &amp; Betrieb</span>
       </div>
       <a class="sidebar-link {% if request.resolver_match.url_name == 'outcome_workspace' and active_stage == 'pilot' %}active{% endif %}" href="{% url 'reporting:outcome_workspace' %}?stage=pilot">
         <span class="nav-icon">▶</span> Piloten

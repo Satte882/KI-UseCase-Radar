@@ -5,15 +5,15 @@
     <div class="journey-topbar-heading">
       {% if request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'outcome_workspace' %}
       <span class="journey-topbar-kicker">
-        End-to-End-Arbeitsmodell · {% if request.GET.layout == 'continuous' %}Gesamtlebenszyklus · Vergleichsvariante{% else %}Arbeitsraum 2 · Wirkung &amp; Betrieb{% endif %}
+        End-to-End-Arbeitsmodell · Wirkung &amp; Betrieb
       </span>
-      <strong>{% if journey %}{{ journey.path_label }}{% else %}Use Case für den UX-Spike auswählen{% endif %}</strong>
+      <strong>{% if journey %}{{ journey.path_label }}{% else %}Use Case auswählen{% endif %}</strong>
       {% else %}
       <span class="journey-topbar-kicker">End-to-End-Arbeitsmodell · Arbeitsraum 1 · Auswahl &amp; Freigabe</span>
       <strong>{% if journey %}{{ journey.path_label }}{% elif request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'portfolio' %}Portfolio · Querschnitt über alle Phasen{% else %}Von der Discovery bis zur umsetzbaren Übergabe{% endif %}</strong>
       {% endif %}
     </div>
-    <nav class="journey-progress{% if request.GET.layout == 'continuous' %} journey-progress-continuous{% endif %}" aria-label="Phasen des Arbeitsmodells">
+    <nav class="journey-progress" aria-label="Phasen des Arbeitsmodells">
       {% for step in workflow %}
       {% if step.divider_before %}<span class="journey-progress-divider" aria-hidden="true"></span>{% endif %}
       <a class="journey-progress-step journey-progress-{{ step.state }}" href="{{ step.url }}"{% if step.state == 'current' or step.state == 'blocked' %} aria-current="step"{% endif %}>
@@ -55,9 +55,9 @@
   {% elif request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'outcome_workspace' %}
   <div class="journey-topbar-next journey-topbar-context-note">
     <div class="journey-topbar-next-copy">
-      <span class="journey-topbar-kicker">UX-Spike</span>
-      <strong>Keine neue Statusquelle</strong>
-      <span class="journey-topbar-next-reason">Der zweite Arbeitsraum erweitert dieselbe JourneyState-Logik.</span>
+      <span class="journey-topbar-kicker">Wirkung &amp; Betrieb</span>
+      <strong>Gemeinsamer Lebenszyklus</strong>
+      <span class="journey-topbar-next-reason">Review- und Entscheidungsinformationen folgen dem bestehenden Status des Use Cases.</span>
     </div>
   </div>
   {% elif request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'portfolio' %}

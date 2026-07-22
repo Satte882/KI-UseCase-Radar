@@ -58,10 +58,6 @@ def _is_outcome_workspace(journey, request):
 def _workflow_definition(journey, request):
     if not _is_outcome_workspace(journey, request):
         return [(*definition, False) for definition in SELECTION_WORKFLOW]
-    if request.GET.get("layout") == "continuous":
-        selection = [(*definition, False) for definition in SELECTION_WORKFLOW]
-        outcome = [(*definition, index == 0) for index, definition in enumerate(OUTCOME_WORKFLOW)]
-        return [*selection, *outcome]
     return [(*definition, False) for definition in OUTCOME_WORKFLOW]
 
 
@@ -140,10 +136,7 @@ def _outcome_route_states(request):
 
 
 def _outcome_link(request, stage):
-    query = {
-        "stage": stage,
-        "layout": "continuous" if request.GET.get("layout") == "continuous" else "split",
-    }
+    query = {"stage": stage}
     if request.GET.get("use_case"):
         query["use_case"] = request.GET["use_case"]
     return f"{reverse('reporting:outcome_workspace')}?{urlencode(query)}"

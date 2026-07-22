@@ -28,7 +28,7 @@ def _use_case(owner, business_unit):
     )
 
 
-def test_outcome_workspace_assets_document_scope_and_variants():
+def test_outcome_workspace_assets_document_scope_and_final_navigation():
     base = (ROOT / "templates" / "base.html").read_text(encoding="utf-8")
     template = (ROOT / "templates" / "reporting" / "outcome_workspace.html").read_text(
         encoding="utf-8"
@@ -38,9 +38,11 @@ def test_outcome_workspace_assets_document_scope_and_variants():
     assert "sidebar-workspace-separator" in base
     assert "Wirkung &amp; Betrieb" in base
     assert "css/outcome-workspace.css" in base
-    assert "A · Arbeitsraum wechselt" in template
-    assert "B · Gesamtleiste" in template
-    assert "manueller Review-Snapshot" in template
+    assert "Entscheidungsrelevanter Review-Snapshot" in template
+    assert "B · Gesamtleiste" not in template
+    assert "outcome-stage-nav" not in template
+    assert "für die Abnahme" not in template
+    assert "Arbeitsraum 2" not in template
     assert "keine Live-Synchronisation" in documentation
     assert "keine zweite Journey-Engine" in documentation
 
@@ -49,7 +51,7 @@ def test_outcome_workspace_assets_document_scope_and_variants():
 def test_outcome_journey_extends_existing_journey_state(owner, business_unit):
     use_case = _use_case(owner, business_unit)
 
-    journey = build_outcome_workspace_journey(use_case, owner, layout="split")
+    journey = build_outcome_workspace_journey(use_case, owner)
     keys = [step.key for step in journey.steps]
 
     assert isinstance(journey, JourneyState)
@@ -74,7 +76,7 @@ def test_outcome_journey_extends_existing_journey_state(owner, business_unit):
 
 
 @pytest.mark.django_db
-def test_outcome_workspace_renders_both_lifecycle_segments(
+def test_outcome_workspace_renders_only_outcome_lifecycle_segment(
     client,
     owner,
     business_unit,
@@ -82,26 +84,27 @@ def test_outcome_workspace_renders_both_lifecycle_segments(
     use_case = _use_case(owner, business_unit)
     client.force_login(owner)
 
-    response = client.get(
-        reverse("reporting:outcome_workspace"),
-        {
-            "stage": "effect",
-            "layout": "continuous",
-            "use_case": use_case.pk,
-        },
-    )
-    content = response.content.decode()
+    for layout in ("continuous", "split"):
+        response = client.get(
+            reverse("reporting:outcome_workspace"),
+            {
+                "stage": "effect",
+                "layout": layout,
+                "use_case": use_case.pk,
+            },
+        )
+        content = response.content.decode()
 
-    assert response.status_code == 200
-    assert response.context["active_stage"] == "effect"
-    assert response.context["layout"] == "continuous"
-    assert response.context["journey"].path_label.endswith("Wirkung & Betrieb")
-    assert "Arbeitsraum 2 · Wirkung &amp; Betrieb" in content
-    assert "Discovery" in content
-    assert "Fokus &amp; Priorisierung" in content
-    assert "Ergebnisentscheidung" in content
-    assert "Review-Snapshot statt Projektmanagement" in content
-    assert "Externes Delivery-System" in content
+        assert response.status_code == 200
+        assert response.context["active_stage"] == "effect"
+        assert response.context["journey"].path_label.endswith("Wirkung & Betrieb")
+        assert "End-to-End-Arbeitsmodell · Wirkung &amp; Betrieb" in content
+        assert 'class="journey-progress-label">Discovery</span>' not in content
+        assert 'class="journey-progress-label">Fokus &amp; Priorisierung</span>' not in content
+        assert "Ergebnisentscheidung" in content
+        assert "Entscheidungsrelevanter Review-Snapshot" in content
+        assert "Externes Delivery-System" in content
+        assert "B · Gesamtleiste" not in content
 
 
 @pytest.mark.django_db
@@ -116,5 +119,4 @@ def test_outcome_workspace_defaults_invalid_parameters(client, owner, business_u
 
     assert response.status_code == 200
     assert response.context["active_stage"] == "pilot"
-    assert response.context["layout"] == "split"
     assert response.context["selected_use_case"] is not None

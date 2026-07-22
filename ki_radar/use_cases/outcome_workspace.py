@@ -23,20 +23,12 @@ def normalize_outcome_stage(value: str | None) -> str:
     return value if value in OUTCOME_STAGE_KEYS else "pilot"
 
 
-def normalize_workspace_layout(value: str | None) -> str:
-    return value if value in {"split", "continuous"} else "split"
-
-
 def outcome_workspace_url(
     stage: str,
     *,
     use_case: UseCase | None = None,
-    layout: str = "split",
 ) -> str:
-    query = {
-        "stage": normalize_outcome_stage(stage),
-        "layout": normalize_workspace_layout(layout),
-    }
+    query = {"stage": normalize_outcome_stage(stage)}
     if use_case is not None:
         query["use_case"] = str(use_case.pk)
     return f"{reverse('reporting:outcome_workspace')}?{urlencode(query)}"
@@ -77,9 +69,8 @@ def _pilot_step(
     use_case: UseCase,
     *,
     handed_over: bool,
-    layout: str,
 ) -> JourneyStep:
-    url = outcome_workspace_url("pilot", use_case=use_case, layout=layout)
+    url = outcome_workspace_url("pilot", use_case=use_case)
     if not handed_over:
         return JourneyStep(
             key="pilot",
@@ -130,7 +121,6 @@ def _measurement_step(
     use_case: UseCase,
     *,
     handed_over: bool,
-    layout: str,
 ) -> JourneyStep:
     url = reverse("use_cases:edit", kwargs={"pk": use_case.pk})
     if use_case.metric_actual is not None and use_case.metric_evidence_url:
@@ -138,7 +128,7 @@ def _measurement_step(
             key="measurement",
             label="Wirkungsmessung",
             state="complete",
-            url=outcome_workspace_url("effect", use_case=use_case, layout=layout),
+            url=outcome_workspace_url("effect", use_case=use_case),
             action_label="Wirkung öffnen",
             reason=f"{use_case.metric_result_label}; Messwert und Nachweis liegen vor.",
         )
@@ -179,7 +169,6 @@ def _outcome_decision_step(
     use_case: UseCase,
     *,
     measurement_complete: bool,
-    layout: str,
 ) -> JourneyStep:
     if not measurement_complete:
         return JourneyStep(
@@ -193,7 +182,7 @@ def _outcome_decision_step(
             key="outcome_decision",
             label="Ergebnisentscheidung",
             state="complete",
-            url=outcome_workspace_url("decision", use_case=use_case, layout=layout),
+            url=outcome_workspace_url("decision", use_case=use_case),
             action_label="Entscheidungsrahmen öffnen",
             reason=(
                 "Der Lifecycle-Status zeigt bereits Betrieb oder Abschluss; das versionierte "
@@ -204,14 +193,14 @@ def _outcome_decision_step(
         key="outcome_decision",
         label="Ergebnisentscheidung",
         state="current",
-        url=outcome_workspace_url("decision", use_case=use_case, layout=layout),
+        url=outcome_workspace_url("decision", use_case=use_case),
         action_label="Entscheidungsrahmen prüfen",
-        reason=("UX-Spike: Scale-, Continue- oder Stop-Entscheidung wird noch nicht gespeichert."),
+        reason=("Scale-, Continue- oder Stop-Entscheidung wird noch nicht gespeichert."),
     )
 
 
-def _operation_step(use_case: UseCase, *, layout: str) -> JourneyStep:
-    url = outcome_workspace_url("operation", use_case=use_case, layout=layout)
+def _operation_step(use_case: UseCase) -> JourneyStep:
+    url = outcome_workspace_url("operation", use_case=use_case)
     if use_case.status == UseCase.Status.ENDED:
         return JourneyStep(
             key="operation",
@@ -240,13 +229,13 @@ def _operation_step(use_case: UseCase, *, layout: str) -> JourneyStep:
     )
 
 
-def _closure_step(use_case: UseCase, *, layout: str) -> JourneyStep:
+def _closure_step(use_case: UseCase) -> JourneyStep:
     if use_case.status == UseCase.Status.ENDED:
         return JourneyStep(
             key="closure",
             label="Abschluss",
             state="complete",
-            url=outcome_workspace_url("closure", use_case=use_case, layout=layout),
+            url=outcome_workspace_url("closure", use_case=use_case),
             action_label="Abschluss öffnen",
             reason="Das Vorhaben ist beendet; Abschlussinformationen liegen am Use Case.",
         )
@@ -261,12 +250,9 @@ def _closure_step(use_case: UseCase, *, layout: str) -> JourneyStep:
 def build_outcome_workspace_journey(
     use_case: UseCase,
     user,
-    *,
-    layout: str = "split",
 ) -> JourneyState:
     """Extend the existing journey; do not create a second status engine."""
 
-    normalized_layout = normalize_workspace_layout(layout)
     selection_journey = build_use_case_journey(use_case, user)
     package = use_case.delivery_packages.first()
     handed_over = bool(package and package.status == DeliveryPackage.Status.HANDED_OVER)
@@ -274,15 +260,14 @@ def build_outcome_workspace_journey(
 
     outcome_steps = [
         _handover_step(package),
-        _pilot_step(use_case, handed_over=handed_over, layout=normalized_layout),
-        _measurement_step(use_case, handed_over=handed_over, layout=normalized_layout),
+        _pilot_step(use_case, handed_over=handed_over),
+        _measurement_step(use_case, handed_over=handed_over),
         _outcome_decision_step(
             use_case,
             measurement_complete=measurement_complete,
-            layout=normalized_layout,
         ),
-        _operation_step(use_case, layout=normalized_layout),
-        _closure_step(use_case, layout=normalized_layout),
+        _operation_step(use_case),
+        _closure_step(use_case),
     ]
     completion_message = (
         "Lebenszyklus abgeschlossen: Das Vorhaben ist beendet."

@@ -6,98 +6,13 @@
 {% block content %}
 <div class="page-header outcome-page-header">
   <div>
-    <div class="outcome-eyebrow">Arbeitsraum 2 · Wirkung &amp; Betrieb · UX-Spike</div>
+    <div class="outcome-eyebrow">Review- und Entscheidungsinformationen</div>
     <h1 class="page-title">Wirkung &amp; Betrieb</h1>
-    <p class="page-subtitle">Systemgrenze, Journey-Integration und zwei Varianten der stabilen Hauptleiste werden mit bestehenden Daten geprüft.</p>
-  </div>
-  <div class="outcome-layout-switch" aria-label="Darstellungsvarianten">
-    <a class="btn btn-sm {% if layout == 'split' %}btn-primary{% else %}btn-outline-secondary{% endif %}" href="{{ layout_links.split }}">A · Arbeitsraum wechselt</a>
-    <a class="btn btn-sm {% if layout == 'continuous' %}btn-primary{% else %}btn-outline-secondary{% endif %}" href="{{ layout_links.continuous }}">B · Gesamtleiste</a>
+    <p class="page-subtitle">Wirkung, Ergebnisentscheidung und Betrieb werden mit bestehenden Use-Case-, Metrik- und Delivery-Daten zusammengeführt.</p>
   </div>
 </div>
-
-<div class="outcome-spike-banner" role="note">
-  <strong>Noch kein neues Fachmodell.</strong>
-  Dieser PR speichert weder Pilotfortschritt noch Maßnahmen oder Ergebnisentscheidungen. Er nutzt bestehende Use-Case-, Metrik- und Delivery-Daten ausschließlich zur visuellen und fachlichen Abnahme.
-</div>
-
-<div class="outcome-stage-nav" aria-label="Bereiche von Wirkung und Betrieb">
-  {% for item in stage_links %}
-  <a class="outcome-stage-link {% if item.key == active_stage %}active{% endif %}" href="{{ item.url }}">
-    <span>{{ forloop.counter }}</span>{{ item.label }}
-  </a>
-  {% endfor %}
-</div>
-
-<section class="outcome-boundary-grid" aria-labelledby="system-boundary-heading">
-  <div class="app-card outcome-boundary-intro">
-    <div class="card-body">
-      <div class="outcome-eyebrow">Verantwortungsgrenze</div>
-      <h2 id="system-boundary-heading">Review-Snapshot statt Projektmanagement</h2>
-      <p>Jira, Azure DevOps oder GitHub bleiben führend für die operative Umsetzung. KI-Radar übernimmt nur die Informationen, die für einen Portfolio- oder Managemententscheid benötigt werden.</p>
-      <div class="outcome-transfer-flow" aria-label="Datenfluss zwischen Delivery-System und KI-Radar">
-        <span>Externes Delivery-System</span><strong>→ manueller Review-Snapshot →</strong><span>KI-Radar</span>
-      </div>
-      <small>Erster Ausbaustand: manuelle Aktualisierung zum Review-Termin, keine Live-Synchronisation.</small>
-    </div>
-  </div>
-  <div class="app-card outcome-boundary-card">
-    <div class="card-body">
-      <span class="outcome-boundary-label">Bleibt extern</span>
-      <ul>
-        <li>Backlog, Tasks, Sprints und Story Points</li>
-        <li>technische Einzelfehler und tägliche Maßnahmen</li>
-        <li>Ressourcen-, Release- und Incident-Steuerung</li>
-      </ul>
-    </div>
-  </div>
-  <div class="app-card outcome-boundary-card">
-    <div class="card-body">
-      <span class="outcome-boundary-label">Kommt zu KI-Radar</span>
-      <ul>
-        <li>Baseline, Ziel, Ist-Wert und Messnachweis</li>
-        <li>wesentliche Probleme und offene Auflagen</li>
-        <li>Empfehlung und verbindliche Folgeentscheidung</li>
-      </ul>
-    </div>
-  </div>
-</section>
 
 <section class="outcome-workbench">
-  <div class="app-card outcome-control-card">
-    <div class="card-body">
-      <div class="d-flex justify-content-between gap-3 align-items-start mb-3">
-        <div>
-          <div class="outcome-eyebrow">Aktiver Bereich</div>
-          <h2>{{ active_stage_copy.title }}</h2>
-          <p>{{ active_stage_copy.purpose }}</p>
-        </div>
-        <span class="badge badge-soft">{{ layout|capfirst }}</span>
-      </div>
-
-      <form method="get" class="outcome-use-case-picker">
-        <input type="hidden" name="stage" value="{{ active_stage }}">
-        <input type="hidden" name="layout" value="{{ layout }}">
-        <label for="outcome-use-case">Use Case für die Abnahme</label>
-        <div>
-          <select id="outcome-use-case" name="use_case" class="form-select">
-            {% for item in use_cases %}
-            <option value="{{ item.pk }}"{% if selected_use_case and item.pk == selected_use_case.pk %} selected{% endif %}>{{ item.short_id }} · {{ item.title }}</option>
-            {% empty %}
-            <option value="">Keine Use Cases vorhanden</option>
-            {% endfor %}
-          </select>
-          <button class="btn btn-outline-secondary" type="submit">Anzeigen</button>
-        </div>
-      </form>
-
-      <div class="outcome-responsibility-pair">
-        <div><span>KI-Radar</span><p>{{ active_stage_copy.ki_radar }}</p></div>
-        <div><span>Externes System</span><p>{{ active_stage_copy.external }}</p></div>
-      </div>
-    </div>
-  </div>
-
   {% if selected_use_case %}
   <div class="app-card outcome-use-case-card">
     <div class="card-body">
@@ -130,8 +45,67 @@
     </div>
   </div>
   {% else %}
-  <div class="app-card outcome-empty-state"><div class="card-body"><h2>Keine Use Cases vorhanden</h2><p>Nach dem Anlegen oder Einspielen der Demo-Daten kann der UX-Spike mit einem konkreten Vorhaben geprüft werden.</p></div></div>
+  <div class="app-card outcome-empty-state"><div class="card-body"><h2>Keine Use Cases vorhanden</h2><p>Nach dem Anlegen oder Einspielen von Daten werden Review- und Entscheidungsinformationen hier zusammengeführt.</p></div></div>
   {% endif %}
+
+  <div class="app-card outcome-control-card">
+    <div class="card-body">
+      <div class="d-flex justify-content-between gap-3 align-items-start mb-3">
+        <div>
+          <div class="outcome-eyebrow">Aktiver Bereich</div>
+          <h2>{{ active_stage_copy.title }}</h2>
+          <p>{{ active_stage_copy.purpose }}</p>
+        </div>
+        <span class="badge badge-soft">Wirkung &amp; Betrieb</span>
+      </div>
+
+      <form method="get" class="outcome-use-case-picker">
+        <input type="hidden" name="stage" value="{{ active_stage }}">
+        <label for="outcome-use-case">Use Case</label>
+        <div>
+          <select id="outcome-use-case" name="use_case" class="form-select">
+            {% for item in use_cases %}
+            <option value="{{ item.pk }}"{% if selected_use_case and item.pk == selected_use_case.pk %} selected{% endif %}>{{ item.short_id }} · {{ item.title }}</option>
+            {% empty %}
+            <option value="">Keine Use Cases vorhanden</option>
+            {% endfor %}
+          </select>
+          <button class="btn btn-outline-secondary" type="submit">Anzeigen</button>
+        </div>
+      </form>
+
+      <div class="outcome-responsibility-pair">
+        <div><span>KI-Radar</span><p>{{ active_stage_copy.ki_radar }}</p></div>
+        <div><span>Externes Delivery-System</span><p>{{ active_stage_copy.external }}</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="app-card outcome-boundary-compact" aria-labelledby="system-boundary-heading">
+  <div class="card-body">
+    <div class="outcome-boundary-summary">
+      <div>
+        <div class="outcome-eyebrow">Systemgrenze</div>
+        <h2 id="system-boundary-heading">Entscheidungsrelevanter Review-Snapshot</h2>
+      </div>
+      <p>KI-Radar verdichtet Ergebnisse für Portfolio- und Managemententscheidungen. Jira, Azure DevOps oder GitHub bleiben für die operative Umsetzung führend.</p>
+    </div>
+    <details class="outcome-boundary-details">
+      <summary>Verantwortlichkeiten anzeigen</summary>
+      <div class="outcome-boundary-columns">
+        <div>
+          <strong>KI-Radar</strong>
+          <p>Baseline, Ziel, Ist-Wert, Nachweis, wesentliche Auflagen, Empfehlung und Folgeentscheidung.</p>
+        </div>
+        <div>
+          <strong>Externes Delivery-System</strong>
+          <p>Backlog, Tasks, Sprints, technische Details, Ressourcensteuerung und täglicher Fortschritt.</p>
+        </div>
+      </div>
+      <small>Die Review- und Entscheidungsinformationen werden zum Review-Termin manuell bestätigt; es gibt keine Live-Synchronisation.</small>
+    </details>
+  </div>
 </section>
 
 <section class="outcome-summary-grid" aria-label="Portfolio-Snapshot">
@@ -140,18 +114,4 @@
   <div class="app-card"><div class="card-body"><small>Im Betrieb</small><strong>{{ operation_total }}</strong></div></div>
   <div class="app-card"><div class="card-body"><small>Beendet</small><strong>{{ ended_total }}</strong></div></div>
 </section>
-
-<div class="app-card outcome-decision-note">
-  <div class="card-body">
-    <div>
-      <div class="outcome-eyebrow">Abnahmeentscheidung dieses Spikes</div>
-      <h2>Welche Hauptleiste trägt den Kontext besser?</h2>
-    </div>
-    <ol>
-      <li><strong>Variante A:</strong> Im zweiten Arbeitsraum wird nur Übergabe bis Abschluss gezeigt.</li>
-      <li><strong>Variante B:</strong> Auswahl &amp; Freigabe bleiben sichtbar; eine Trennlinie markiert Wirkung &amp; Betrieb.</li>
-    </ol>
-    <p>Erst nach der visuellen Abnahme wird eine Variante zum Standard. Neue Review- oder Scale-Daten werden in diesem PR bewusst nicht eingeführt.</p>
-  </div>
-</div>
 {% endblock %}
