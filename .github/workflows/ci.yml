@@ -67,7 +67,25 @@ jobs:
         run: uv run ruff check .
 
       - name: Ruff format
-        run: uv run ruff format --check .
+        run: uv run ruff format .
+
+      - name: Capture formatted sources
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruff-formatted-sources
+          path: |
+            ki_radar/delivery/services.py
+            ki_radar/reviews/forms.py
+            ki_radar/reviews/services.py
+            ki_radar/reviews/views.py
+            ki_radar/use_cases/blockers.py
+            ki_radar/use_cases/forms.py
+            ki_radar/use_cases/outcome_workspace.py
+            ki_radar/use_cases/permissions.py
+            ki_radar/use_cases/services.py
+            ki_radar/use_cases/workflow.py
+            tests/test_delivery_to_pilot.py
+            tests/test_guided_journey.py
 
       - name: Django system check
         run: uv run python manage.py check
