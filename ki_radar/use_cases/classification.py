@@ -74,6 +74,8 @@ def persist_classification_payload(sender, instance, **kwargs):
             "capability": capability,
             "process_area": instance.affected_process,
         }
+    if payload is None and UseCaseClassification.objects.filter(use_case=instance).exists():
+        return
     if payload is None:
         payload = {
             "business_domain": BusinessDomain.OTHER,
