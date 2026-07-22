@@ -21,3 +21,4 @@ backups/
 .DS_Store
 secrets/
 .ci-secrets/
+output/

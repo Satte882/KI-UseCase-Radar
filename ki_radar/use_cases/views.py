@@ -21,6 +21,7 @@ from ki_radar.core.taxonomy import BusinessDomain
 from .blockers import build_blocker_details
 from .copilot import CopilotUnavailable, analyze_use_case
 from .forms import UseCaseForm
+from .governance_status import build_governance_statuses
 from .models import UseCase
 from .permissions import can_create_use_case, can_edit_use_case, can_view_use_case
 from .services import current_decision_check, decision_due_date
@@ -119,6 +120,7 @@ def _detail_context(request, use_case: UseCase, *, copilot_analysis: str = "") -
         "architecture_origin": architecture_origin,
         "journey": build_use_case_journey(use_case, request.user),
         "history": history,
+        "governance_statuses": build_governance_statuses(use_case),
         "can_edit": can_edit_use_case(request.user, use_case),
         "decision_check": decision_check,
         "blocker_details": blocker_details,
