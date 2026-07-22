@@ -16,20 +16,24 @@ from django.views.decorators.http import require_POST
 
 from ki_radar.accounts.models import BusinessUnit
 from ki_radar.accounts.permissions import is_coordinator
+from ki_radar.core.taxonomy import BusinessDomain
 
 from .blockers import build_blocker_details
 from .copilot import CopilotUnavailable, analyze_use_case
 from .forms import UseCaseForm
-from .journey import build_use_case_journey
 from .models import UseCase
 from .permissions import can_create_use_case, can_edit_use_case, can_view_use_case
 from .services import current_decision_check, decision_due_date
+from .workflow import build_use_case_journey
 
 
 @login_required
 def use_case_list(request):
     queryset = UseCase.objects.filter(is_archived=False).select_related(
-        "business_unit", "business_owner", "coordinator"
+        "business_unit",
+        "business_owner",
+        "coordinator",
+        "classification",
     )
     query = request.GET.get("q", "").strip()
     if query:
@@ -39,11 +43,14 @@ def use_case_list(request):
             | Q(problem_statement__icontains=query)
             | Q(expected_benefit__icontains=query)
             | Q(metric_name__icontains=query)
+            | Q(classification__capability__icontains=query)
+            | Q(classification__process_area__icontains=query)
         )
 
     for parameter, field_name in {
         "status": "status",
         "business_unit": "business_unit_id",
+        "business_domain": "classification__business_domain",
         "business_owner": "business_owner_id",
         "coordinator": "coordinator_id",
         "business_value": "business_value",
@@ -91,6 +98,7 @@ def use_case_list(request):
         "use_cases": use_cases,
         "status_choices": UseCase.Status.choices,
         "level_choices": UseCase.Level.choices,
+        "business_domain_choices": BusinessDomain.choices,
         "business_units": BusinessUnit.objects.filter(is_active=True).order_by("name"),
         "active_users": active_users,
         "can_create": can_create_use_case(request.user),
@@ -129,7 +137,9 @@ def use_case_detail(request, pk):
             "business_owner",
             "coordinator",
             "technical_owner",
+            "classification",
             "architecture_origin__stage__value_stream",
+            "architecture_origin__stage__value_stream__focus",
             "architecture_origin__process_analysis",
             "architecture_origin__solution_option",
         ).prefetch_related(
@@ -154,7 +164,11 @@ def use_case_copilot(request, pk):
         raise PermissionDenied
     use_case = get_object_or_404(
         UseCase.objects.select_related(
-            "business_unit", "business_owner", "coordinator", "technical_owner"
+            "business_unit",
+            "business_owner",
+            "coordinator",
+            "technical_owner",
+            "classification",
         ).prefetch_related(
             "governance_assessments",
             "reviews",
@@ -224,7 +238,9 @@ def use_case_edit(request, pk):
 @login_required
 def export_csv(request):
     queryset = UseCase.objects.filter(is_archived=False).select_related(
-        "business_unit", "business_owner"
+        "business_unit",
+        "business_owner",
+        "classification",
     )
     response = HttpResponse(content_type="text/csv; charset=utf-8")
     response["Content-Disposition"] = 'attachment; filename="ki-radar-use-cases.csv"'
@@ -236,6 +252,9 @@ def export_csv(request):
             "Titel",
             "Status",
             "Organisationseinheit",
+            "Fachdomäne",
+            "Business Capability",
+            "Prozessbereich",
             "Business Owner",
             "Nächste Entscheidung",
             "Entscheidungsreife",
@@ -255,6 +274,9 @@ def export_csv(request):
                 use_case.title,
                 use_case.get_status_display(),
                 use_case.business_unit.name,
+                use_case.classification.get_business_domain_display(),
+                use_case.classification.capability,
+                use_case.classification.process_area,
                 use_case.business_owner.get_display_name(),
                 decision.title,
                 decision.state_label,
