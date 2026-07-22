@@ -1,8 +1,10 @@
 from django import forms
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ObjectDoesNotExist
 
 from ki_radar.accounts.models import BusinessUnit
 from ki_radar.accounts.permissions import is_coordinator
+from ki_radar.core.taxonomy import BusinessDomain
 
 from .models import UseCase
 
@@ -15,6 +17,20 @@ class DateInput(forms.DateInput):
 
 
 class UseCaseForm(forms.ModelForm):
+    business_domain = forms.ChoiceField(
+        choices=BusinessDomain.choices,
+        label="Fachdomäne",
+    )
+    business_capability = forms.CharField(
+        max_length=200,
+        label="Business Capability",
+    )
+    process_area = forms.CharField(
+        max_length=200,
+        required=False,
+        label="Prozessbereich",
+    )
+
     class Meta:
         model = UseCase
         fields = [
@@ -22,6 +38,9 @@ class UseCaseForm(forms.ModelForm):
             "summary",
             "problem_statement",
             "business_unit",
+            "business_domain",
+            "business_capability",
+            "process_area",
             "affected_process",
             "target_users",
             "business_owner",
@@ -139,6 +158,21 @@ class UseCaseForm(forms.ModelForm):
 
     def __init__(self, *args, current_user=None, **kwargs):
         super().__init__(*args, **kwargs)
+        if self.instance.pk and not self.is_bound:
+            try:
+                classification = self.instance.classification
+            except ObjectDoesNotExist:
+                classification = None
+            if classification is not None:
+                self.initial.update(
+                    {
+                        "business_domain": classification.business_domain,
+                        "business_capability": classification.capability,
+                        "process_area": classification.process_area,
+                    }
+                )
+        self.initial.setdefault("business_domain", BusinessDomain.OTHER)
+        self.initial.setdefault("process_area", self.initial.get("affected_process", ""))
         for field in self.fields.values():
             field.widget.attrs.setdefault(
                 "class",
@@ -148,6 +182,7 @@ class UseCaseForm(forms.ModelForm):
             )
         for field_name in [
             "business_unit",
+            "business_domain",
             "business_owner",
             "coordinator",
             "technical_owner",
@@ -183,6 +218,18 @@ class UseCaseForm(forms.ModelForm):
             ]:
                 if name in self.fields:
                     self.fields[name].disabled = True
+
+    def save(self, commit=True):
+        use_case = super().save(commit=False)
+        use_case._classification_payload = {
+            "business_domain": self.cleaned_data["business_domain"],
+            "capability": self.cleaned_data["business_capability"],
+            "process_area": self.cleaned_data.get("process_area") or use_case.affected_process,
+        }
+        if commit:
+            use_case.save()
+            self.save_m2m()
+        return use_case
 
     def clean(self):
         cleaned = super().clean()
