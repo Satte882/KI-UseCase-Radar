@@ -1,13 +1,18 @@
 from __future__ import annotations
 
+from urllib.parse import urlencode
+
 from django.core.exceptions import ObjectDoesNotExist
 from django.urls import reverse
 
 from ki_radar.architecture.focus import ValueStreamFocus, get_value_stream_focus
 from ki_radar.architecture.models import ProcessAnalysis, ValueStream
 from ki_radar.delivery.models import DeliveryPackage
+from ki_radar.delivery.services import current_handed_over_package
 
 from . import journey as legacy
+from .permissions import can_start_pilot
+from .services import check_pilot_start
 
 JourneyState = legacy.JourneyState
 JourneyStep = legacy.JourneyStep
@@ -106,6 +111,38 @@ def _insert_focus(journey: JourneyState, focus_step: JourneyStep) -> JourneyStat
         path_label=journey.path_label,
         steps=steps,
         completion_message=journey.completion_message,
+    )
+
+
+def pilot_start_url(use_case) -> str:
+    query = urlencode({"action": "pilot_start"})
+    return f"{reverse('reviews:create', kwargs={'use_case_id': use_case.pk})}?{query}"
+
+
+def _append_pilot_start(journey: JourneyState, use_case, user) -> JourneyState:
+    if use_case.status != use_case.Status.REVIEW:
+        return journey
+    if current_handed_over_package(use_case) is None:
+        return journey
+
+    check = check_pilot_start(use_case)
+    allowed = can_start_pilot(user, use_case)
+    reason = "Die Übergabe ist erfolgt; der tatsächliche Pilotbeginn muss bestätigt werden."
+    if not allowed:
+        reason += " Nur ein KI-Koordinator oder der zuständige Business Owner darf starten."
+    step = JourneyStep(
+        key="pilot_start",
+        label="Pilot starten",
+        state="blocked" if check.blockers else "current",
+        url=pilot_start_url(use_case) if allowed else None,
+        action_label="Pilot starten" if allowed else "",
+        reason=reason,
+        details=tuple(check.blockers),
+    )
+    return _state(
+        path_label=journey.path_label,
+        steps=[*journey.steps, step],
+        completion_message="",
     )
 
 
@@ -219,15 +256,17 @@ def build_use_case_journey(use_case, user) -> JourneyState:
             ),
             *legacy_journey.steps,
         ]
-        return _state(
+        journey = _state(
             path_label=legacy_journey.path_label,
             steps=steps,
             completion_message=legacy_journey.completion_message,
         )
-    return _insert_focus(
-        legacy_journey,
-        _focus_step(origin.stage.value_stream),
-    )
+    else:
+        journey = _insert_focus(
+            legacy_journey,
+            _focus_step(origin.stage.value_stream),
+        )
+    return _append_pilot_start(journey, use_case, user)
 
 
 def build_delivery_package_journey(package: DeliveryPackage, user) -> JourneyState:
