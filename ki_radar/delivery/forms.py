@@ -62,7 +62,8 @@ class DeliveryPackageForm(forms.ModelForm):
         widgets = {
             name: forms.Textarea(attrs={"rows": 4})
             for name in DELIVERY_PACKAGE_FIELDS
-            if name not in {
+            if name
+            not in {
                 "external_delivery_url",
                 "architecture_artifacts_url",
                 "system_landscape",
@@ -73,11 +74,7 @@ class DeliveryPackageForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        artifacts = (
-            get_delivery_architecture_artifacts(self.instance)
-            if self.instance.pk
-            else None
-        )
+        artifacts = get_delivery_architecture_artifacts(self.instance) if self.instance.pk else None
         if artifacts is not None and not self.is_bound:
             self.initial.update(
                 {

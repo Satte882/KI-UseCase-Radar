@@ -227,7 +227,8 @@ class SolutionOptionForm(StyledModelForm):
         focus = get_value_stream_focus(self.process_analysis.stage.value_stream)
         if focus is None or not focus.is_selected:
             raise forms.ValidationError(
-                "Eine Lösungsoption kann erst nach einer dokumentierten Auswahl des Value Streams bevorzugt werden."
+                "Eine Lösungsoption kann erst nach einer dokumentierten Auswahl des Value Streams "
+                "bevorzugt werden."
             )
         existing = self.process_analysis.solution_options.filter(
             recommendation=SolutionOption.Recommendation.PREFERRED

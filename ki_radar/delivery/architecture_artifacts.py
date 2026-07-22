@@ -41,7 +41,9 @@ class DeliveryArchitectureArtifacts(TimeStampedModel):
             "data_flows": "Daten- und Informationsflüsse",
             "integration_contracts": "Integrationsverträge und Verantwortlichkeiten",
         }
-        return tuple(label for name, label in required.items() if not str(getattr(self, name, "")).strip())
+        return tuple(
+            label for name, label in required.items() if not str(getattr(self, name, "")).strip()
+        )
 
 
 def get_delivery_architecture_artifacts(package) -> DeliveryArchitectureArtifacts | None:
@@ -62,11 +64,15 @@ def ensure_delivery_architecture_artifacts(sender, instance, created, **kwargs):
             ),
             "data_flows": (
                 f"Datenobjekte und Quellen:\n{instance.data_context}\n\n"
-                f"Schnittstellen und Integrationen:\n{instance.integrations or 'Keine Integrationen dokumentiert.'}"
+                "Schnittstellen und Integrationen:\n"
+                f"{instance.integrations or 'Keine Integrationen dokumentiert.'}"
             ),
             "integration_contracts": (
                 instance.integrations
-                or "Keine technischen Integrationen vorgesehen; fachliche Verantwortlichkeiten bestätigen."
+                or (
+                    "Keine technischen Integrationen vorgesehen; fachliche Verantwortlichkeiten "
+                    "bestätigen."
+                )
             ),
         }
     if payload is None:

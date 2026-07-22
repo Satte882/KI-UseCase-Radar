@@ -7,7 +7,7 @@ class DeliveryConfig(AppConfig):
     verbose_name = "Delivery Handover"
 
     def ready(self):
-        from . import architecture_artifacts  # noqa: F401, PLC0415
-        from .readiness import install  # noqa: PLC0415
+        from . import architecture_artifacts  # noqa: F401
+        from .readiness import install
 
         install()

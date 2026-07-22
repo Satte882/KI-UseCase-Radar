@@ -20,3 +20,4 @@ backups/
 .idea/
 .DS_Store
 secrets/
+.ci-secrets/

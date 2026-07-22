@@ -88,6 +88,24 @@ def approve_use_case(use_case, coordinator):
     return decision
 
 
+def complete_delivery_readiness(package):
+    package.integrations = "Keine technischen Integrationen vorgesehen."
+    package.dependencies = "Keine externen Abhängigkeiten für das MVP."
+    package.risks = "Keine zusätzlichen Risiken über die Bewertung hinaus."
+    package.assumptions = "Fachliche Annahmen wurden in der Freigabe bestätigt."
+    package.architecture_decisions = "Bestehende Systemlandschaft bleibt unverändert."
+    package.save(
+        update_fields=[
+            "integrations",
+            "dependencies",
+            "risks",
+            "assumptions",
+            "architecture_decisions",
+            "updated_at",
+        ]
+    )
+
+
 @pytest.mark.django_db
 def test_delivery_package_requires_final_positive_approval(
     owner,
@@ -204,6 +222,7 @@ def test_ready_and_handover_make_version_immutable(
     use_case = make_use_case(owner, business_unit)
     approve_use_case(use_case, coordinator)
     package = create_delivery_package(use_case=use_case, actor=coordinator)
+    complete_delivery_readiness(package)
 
     mark_package_ready(package)
     package.refresh_from_db()

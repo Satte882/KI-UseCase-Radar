@@ -1,6 +1,7 @@
 import pytest
 from django.urls import reverse
 
+from ki_radar.architecture.focus import ValueStreamFocus
 from ki_radar.architecture.forms import SolutionOptionForm
 from ki_radar.architecture.models import (
     ProcessAnalysis,
@@ -9,6 +10,7 @@ from ki_radar.architecture.models import (
     ValueStream,
     ValueStreamStage,
 )
+from ki_radar.core.taxonomy import BusinessDomain, ScreeningLevel
 from ki_radar.use_cases.intake_views import SESSION_KEY, _persist_optional_origin
 from ki_radar.use_cases.models import UseCase
 
@@ -24,6 +26,21 @@ def architecture_context(owner, business_unit):
         outcome="Bezahlte Leistung",
         scope="Bedarf bis Zahlung",
         status=ValueStream.Status.ACTIVE,
+    )
+    ValueStreamFocus.objects.update_or_create(
+        value_stream=stream,
+        defaults={
+            "business_domain": BusinessDomain.PROCUREMENT,
+            "capability": "Source-to-Pay",
+            "strategic_impact": ScreeningLevel.HIGH,
+            "economic_potential": ScreeningLevel.HIGH,
+            "pain_intensity": ScreeningLevel.HIGH,
+            "data_accessibility": ScreeningLevel.MEDIUM,
+            "change_effort": ScreeningLevel.MEDIUM,
+            "status": ValueStreamFocus.Status.SELECTED,
+            "rationale": "Hoher fachlicher Hebel und belastbare Baseline.",
+            "updated_by": owner,
+        },
     )
     stage = ValueStreamStage.objects.create(
         value_stream=stream,

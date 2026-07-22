@@ -78,9 +78,7 @@ def _route_states(request):
             approval="complete",
             delivery="current",
         )
-    elif namespace == "reviews" or (
-        namespace == "reporting" and url_name == "dashboard"
-    ):
+    elif namespace == "reviews" or (namespace == "reporting" and url_name == "dashboard"):
         states.update(
             discovery="optional",
             focus="optional",

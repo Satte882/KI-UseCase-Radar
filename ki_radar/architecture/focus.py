@@ -98,7 +98,9 @@ class ValueStreamFocus(TimeStampedModel):
             "change_effort": "Veränderungsaufwand",
             "rationale": "Begründung der Fokusentscheidung",
         }
-        return tuple(label for name, label in required.items() if not str(getattr(self, name, "")).strip())
+        return tuple(
+            label for name, label in required.items() if not str(getattr(self, name, "")).strip()
+        )
 
     @property
     def is_selected(self) -> bool:
@@ -126,7 +128,9 @@ DEMO_FOCUS_DEFAULTS = {
         "data_accessibility": ScreeningLevel.MEDIUM,
         "change_effort": ScreeningLevel.MEDIUM,
         "status": ValueStreamFocus.Status.SELECTED,
-        "rationale": "Hoher manueller Aufwand, messbare Baseline und klar abgegrenzter End-to-End-Deep-Dive.",
+        "rationale": (
+            "Hoher manueller Aufwand, messbare Baseline und klar abgegrenzter End-to-End-Deep-Dive."
+        ),
     },
     "supplier-selection-incomplete": {
         "business_domain": BusinessDomain.PROCUREMENT,
@@ -137,7 +141,9 @@ DEMO_FOCUS_DEFAULTS = {
         "data_accessibility": ScreeningLevel.MEDIUM,
         "change_effort": ScreeningLevel.MEDIUM,
         "status": ValueStreamFocus.Status.SELECTED,
-        "rationale": "Der Angebotsvergleich wurde wegen hoher Reibung für einen Deep Dive ausgewählt.",
+        "rationale": (
+            "Der Angebotsvergleich wurde wegen hoher Reibung für einen Deep Dive ausgewählt."
+        ),
     },
     "order-approval-non-ai": {
         "business_domain": BusinessDomain.PROCUREMENT,

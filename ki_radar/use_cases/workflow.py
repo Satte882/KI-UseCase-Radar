@@ -43,7 +43,9 @@ def _focus_step(value_stream: ValueStream, *, terminal_as_complete: bool = False
             state="blocked",
             url=edit_url,
             action_label="Screening ergänzen",
-            reason="Der Value Stream wurde noch nicht anhand einheitlicher Fokus-Kriterien bewertet.",
+            reason=(
+                "Der Value Stream wurde noch nicht anhand einheitlicher Fokus-Kriterien bewertet."
+            ),
             details=("Fachdomäne", "Business Capability", "Impact, Potenzial, Daten und Aufwand"),
         )
     if focus.missing_screening_fields:

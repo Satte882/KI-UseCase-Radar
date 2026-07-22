@@ -15,15 +15,11 @@ def test_base_uses_contextual_topbar_instead_of_static_status():
 
 
 def test_context_topbar_contains_permanent_workflow_and_next_action():
-    topbar = (ROOT / "templates" / "includes" / "context_topbar.html").read_text(
+    topbar = (ROOT / "templates" / "includes" / "context_topbar.html").read_text(encoding="utf-8")
+    tags = (ROOT / "ki_radar" / "use_cases" / "templatetags" / "workflow_tags.py").read_text(
         encoding="utf-8"
     )
-    tags = (
-        ROOT / "ki_radar" / "use_cases" / "templatetags" / "workflow_tags.py"
-    ).read_text(encoding="utf-8")
-    stylesheet = (ROOT / "static" / "css" / "context-topbar.css").read_text(
-        encoding="utf-8"
-    )
+    stylesheet = (ROOT / "static" / "css" / "context-topbar.css").read_text(encoding="utf-8")
 
     assert 'aria-label="Arbeitsfortschritt"' in topbar
     assert "workflow_steps journey request" in topbar

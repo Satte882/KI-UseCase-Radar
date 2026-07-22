@@ -212,7 +212,9 @@ def stage_start_use_case(request, pk):
     if not can_create_use_case(request.user):
         raise PermissionDenied
     stage = get_object_or_404(
-        ValueStreamStage.objects.select_related("value_stream__business_unit", "value_stream__focus"),
+        ValueStreamStage.objects.select_related(
+            "value_stream__business_unit", "value_stream__focus"
+        ),
         pk=pk,
     )
     if not _focus_is_selected(stage.value_stream):
