@@ -1,3 +1,10 @@
+.sidebar-nav {
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 3px;
+  scrollbar-width: thin;
+}
+
 .sidebar-local-depth {
   display: grid;
   gap: 3px;
@@ -47,6 +54,31 @@
 
 .sidebar-local-optional {
   opacity: .72;
+}
+
+.sidebar-workspace-separator {
+  height: 3px;
+  margin: 18px 10px 12px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(124, 92, 255, .62),
+    rgba(32, 198, 215, .42),
+    rgba(148, 163, 184, .12)
+  );
+}
+
+.nav-caption-workspace {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.nav-caption-workspace small {
+  color: #8d7cff;
+  font-size: .56rem;
+  letter-spacing: .06em;
 }
 
 @media (max-width: 1100px) {

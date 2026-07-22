@@ -3,11 +3,19 @@
 <header class="app-topbar app-topbar-journey" aria-label="Arbeitsfortschritt">
   <div class="journey-topbar-main">
     <div class="journey-topbar-heading">
-      <span class="journey-topbar-kicker">End-to-End-Arbeitsmodell</span>
+      {% if request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'outcome_workspace' %}
+      <span class="journey-topbar-kicker">
+        End-to-End-Arbeitsmodell · Wirkung &amp; Betrieb
+      </span>
+      <strong>{% if journey %}{{ journey.path_label }}{% else %}Use Case auswählen{% endif %}</strong>
+      {% else %}
+      <span class="journey-topbar-kicker">End-to-End-Arbeitsmodell · Arbeitsraum 1 · Auswahl &amp; Freigabe</span>
       <strong>{% if journey %}{{ journey.path_label }}{% elif request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'portfolio' %}Portfolio · Querschnitt über alle Phasen{% else %}Von der Discovery bis zur umsetzbaren Übergabe{% endif %}</strong>
+      {% endif %}
     </div>
     <nav class="journey-progress" aria-label="Phasen des Arbeitsmodells">
       {% for step in workflow %}
+      {% if step.divider_before %}<span class="journey-progress-divider" aria-hidden="true"></span>{% endif %}
       <a class="journey-progress-step journey-progress-{{ step.state }}" href="{{ step.url }}"{% if step.state == 'current' or step.state == 'blocked' %} aria-current="step"{% endif %}>
         <span class="journey-progress-marker" aria-hidden="true">
           {% if step.state == 'complete' %}✓{% elif step.state == 'current' %}●{% elif step.state == 'blocked' %}!{% elif step.state == 'optional' %}–{% else %}○{% endif %}
@@ -31,7 +39,7 @@
       {{ action.action_label|default:"Öffnen" }} →
     </a>
     {% else %}
-    <span class="badge badge-soft">Berechtigte Rolle erforderlich</span>
+    <span class="badge badge-soft">Noch kein ausführbarer Schritt</span>
     {% endif %}
   </div>
   {% endwith %}
@@ -43,6 +51,14 @@
       <span class="journey-topbar-next-reason">{{ journey.completion_message }}</span>
     </div>
     <span class="badge state-ready">Abgeschlossen</span>
+  </div>
+  {% elif request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'outcome_workspace' %}
+  <div class="journey-topbar-next journey-topbar-context-note">
+    <div class="journey-topbar-next-copy">
+      <span class="journey-topbar-kicker">Wirkung &amp; Betrieb</span>
+      <strong>Gemeinsamer Lebenszyklus</strong>
+      <span class="journey-topbar-next-reason">Review- und Entscheidungsinformationen folgen dem bestehenden Status des Use Cases.</span>
+    </div>
   </div>
   {% elif request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'portfolio' %}
   <div class="journey-topbar-next journey-topbar-context-note">

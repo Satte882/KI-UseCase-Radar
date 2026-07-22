@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="{% static 'css/form-guidance.css' %}">
   <link rel="stylesheet" href="{% static 'css/architecture.css' %}">
   <link rel="stylesheet" href="{% static 'css/delivery.css' %}">
+  <link rel="stylesheet" href="{% static 'css/outcome-workspace.css' %}">
 </head>
 <body>
 {% if user.is_authenticated %}
@@ -75,6 +76,27 @@
         <span class="nav-icon">✓</span> Monatsreview
       </a>
       {% endif %}
+
+      <div class="sidebar-workspace-separator" role="separator" aria-label="Trennung der Arbeitsräume"></div>
+      <div class="nav-caption nav-caption-workspace">
+        <span>Wirkung &amp; Betrieb</span>
+      </div>
+      <a class="sidebar-link {% if request.resolver_match.url_name == 'outcome_workspace' and active_stage == 'pilot' %}active{% endif %}" href="{% url 'reporting:outcome_workspace' %}?stage=pilot">
+        <span class="nav-icon">▶</span> Piloten
+      </a>
+      <a class="sidebar-link {% if request.resolver_match.url_name == 'outcome_workspace' and active_stage == 'effect' %}active{% endif %}" href="{% url 'reporting:outcome_workspace' %}?stage=effect">
+        <span class="nav-icon">◎</span> Wirkung
+      </a>
+      <a class="sidebar-link {% if request.resolver_match.url_name == 'outcome_workspace' and active_stage == 'decision' %}active{% endif %}" href="{% url 'reporting:outcome_workspace' %}?stage=decision">
+        <span class="nav-icon">◇</span> Ergebnisentscheidung
+      </a>
+      <a class="sidebar-link {% if request.resolver_match.url_name == 'outcome_workspace' and active_stage == 'operation' %}active{% endif %}" href="{% url 'reporting:outcome_workspace' %}?stage=operation">
+        <span class="nav-icon">⚙</span> Betrieb
+      </a>
+      <a class="sidebar-link {% if request.resolver_match.url_name == 'outcome_workspace' and active_stage == 'closure' %}active{% endif %}" href="{% url 'reporting:outcome_workspace' %}?stage=closure">
+        <span class="nav-icon">■</span> Abschluss
+      </a>
+
       {% if nav_is_technical_admin %}
       <div class="nav-caption mt-4">System</div>
       <a class="sidebar-link" href="/admin/"><span class="nav-icon">⚙</span> Administration</a>
@@ -90,7 +112,7 @@
   </aside>
   <div class="app-main">
     {% include "includes/context_topbar.html" %}
-    <main class="app-content">
+    <main class="app-content {% block content_class %}{% endblock %}">
 {% else %}
 <main class="login-shell">
 {% endif %}

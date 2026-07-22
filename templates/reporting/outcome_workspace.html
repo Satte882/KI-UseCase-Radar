@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Wirkung & Betrieb · KI-Radar{% endblock %}
+{% block content_class %}app-content-wide outcome-workspace-content{% endblock %}
+
+{% block content %}
+<div class="page-header outcome-page-header">
+  <div>
+    <div class="outcome-eyebrow">Review- und Entscheidungsinformationen</div>
+    <h1 class="page-title">Wirkung &amp; Betrieb</h1>
+    <p class="page-subtitle">Wirkung, Ergebnisentscheidung und Betrieb werden mit bestehenden Use-Case-, Metrik- und Delivery-Daten zusammengeführt.</p>
+  </div>
+</div>
+
+<section class="outcome-workbench">
+  {% if selected_use_case %}
+  <div class="app-card outcome-use-case-card">
+    <div class="card-body">
+      <div class="outcome-use-case-heading">
+        <div>
+          <div class="outcome-eyebrow">{{ selected_use_case.short_id }} · {{ selected_use_case.get_status_display }}</div>
+          <h2>{{ selected_use_case.title }}</h2>
+          <p>{{ selected_use_case.summary|default:selected_use_case.problem_statement }}</p>
+        </div>
+        <a class="btn btn-outline-secondary btn-sm" href="{{ selected_use_case.get_absolute_url }}">Use Case öffnen</a>
+      </div>
+
+      <div class="outcome-metric-grid">
+        <div><small>Baseline</small><strong>{{ selected_use_case.metric_baseline|default_if_none:"—" }} {{ selected_use_case.metric_unit }}</strong></div>
+        <div><small>Ziel</small><strong>{{ selected_use_case.metric_target|default_if_none:"—" }} {{ selected_use_case.metric_unit }}</strong></div>
+        <div><small>Ist</small><strong>{{ selected_use_case.metric_actual|default_if_none:"—" }} {{ selected_use_case.metric_unit }}</strong></div>
+        <div><small>Ergebnis</small><strong>{{ selected_use_case.metric_result_label }}</strong></div>
+      </div>
+
+      <dl class="outcome-facts">
+        <div><dt>Business Owner</dt><dd>{{ selected_use_case.business_owner.get_display_name }}</dd></div>
+        <div><dt>Technical Owner</dt><dd>{% if selected_use_case.technical_owner %}{{ selected_use_case.technical_owner.get_display_name }}{% else %}Nicht zugeordnet{% endif %}</dd></div>
+        <div><dt>Nächster Review</dt><dd>{{ selected_use_case.next_review_date|default:"Nicht geplant" }}</dd></div>
+        <div><dt>Delivery</dt><dd>{% if selected_use_case.latest_delivery %}v{{ selected_use_case.latest_delivery.version }} · {{ selected_use_case.latest_delivery.get_status_display }}{% else %}Kein Package{% endif %}</dd></div>
+      </dl>
+
+      {% if selected_use_case.latest_delivery and selected_use_case.latest_delivery.external_delivery_url %}
+      <a href="{{ selected_use_case.latest_delivery.external_delivery_url }}" class="outcome-external-link" rel="noopener noreferrer">Externes Delivery-System öffnen ↗</a>
+      {% endif %}
+    </div>
+  </div>
+  {% else %}
+  <div class="app-card outcome-empty-state"><div class="card-body"><h2>Keine Use Cases vorhanden</h2><p>Nach dem Anlegen oder Einspielen von Daten werden Review- und Entscheidungsinformationen hier zusammengeführt.</p></div></div>
+  {% endif %}
+
+  <div class="app-card outcome-control-card">
+    <div class="card-body">
+      <div class="d-flex justify-content-between gap-3 align-items-start mb-3">
+        <div>
+          <div class="outcome-eyebrow">Aktiver Bereich</div>
+          <h2>{{ active_stage_copy.title }}</h2>
+          <p>{{ active_stage_copy.purpose }}</p>
+        </div>
+        <span class="badge badge-soft">Wirkung &amp; Betrieb</span>
+      </div>
+
+      <form method="get" class="outcome-use-case-picker">
+        <input type="hidden" name="stage" value="{{ active_stage }}">
+        <label for="outcome-use-case">Use Case</label>
+        <div>
+          <select id="outcome-use-case" name="use_case" class="form-select">
+            {% for item in use_cases %}
+            <option value="{{ item.pk }}"{% if selected_use_case and item.pk == selected_use_case.pk %} selected{% endif %}>{{ item.short_id }} · {{ item.title }}</option>
+            {% empty %}
+            <option value="">Keine Use Cases vorhanden</option>
+            {% endfor %}
+          </select>
+          <button class="btn btn-outline-secondary" type="submit">Anzeigen</button>
+        </div>
+      </form>
+
+      <div class="outcome-responsibility-pair">
+        <div><span>KI-Radar</span><p>{{ active_stage_copy.ki_radar }}</p></div>
+        <div><span>Externes Delivery-System</span><p>{{ active_stage_copy.external }}</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="app-card outcome-boundary-compact" aria-labelledby="system-boundary-heading">
+  <div class="card-body">
+    <div class="outcome-boundary-summary">
+      <div>
+        <div class="outcome-eyebrow">Systemgrenze</div>
+        <h2 id="system-boundary-heading">Entscheidungsrelevanter Review-Snapshot</h2>
+      </div>
+      <p>KI-Radar verdichtet Ergebnisse für Portfolio- und Managemententscheidungen. Jira, Azure DevOps oder GitHub bleiben für die operative Umsetzung führend.</p>
+    </div>
+    <details class="outcome-boundary-details">
+      <summary>Verantwortlichkeiten anzeigen</summary>
+      <div class="outcome-boundary-columns">
+        <div>
+          <strong>KI-Radar</strong>
+          <p>Baseline, Ziel, Ist-Wert, Nachweis, wesentliche Auflagen, Empfehlung und Folgeentscheidung.</p>
+        </div>
+        <div>
+          <strong>Externes Delivery-System</strong>
+          <p>Backlog, Tasks, Sprints, technische Details, Ressourcensteuerung und täglicher Fortschritt.</p>
+        </div>
+      </div>
+      <small>Die Review- und Entscheidungsinformationen werden zum Review-Termin manuell bestätigt; es gibt keine Live-Synchronisation.</small>
+    </details>
+  </div>
+</section>
+
+<section class="outcome-summary-grid" aria-label="Portfolio-Snapshot">
+  <div class="app-card"><div class="card-body"><small>Pilot</small><strong>{{ pilot_total }}</strong></div></div>
+  <div class="app-card"><div class="card-body"><small>Wirkung gemessen</small><strong>{{ measured_total }}</strong></div></div>
+  <div class="app-card"><div class="card-body"><small>Im Betrieb</small><strong>{{ operation_total }}</strong></div></div>
+  <div class="app-card"><div class="card-body"><small>Beendet</small><strong>{{ ended_total }}</strong></div></div>
+</section>
+{% endblock %}
