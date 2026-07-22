@@ -4,53 +4,69 @@
 
 > AI Business Architecture, Portfolio- und Decision-Governance-Cockpit für kleine und mittlere Unternehmen
 
-
 KI-Radar verbindet die Analyse von Geschäftsprozessen mit der strukturierten Auswahl, Bewertung, Freigabe und Übergabe von KI-Vorhaben an ein Delivery-Team.
 
 Das System beantwortet nicht nur, **welche KI-Ideen existieren**, sondern vor allem:
 
 * Aus welchem Geschäftsproblem entsteht ein Vorhaben?
+* Welcher End-to-End-Bereich rechtfertigt überhaupt einen Deep Dive?
 * Ist KI tatsächlich die geeignete Lösung?
 * Sind Nutzen, Datenlage und technische Machbarkeit ausreichend belegt?
 * Welche Governance- und Fachprüfungen fehlen?
 * Ist das Vorhaben entscheidungs- und umsetzungsreif?
-* Was muss ein Delivery-Team konkret umsetzen?
+* Welche Systeme, Datenflüsse und Architekturartefakte benötigt Delivery?
 
 ---
 
 ## End-to-End-Arbeitsmodell
 
 ```text
-Value Stream
-→ Prozessproblem und Bottleneck
+Discovery
+→ Fokus & Priorisierung
+→ Use Cases
+→ Bewertung
+→ Freigabe
+→ Delivery
+```
+
+Der systematische Architecture-Pfad wird detaillierter so umgesetzt:
+
+```text
+Fachdomäne und Business Capability
+→ End-to-End-Value-Stream
+→ transparentes Fokus-Screening
+→ Auswahl für einen Prozess-Deep-Dive
 → organisatorische, klassische und KI-Lösungsoptionen
 → geführter Use-Case-Intake
-→ evidenzbasierte Bewertung und Freigabe
-→ Portfolio-Steuerung
+→ evidenzbasierte Bewertung
+→ verbindliche Freigabe
 → versioniertes Delivery Package
 → Umsetzung in Jira, Azure DevOps, GitHub oder einem anderen Delivery-System
 ```
 
-Der Discovery- und Architecture-Pfad ist optional.
+Die Gesamtstrecke bleibt in der Oberfläche dauerhaft sichtbar. Auf Detailseiten zeigt sie den tatsächlichen Zustand einer Initiative; die linke Navigation öffnet zusätzlich die lokale Tiefe des aktiven Bereichs.
 
-Bereits bekannte KI-Vorhaben können weiterhin direkt über den Use-Case-Intake erfasst werden. Nur systematisch abgeleitete Vorhaben erhalten zusätzlich eine nachvollziehbare Herkunftskette vom Value Stream bis zur ausgewählten Lösungsoption.
+Der Discovery- und Architecture-Pfad bleibt optional. Bereits bekannte Vorhaben können direkt über den Use-Case-Intake erfasst werden. Systematisch abgeleitete Vorhaben erhalten zusätzlich eine nachvollziehbare Herkunftskette vom Value Stream über die Fokusentscheidung und Lösungsoption bis zum Use Case.
+
+Portfolio ist kein einmaliger linearer Schritt. Es ist eine Querschnittssicht über Use Cases, Bewertung, Freigabe und Delivery.
 
 ---
 
 ## Welches Problem löst KI-Radar?
 
-In vielen Organisationen sind Informationen über KI-Ideen, Prozessprobleme, Bewertungen, Governance-Prüfungen und Delivery-Anforderungen über Tabellen, Präsentationen, Tickets und einzelne Dokumente verteilt.
+In vielen Organisationen sind Informationen über KI-Ideen, Prozessprobleme, Priorisierungsentscheidungen, Bewertungen, Governance-Prüfungen und Delivery-Anforderungen über Tabellen, Präsentationen, Tickets und einzelne Dokumente verteilt.
 
 Dadurch bleiben zentrale Fragen häufig unbeantwortet:
 
 * Wo entsteht im End-to-End-Prozess ein relevantes Problem?
+* Welcher Value Stream oder Prozessbereich sollte zuerst vertieft werden?
 * Wie hoch ist der erwartete und messbare Nutzen?
 * Welche einfacheren Lösungsalternativen wurden geprüft?
 * Wie belastbar sind Machbarkeit, Datenlage und Risiken bewertet?
 * Welche Entscheidung wurde wann, von wem und auf welcher Evidenzbasis getroffen?
 * Welche Vorhaben gehören aktiv ins Portfolio?
 * Welche Voraussetzungen fehlen noch?
-* Ist der Scope konkret genug für eine Übergabe an Delivery?
+* Ist der Scope einschließlich Systemlandschaft und Architekturkontext konkret genug für Delivery?
 
 KI-Radar führt diese Informationen in einem gemeinsamen, nachvollziehbaren Arbeitsmodell zusammen.
 
@@ -58,16 +74,21 @@ KI-Radar führt diese Informationen in einem gemeinsamen, nachvollziehbaren Arbe
 
 ## Vier zentrale Produktfähigkeiten
 
-### 1. Business Architecture und Discovery
+### 1. Business Architecture, Discovery und Fokus
 
 KI-Radar unterstützt die strukturierte Analyse eines Geschäftsbereichs durch:
 
+* kontrollierte Fachdomänen und Business Capabilities
 * End-to-End-Value-Streams
 * geordnete Wertschöpfungsphasen
 * Rollen, Systeme und Dokumente
 * Probleme, Engpässe und Baseline-Kennzahlen
+* Fokus-Screening nach strategischem Impact, wirtschaftlichem Potenzial, Problemintensität, Datenzugänglichkeit und Veränderungsaufwand
+* dokumentierte Auswahl für einen Deep Dive
 * detaillierte Prozessanalysen
 * organisatorische, regelbasierte und technische Lösungsoptionen
+
+Nur ein vollständig bewerteter und ausgewählter Value Stream darf neue Prozess-Deep-Dives, bevorzugte Lösungsoptionen oder systematisch abgeleitete Use Cases starten. Dieses Gate wird serverseitig geprüft.
 
 KI wird nicht automatisch als bevorzugte Lösung behandelt. Eine organisatorische Änderung, Standardsoftware oder regelbasierte Automatisierung kann die bessere Option sein.
 
@@ -95,6 +116,7 @@ Verbindliche Entscheidungen werden serverseitig durch deterministische Hard Gate
 
 Die Portfolio-Sicht verbindet Managementübersicht und operative Handlungsfähigkeit:
 
+* Fachdomänen- und Capability-Zuordnung unabhängig von der Organisationseinheit
 * kategorische Matrix aus Nutzen und technischer Machbarkeit
 * Entscheidungsstatus und Confidence
 * Filter nach Organisationseinheit, Lifecycle, Lösungstyp und Status
@@ -103,7 +125,7 @@ Die Portfolio-Sicht verbindet Managementübersicht und operative Handlungsfähig
 * konkrete Daten- und Prozessblocker
 * direkte Navigation zur jeweils notwendigen Aktion
 
-Es wird bewusst kein künstlicher Gesamtscore und kein automatisches Ranking verwendet.
+Es wird bewusst kein künstlicher Gesamtscore und kein automatisches Ranking verwendet. Die Kriterien und ihre Evidenz bleiben einzeln sichtbar.
 
 ### 4. Delivery Readiness
 
@@ -116,6 +138,10 @@ Es bündelt:
 * In-Scope und Out-of-Scope
 * Nutzer und Nutzungsszenarien
 * System-, Daten- und Integrationskontext
+* Ist-/Ziel-Systemlandschaft
+* Daten- und Informationsflüsse
+* Integrationsverträge und technische Verantwortlichkeiten
+* Link zu Architekturdiagrammen und weiteren Architekturartefakten
 * funktionale und nichtfunktionale Anforderungen
 * Security-, Datenschutz- und Rechtsanforderungen
 * Human Oversight, Logging, Betrieb und Support
@@ -123,9 +149,11 @@ Es bündelt:
 * Akzeptanzkriterien und Testfälle
 * Erfolgsmessung
 * Risiken, Annahmen und Abhängigkeiten
-* Architekturentscheidungen
+* Architekturentscheidungen und Leitplanken
 * initiales Backlog
 * Link zum externen Delivery-System
+
+Für den Status **Bereit zur Übergabe** müssen Architektur- und Übergabepunkte konkret beschrieben oder ausdrücklich als nicht relevant dokumentiert sein. Leere Integrationen, Abhängigkeiten, Risiken, Annahmen oder Architekturentscheidungen gelten nicht automatisch als ausreichend.
 
 Der Status verläuft über:
 
@@ -141,15 +169,17 @@ Entwurf → Bereit zur Übergabe → Übergeben
 
 Der mitgelieferte Demo-Datensatz zeigt den vollständigen Arbeitsablauf:
 
-1. Im Value Stream **„Beschaffung bis Zahlung“** wird die Phase „Eingangsrechnung prüfen“ betrachtet.
-2. Die Prozessanalyse identifiziert manuelle Suche, Medienbrüche und Rückfragen als Bottlenecks.
-3. Organisatorische, regelbasierte und KI-gestützte Lösungsoptionen können verglichen werden.
-4. Eine kombinierte Regel- und Assistenzlösung wird als bevorzugte Option gewählt.
-5. Der daraus abgeleitete Use Case wird hinsichtlich Nutzen, Datenreife, Machbarkeit, Risiko und Governance bewertet.
-6. Nach der finalen Freigabe entsteht ein versioniertes Delivery Package mit MVP-Scope, Anforderungen und Akzeptanzkriterien.
-7. Das Delivery Package ist bereit für die verbindliche Übergabe an ein externes Delivery-System.
+1. Der Value Stream **„Beschaffung bis Zahlung“** wird der Fachdomäne Finanzen und der Capability Accounts Payable zugeordnet.
+2. Das Fokus-Screening dokumentiert Impact, wirtschaftliches Potenzial, Problemintensität, Datenzugänglichkeit und Veränderungsaufwand.
+3. Der Value Stream wird nachvollziehbar für einen Deep Dive ausgewählt.
+4. Die Prozessanalyse identifiziert manuelle Suche, Medienbrüche und Rückfragen als Bottlenecks.
+5. Organisatorische, regelbasierte und KI-gestützte Lösungsoptionen werden verglichen.
+6. Eine kombinierte Regel- und Assistenzlösung wird als bevorzugte Option gewählt.
+7. Der daraus abgeleitete Use Case wird hinsichtlich Nutzen, Datenreife, Machbarkeit, Risiko und Governance bewertet.
+8. Nach der finalen Freigabe entsteht ein versioniertes Delivery Package mit Systemlandschaft, Datenflüssen, MVP-Scope, Anforderungen und Akzeptanzkriterien.
+9. Das Delivery Package ist bereit für die verbindliche Übergabe an ein externes Delivery-System, aber noch nicht als übergeben markiert.
 
-Damit wird nicht nur ein KI-Use-Case dokumentiert, sondern seine fachliche Herkunft und seine Umsetzungsreife nachvollziehbar gemacht.
+Damit wird nicht nur ein KI-Use-Case dokumentiert, sondern seine fachliche Herkunft, Auswahlentscheidung und Umsetzungsreife nachvollziehbar gemacht.
 
 ---
 
@@ -157,15 +187,15 @@ Damit wird nicht nur ein KI-Use-Case dokumentiert, sondern seine fachliche Herku
 
 KI-Radar nutzt TOGAF ADM als pragmatischen Ordnungsrahmen. Es ist kein vollständiges Enterprise-Architecture-Repository und bildet kein umfassendes TOGAF-Metamodell ab.
 
-| Bereich                   | Umsetzung in KI-Radar                                 |
-| ------------------------- | ----------------------------------------------------- |
-| Architecture Vision       | Scope, Ziel, Stakeholder und Leitplanken              |
-| Business Architecture     | Value Streams, Prozesse, Rollen und Bottlenecks       |
-| Information Systems       | Anwendungen, Datenobjekte und Integrationen           |
-| Technology Architecture   | Technologie-, Hosting- und Plattformbedingungen       |
-| Opportunities & Solutions | organisatorische, klassische und KI-Lösungsoptionen   |
-| Migration Planning        | MVP, Akzeptanz, Risiken, Backlog und Delivery Package |
-| Governance und Change     | Entscheidungen, Versionen und Änderungen              |
+| Bereich                   | Umsetzung in KI-Radar                                                      |
+| ------------------------- | -------------------------------------------------------------------------- |
+| Architecture Vision       | Scope, Ziel, Stakeholder und Leitplanken                                   |
+| Business Architecture     | Fachdomäne, Capability, Value Streams, Prozesse, Rollen und Bottlenecks    |
+| Information Systems       | Anwendungen, Datenobjekte, Datenflüsse und Integrationen                   |
+| Technology Architecture   | Technologie-, Hosting- und Plattformbedingungen                            |
+| Opportunities & Solutions | Fokusentscheidung sowie organisatorische, klassische und KI-Optionen       |
+| Migration Planning        | Systemlandschaft, MVP, Akzeptanz, Risiken, Backlog und Delivery Package    |
+| Governance und Change     | Entscheidungen, Versionen und Änderungen                                   |
 
 Der TOGAF-Bezug wird nur dort verwendet, wo tatsächlich entsprechende Architekturartefakte entstehen.
 
@@ -204,6 +234,7 @@ KI-Radar bleibt fachlich und technisch ein klar abgegrenztes System:
 * Die operative Delivery-Steuerung verbleibt in spezialisierten Werkzeugen.
 * Verbindliche Prüfungen werden serverseitig ausgeführt.
 * LLM-Funktionen sind optional und nicht entscheidungsbefugt.
+* Die Systemlandschaft im Delivery Package ist eine umsetzungsbezogene Ist-/Ziel-Sicht, kein vollständiger Enterprise-Architecture-Katalog.
 
 ---
 
@@ -224,9 +255,12 @@ Architekturentscheidungen werden als Architecture Decision Records dokumentiert.
 ### Weitere prägende Produktentscheidungen
 
 * Discovery bleibt optional und belastet bekannte Einzelvorhaben nicht mit unnötigen Architekturartefakten.
+* Der systematische Architecture-Pfad verlangt eine dokumentierte Fokusentscheidung vor dem Deep Dive.
+* Organisationseinheit und fachliche Domäne werden getrennt modelliert.
 * KI ist eine Lösungsoption unter mehreren und wird nicht automatisch bevorzugt.
 * Freigaben beruhen auf deterministischen Hard Gates, nicht auf LLM-Ausgaben.
-* Portfolio-Entscheidungen verwenden keine künstliche Gesamtnote.
+* Portfolio ist eine Querschnittssicht und kein linearer Prozessschritt.
+* Fokus- und Portfolio-Entscheidungen verwenden keine künstliche Gesamtnote.
 * Delivery Packages werden erst nach finaler Freigabe erzeugt.
 * Übergebene Package-Versionen sind unveränderlich.
 * KI-Radar ersetzt kein Projektmanagement- oder Delivery-System.
@@ -235,12 +269,12 @@ Architekturentscheidungen werden als Architecture Decision Records dokumentiert.
 
 ## Rollen
 
-| Rolle                     | Verantwortung                                                        |
-| ------------------------- | -------------------------------------------------------------------- |
-| Technischer Administrator | Betrieb, Benutzer und Stammdaten                                     |
-| KI-Koordinator            | Analyse, Bewertung, Governance, Freigaben und Delivery-Handover      |
-| Business Owner            | fachliche Verantwortung für Prozesse, Use Cases und Package-Entwürfe |
-| Leser                     | lesender Zugriff auf nicht archivierte Inhalte                       |
+| Rolle                     | Verantwortung                                                                  |
+| ------------------------- | ------------------------------------------------------------------------------ |
+| Technischer Administrator | Betrieb, Benutzer und Stammdaten                                               |
+| KI-Koordinator            | Fokus, Analyse, Bewertung, Governance, Freigaben und Delivery-Handover         |
+| Business Owner            | fachliche Verantwortung für Value Streams, Prozesse, Use Cases und Packages    |
+| Leser                     | lesender Zugriff auf nicht archivierte Inhalte                                 |
 
 Berechtigungen und fachliche Gates werden serverseitig geprüft.
 
@@ -296,14 +330,16 @@ Die CI prüft unter anderem:
 
 Die automatisierten Tests decken insbesondere ab:
 
-* Value Streams und Prozessanalysen
+* Value Streams, Fokus-Screening und Prozessanalysen
+* serverseitige Deep-Dive-Gates
 * Lösungsoptionen und Herkunftsketten
+* strukturierte Fachdomänen und Capabilities
 * Use-Case-Intake
 * Bewertungen und Freigaben
 * Governance
 * Lifecycle-Übergänge
 * Portfolio
-* Delivery Packages
+* Delivery Packages und Architekturartefakte
 * Rollen und Berechtigungen
 * Anonymisierung
 * Demo-Daten und Betriebsfunktionen
@@ -341,7 +377,7 @@ docker compose -f compose.local.yml exec app `
   python manage.py seed_demo_data --password "<lokales-demo-passwort>"
 ```
 
-Der Demo-Datensatz enthält einen vollständigen Ablauf von der Value-Stream-Analyse bis zum Delivery Package.
+Der Demo-Datensatz enthält einen vollständigen Ablauf von Discovery und Fokusentscheidung bis zum Delivery Package sowie bewusst unvollständige, nicht weiterverfolgte und bereits übergebene Szenarien.
 
 Weitere Informationen: [Lokales Setup](SETUP.md)
 
@@ -381,4 +417,4 @@ Ohne SSO sollte der Zugriff auf ein internes Netz oder VPN beschränkt bleiben.
 ## Grundprinzip
 
 > KI-Radar bewertet nicht, ob eine Idee modern klingt.
-> Es macht sichtbar, ob ein Vorhaben aus einem relevanten Geschäftsproblem entsteht, messbar, technisch realistisch, ausreichend belegt, verantwortbar entscheidbar und für Delivery konkret genug ist.
+> Es macht sichtbar, ob ein Vorhaben aus einem relevanten Geschäftsproblem entsteht, priorisiert vertieft werden sollte, messbar, technisch realistisch, ausreichend belegt, verantwortbar entscheidbar und für Delivery einschließlich Architekturkontext konkret genug ist.
