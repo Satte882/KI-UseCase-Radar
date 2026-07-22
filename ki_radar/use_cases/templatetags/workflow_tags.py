@@ -47,9 +47,7 @@ def _aggregate_state(raw_steps, keys):
 def _is_outcome_workspace(journey, request):
     resolver = request.resolver_match
     is_outcome_route = bool(
-        resolver
-        and resolver.namespace == "reporting"
-        and resolver.url_name == "outcome_workspace"
+        resolver and resolver.namespace == "reporting" and resolver.url_name == "outcome_workspace"
     )
     has_outcome_steps = bool(
         journey and any(step.key in OUTCOME_STEP_KEYS for step in journey.steps)
@@ -62,9 +60,7 @@ def _workflow_definition(journey, request):
         return [(*definition, False) for definition in SELECTION_WORKFLOW]
     if request.GET.get("layout") == "continuous":
         selection = [(*definition, False) for definition in SELECTION_WORKFLOW]
-        outcome = [
-            (*definition, index == 0) for index, definition in enumerate(OUTCOME_WORKFLOW)
-        ]
+        outcome = [(*definition, index == 0) for index, definition in enumerate(OUTCOME_WORKFLOW)]
         return [*selection, *outcome]
     return [(*definition, False) for definition in OUTCOME_WORKFLOW]
 
