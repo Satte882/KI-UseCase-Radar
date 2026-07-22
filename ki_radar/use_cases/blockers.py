@@ -67,6 +67,11 @@ DECISION_BLOCKERS = {
     "Fachlich verantwortliche und freigebende Person müssen verschieden sein",
 }
 
+DELIVERY_BLOCKERS = {
+    "Aktuelles Delivery Package",
+    "Verbindliche Übergabe des aktuellen Delivery Packages",
+}
+
 
 def _code(label: str) -> str:
     return "".join(character.lower() if character.isalnum() else "_" for character in label).strip(
@@ -110,6 +115,37 @@ def build_blocker_details(use_case: UseCase, blockers: list[str]) -> list[Blocke
                     category="process",
                     action_label="Governance-Screening anlegen",
                     target_url=reverse("governance:create", kwargs={"use_case_id": use_case.pk}),
+                )
+            )
+            continue
+
+        if label in DELIVERY_BLOCKERS:
+            package = use_case.delivery_packages.first()
+            details.append(
+                BlockerDetail(
+                    code=_code(label),
+                    label=label,
+                    category="process",
+                    action_label=(
+                        "Delivery Package öffnen" if package else "Delivery-Bereich öffnen"
+                    ),
+                    target_url=(
+                        package.get_absolute_url()
+                        if package
+                        else reverse("delivery:package_list")
+                    ),
+                )
+            )
+            continue
+
+        if label == "Lifecycle-Status Prüfung":
+            details.append(
+                BlockerDetail(
+                    code="pilot_requires_review_status",
+                    label=label,
+                    category="process",
+                    action_label="Use Case öffnen",
+                    target_url=detail_url,
                 )
             )
             continue
