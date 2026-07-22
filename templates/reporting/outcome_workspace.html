@@ -8,7 +8,7 @@
   <div>
     <div class="outcome-eyebrow">Review- und Entscheidungsinformationen</div>
     <h1 class="page-title">Wirkung &amp; Betrieb</h1>
-    <p class="page-subtitle">Wirkung, Ergebnisentscheidung und Betrieb werden mit bestehenden Use-Case-, Metrik- und Delivery-Daten zusammengeführt.</p>
+    <p class="page-subtitle">Kompakter Entscheidungs-Snapshot mit direkten Einstiegen in die bereits führenden Oberflächen.</p>
   </div>
 </div>
 
@@ -17,10 +17,10 @@
   <div class="app-card outcome-use-case-card">
     <div class="card-body">
       <div class="outcome-use-case-heading">
-        <div>
+        <div class="min-w-0">
           <div class="outcome-eyebrow">{{ selected_use_case.short_id }} · {{ selected_use_case.get_status_display }}</div>
           <h2>{{ selected_use_case.title }}</h2>
-          <p>{{ selected_use_case.summary|default:selected_use_case.problem_statement }}</p>
+          <p class="outcome-use-case-summary">{{ selected_use_case.summary|default:selected_use_case.problem_statement }}</p>
         </div>
         <a class="btn btn-outline-secondary btn-sm" href="{{ selected_use_case.get_absolute_url }}">Use Case öffnen</a>
       </div>
@@ -38,10 +38,6 @@
         <div><dt>Nächster Review</dt><dd>{{ selected_use_case.next_review_date|default:"Nicht geplant" }}</dd></div>
         <div><dt>Delivery</dt><dd>{% if selected_use_case.latest_delivery %}v{{ selected_use_case.latest_delivery.version }} · {{ selected_use_case.latest_delivery.get_status_display }}{% else %}Kein Package{% endif %}</dd></div>
       </dl>
-
-      {% if selected_use_case.latest_delivery and selected_use_case.latest_delivery.external_delivery_url %}
-      <a href="{{ selected_use_case.latest_delivery.external_delivery_url }}" class="outcome-external-link" rel="noopener noreferrer">Externes Delivery-System öffnen ↗</a>
-      {% endif %}
     </div>
   </div>
   {% else %}
@@ -73,6 +69,14 @@
           <button class="btn btn-outline-secondary" type="submit">Anzeigen</button>
         </div>
       </form>
+
+      {% if active_stage_action %}
+      <div class="outcome-stage-status outcome-stage-status-{{ active_stage_action.state }}">
+        <div class="outcome-eyebrow">Handlungsstatus</div>
+        <strong>{% if active_stage_action.url %}{{ active_stage_action.action_label }} verfügbar{% else %}Keine Aktion erforderlich{% endif %}</strong>
+        <p>{{ active_stage_action.reason }}</p>
+      </div>
+      {% endif %}
 
       <div class="outcome-responsibility-pair">
         <div><span>KI-Radar</span><p>{{ active_stage_copy.ki_radar }}</p></div>
