@@ -14,6 +14,7 @@ from ki_radar.core.demo_architecture_data import (
 from ki_radar.core.demo_data import seed_demo_data
 from ki_radar.core.demo_decision_data import enrich_demo_metrics
 from ki_radar.core.demo_identity import assign_demo_identities, prepare_demo_identities
+from ki_radar.core.golden_path_demo import seed_supplier_golden_path_demo
 from ki_radar.delivery.services import current_handed_over_package
 from ki_radar.use_cases.models import UseCase
 
@@ -46,6 +47,7 @@ class Command(BaseCommand):
         counts = seed_demo_data(demo_user_password=password)
         metric_count = enrich_demo_metrics()
         architecture_counts = seed_demo_architecture_data()
+        golden_counts = seed_supplier_golden_path_demo()
         assign_demo_identities()
 
         today = timezone.localdate()
@@ -89,14 +91,16 @@ class Command(BaseCommand):
                 "Demo-Daten eingespielt: "
                 f"{counts['business_units']} Organisationseinheiten, "
                 f"{counts['users']} Benutzer, "
-                f"{counts['use_cases']} Use Cases, "
+                f"{counts['use_cases'] + golden_counts['use_cases']} Use Cases, "
                 f"{counts['governance_assessments']} Governance-Screenings, "
                 f"{counts['reviews']} Reviews, "
                 f"{metric_count} strukturierte Erfolgsmetriken, "
-                f"{architecture_counts['value_streams']} Value Streams, "
-                f"{architecture_counts['process_analyses']} Prozessanalysen, "
-                f"{architecture_counts['solution_options']} Lösungsoptionen und "
-                f"{architecture_counts['delivery_packages']} Delivery Packages."
+                f"{architecture_counts['value_streams'] + golden_counts['value_streams']} "
+                "Value Streams, "
+                f"{architecture_counts['process_analyses'] + 1} Prozessanalysen, "
+                f"{architecture_counts['solution_options'] + 1} Lösungsoptionen und "
+                f"{architecture_counts['delivery_packages'] + golden_counts['delivery_packages']} "
+                "Delivery Packages."
             )
         )
         if generated_password:
