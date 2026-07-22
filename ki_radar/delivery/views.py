@@ -5,8 +5,8 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
-from ki_radar.use_cases.journey import build_delivery_package_journey
 from ki_radar.use_cases.models import UseCase
+from ki_radar.use_cases.workflow import build_delivery_package_journey
 
 from .forms import DeliveryPackageForm
 from .models import DeliveryPackage
@@ -16,13 +16,12 @@ from .permissions import (
     can_transition_package,
     can_view_package,
 )
+from .readiness import missing_ready_fields, render_delivery_markdown
 from .services import (
     APPROVED_STATUSES,
     create_delivery_package,
     hand_over_package,
     mark_package_ready,
-    missing_ready_fields,
-    render_delivery_markdown,
 )
 
 
@@ -33,7 +32,7 @@ def package_list(request):
             is_archived=False,
             decision_status__in=APPROVED_STATUSES,
         )
-        .select_related("business_unit", "business_owner")
+        .select_related("business_unit", "business_owner", "classification")
         .prefetch_related("delivery_packages", "approval_decisions")
         .order_by("business_unit__name", "short_id")
     )
@@ -78,6 +77,8 @@ def package_create(request, use_case_id):
         UseCase.objects.select_related(
             "business_unit",
             "business_owner",
+            "classification",
+            "architecture_origin__stage__value_stream__focus",
         ).prefetch_related(
             "approval_decisions__assessment",
             "delivery_packages",
@@ -102,14 +103,17 @@ def package_detail(request, pk):
         DeliveryPackage.objects.select_related(
             "use_case__business_unit",
             "use_case__business_owner",
+            "use_case__classification",
             "generated_from_decision__assessment",
             "created_by",
             "handed_over_by",
+            "architecture_artifacts",
         ).prefetch_related(
             "use_case__decision_assessments",
             "use_case__approval_decisions",
             "use_case__delivery_packages",
             "use_case__architecture_origin__stage__value_stream",
+            "use_case__architecture_origin__stage__value_stream__focus",
             "use_case__architecture_origin__process_analysis",
             "use_case__architecture_origin__solution_option",
         ),
@@ -133,7 +137,10 @@ def package_detail(request, pk):
 @login_required
 def package_update(request, pk):
     package = get_object_or_404(
-        DeliveryPackage.objects.select_related("use_case"),
+        DeliveryPackage.objects.select_related(
+            "use_case",
+            "architecture_artifacts",
+        ),
         pk=pk,
     )
     if not can_edit_package(request.user, package):
@@ -153,7 +160,10 @@ def package_update(request, pk):
 @login_required
 @require_POST
 def package_mark_ready(request, pk):
-    package = get_object_or_404(DeliveryPackage, pk=pk)
+    package = get_object_or_404(
+        DeliveryPackage.objects.select_related("architecture_artifacts"),
+        pk=pk,
+    )
     if not can_transition_package(request.user):
         raise PermissionDenied
     try:
@@ -183,7 +193,10 @@ def package_handover(request, pk):
 @login_required
 def package_export_markdown(request, pk):
     package = get_object_or_404(
-        DeliveryPackage.objects.select_related("use_case"),
+        DeliveryPackage.objects.select_related(
+            "use_case",
+            "architecture_artifacts",
+        ),
         pk=pk,
     )
     if not can_view_package(request.user, package):
