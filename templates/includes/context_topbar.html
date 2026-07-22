@@ -5,11 +5,11 @@
     <div class="journey-topbar-heading">
       {% if request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'outcome_workspace' %}
       <span class="journey-topbar-kicker">
-        {% if request.GET.layout == 'continuous' %}Gesamtlebenszyklus · Vergleichsvariante{% else %}Arbeitsraum 2 · Wirkung &amp; Betrieb{% endif %}
+        End-to-End-Arbeitsmodell · {% if request.GET.layout == 'continuous' %}Gesamtlebenszyklus · Vergleichsvariante{% else %}Arbeitsraum 2 · Wirkung &amp; Betrieb{% endif %}
       </span>
       <strong>{% if journey %}{{ journey.path_label }}{% else %}Use Case für den UX-Spike auswählen{% endif %}</strong>
       {% else %}
-      <span class="journey-topbar-kicker">Arbeitsraum 1 · Auswahl &amp; Freigabe</span>
+      <span class="journey-topbar-kicker">End-to-End-Arbeitsmodell · Arbeitsraum 1 · Auswahl &amp; Freigabe</span>
       <strong>{% if journey %}{{ journey.path_label }}{% elif request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'portfolio' %}Portfolio · Querschnitt über alle Phasen{% else %}Von der Discovery bis zur umsetzbaren Übergabe{% endif %}</strong>
       {% endif %}
     </div>
