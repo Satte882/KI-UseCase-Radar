@@ -111,7 +111,7 @@ def test_unselected_value_stream_cannot_start_deep_dive(client, seeded_demo):
 
     assert response.status_code == 302
     assert response.url == value_stream.get_absolute_url()
-    assert value_stream.process_analyses.count() == 0
+    assert stage.process_analyses.count() == 0
 
 
 @pytest.mark.django_db
