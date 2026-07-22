@@ -64,11 +64,21 @@ def test_outcome_journey_extends_existing_journey_state(owner, business_unit):
         "closure",
     ]
     assert journey.next_action is not None
-    assert journey.next_action.key in {"use_case", "delivery", "handover", "pilot", "measurement"}
+    assert journey.next_action.key in {
+        "use_case",
+        "delivery",
+        "handover",
+        "pilot",
+        "measurement",
+    }
 
 
 @pytest.mark.django_db
-def test_outcome_workspace_renders_both_lifecycle_segments(client, owner, business_unit):
+def test_outcome_workspace_renders_both_lifecycle_segments(
+    client,
+    owner,
+    business_unit,
+):
     use_case = _use_case(owner, business_unit)
     client.force_login(owner)
 
