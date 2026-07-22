@@ -9,7 +9,7 @@
   </div>
   <div class="d-flex gap-2">
     <a class="btn btn-outline-secondary" href="{% url 'architecture:value_stream_list' %}">Zur Übersicht</a>
-    {% if can_edit %}<a class="btn btn-primary" href="{% url 'architecture:value_stream_update' value_stream.pk %}">Bearbeiten</a>{% endif %}
+    {% if can_edit %}<a class="btn btn-primary" href="{% url 'architecture:value_stream_update' value_stream.pk %}">Bearbeiten &amp; priorisieren</a>{% endif %}
   </div>
 </div>
 
@@ -23,6 +23,33 @@
   <section class="app-card card-body"><div class="section-title">Strategisches Ziel</div><p class="mb-0">{{ value_stream.strategic_objective|default:"Noch nicht dokumentiert" }}</p></section>
 </div>
 
+<section class="app-card decision-panel mb-4">
+  <div class="card-header d-flex flex-wrap justify-content-between align-items-start gap-3">
+    <div><strong>Fokus &amp; Priorisierung</strong><div class="small text-muted mt-1">Entscheidung, ob dieser End-to-End-Bereich einen Detail-Deep-Dive rechtfertigt.</div></div>
+    {% if value_stream.focus %}<span class="badge {% if value_stream.focus.is_selected %}state-ready{% elif value_stream.focus.is_terminal %}state-blocked{% else %}state-review{% endif %}">{{ value_stream.focus.get_status_display }}</span>{% else %}<span class="badge state-blocked">Screening fehlt</span>{% endif %}
+  </div>
+  <div class="card-body">
+    {% if value_stream.focus %}
+    <div class="row g-4 mb-3">
+      <div class="col-md-4"><div class="section-title">Fachdomäne</div><strong>{{ value_stream.focus.get_business_domain_display }}</strong></div>
+      <div class="col-md-4"><div class="section-title">Business Capability</div><strong>{{ value_stream.focus.capability|default:"Noch offen" }}</strong></div>
+      <div class="col-md-4"><div class="section-title">Entscheidung</div><strong>{{ value_stream.focus.get_status_display }}</strong></div>
+    </div>
+    <div class="kpi-strip mb-3" style="grid-template-columns: repeat(5, 1fr);">
+      <div class="kpi-cell"><small>Strategischer Impact</small><strong>{{ value_stream.focus.get_strategic_impact_display|default:"–" }}</strong></div>
+      <div class="kpi-cell"><small>Wirtschaftliches Potenzial</small><strong>{{ value_stream.focus.get_economic_potential_display|default:"–" }}</strong></div>
+      <div class="kpi-cell"><small>Problemintensität</small><strong>{{ value_stream.focus.get_pain_intensity_display|default:"–" }}</strong></div>
+      <div class="kpi-cell"><small>Datenzugänglichkeit</small><strong>{{ value_stream.focus.get_data_accessibility_display|default:"–" }}</strong></div>
+      <div class="kpi-cell"><small>Veränderungsaufwand</small><strong>{{ value_stream.focus.get_change_effort_display|default:"–" }}</strong></div>
+    </div>
+    <div class="text-preline">{{ value_stream.focus.rationale|default:"Die Fokusentscheidung ist noch nicht begründet." }}</div>
+    {% if value_stream.focus.missing_screening_fields %}<div class="alert alert-warning mt-3 mb-0"><strong>Screening unvollständig:</strong> {{ value_stream.focus.missing_screening_fields|join:", " }}</div>{% endif %}
+    {% else %}
+    <p class="text-muted mb-0">Der Value Stream ist beschrieben, wurde aber noch nicht anhand einheitlicher Fokus-Kriterien eingeordnet.</p>
+    {% endif %}
+  </div>
+</section>
+
 <div class="app-card mb-4">
   <div class="card-header"><strong>TOGAF-light: Architecture Vision</strong><div class="small text-muted mt-1">Konkrete Artefakte aus ADM Phase A; kein vollständiger ADM-Zyklus.</div></div>
   <div class="card-body">
@@ -35,10 +62,11 @@
 
 <div class="app-card">
   <div class="card-header d-flex justify-content-between align-items-start gap-3">
-    <div><strong>End-to-End-Phasen</strong><div class="small text-muted mt-1">ADM Phase B: Wertschöpfung zuerst grob strukturieren; nur relevante Phasen werden anschließend im Detail analysiert.</div></div>
+    <div><strong>End-to-End-Phasen</strong><div class="small text-muted mt-1">Wertschöpfung zuerst grob strukturieren. Prozess-Deep-Dives und Use Cases beginnen erst nach der dokumentierten Fokusauswahl.</div></div>
     {% if can_edit %}<a class="btn btn-sm btn-primary" href="{% url 'architecture:stage_create' value_stream.pk %}">Phase ergänzen</a>{% endif %}
   </div>
   <div class="card-body">
+    {% if not value_stream.focus.is_selected %}<div class="alert alert-secondary"><strong>Deep Dive noch nicht freigegeben.</strong> Vervollständige das Screening und setze die Fokusentscheidung auf „Für Deep Dive ausgewählt“.</div>{% endif %}
     <div class="value-stream-flow">
       {% for stage in value_stream.stages.all %}
       <section class="value-stream-stage">
@@ -66,8 +94,8 @@
           {% for origin in stage.use_case_origins.all %}<a href="{{ origin.use_case.get_absolute_url }}">{{ origin.use_case.short_id }} · {{ origin.use_case.title }}</a>{% endfor %}
         </div>
         {% endif %}
-        {% if can_edit %}<a class="btn btn-sm btn-primary w-100 mt-3" href="{% url 'architecture:process_analysis_create' stage.pk %}">Prozess im Detail analysieren</a>{% endif %}
-        {% if can_create_use_case %}<a class="btn btn-sm btn-outline-secondary w-100 mt-2" href="{% url 'architecture:stage_start_use_case' stage.pk %}">Use Case direkt aus Phase ableiten</a>{% endif %}
+        {% if can_edit and value_stream.focus.is_selected %}<a class="btn btn-sm btn-primary w-100 mt-3" href="{% url 'architecture:process_analysis_create' stage.pk %}">Prozess im Detail analysieren</a>{% elif can_edit %}<button class="btn btn-sm btn-outline-secondary w-100 mt-3" type="button" disabled>Erst Fokusentscheidung abschließen</button>{% endif %}
+        {% if can_create_use_case and value_stream.focus.is_selected %}<a class="btn btn-sm btn-outline-secondary w-100 mt-2" href="{% url 'architecture:stage_start_use_case' stage.pk %}">Use Case direkt aus Phase ableiten</a>{% endif %}
       </section>
       {% empty %}
       <div class="text-muted">Noch keine Phasen erfasst. Beginnen Sie mit 5–10 groben End-to-End-Phasen statt mit Detailprozessen.</div>
