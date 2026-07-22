@@ -5,14 +5,16 @@ from django.db.models import Count
 from django.shortcuts import render
 from django.utils import timezone
 
+from ki_radar.core.taxonomy import BusinessDomain
 from ki_radar.use_cases.blockers import build_blocker_details
-from ki_radar.use_cases.journey import build_use_case_journey
+from ki_radar.use_cases.classification import UseCaseClassification
 from ki_radar.use_cases.models import UseCase
 from ki_radar.use_cases.services import (
     current_decision_check,
     decision_due_date,
     decision_priority,
 )
+from ki_radar.use_cases.workflow import build_use_case_journey
 
 from .portfolio import build_portfolio_context
 
@@ -27,7 +29,9 @@ def dashboard(request):
             "business_owner",
             "business_unit",
             "technical_owner",
+            "classification",
             "architecture_origin__stage__value_stream",
+            "architecture_origin__stage__value_stream__focus",
             "architecture_origin__process_analysis",
             "architecture_origin__solution_option",
         )
@@ -79,8 +83,20 @@ def dashboard(request):
 
 @login_required
 def portfolio(request):
-    return render(
-        request,
-        "reporting/portfolio.html",
-        build_portfolio_context(request.GET),
+    context = build_portfolio_context(request.GET)
+    domain_labels = dict(BusinessDomain.choices)
+    domain_rows = (
+        UseCaseClassification.objects.filter(use_case__is_archived=False)
+        .values("business_domain")
+        .annotate(total=Count("use_case_id"))
+        .order_by("business_domain")
     )
+    context["business_domain_groups"] = [
+        {
+            "key": row["business_domain"],
+            "label": domain_labels.get(row["business_domain"], "Nicht zugeordnet"),
+            "total": row["total"],
+        }
+        for row in domain_rows
+    ]
+    return render(request, "reporting/portfolio.html", context)
