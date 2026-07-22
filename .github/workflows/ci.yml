@@ -69,11 +69,24 @@ jobs:
       - name: Ruff format
         run: uv run ruff format .
 
-      - name: Capture formatted tests
+      - name: Capture formatted sources
         uses: actions/upload-artifact@v4
         with:
-          name: ruff-formatted-tests
+          name: ruff-formatted-sources
           path: |
+            ki_radar/core/management/commands/seed_demo_data.py
+            ki_radar/delivery/services.py
+            ki_radar/reviews/forms.py
+            ki_radar/reviews/services.py
+            ki_radar/reviews/views.py
+            ki_radar/use_cases/blockers.py
+            ki_radar/use_cases/forms.py
+            ki_radar/use_cases/outcome_workspace.py
+            ki_radar/use_cases/permissions.py
+            ki_radar/use_cases/services.py
+            ki_radar/use_cases/workflow.py
+            tests/test_delivery_to_pilot.py
+            tests/test_guided_journey.py
             tests/test_reviews.py
             tests/test_status_transitions.py
 
@@ -87,7 +100,17 @@ jobs:
         run: uv run python manage.py migrate --noinput
 
       - name: Run tests
-        run: uv run pytest -q
+        shell: bash
+        run: |
+          set -o pipefail
+          uv run pytest -q 2>&1 | tee pytest-output.txt
+
+      - name: Capture pytest output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-output
+          path: pytest-output.txt
 
       - name: Bandit
         run: uv run bandit -q -r ki_radar config
