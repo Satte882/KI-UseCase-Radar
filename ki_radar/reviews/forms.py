@@ -1,9 +1,10 @@
 from django import forms
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from ki_radar.use_cases.models import UseCase
-from ki_radar.use_cases.services import current_decision_check
+from ki_radar.use_cases.services import current_decision_check, validate_pilot_start_date
 
 from .models import Review
 
@@ -16,6 +17,15 @@ class DateInput(forms.DateInput):
 
 
 class ReviewForm(forms.ModelForm):
+    pilot_start = forms.DateField(
+        required=False,
+        widget=DateInput(),
+        label="Tatsächlicher Pilotbeginn",
+        help_text=(
+            "Heute oder ein früheres Datum ab der verbindlichen Übergabe des aktuellen "
+            "Delivery Packages."
+        ),
+    )
     ending_reason = forms.CharField(
         required=False, widget=forms.Textarea(attrs={"rows": 3}), label="Beendigungsgrund"
     )
@@ -46,6 +56,7 @@ class ReviewForm(forms.ModelForm):
         model = Review
         fields = [
             "review_date",
+            "pilot_start",
             "decision",
             "new_status",
             "rationale",
@@ -73,10 +84,15 @@ class ReviewForm(forms.ModelForm):
             "next_review_date": "Nächster Entscheidungstermin",
         }
 
-    def __init__(self, *args, use_case: UseCase, **kwargs):
+    def __init__(self, *args, use_case: UseCase, pilot_start_only: bool = False, **kwargs):
         self.use_case = use_case
+        self.pilot_start_only = pilot_start_only
         super().__init__(*args, **kwargs)
-        self.fields["review_date"].initial = timezone.localdate()
+        today = timezone.localdate()
+        self.fields["review_date"].initial = today
+        self.fields["pilot_start"].initial = use_case.pilot_start or today
+        self.fields["pilot_start"].widget.attrs["max"] = today.isoformat()
+        self.fields["next_review_date"].initial = use_case.next_review_date
         if not self.is_bound:
             decision = current_decision_check(use_case)
             initial_decision = {
@@ -92,6 +108,23 @@ class ReviewForm(forms.ModelForm):
             if initial_decision:
                 self.fields["decision"].initial = initial_decision
             self.fields["new_status"].initial = decision.target_status
+        if pilot_start_only:
+            self.fields["decision"].initial = Review.Decision.START_PILOT
+            self.fields["new_status"].initial = UseCase.Status.PILOT
+            for name in ["decision", "new_status", "go_live_exception_confirmed"]:
+                self.fields[name].disabled = True
+                self.fields[name].widget = forms.HiddenInput()
+            self.fields["pilot_start"].required = True
+            for name in [
+                "ending_reason",
+                "data_and_access_handling",
+                "replacement_solution",
+                "final_assessment",
+                "lessons_learned",
+            ]:
+                self.fields.pop(name, None)
+        elif use_case.status != UseCase.Status.REVIEW:
+            self.fields.pop("pilot_start", None)
         user_model = get_user_model()
         self.fields["action_owner"].queryset = user_model.objects.filter(
             is_active=True, is_anonymized=False
@@ -99,11 +132,20 @@ class ReviewForm(forms.ModelForm):
         for field in self.fields.values():
             field.widget.attrs.setdefault("class", "form-control")
         for name in ["decision", "new_status", "action_owner"]:
-            self.fields[name].widget.attrs["class"] = "form-select"
-        self.fields["go_live_exception_confirmed"].widget.attrs["class"] = "form-check-input"
+            if name in self.fields and not self.fields[name].widget.is_hidden:
+                self.fields[name].widget.attrs["class"] = "form-select"
+        if (
+            "go_live_exception_confirmed" in self.fields
+            and not self.fields["go_live_exception_confirmed"].widget.is_hidden
+        ):
+            self.fields["go_live_exception_confirmed"].widget.attrs["class"] = "form-check-input"
 
     def clean(self):
         cleaned = super().clean()
+        if self.pilot_start_only:
+            cleaned["decision"] = Review.Decision.START_PILOT
+            cleaned["new_status"] = UseCase.Status.PILOT
+            cleaned["go_live_exception_confirmed"] = False
         decision = cleaned.get("decision")
         new_status = cleaned.get("new_status")
         expected = {
@@ -138,6 +180,17 @@ class ReviewForm(forms.ModelForm):
                     "new_status",
                     "Für eine Rückstufung muss eine frühere Lifecycle-Phase gewählt werden.",
                 )
+        if decision == Review.Decision.START_PILOT:
+            pilot_start = cleaned.get("pilot_start")
+            if pilot_start is None:
+                self.add_error("pilot_start", "Der tatsächliche Pilotbeginn ist erforderlich.")
+            else:
+                try:
+                    validate_pilot_start_date(use_case=self.use_case, pilot_start=pilot_start)
+                except ValidationError as exc:
+                    self.add_error("pilot_start", exc)
+        else:
+            cleaned["pilot_start"] = None
         exception_required = (
             decision == Review.Decision.GO_LIVE
             and self.use_case.metric_result == UseCase.MetricResult.NOT_ACHIEVED

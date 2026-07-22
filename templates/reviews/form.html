@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% block title %}Entscheidung – KI-Radar{% endblock %}
+{% block title %}{% if pilot_start_only %}Pilot starten{% else %}Entscheidung{% endif %} – KI-Radar{% endblock %}
 {% block content %}
 <div class="page-header">
-  <div><div class="eyebrow mb-2">{{ use_case.short_id }} · {{ use_case.get_status_display }}</div><h1 class="page-title">Entscheidung dokumentieren</h1><p class="page-subtitle">{{ use_case.title }}</p></div>
+  <div><div class="eyebrow mb-2">{{ use_case.short_id }} · {{ use_case.get_status_display }}</div><h1 class="page-title">{% if pilot_start_only %}Pilot starten{% else %}Entscheidung dokumentieren{% endif %}</h1><p class="page-subtitle">{{ use_case.title }}</p></div>
   <a class="btn btn-outline-secondary" href="{{ use_case.get_absolute_url }}">Zurück zum Use Case</a>
 </div>
 <div class="row g-4">
@@ -25,14 +25,18 @@
   </div>
   <div class="col-xl-8">
     <form method="post" class="app-card">{% csrf_token %}
-      <div class="card-header"><strong>Review und Beschluss</strong><div class="small text-muted mt-1">Die Entscheidung bleibt menschlich verantwortlich und wird revisionsfähig dokumentiert.</div></div>
+      <div class="card-header"><strong>{% if pilot_start_only %}Pilotbeginn bestätigen{% else %}Review und Beschluss{% endif %}</strong><div class="small text-muted mt-1">{% if pilot_start_only %}Der tatsächliche Pilotbeginn muss am oder nach dem verbindlichen Übergabedatum liegen und darf nicht in der Zukunft liegen.{% else %}Die Entscheidung bleibt menschlich verantwortlich und wird revisionsfähig dokumentiert.{% endif %}</div></div>
       <div class="card-body">{{ form.non_field_errors }}<div class="row g-3">
-        {% for field in form %}<div class="{% if field.name == 'rationale' or field.name == 'open_actions' or field.name == 'ending_reason' or field.name == 'data_and_access_handling' or field.name == 'replacement_solution' or field.name == 'final_assessment' or field.name == 'lessons_learned' or field.name == 'go_live_exception_confirmed' %}col-12{% else %}col-md-6{% endif %}">
-          {% if field.field.widget.input_type == 'checkbox' %}<div class="form-check mt-3">{{ field }}<label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label></div>{% else %}<label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% endif %}
-          <div class="text-danger small">{{ field.errors }}</div>{% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-        </div>{% endfor %}
+        {% for field in form %}
+          {% if field.is_hidden %}{{ field }}{% else %}
+          <div class="{% if field.name == 'rationale' or field.name == 'open_actions' or field.name == 'ending_reason' or field.name == 'data_and_access_handling' or field.name == 'replacement_solution' or field.name == 'final_assessment' or field.name == 'lessons_learned' or field.name == 'go_live_exception_confirmed' %}col-12{% else %}col-md-6{% endif %}">
+            {% if field.field.widget.input_type == 'checkbox' %}<div class="form-check mt-3">{{ field }}<label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label></div>{% else %}<label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% endif %}
+            <div class="text-danger small">{{ field.errors }}</div>{% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+          </div>
+          {% endif %}
+        {% endfor %}
       </div></div>
-      <div class="card-body border-top d-flex justify-content-end gap-2"><a class="btn btn-outline-secondary" href="{{ use_case.get_absolute_url }}">Abbrechen</a><button class="btn btn-primary px-4">Entscheidung speichern</button></div>
+      <div class="card-body border-top d-flex justify-content-end gap-2"><a class="btn btn-outline-secondary" href="{{ use_case.get_absolute_url }}">Abbrechen</a><button class="btn btn-primary px-4">{% if pilot_start_only %}Pilot starten{% else %}Entscheidung speichern{% endif %}</button></div>
     </form>
   </div>
 </div>

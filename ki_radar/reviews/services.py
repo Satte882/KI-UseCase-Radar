@@ -11,6 +11,7 @@ from .models import Review
 def create_review(*, use_case, actor, data) -> Review:
     previous_status = use_case.status
     review_data = data.copy()
+    pilot_start = review_data.pop("pilot_start", None)
 
     if (
         review_data.get("decision") == Review.Decision.GO_LIVE
@@ -36,7 +37,12 @@ def create_review(*, use_case, actor, data) -> Review:
     target_status = review_data["new_status"]
 
     if target_status != previous_status:
-        apply_status_transition(use_case=use_case, target_status=target_status, actor=actor)
+        apply_status_transition(
+            use_case=use_case,
+            target_status=target_status,
+            actor=actor,
+            pilot_start=pilot_start,
+        )
     else:
         use_case._history_user = actor
         use_case.save()

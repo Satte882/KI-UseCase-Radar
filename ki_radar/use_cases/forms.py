@@ -1,12 +1,14 @@
 from django import forms
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.utils import timezone
 
 from ki_radar.accounts.models import BusinessUnit
 from ki_radar.accounts.permissions import is_coordinator
 from ki_radar.core.taxonomy import BusinessDomain
 
 from .models import UseCase
+from .services import validate_pilot_start_date
 
 
 class DateInput(forms.DateInput):
@@ -173,6 +175,7 @@ class UseCaseForm(forms.ModelForm):
                 )
         self.initial.setdefault("business_domain", BusinessDomain.OTHER)
         self.initial.setdefault("process_area", self.initial.get("affected_process", ""))
+        self.fields["pilot_start"].widget.attrs["max"] = timezone.localdate().isoformat()
         for field in self.fields.values():
             field.widget.attrs.setdefault(
                 "class",
@@ -235,6 +238,11 @@ class UseCaseForm(forms.ModelForm):
         cleaned = super().clean()
         start = cleaned.get("pilot_start")
         end = cleaned.get("planned_pilot_end")
+        if start:
+            try:
+                validate_pilot_start_date(use_case=self.instance, pilot_start=start)
+            except ValidationError as exc:
+                self.add_error("pilot_start", exc)
         if start and end and end < start:
             self.add_error(
                 "planned_pilot_end", "Das geplante Pilotende darf nicht vor dem Pilotbeginn liegen."

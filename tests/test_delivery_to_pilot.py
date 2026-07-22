@@ -1,0 +1,429 @@
+from datetime import timedelta
+from decimal import Decimal
+
+import pytest
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.management import call_command
+from django.urls import reverse
+from django.utils import timezone
+
+from ki_radar.accounts.models import User
+from ki_radar.core.demo_architecture_data import INVOICE_USE_CASE_KEY
+from ki_radar.delivery.models import DeliveryPackage
+from ki_radar.delivery.services import (
+    create_delivery_package,
+    hand_over_package,
+    mark_package_ready,
+)
+from ki_radar.governance.models import GovernanceAssessment
+from ki_radar.reviews.models import Review
+from ki_radar.reviews.services import create_review
+from ki_radar.use_cases.models import ApprovalDecision, DecisionAssessment, UseCase
+from ki_radar.use_cases.outcome_workspace import build_outcome_workspace_journey
+from ki_radar.use_cases.permissions import can_start_pilot
+from ki_radar.use_cases.services import apply_status_transition
+from ki_radar.use_cases.workflow import build_use_case_journey
+
+
+def _complete_delivery_readiness(package):
+    package.integrations = "Keine technischen Integrationen vorgesehen."
+    package.dependencies = "Keine externen Abhängigkeiten für das MVP."
+    package.risks = "Keine zusätzlichen Risiken über die Bewertung hinaus."
+    package.assumptions = "Fachliche Annahmen wurden in der Freigabe bestätigt."
+    package.architecture_decisions = "Bestehende Systemlandschaft bleibt unverändert."
+    package.save(
+        update_fields=[
+            "integrations",
+            "dependencies",
+            "risks",
+            "assumptions",
+            "architecture_decisions",
+            "updated_at",
+        ]
+    )
+
+
+def _make_pilot_candidate(owner, coordinator, business_unit, *, technical_owner=None):
+    use_case = UseCase.objects.create(
+        title="Assistierter Angebotsvergleich",
+        summary="Angebote strukturiert vergleichen und Rückfragen reduzieren.",
+        problem_statement="Uneinheitliche Angebote verlängern die Lieferantenauswahl.",
+        business_unit=business_unit,
+        affected_process="Lieferantenauswahl",
+        target_users="Einkauf und Fachbereich",
+        submitter=owner,
+        business_owner=owner,
+        coordinator=coordinator,
+        technical_owner=technical_owner,
+        status=UseCase.Status.REVIEW,
+        source_systems="ERP, Shared Inbox und Dateiablage",
+        data_sources="Angebote, Kriterienkatalog und Lieferantenstammdaten",
+        interface_description="Dateiablage; ERP zunächst per Export",
+        intended_users="Strategischer Einkauf",
+        intended_purpose="Angebotsdaten extrahieren und vergleichbar darstellen.",
+        expected_benefit="Durchlaufzeit von fünf auf drei Tage reduzieren.",
+        metric_name="Durchlaufzeit",
+        metric_type=UseCase.MetricType.DURATION,
+        metric_direction=UseCase.MetricDirection.LOWER,
+        metric_unit="Tage",
+        metric_baseline=Decimal("5"),
+        metric_target=Decimal("3"),
+        metric_measurement_method="Median über zehn Beschaffungsvorgänge.",
+        next_review_date=timezone.localdate() + timedelta(days=14),
+        planned_pilot_end=timezone.localdate() + timedelta(days=30),
+        human_oversight="Einkauf prüft Vergleich und trifft die Entscheidung.",
+        support_responsibility="IT Application Management",
+        decision_status=UseCase.DecisionStatus.APPROVED,
+    )
+    GovernanceAssessment.objects.create(
+        use_case=use_case,
+        assessment_date=timezone.localdate(),
+        reviewer=coordinator,
+        basis_version="2026-01",
+        result=GovernanceAssessment.Result.NO_FLAGS,
+        rationale="Keine Hinweise",
+    )
+    assessment = DecisionAssessment.objects.create(
+        use_case=use_case,
+        version=1,
+        assessed_by=coordinator,
+        business_value=UseCase.Level.HIGH,
+        strategic_fit=UseCase.Level.HIGH,
+        technical_feasibility=UseCase.Level.HIGH,
+        data_readiness=UseCase.Level.MEDIUM,
+        risk_complexity=UseCase.Level.MEDIUM,
+        evidence_quality=DecisionAssessment.EvidenceQuality.REPRESENTATIVE,
+        evidence_recency=DecisionAssessment.ConfidenceFactor.SOLID,
+        evidence_coverage=DecisionAssessment.ConfidenceFactor.SOLID,
+        independent_review=DecisionAssessment.ConfidenceFactor.SOLID,
+        assumptions_resolved=DecisionAssessment.ConfidenceFactor.SOLID,
+        evidence_url="https://example.com/evidence",
+        rationale="Prozessmessung, Datenstichprobe und technische Vorprüfung liegen vor.",
+        governance_precheck_completed=True,
+        recommendation=UseCase.DecisionStatus.APPROVED,
+    )
+    ApprovalDecision.objects.create(
+        use_case=use_case,
+        assessment=assessment,
+        decision_status=UseCase.DecisionStatus.APPROVED,
+        rationale="Pilot und Delivery sind fachlich freigegeben.",
+        decided_by=coordinator,
+        governance_confirmed=True,
+        finalized_at=timezone.now(),
+    )
+    return use_case
+
+
+def _create_package(use_case, coordinator, *, handover=False):
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    _complete_delivery_readiness(package)
+    mark_package_ready(package)
+    if handover:
+        hand_over_package(package, coordinator)
+        package.refresh_from_db()
+    return package
+
+
+def _review_data(use_case, pilot_start):
+    return {
+        "review_date": timezone.localdate(),
+        "pilot_start": pilot_start,
+        "decision": Review.Decision.START_PILOT,
+        "new_status": UseCase.Status.PILOT,
+        "rationale": "Delivery ist übergeben; der Pilot wird fachlich gestartet.",
+        "go_live_exception_confirmed": False,
+        "open_actions": "",
+        "action_owner": None,
+        "action_due_date": None,
+        "next_review_date": use_case.next_review_date,
+    }
+
+
+@pytest.fixture
+def handed_over_candidate(owner, coordinator, business_unit):
+    use_case = _make_pilot_candidate(owner, coordinator, business_unit)
+    package = _create_package(use_case, coordinator, handover=True)
+    return use_case, package
+
+
+@pytest.mark.django_db
+def test_golden_path_uses_one_use_case_from_value_stream_to_pilot(settings):
+    settings.DEBUG = True
+    call_command("seed_demo_data", demo_user_password="Delivery-Pilot-Demo-2026!")
+    coordinator = User.objects.get(username="demo_ki_koordinator")
+    use_case = UseCase.objects.get(demo_key=INVOICE_USE_CASE_KEY)
+    package = use_case.delivery_packages.get(version=1)
+
+    before = build_use_case_journey(use_case, coordinator)
+    steps = {step.key: step for step in before.steps}
+    assert [step.key for step in before.steps[:8]] == [
+        "value_stream",
+        "focus",
+        "process",
+        "solution",
+        "use_case",
+        "assessment",
+        "approval",
+        "delivery",
+    ]
+    assert all(
+        steps[key].state == "complete"
+        for key in [
+            "value_stream",
+            "focus",
+            "process",
+            "solution",
+            "use_case",
+            "assessment",
+            "approval",
+        ]
+    )
+    assert package.status == DeliveryPackage.Status.READY
+
+    hand_over_package(package, coordinator)
+    package.refresh_from_db()
+    after_handover = build_use_case_journey(use_case, coordinator)
+    assert after_handover.next_action is not None
+    assert after_handover.next_action.key == "pilot_start"
+    assert after_handover.next_action.action_label == "Pilot starten"
+
+    pilot_start = timezone.localdate(package.handed_over_at)
+    review = create_review(
+        use_case=use_case,
+        actor=coordinator,
+        data=_review_data(use_case, pilot_start),
+    )
+    use_case.refresh_from_db()
+
+    assert use_case.status == UseCase.Status.PILOT
+    assert use_case.pilot_start == pilot_start
+    assert review.decision == Review.Decision.START_PILOT
+    assert review.previous_status == UseCase.Status.REVIEW
+    assert review.new_status == UseCase.Status.PILOT
+    assert package.status == DeliveryPackage.Status.HANDED_OVER
+    outcome = build_outcome_workspace_journey(use_case, coordinator)
+    assert next(step for step in outcome.steps if step.key == "pilot").state == "current"
+
+
+@pytest.mark.django_db
+def test_pilot_start_requires_a_delivery_package(owner, coordinator, business_unit):
+    use_case = _make_pilot_candidate(owner, coordinator, business_unit)
+
+    with pytest.raises(ValidationError, match="Aktuelles Delivery Package"):
+        apply_status_transition(
+            use_case=use_case,
+            target_status=UseCase.Status.PILOT,
+            actor=coordinator,
+            pilot_start=timezone.localdate(),
+        )
+
+
+@pytest.mark.django_db
+def test_pilot_start_requires_handed_over_package(owner, coordinator, business_unit):
+    use_case = _make_pilot_candidate(owner, coordinator, business_unit)
+    _create_package(use_case, coordinator, handover=False)
+
+    with pytest.raises(ValidationError, match="Verbindliche Übergabe"):
+        apply_status_transition(
+            use_case=use_case,
+            target_status=UseCase.Status.PILOT,
+            actor=coordinator,
+            pilot_start=timezone.localdate(),
+        )
+
+
+@pytest.mark.django_db
+def test_current_package_must_be_handed_over(owner, coordinator, business_unit):
+    use_case = _make_pilot_candidate(owner, coordinator, business_unit)
+    first = _create_package(use_case, coordinator, handover=True)
+    second = create_delivery_package(use_case=use_case, actor=coordinator)
+
+    assert first.status == DeliveryPackage.Status.HANDED_OVER
+    assert second.version == 2
+    with pytest.raises(ValidationError, match="Verbindliche Übergabe"):
+        apply_status_transition(
+            use_case=use_case,
+            target_status=UseCase.Status.PILOT,
+            actor=coordinator,
+            pilot_start=timezone.localdate(),
+        )
+
+
+@pytest.mark.django_db
+def test_pilot_start_requires_review_status(handed_over_candidate, coordinator):
+    use_case, _package = handed_over_candidate
+    use_case.status = UseCase.Status.IDEA
+    use_case.save(update_fields=["status", "updated_at"])
+
+    with pytest.raises(ValidationError, match="Lifecycle-Status Prüfung"):
+        apply_status_transition(
+            use_case=use_case,
+            target_status=UseCase.Status.PILOT,
+            actor=coordinator,
+            pilot_start=timezone.localdate(),
+        )
+
+
+@pytest.mark.django_db
+def test_pilot_start_date_is_required_and_failure_is_atomic(
+    handed_over_candidate,
+    coordinator,
+):
+    use_case, _package = handed_over_candidate
+    original_review_date = use_case.next_review_date
+
+    with pytest.raises(ValidationError, match="Pilotbeginn ist erforderlich"):
+        create_review(
+            use_case=use_case,
+            actor=coordinator,
+            data={**_review_data(use_case, None), "next_review_date": timezone.localdate()},
+        )
+
+    use_case.refresh_from_db()
+    assert use_case.status == UseCase.Status.REVIEW
+    assert use_case.pilot_start is None
+    assert use_case.next_review_date == original_review_date
+    assert use_case.reviews.count() == 0
+
+
+@pytest.mark.django_db
+def test_pilot_start_date_cannot_be_in_future(handed_over_candidate, coordinator):
+    use_case, _package = handed_over_candidate
+
+    with pytest.raises(ValidationError, match="nicht in der Zukunft"):
+        create_review(
+            use_case=use_case,
+            actor=coordinator,
+            data=_review_data(use_case, timezone.localdate() + timedelta(days=1)),
+        )
+
+
+@pytest.mark.django_db
+def test_pilot_start_date_cannot_precede_handover(handed_over_candidate, coordinator):
+    use_case, package = handed_over_candidate
+    handover_date = timezone.localdate(package.handed_over_at)
+
+    with pytest.raises(ValidationError, match="nicht vor der verbindlichen Übergabe"):
+        create_review(
+            use_case=use_case,
+            actor=coordinator,
+            data=_review_data(use_case, handover_date - timedelta(days=1)),
+        )
+
+
+@pytest.mark.django_db
+def test_planned_pilot_end_cannot_precede_actual_start(handed_over_candidate, coordinator):
+    use_case, package = handed_over_candidate
+    pilot_start = timezone.localdate(package.handed_over_at)
+    use_case.planned_pilot_end = pilot_start - timedelta(days=1)
+    use_case.save(update_fields=["planned_pilot_end", "updated_at"])
+
+    with pytest.raises(ValidationError, match="Pilotende darf nicht vor"):
+        create_review(
+            use_case=use_case,
+            actor=coordinator,
+            data=_review_data(use_case, pilot_start),
+        )
+
+
+@pytest.mark.django_db
+def test_only_coordinator_or_assigned_business_owner_can_start(
+    handed_over_candidate,
+    owner,
+    other_owner,
+    coordinator,
+    technical_admin,
+    reader,
+):
+    use_case, package = handed_over_candidate
+    use_case.technical_owner = reader
+    use_case.save(update_fields=["technical_owner", "updated_at"])
+    pilot_start = timezone.localdate(package.handed_over_at)
+
+    assert can_start_pilot(coordinator, use_case) is True
+    assert can_start_pilot(owner, use_case) is True
+    assert can_start_pilot(other_owner, use_case) is False
+    assert can_start_pilot(reader, use_case) is False
+    assert can_start_pilot(technical_admin, use_case) is False
+
+    for actor in [other_owner, reader, technical_admin]:
+        with pytest.raises(PermissionDenied):
+            apply_status_transition(
+                use_case=use_case,
+                target_status=UseCase.Status.PILOT,
+                actor=actor,
+                pilot_start=pilot_start,
+            )
+
+
+@pytest.mark.django_db
+def test_manipulated_owner_post_is_forced_to_pilot_start(
+    client,
+    handed_over_candidate,
+    owner,
+):
+    use_case, package = handed_over_candidate
+    client.force_login(owner)
+    response = client.post(
+        reverse("reviews:create", kwargs={"use_case_id": use_case.pk}),
+        {
+            "review_date": timezone.localdate().isoformat(),
+            "pilot_start": timezone.localdate(package.handed_over_at).isoformat(),
+            "decision": Review.Decision.GO_LIVE,
+            "new_status": UseCase.Status.OPERATION,
+            "rationale": "Manipulierter POST darf den festen Pilotübergang nicht verändern.",
+            "open_actions": "",
+            "action_owner": "",
+            "action_due_date": "",
+            "next_review_date": use_case.next_review_date.isoformat(),
+        },
+    )
+
+    use_case.refresh_from_db()
+    review = use_case.reviews.get()
+    assert response.status_code == 302
+    assert use_case.status == UseCase.Status.PILOT
+    assert review.decision == Review.Decision.START_PILOT
+    assert review.new_status == UseCase.Status.PILOT
+
+
+@pytest.mark.django_db
+def test_pilot_start_post_rejects_unauthorized_roles(
+    client,
+    handed_over_candidate,
+    other_owner,
+    technical_admin,
+):
+    use_case, package = handed_over_candidate
+    url = reverse("reviews:create", kwargs={"use_case_id": use_case.pk}) + "?action=pilot_start"
+    payload = {
+        "review_date": timezone.localdate().isoformat(),
+        "pilot_start": timezone.localdate(package.handed_over_at).isoformat(),
+        "rationale": "Nicht berechtigt.",
+        "next_review_date": use_case.next_review_date.isoformat(),
+    }
+
+    for actor in [other_owner, technical_admin]:
+        client.force_login(actor)
+        assert client.post(url, payload).status_code == 403
+
+
+@pytest.mark.django_db
+def test_pilot_start_form_defaults_to_today_and_limits_future_dates(
+    client,
+    handed_over_candidate,
+    owner,
+):
+    use_case, _package = handed_over_candidate
+    client.force_login(owner)
+    url = reverse("reviews:create", kwargs={"use_case_id": use_case.pk}) + "?action=pilot_start"
+
+    response = client.get(url)
+
+    assert response.status_code == 200
+    form = response.context["form"]
+    assert form.fields["pilot_start"].initial == timezone.localdate()
+    assert form.fields["pilot_start"].required is True
+    assert form.fields["pilot_start"].widget.attrs["max"] == timezone.localdate().isoformat()
+    assert response.context["pilot_start_only"] is True
+    assert "Pilot starten" in response.content.decode()

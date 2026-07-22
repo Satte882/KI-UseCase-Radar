@@ -5,11 +5,13 @@ from django.core.exceptions import ValidationError
 from django.urls import reverse
 from django.utils import timezone
 
+from ki_radar.delivery.models import DeliveryPackage
+from ki_radar.delivery.services import hand_over_package
 from ki_radar.governance.models import GovernanceAssessment
 from ki_radar.reviews.forms import ReviewForm
 from ki_radar.reviews.models import Review
 from ki_radar.reviews.services import create_review
-from ki_radar.use_cases.models import UseCase
+from ki_radar.use_cases.models import ApprovalDecision, DecisionAssessment, UseCase
 
 
 @pytest.fixture
@@ -21,6 +23,37 @@ def use_case(owner, business_unit):
         affected_process="Prozess",
         business_owner=owner,
         expected_benefit="Nutzen",
+    )
+
+
+def create_final_approval(use_case, coordinator):
+    assessment = DecisionAssessment.objects.create(
+        use_case=use_case,
+        version=1,
+        assessed_by=coordinator,
+        business_value=UseCase.Level.HIGH,
+        strategic_fit=UseCase.Level.HIGH,
+        technical_feasibility=UseCase.Level.HIGH,
+        data_readiness=UseCase.Level.HIGH,
+        risk_complexity=UseCase.Level.LOW,
+        evidence_quality=DecisionAssessment.EvidenceQuality.REPRESENTATIVE,
+        evidence_recency=DecisionAssessment.ConfidenceFactor.SOLID,
+        evidence_coverage=DecisionAssessment.ConfidenceFactor.SOLID,
+        independent_review=DecisionAssessment.ConfidenceFactor.SOLID,
+        assumptions_resolved=DecisionAssessment.ConfidenceFactor.SOLID,
+        evidence_url="https://example.invalid/evidence",
+        rationale="Testfreigabe ist fachlich und technisch belegt.",
+        governance_precheck_completed=True,
+        recommendation=UseCase.DecisionStatus.APPROVED,
+    )
+    return ApprovalDecision.objects.create(
+        use_case=use_case,
+        assessment=assessment,
+        decision_status=UseCase.DecisionStatus.APPROVED,
+        rationale="Pilot ist freigegeben.",
+        decided_by=coordinator,
+        governance_confirmed=True,
+        finalized_at=timezone.now(),
     )
 
 
@@ -139,6 +172,7 @@ def test_continue_review_keeps_status(client, coordinator, use_case):
 @pytest.mark.django_db
 def test_review_can_supply_required_review_date_for_pilot_transition(coordinator, use_case):
     today = timezone.localdate()
+    use_case.status = UseCase.Status.REVIEW
     use_case.decision_status = UseCase.DecisionStatus.APPROVED
     use_case.data_sources = "Freigegebene Wissensbasis"
     use_case.planned_pilot_end = today
@@ -158,12 +192,22 @@ def test_review_can_supply_required_review_date_for_pilot_transition(coordinator
         result=GovernanceAssessment.Result.NO_FLAGS,
         rationale="Keine besonderen Hinweise",
     )
+    decision = create_final_approval(use_case, coordinator)
+    package = DeliveryPackage.objects.create(
+        use_case=use_case,
+        version=1,
+        status=DeliveryPackage.Status.READY,
+        generated_from_decision=decision,
+        created_by=coordinator,
+    )
+    hand_over_package(package, coordinator)
 
     review = create_review(
         use_case=use_case,
         actor=coordinator,
         data={
             "review_date": today,
+            "pilot_start": today,
             "decision": Review.Decision.START_PILOT,
             "new_status": UseCase.Status.PILOT,
             "rationale": "Pilot ist fachlich vorbereitet",
@@ -176,6 +220,7 @@ def test_review_can_supply_required_review_date_for_pilot_transition(coordinator
 
     use_case.refresh_from_db()
     assert use_case.status == UseCase.Status.PILOT
+    assert use_case.pilot_start == today
     assert use_case.next_review_date == today
     assert use_case.history.first().history_user == coordinator
     assert review.history.first().history_user == coordinator

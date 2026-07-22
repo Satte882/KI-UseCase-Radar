@@ -1,5 +1,6 @@
 import pytest
 from django.core.management import call_command
+from django.utils import timezone
 
 from ki_radar.accounts.models import User
 from ki_radar.architecture.models import ProcessAnalysis, SolutionOption, ValueStream
@@ -142,7 +143,7 @@ def test_stopped_demo_ends_without_delivery_action(seeded_demo):
 
 
 @pytest.mark.django_db
-def test_handed_over_demo_is_complete_and_immutable(seeded_demo):
+def test_handed_over_demo_is_a_consistent_running_pilot(seeded_demo):
     use_case = UseCase.objects.get(demo_key=DOCUMENT_USE_CASE_KEY)
     package = use_case.delivery_packages.get(version=1)
 
@@ -150,8 +151,9 @@ def test_handed_over_demo_is_complete_and_immutable(seeded_demo):
 
     assert package.status == DeliveryPackage.Status.HANDED_OVER
     assert package.external_delivery_url
-    assert journey.next_action is None
-    assert "an Delivery übergeben" in journey.completion_message
+    assert use_case.status == UseCase.Status.PILOT
+    assert use_case.pilot_start == timezone.localdate(package.handed_over_at)
+    assert all(step.key != "pilot_start" for step in journey.steps)
 
 
 @pytest.mark.django_db

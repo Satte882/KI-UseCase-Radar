@@ -47,6 +47,25 @@ def latest_final_approval(use_case: UseCase) -> ApprovalDecision | None:
     )
 
 
+def current_delivery_package(use_case: UseCase) -> DeliveryPackage | None:
+    """Return the latest Delivery Package version for the Use Case."""
+
+    return DeliveryPackage.objects.filter(use_case_id=use_case.pk).first()
+
+
+def current_handed_over_package(use_case: UseCase) -> DeliveryPackage | None:
+    """Return the current package only when its handover is complete and timestamped."""
+
+    package = current_delivery_package(use_case)
+    if (
+        package is not None
+        and package.status == DeliveryPackage.Status.HANDED_OVER
+        and package.handed_over_at is not None
+    ):
+        return package
+    return None
+
+
 def delivery_eligibility(use_case: UseCase) -> tuple[bool, str, ApprovalDecision | None]:
     if use_case.decision_status not in APPROVED_STATUSES:
         return False, "Der Use Case besitzt keine finale positive Freigabe.", None

@@ -8,6 +8,8 @@ from django.utils import timezone
 
 from ki_radar.accounts.permissions import is_coordinator
 from ki_radar.use_cases.models import UseCase
+from ki_radar.use_cases.outcome_workspace import outcome_workspace_url
+from ki_radar.use_cases.permissions import can_start_pilot
 from ki_radar.use_cases.services import current_decision_check
 
 from .forms import ReviewForm
@@ -16,26 +18,45 @@ from .services import create_review
 
 @login_required
 def review_create(request, use_case_id):
-    if not is_coordinator(request.user):
-        raise PermissionDenied
     use_case = get_object_or_404(
         UseCase.objects.select_related("business_owner", "technical_owner").prefetch_related(
-            "governance_assessments"
+            "governance_assessments",
+            "delivery_packages",
         ),
         pk=use_case_id,
     )
+    coordinator_access = is_coordinator(request.user)
+    pilot_start_only = request.GET.get("action") == "pilot_start" or (
+        request.method == "POST" and not coordinator_access
+    )
+    if pilot_start_only:
+        if not can_start_pilot(request.user, use_case):
+            raise PermissionDenied
+    elif not coordinator_access:
+        raise PermissionDenied
+
     if request.method == "POST":
-        form = ReviewForm(request.POST, use_case=use_case)
+        form = ReviewForm(
+            request.POST,
+            use_case=use_case,
+            pilot_start_only=pilot_start_only,
+        )
         if form.is_valid():
             try:
                 create_review(use_case=use_case, actor=request.user, data=form.cleaned_data)
             except ValidationError as exc:
                 form.add_error(None, exc)
             else:
+                if pilot_start_only:
+                    messages.success(request, "Der Pilot wurde verbindlich gestartet.")
+                    return redirect(outcome_workspace_url("pilot", use_case=use_case))
                 messages.success(request, "Review und Entscheidung wurden gespeichert.")
                 return redirect(use_case)
     else:
-        form = ReviewForm(use_case=use_case)
+        form = ReviewForm(
+            use_case=use_case,
+            pilot_start_only=pilot_start_only,
+        )
     return render(
         request,
         "reviews/form.html",
@@ -43,6 +64,7 @@ def review_create(request, use_case_id):
             "form": form,
             "use_case": use_case,
             "decision_check": current_decision_check(use_case),
+            "pilot_start_only": pilot_start_only,
         },
     )
 
