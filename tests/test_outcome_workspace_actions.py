@@ -8,7 +8,7 @@ from django.utils import timezone
 from ki_radar.delivery.models import DeliveryPackage
 from ki_radar.reviews.forms import ReviewForm
 from ki_radar.reviews.models import Review
-from ki_radar.use_cases.models import UseCase
+from ki_radar.use_cases.models import ApprovalDecision, DecisionAssessment, UseCase
 
 
 def _use_case(owner, business_unit, *, status=UseCase.Status.PILOT):
@@ -29,11 +29,43 @@ def _use_case(owner, business_unit, *, status=UseCase.Status.PILOT):
     )
 
 
+def _final_approval(use_case, coordinator):
+    assessment = DecisionAssessment.objects.create(
+        use_case=use_case,
+        version=1,
+        assessed_by=coordinator,
+        business_value=UseCase.Level.HIGH,
+        strategic_fit=UseCase.Level.HIGH,
+        technical_feasibility=UseCase.Level.HIGH,
+        data_readiness=UseCase.Level.MEDIUM,
+        risk_complexity=UseCase.Level.MEDIUM,
+        evidence_quality=DecisionAssessment.EvidenceQuality.REPRESENTATIVE,
+        evidence_recency=DecisionAssessment.ConfidenceFactor.SOLID,
+        evidence_coverage=DecisionAssessment.ConfidenceFactor.SOLID,
+        independent_review=DecisionAssessment.ConfidenceFactor.SOLID,
+        assumptions_resolved=DecisionAssessment.ConfidenceFactor.SOLID,
+        evidence_url="https://example.invalid/evidence/approval",
+        rationale="Die Testfreigabe ist durch repräsentative Evidenz belegt.",
+        governance_precheck_completed=True,
+        recommendation=UseCase.DecisionStatus.APPROVED,
+    )
+    return ApprovalDecision.objects.create(
+        use_case=use_case,
+        assessment=assessment,
+        decision_status=UseCase.DecisionStatus.APPROVED,
+        rationale="Delivery und Pilot sind für den Test freigegeben.",
+        decided_by=coordinator,
+        governance_confirmed=True,
+        finalized_at=timezone.now(),
+    )
+
+
 def _package(use_case, coordinator, *, external_url="", status=DeliveryPackage.Status.HANDED_OVER):
     return DeliveryPackage.objects.create(
         use_case=use_case,
         version=1,
         status=status,
+        generated_from_decision=_final_approval(use_case, coordinator),
         created_by=coordinator,
         external_delivery_url=external_url,
         handed_over_by=coordinator if status == DeliveryPackage.Status.HANDED_OVER else None,
