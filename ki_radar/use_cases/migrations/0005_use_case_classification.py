@@ -45,7 +45,7 @@ def backfill_use_case_classification(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("architecture", "0004_value_stream_focus"),
+        ("architecture", "0005_backfill_value_stream_focus"),
         ("use_cases", "0004_usecase_demo_key"),
     ]
 
