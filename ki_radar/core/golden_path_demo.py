@@ -298,6 +298,9 @@ def seed_supplier_golden_path_demo() -> dict[str, int]:
 @transaction.atomic
 def clear_supplier_golden_path_demo() -> dict[str, int]:
     use_cases = UseCase.objects.filter(demo_key=SUPPLIER_GOLDEN_PATH_USE_CASE_KEY)
+    DeliveryPackage.objects.filter(use_case__in=use_cases).delete()
+    ApprovalDecision.objects.filter(use_case__in=use_cases).delete()
+    DecisionAssessment.objects.filter(use_case__in=use_cases).delete()
     use_case_count = use_cases.count()
     use_cases.delete()
     value_streams = ValueStream.objects.filter(demo_key=SUPPLIER_GOLDEN_PATH_STREAM_KEY)
