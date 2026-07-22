@@ -2,31 +2,87 @@
 
 ## Ziel
 
-Der Bereich ergänzt den direkten Use-Case-Intake um einen optionalen Business-Architecture-Pfad:
+Der Bereich ergänzt den direkten Use-Case-Intake um einen optionalen, priorisierten Business-Architecture-Pfad:
 
 ```text
-Value Stream
-→ Phase und Problem
-→ Prozessanalyse
-→ Lösungsoption
+Fachdomäne und Business Capability
+→ End-to-End-Value-Stream
+→ Fokus-Screening und Auswahl
+→ ausgewählter Prozess-Deep-Dive
+→ organisatorische, klassische und KI-Lösungsoptionen
 → geführter Use-Case-Intake
-→ Bewertung und Freigabe
+→ Bewertung
+→ Freigabe
 → Delivery Package
 → externes Delivery-System
 ```
 
-Ein Use Case muss nicht aus einem Value Stream entstehen. Der direkte Intake bleibt ein gleichwertiger Einstieg und behält alle vorhandenen Plausibilitäts- und Hard-Gate-Prüfungen.
+Ein Use Case muss nicht aus einem Value Stream entstehen. Der direkte Intake bleibt ein gleichwertiger Einstieg und behält alle Plausibilitäts- und Hard-Gate-Prüfungen. Systematische Discovery verlangt dagegen eine dokumentierte Fokusentscheidung, bevor Prozessanalysen vertieft oder Use Cases abgeleitet werden.
 
 ## Methodische Trennung
 
-KI-Radar behandelt vier unterschiedliche Ebenen getrennt:
+KI-Radar behandelt fünf unterschiedliche Ebenen getrennt:
 
 1. **Value-Stream-Analyse:** End-to-End-Wertschöpfung, Empfänger, Phasen, Stakeholder und Ergebnis.
-2. **Prozessanalyse:** detaillierter Ist-Ablauf, Rollen, Systeme, Daten, Regeln, Übergaben, Ausnahmen und Bottlenecks.
-3. **TOGAF ADM als Vorgehensrahmen:** strukturierte Ableitung von Kontext, Business-, Daten-/Applikations- und Technologiearchitektur sowie Lösungs- und Migrationsplanung.
-4. **Delivery-Handover:** umsetzbarer Scope, Anforderungen, Akzeptanzkriterien, Risiken, Abhängigkeiten und initiales Backlog.
+2. **Fokus & Priorisierung:** Auswahl der zu vertiefenden Value Streams anhand transparenter Kriterien ohne künstlichen Gesamtscore.
+3. **Prozessanalyse und Lösungsoptionen:** detaillierter Ist-Ablauf, Systeme, Daten, Regeln, Bottlenecks und alternative Lösungswege.
+4. **Use-Case- und Decision-Governance:** fachliche Kategorisierung, evidenzbasierte Bewertung und verbindliche Freigabe.
+5. **Delivery-Handover:** umsetzbarer Scope, Architekturartefakte, Anforderungen, Akzeptanzkriterien, Risiken, Abhängigkeiten und initiales Backlog.
 
-Die Ebenen sind miteinander verknüpft, aber nicht austauschbar. Ein Value Stream ist kein Detailprozess, eine Prozessanalyse ist keine Lösungsarchitektur und ein Delivery Package ist kein Projektplan.
+Die Ebenen sind miteinander verknüpft, aber nicht austauschbar. Ein Value Stream ist kein Detailprozess, ein Fokus-Screening ist keine Use-Case-Bewertung, eine Prozessanalyse ist keine Lösungsarchitektur und ein Delivery Package ist kein Projektplan.
+
+## Dauerhafte Prozesslandkarte
+
+Die Oberfläche zeigt auf allen angemeldeten Seiten dieselbe Gesamtstrecke:
+
+```text
+Discovery → Fokus & Priorisierung → Use Cases → Bewertung → Freigabe → Delivery
+```
+
+Auf Übersichtsseiten markiert sie die fachliche Position des Arbeitsbereichs. Auf Detailseiten übernimmt sie die tatsächlichen Zustände der ausgewählten Initiative:
+
+- `✓` abgeschlossen
+- `●` aktuell
+- `!` blockiert
+- `○` noch offen
+- `–` optional oder bewusst übersprungen
+
+Die linke Navigation zeigt zusätzlich nur für den aktiven Bereich die lokale Tiefe, beispielsweise Value Stream, Fokusentscheidung, Prozessanalyse und Lösungsoption oder Use Case, Bewertung, Freigabe und Delivery.
+
+## Fachdomäne und Capability
+
+Organisationseinheit und fachliche Einordnung werden bewusst getrennt. Jeder systematisch abgeleitete oder direkt erfasste Use Case erhält:
+
+- eine kontrollierte Fachdomäne, beispielsweise Einkauf, Marketing, Produktion, Finanzen oder Personal,
+- eine Business Capability,
+- einen Prozessbereich.
+
+Damit kann ein fachlich dem Einkauf zugeordneter Use Case weiterhin von Shared Services oder einer anderen Organisationseinheit verantwortet werden. Die Zuordnung wird im Register, in der Portfolio-Sicht und im CSV-Export verwendet.
+
+## Fokus & Priorisierung
+
+Die grobe Value-Stream-Aufnahme darf abgeschlossen werden, ohne sofort einen Deep Dive auszulösen. Vor der Vertiefung wird dokumentiert:
+
+- Fachdomäne,
+- Business Capability,
+- strategischer Impact,
+- wirtschaftliches Potenzial,
+- Problem- und Schmerzintensität,
+- Datenzugänglichkeit,
+- Veränderungsaufwand,
+- begründete Fokusentscheidung.
+
+Mögliche Entscheidungen sind:
+
+- noch nicht bewertet,
+- Kandidat für Vertiefung,
+- für Deep Dive ausgewählt,
+- zurückgestellt,
+- nicht ausgewählt.
+
+Nur ein vollständig bewerteter und ausgewählter Value Stream darf neue Prozessanalysen, bevorzugte Lösungsoptionen oder abgeleitete Use Cases starten. Diese Regel wird nicht nur in der Oberfläche, sondern serverseitig geprüft.
+
+Die Kriterien bleiben einzeln sichtbar. KI-Radar berechnet bewusst keinen scheinpräzisen Gesamtscore.
 
 ## TOGAF-light
 
@@ -35,22 +91,27 @@ KI-Radar ist kein Enterprise-Architecture-Repository und implementiert nicht das
 | ADM-Phase | KI-Radar-Artefakt |
 |---|---|
 | A – Architecture Vision | Scope, strategisches Ziel, Stakeholder, Leitplanken, Auslöser und Ergebnis |
-| B – Business Architecture | Value Stream, Phasen, Rollen, Ist-Prozess, Regeln, Bottlenecks und Kennzahlen |
+| B – Business Architecture | Fachdomäne, Capability, Value Stream, Phasen, Rollen, Ist-Prozess, Regeln, Bottlenecks und Kennzahlen |
 | C – Information Systems | Anwendungen, Datenobjekte, Informationsflüsse und Integrationen |
-| D – Technology Architecture | Technologie-, Hosting- und Plattformleitplanken innerhalb der Lösungsoption |
-| E – Opportunities & Solutions | organisatorische, klassische und KI-Lösungsoptionen mit begründeter Präferenz |
+| D – Technology Architecture | Technologie-, Hosting- und Plattformleitplanken innerhalb der Lösungsoption und des Delivery Packages |
+| E – Opportunities & Solutions | Fokusentscheidung sowie organisatorische, klassische und KI-Lösungsoptionen mit begründeter Präferenz |
 | F – Migration Planning | MVP-Scope, Akzeptanzkriterien, Tests, Abhängigkeiten, Backlog und Delivery Package |
 | G/H | Freigaben, Package-Versionen und Änderungen werden dokumentiert; kein vollständiges Architecture-Governance-Modul |
 
 ## Optionalität
 
-Der bestehende Use-Case-Intake bleibt unverändert ein vollwertiger Einstieg. Die Herkunftskette wird nur angelegt, wenn ein Vorhaben tatsächlich aus dem Architecture-Bereich abgeleitet wurde:
+Der bestehende Use-Case-Intake bleibt ein vollwertiger Einstieg. Die Herkunftskette wird nur angelegt, wenn ein Vorhaben tatsächlich aus dem Architecture-Bereich abgeleitet wurde:
 
 ```text
-Use Case → bevorzugte Lösungsoption → Prozessanalyse → Value-Stream-Phase → Value Stream
+Use Case
+→ bevorzugte Lösungsoption
+→ Prozessanalyse
+→ Fokusentscheidung
+→ Value-Stream-Phase
+→ Value Stream
 ```
 
-Dadurch werden Einzelvorhaben nicht künstlich mit Architekturartefakten belastet. Systematische Discovery bleibt dennoch vollständig rückverfolgbar.
+Direkt erfasste Use Cases erhalten ebenfalls Fachdomäne, Capability und Prozessbereich, aber kein künstliches Value-Stream-Artefakt. Systematische Discovery bleibt vollständig rückverfolgbar.
 
 ## Prozessanalyse
 
@@ -73,7 +134,7 @@ KI-Radar erzeugt kein BPMN-Modell. Vorhandene Prozessmodelle können weiterhin i
 
 ## Lösungsoptionen
 
-Vor der Use-Case-Erfassung können unterschiedliche Lösungsarten verglichen werden:
+Nach einer positiven Fokusentscheidung können unterschiedliche Lösungsarten verglichen werden:
 
 - organisatorische Änderung
 - regelbasierte Automatisierung
@@ -84,11 +145,22 @@ Vor der Use-Case-Erfassung können unterschiedliche Lösungsarten verglichen wer
 - Assistenzsystem
 - keine technische Lösung
 
-Maximal eine Option kann je Prozessanalyse als bevorzugt markiert werden. Nur diese Option kann den vorhandenen Intake vorbefüllen. Die anschließende Bewertung und Governance bleiben vollständig verbindlich.
+Maximal eine Option kann je Prozessanalyse als bevorzugt markiert werden. Nur diese Option kann den Intake vorbefüllen. Eine organisatorische, regelbasierte oder Standardsoftware-Lösung kann die Discovery bewusst ohne KI-Use-Case abschließen. Die anschließende Bewertung und Governance bleiben für tatsächlich angelegte Use Cases verbindlich.
+
+## Portfolio als Querschnitt
+
+Portfolio ist kein einmaliger linearer Prozessschritt. Die Portfolio-Sicht vergleicht Vorhaben über mehrere Phasen hinweg, insbesondere Use Cases, Bewertung, Freigabe und Delivery. Sie zeigt unter anderem:
+
+- Fachdomänen und Capabilities,
+- Organisationseinheiten,
+- Nutzen und technische Machbarkeit,
+- Confidence und Entscheidungsstatus,
+- Lifecycle und Lösungstyp,
+- nicht einordenbare oder blockierte Vorhaben.
 
 ## Delivery-Handover
 
-Ein Delivery Package kann nur aus einer final positiven Freigabe entstehen. Es konsolidiert Informationen aus Discovery, Prozessanalyse, Lösungsoption, Use Case, Bewertung und Freigabe.
+Ein Delivery Package kann nur aus einer final positiven Freigabe entstehen. Es konsolidiert Informationen aus Discovery, Fokusentscheidung, Prozessanalyse, Lösungsoption, Use Case, Bewertung und Freigabe.
 
 Enthalten sind insbesondere:
 
@@ -96,6 +168,10 @@ Enthalten sind insbesondere:
 - Ziel, Nutzer und Nutzungsszenarien
 - In-Scope und Out-of-Scope
 - Lösungs-, System-, Daten- und Integrationskontext
+- Ist-/Ziel-Systemlandschaft
+- Daten- und Informationsflüsse
+- Integrationsverträge und technische Verantwortlichkeiten
+- Link zu Architekturdiagrammen oder weiteren Architekturartefakten
 - funktionale und nichtfunktionale Anforderungen
 - Security-, Datenschutz- und Rechtsanforderungen
 - menschliche Aufsicht, Logging, Betrieb und Support
@@ -103,9 +179,11 @@ Enthalten sind insbesondere:
 - Akzeptanzkriterien und Testfälle
 - Erfolgsmessung
 - Risiken, Annahmen und Abhängigkeiten
-- Architekturentscheidungen
+- Architekturentscheidungen und Leitplanken
 - initiales Backlog
 - Link zum externen Delivery-System
+
+Für den Status **Bereit zur Übergabe** müssen Architektur- und Übergabepunkte entweder konkret beschrieben oder ausdrücklich als nicht relevant dokumentiert sein. Leere Integrationen, Abhängigkeiten, Risiken, Annahmen oder Architekturentscheidungen gelten nicht mehr automatisch als ausreichend.
 
 Packages sind versioniert. Der Status verläuft über:
 
@@ -126,12 +204,14 @@ KI-Radar verwaltet keine:
 - frei konfigurierbaren Workflows
 - vollständigen Enterprise-Architecture-Katalog
 
-Es sorgt dafür, dass ein fachlich begründetes und freigegebenes Vorhaben mit einem belastbaren Scope an Delivery übergeben wird. Die operative Umsetzung bleibt im spezialisierten Delivery-System.
+Die Systemlandschaft im Delivery Package ist eine umsetzungsbezogene Ist-/Ziel-Sicht, kein vollständiges Applikationsportfolio. KI-Radar sorgt dafür, dass ein fachlich begründetes und freigegebenes Vorhaben mit belastbarem Scope und den relevanten Architekturartefakten an Delivery übergeben wird. Die operative Umsetzung bleibt im spezialisierten Delivery-System.
 
 ## Umgesetzte Inkremente
 
 1. Value Streams und optionale Herkunft eines Use Cases
-2. Prozessanalyse und explizite Lösungsoptionen
-3. Versioniertes Delivery Package und exportierbarer Handover
+2. Fokus-Screening und serverseitige Deep-Dive-Freigabe
+3. Prozessanalyse und explizite Lösungsoptionen
+4. Strukturierte Fachdomäne, Capability und Prozessbereich
+5. Versioniertes Delivery Package mit Systemlandschaft und exportierbarem Handover
 
-Alle drei Inkremente sind unabhängig nutzbar und erweitern den bestehenden Governance-Prozess, ohne ihn zur Pflicht für direkte Einzelvorhaben zu machen.
+Der direkte Intake und der systematische Architecture-Pfad bleiben unabhängig nutzbar. Der Architecture-Pfad verlangt jedoch eine nachvollziehbare Auswahlentscheidung, bevor vertiefende Artefakte erzeugt werden.

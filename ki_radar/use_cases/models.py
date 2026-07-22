@@ -85,6 +85,13 @@ class UseCase(TimeStampedModel):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     short_id = models.CharField(max_length=20, unique=True, blank=True)
+    demo_key = models.SlugField(
+        max_length=100,
+        null=True,
+        blank=True,
+        unique=True,
+        editable=False,
+    )
     title = models.CharField(max_length=200)
     summary = models.TextField(blank=True)
     problem_statement = models.TextField()

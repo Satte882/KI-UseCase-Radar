@@ -2,6 +2,7 @@ import pytest
 from django.core.exceptions import ObjectDoesNotExist
 from django.urls import reverse
 
+from ki_radar.architecture.focus import ValueStreamFocus
 from ki_radar.architecture.models import (
     ProcessAnalysis,
     SolutionOption,
@@ -9,13 +10,14 @@ from ki_radar.architecture.models import (
     ValueStream,
     ValueStreamStage,
 )
+from ki_radar.core.taxonomy import BusinessDomain, ScreeningLevel
 from ki_radar.use_cases.intake_views import SESSION_KEY, _persist_optional_origin
 from ki_radar.use_cases.models import UseCase
 
 
 @pytest.fixture
 def value_stream(owner, business_unit):
-    return ValueStream.objects.create(
+    stream = ValueStream.objects.create(
         name="Beschaffung bis Zahlung",
         description="End-to-End-Wertschöpfung des Einkaufs.",
         business_unit=business_unit,
@@ -29,6 +31,22 @@ def value_stream(owner, business_unit):
         constraints="Bestehendes ERP bleibt führend",
         status=ValueStream.Status.ACTIVE,
     )
+    ValueStreamFocus.objects.update_or_create(
+        value_stream=stream,
+        defaults={
+            "business_domain": BusinessDomain.PROCUREMENT,
+            "capability": "Source-to-Pay",
+            "strategic_impact": ScreeningLevel.HIGH,
+            "economic_potential": ScreeningLevel.HIGH,
+            "pain_intensity": ScreeningLevel.HIGH,
+            "data_accessibility": ScreeningLevel.MEDIUM,
+            "change_effort": ScreeningLevel.MEDIUM,
+            "status": ValueStreamFocus.Status.SELECTED,
+            "rationale": "Hoher fachlicher Hebel und belastbare Baseline.",
+            "updated_by": owner,
+        },
+    )
+    return stream
 
 
 @pytest.fixture
@@ -76,6 +94,8 @@ def test_business_owner_can_create_value_stream(client, owner, business_unit):
             "strategic_objective": "Cash Conversion verbessern",
             "stakeholders": "Vertrieb, Operations, Finance",
             "constraints": "ERP bleibt führend",
+            "business_domain": BusinessDomain.PROCUREMENT,
+            "focus_status": ValueStreamFocus.Status.NOT_SCREENED,
         },
     )
 

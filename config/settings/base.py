@@ -6,6 +6,25 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parents[2]
 
 
+def load_local_env_file() -> None:
+    env_file = BASE_DIR / ".env"
+    if not env_file.exists():
+        return
+    for line in env_file.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or "=" not in stripped:
+            continue
+        name, value = stripped.split("=", 1)
+        name = name.strip()
+        if not name or name in os.environ:
+            continue
+        value = value.strip().strip('"').strip("'")
+        os.environ[name] = value
+
+
+load_local_env_file()
+
+
 def env(name: str, default: str | None = None, *, required: bool = False) -> str:
     file_name = os.getenv(f"{name}_FILE")
     if file_name:
@@ -22,6 +41,18 @@ def env(name: str, default: str | None = None, *, required: bool = False) -> str
 
 def env_bool(name: str, default: bool = False) -> bool:
     return env(name, str(default)).lower() in {"1", "true", "yes", "on"}
+
+
+def openrouter_api_url() -> str:
+    configured_url = env("OPENROUTER_API_URL", "")
+    if configured_url:
+        return configured_url
+    openai_base_url = env("OPENAI_BASE_URL", "").rstrip("/")
+    if "openrouter.ai" in openai_base_url:
+        if openai_base_url.endswith("/chat/completions"):
+            return openai_base_url
+        return f"{openai_base_url}/chat/completions"
+    return "https://openrouter.ai/api/v1/chat/completions"
 
 
 SECRET_KEY = env("DJANGO_SECRET_KEY", "dev-only-insecure-key")
@@ -149,6 +180,14 @@ ANONYMIZATION_LEDGER_PATH = Path(
     env("ANONYMIZATION_LEDGER_PATH", str(BASE_DIR / "var" / "anonymization-ledger.jsonl"))
 )
 MONITORING_TOKEN = env("MONITORING_TOKEN", "")
+OPENROUTER_API_KEY = env("OPENROUTER_API_KEY", "") or (
+    env("OPENAI_API_KEY", "") if "openrouter.ai" in env("OPENAI_BASE_URL", "") else ""
+)
+OPENROUTER_MODEL = env("OPENROUTER_MODEL", "")
+OPENROUTER_API_URL = openrouter_api_url()
+OPENROUTER_TIMEOUT_SECONDS = env("OPENROUTER_TIMEOUT_SECONDS", "30")
+OPENROUTER_APP_NAME = env("OPENROUTER_APP_NAME", "KI-Radar")
+OPENROUTER_SITE_URL = env("OPENROUTER_SITE_URL", "")
 JOB_FRESHNESS_HOURS = int(env("JOB_FRESHNESS_HOURS", "26"))
 SENTRY_DSN = env("SENTRY_DSN", "")
 SENTRY_ENVIRONMENT = env("SENTRY_ENVIRONMENT", "development")

@@ -9,6 +9,9 @@
   <link rel="icon" href="{% static 'favicon.svg' %}" type="image/svg+xml">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <link rel="stylesheet" href="{% static 'css/context-topbar.css' %}">
+  <link rel="stylesheet" href="{% static 'css/sidebar-journey.css' %}">
+  <link rel="stylesheet" href="{% static 'css/form-guidance.css' %}">
   <link rel="stylesheet" href="{% static 'css/architecture.css' %}">
   <link rel="stylesheet" href="{% static 'css/delivery.css' %}">
 </head>
@@ -25,8 +28,18 @@
       <a class="sidebar-link {% if request.resolver_match.namespace == 'architecture' %}active{% endif %}" href="{% url 'architecture:value_stream_list' %}">
         <span class="nav-icon">⇢</span> Analyse
       </a>
+      {% if journey and request.resolver_match.namespace == 'architecture' %}
+      <div class="sidebar-local-depth" aria-label="Lokale Analysetiefe">
+        {% for step in journey.steps %}{% if step.key == 'value_stream' or step.key == 'focus' or step.key == 'process' or step.key == 'solution' %}
+        {% if step.url %}<a href="{{ step.url }}" class="sidebar-local-step sidebar-local-{{ step.state }}">{% else %}<span class="sidebar-local-step sidebar-local-{{ step.state }}">{% endif %}
+          <span aria-hidden="true">{% if step.state == 'complete' %}✓{% elif step.state == 'current' %}●{% elif step.state == 'blocked' %}!{% elif step.state == 'optional' %}–{% else %}○{% endif %}</span>
+          <span>{{ step.label }}</span>
+        {% if step.url %}</a>{% else %}</span>{% endif %}
+        {% endif %}{% endfor %}
+      </div>
+      {% endif %}
       <a class="sidebar-link {% if request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'portfolio' %}active{% endif %}" href="{% url 'reporting:portfolio' %}">
-        <span class="nav-icon">◈</span> Portfolio
+        <span class="nav-icon">◈</span> Portfolio <small>Querschnitt</small>
       </a>
       <a class="sidebar-link {% if request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'reporting:dashboard' %}">
         <span class="nav-icon">⌁</span> Entscheidungen
@@ -34,9 +47,29 @@
       <a class="sidebar-link {% if request.resolver_match.namespace == 'use_cases' %}active{% endif %}" href="{% url 'use_cases:list' %}">
         <span class="nav-icon">◫</span> Use Cases
       </a>
+      {% if journey and request.resolver_match.namespace == 'use_cases' %}
+      <div class="sidebar-local-depth" aria-label="Lokale Initiative">
+        {% for step in journey.steps %}{% if step.key == 'use_case' or step.key == 'assessment' or step.key == 'approval' or step.key == 'delivery' %}
+        {% if step.url %}<a href="{{ step.url }}" class="sidebar-local-step sidebar-local-{{ step.state }}">{% else %}<span class="sidebar-local-step sidebar-local-{{ step.state }}">{% endif %}
+          <span aria-hidden="true">{% if step.state == 'complete' %}✓{% elif step.state == 'current' %}●{% elif step.state == 'blocked' %}!{% elif step.state == 'optional' %}–{% else %}○{% endif %}</span>
+          <span>{{ step.label }}</span>
+        {% if step.url %}</a>{% else %}</span>{% endif %}
+        {% endif %}{% endfor %}
+      </div>
+      {% endif %}
       <a class="sidebar-link {% if request.resolver_match.namespace == 'delivery' %}active{% endif %}" href="{% url 'delivery:package_list' %}">
         <span class="nav-icon">⇥</span> Delivery
       </a>
+      {% if journey and request.resolver_match.namespace == 'delivery' %}
+      <div class="sidebar-local-depth" aria-label="Lokale Delivery-Tiefe">
+        {% for step in journey.steps %}{% if step.key == 'use_case' or step.key == 'assessment' or step.key == 'approval' or step.key == 'delivery' %}
+        {% if step.url %}<a href="{{ step.url }}" class="sidebar-local-step sidebar-local-{{ step.state }}">{% else %}<span class="sidebar-local-step sidebar-local-{{ step.state }}">{% endif %}
+          <span aria-hidden="true">{% if step.state == 'complete' %}✓{% elif step.state == 'current' %}●{% elif step.state == 'blocked' %}!{% elif step.state == 'optional' %}–{% else %}○{% endif %}</span>
+          <span>{{ step.label }}</span>
+        {% if step.url %}</a>{% else %}</span>{% endif %}
+        {% endif %}{% endfor %}
+      </div>
+      {% endif %}
       {% if nav_is_coordinator %}
       <a class="sidebar-link {% if request.resolver_match.namespace == 'reviews' %}active{% endif %}" href="{% url 'reviews:monthly' %}">
         <span class="nav-icon">✓</span> Monatsreview
@@ -56,10 +89,7 @@
     </div>
   </aside>
   <div class="app-main">
-    <header class="app-topbar">
-      <div><span class="eyebrow">Discovery · Portfolio · Governance · Delivery</span></div>
-      <div class="topbar-status"><span class="status-dot"></span> System bereit</div>
-    </header>
+    {% include "includes/context_topbar.html" %}
     <main class="app-content">
 {% else %}
 <main class="login-shell">
@@ -74,5 +104,6 @@
 </main>
 {% endif %}
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+<script src="{% static 'js/form-guidance.js' %}" defer></script>
 </body>
 </html>

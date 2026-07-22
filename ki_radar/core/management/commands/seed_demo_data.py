@@ -7,6 +7,7 @@ from django.core.management.base import BaseCommand, CommandError
 from ki_radar.core.demo_architecture_data import seed_demo_architecture_data
 from ki_radar.core.demo_data import seed_demo_data
 from ki_radar.core.demo_decision_data import enrich_demo_metrics
+from ki_radar.core.demo_identity import assign_demo_identities, prepare_demo_identities
 
 
 class Command(BaseCommand):
@@ -33,9 +34,11 @@ class Command(BaseCommand):
         elif not password.strip():
             raise CommandError("Demo user password must not be empty.")
 
+        prepare_demo_identities()
         counts = seed_demo_data(demo_user_password=password)
         metric_count = enrich_demo_metrics()
         architecture_counts = seed_demo_architecture_data()
+        assign_demo_identities()
         self.stdout.write(
             self.style.SUCCESS(
                 "Demo-Daten eingespielt: "
@@ -45,10 +48,10 @@ class Command(BaseCommand):
                 f"{counts['governance_assessments']} Governance-Screenings, "
                 f"{counts['reviews']} Reviews, "
                 f"{metric_count} strukturierte Erfolgsmetriken, "
-                f"{architecture_counts['value_streams']} Value Stream, "
-                f"{architecture_counts['process_analyses']} Prozessanalyse, "
-                f"{architecture_counts['solution_options']} Lösungsoption und "
-                f"{architecture_counts['delivery_packages']} Delivery Package."
+                f"{architecture_counts['value_streams']} Value Streams, "
+                f"{architecture_counts['process_analyses']} Prozessanalysen, "
+                f"{architecture_counts['solution_options']} Lösungsoptionen und "
+                f"{architecture_counts['delivery_packages']} Delivery Packages."
             )
         )
         if generated_password:

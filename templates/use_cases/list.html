@@ -2,27 +2,29 @@
 {% block title %}Use Cases – KI-Radar{% endblock %}
 {% block content %}
 <div class="page-header">
-  <div><div class="eyebrow mb-2">Register</div><h1 class="page-title">KI-Use-Cases</h1><p class="page-subtitle">Fachlicher Bestand mit Entscheidungsreife und primärer Erfolgsmetrik.</p></div>
+  <div><div class="eyebrow mb-2">Register</div><h1 class="page-title">KI-Use-Cases</h1><p class="page-subtitle">Nach Fachdomäne, Capability, Entscheidungsreife und Erfolgsmetrik eingeordneter Bestand.</p></div>
   <div class="d-flex gap-2"><a class="btn btn-outline-secondary" href="{% url 'use_cases:export_csv' %}">CSV exportieren</a>{% if can_create %}<a class="btn btn-primary" href="{% url 'use_cases:create' %}">Use Case anlegen</a>{% endif %}</div>
 </div>
 
 <div class="app-card mb-4">
   <div class="card-body">
     <form method="get" class="row g-3 align-items-end">
-      <div class="col-lg-4"><label class="form-label">Suche</label><input class="form-control" name="q" value="{{ request.GET.q }}" placeholder="Titel, ID, Problem oder Metrik"></div>
-      <div class="col-md-3 col-lg-2"><label class="form-label">Status</label><select class="form-select" name="status"><option value="">Alle</option>{% for value,label in status_choices %}<option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
-      <div class="col-md-3 col-lg-2"><label class="form-label">Review</label><select class="form-select" name="review_state"><option value="">Alle</option><option value="overdue" {% if request.GET.review_state == 'overdue' %}selected{% endif %}>Überfällig</option><option value="due_30" {% if request.GET.review_state == 'due_30' %}selected{% endif %}>In 30 Tagen</option><option value="missing" {% if request.GET.review_state == 'missing' %}selected{% endif %}>Ohne Termin</option></select></div>
-      <div class="col-md-3 col-lg-2"><label class="form-label">Geschäftswert</label><select class="form-select" name="business_value"><option value="">Alle</option>{% for value,label in level_choices %}<option value="{{ value }}" {% if request.GET.business_value == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
-      <div class="col-md-3 col-lg-2 d-flex gap-2"><button class="btn btn-primary flex-grow-1">Filtern</button><a class="btn btn-outline-secondary" href="{% url 'use_cases:list' %}">×</a></div>
+      <div class="col-lg-4"><label class="form-label">Suche</label><input class="form-control" name="q" value="{{ request.GET.q }}" placeholder="Titel, ID, Problem, Capability oder Prozessbereich"></div>
+      <div class="col-md-4 col-lg-2"><label class="form-label">Fachdomäne</label><select class="form-select" name="business_domain"><option value="">Alle</option>{% for value,label in business_domain_choices %}<option value="{{ value }}" {% if request.GET.business_domain == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+      <div class="col-md-4 col-lg-2"><label class="form-label">Status</label><select class="form-select" name="status"><option value="">Alle</option>{% for value,label in status_choices %}<option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+      <div class="col-md-4 col-lg-2"><label class="form-label">Review</label><select class="form-select" name="review_state"><option value="">Alle</option><option value="overdue" {% if request.GET.review_state == 'overdue' %}selected{% endif %}>Überfällig</option><option value="due_30" {% if request.GET.review_state == 'due_30' %}selected{% endif %}>In 30 Tagen</option><option value="missing" {% if request.GET.review_state == 'missing' %}selected{% endif %}>Ohne Termin</option></select></div>
+      <div class="col-md-4 col-lg-2"><label class="form-label">Geschäftswert</label><select class="form-select" name="business_value"><option value="">Alle</option>{% for value,label in level_choices %}<option value="{{ value }}" {% if request.GET.business_value == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+      <div class="col-md-4 col-lg-2 d-flex gap-2"><button class="btn btn-primary flex-grow-1">Filtern</button><a class="btn btn-outline-secondary" href="{% url 'use_cases:list' %}">×</a></div>
     </form>
   </div>
 </div>
 
 <div class="app-card table-card">
   <div class="table-responsive"><table class="table table-hover align-middle">
-    <thead><tr><th>Use Case</th><th>Phase</th><th>Nächste Entscheidung</th><th>Reife</th><th>Erfolgsmetrik</th><th>Zielerreichung</th><th>Owner</th><th>Fällig</th></tr></thead>
+    <thead><tr><th>Use Case</th><th>Einordnung</th><th>Phase</th><th>Nächste Entscheidung</th><th>Reife</th><th>Erfolgsmetrik</th><th>Zielerreichung</th><th>Owner</th><th>Fällig</th></tr></thead>
     <tbody>{% for item in use_cases %}<tr>
       <td><a href="{{ item.get_absolute_url }}">{{ item.short_id }} · {{ item.title }}</a><div class="small text-muted">{{ item.business_unit }}</div></td>
+      <td><span class="badge badge-soft">{{ item.classification.get_business_domain_display }}</span>{% if item.classification.capability %}<div class="small text-muted mt-1">{{ item.classification.capability }}</div>{% endif %}</td>
       <td><span class="badge badge-soft">{{ item.get_status_display }}</span></td>
       <td>{{ item.decision_check.title }}</td>
       <td><span class="badge state-{{ item.decision_check.state }}">{{ item.decision_check.state_label }}</span></td>
@@ -30,7 +32,7 @@
       <td>{{ item.metric_result_label }}</td>
       <td>{{ item.business_owner.get_display_name }}</td>
       <td>{{ item.decision_due|date:"d.m.Y"|default:"–" }}</td>
-    </tr>{% empty %}<tr><td colspan="8" class="text-muted text-center py-5">Keine Use Cases gefunden.</td></tr>{% endfor %}</tbody>
+    </tr>{% empty %}<tr><td colspan="9" class="text-muted text-center py-5">Keine Use Cases gefunden.</td></tr>{% endfor %}</tbody>
   </table></div>
 </div>
 {% endblock %}

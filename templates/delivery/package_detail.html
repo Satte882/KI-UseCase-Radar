@@ -14,6 +14,9 @@
   </div>
 </div>
 
+{% include "includes/next_action.html" %}
+{% include "includes/journey_stepper.html" %}
+
 <div class="kpi-strip mb-4">
   <div class="kpi-cell"><small>Status</small><strong>{{ package.get_status_display }}</strong></div>
   <div class="kpi-cell"><small>Version</small><strong>{{ package.version }}</strong></div>
@@ -40,6 +43,16 @@
     <section><div class="section-title">Datenkontext</div><div class="text-preline">{{ package.data_context }}</div></section>
     <section><div class="section-title">Integrationen</div><div class="text-preline">{{ package.integrations|default:"–" }}</div></section>
     <section><div class="section-title">Architekturentscheidungen</div><div class="text-preline">{{ package.architecture_decisions|default:"–" }}</div></section>
+  </div>
+</div>
+
+<div class="app-card decision-panel mb-4">
+  <div class="card-header"><strong>Systemlandschaft und Architekturartefakte</strong><div class="small text-muted mt-1">Umsetzungsrelevante Ist-/Ziel-Sicht, Datenflüsse und technische Verantwortlichkeiten.</div></div>
+  <div class="card-body architecture-artifact-grid">
+    <section><div class="section-title">Ist-/Ziel-Systemlandschaft</div><div class="text-preline">{{ package.architecture_artifacts.system_landscape|default:"Noch nicht dokumentiert" }}</div></section>
+    <section><div class="section-title">Daten- und Informationsflüsse</div><div class="text-preline">{{ package.architecture_artifacts.data_flows|default:"Noch nicht dokumentiert" }}</div></section>
+    <section><div class="section-title">Integrationsverträge und Verantwortlichkeiten</div><div class="text-preline">{{ package.architecture_artifacts.integration_contracts|default:"Noch nicht dokumentiert" }}</div></section>
+    <section><div class="section-title">Architekturdiagramme und Nachweise</div>{% if package.architecture_artifacts.artifacts_url %}<a href="{{ package.architecture_artifacts.artifacts_url }}" target="_blank" rel="noopener noreferrer">Architekturartefakte öffnen</a>{% else %}<span class="text-muted">Noch nicht verknüpft</span>{% endif %}</section>
   </div>
 </div>
 

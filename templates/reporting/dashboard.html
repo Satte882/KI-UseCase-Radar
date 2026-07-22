@@ -21,6 +21,31 @@
   <div class="app-card metric-card"><div class="metric-label">Ziel erreicht</div><div class="metric-value">{{ achieved_total }}</div><div class="metric-note">Primäre Erfolgsmetrik erfüllt</div></div>
 </div>
 
+<div class="app-card table-card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <div><strong>Meine nächsten Schritte</strong><div class="small text-muted mt-1">Konkrete Folgeaktionen aus derselben Journey-Logik wie auf den Detailseiten</div></div>
+    <span class="badge badge-soft">{{ next_steps|length }} priorisiert</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead><tr><th>Vorhaben</th><th>Erfassungsweg</th><th>Nächste Aktion</th><th>Begründung</th><th></th></tr></thead>
+      <tbody>
+      {% for item in next_steps %}
+      {% with action=item.journey.next_action %}
+      <tr>
+        <td><a href="{{ item.get_absolute_url }}">{{ item.short_id }} · {{ item.title }}</a><div class="small text-muted">{{ item.business_unit }}</div></td>
+        <td><span class="badge badge-soft">{{ item.journey.path_label }}</span></td>
+        <td><strong>{{ action.label }}</strong>{% if action.details %}<div class="small text-muted mt-1">{{ action.details|length }} Voraussetzungen offen</div>{% endif %}</td>
+        <td class="small text-muted">{{ action.reason }}</td>
+        <td>{% if action.url %}<a class="btn btn-sm {% if action.state == 'blocked' %}btn-outline-danger{% else %}btn-primary{% endif %}" href="{{ action.url }}">{{ action.action_label|default:"Öffnen" }}</a>{% else %}<span class="badge badge-soft">Berechtigte Rolle erforderlich</span>{% endif %}</td>
+      </tr>
+      {% endwith %}
+      {% empty %}<tr><td colspan="5" class="text-muted py-4 text-center">Keine offenen Journey-Aktionen vorhanden.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
 <div class="app-card table-card">
   <div class="card-header d-flex justify-content-between align-items-center">
     <div><strong>Nächste Entscheidungen</strong><div class="small text-muted mt-1">Sortiert nach Überfälligkeit, Blockern und Fälligkeit</div></div>

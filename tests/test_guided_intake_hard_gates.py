@@ -10,6 +10,7 @@ from django.utils import timezone
 
 from ki_radar.accounts.models import User
 from ki_radar.accounts.permissions import GROUP_COORDINATOR
+from ki_radar.core.taxonomy import BusinessDomain
 from ki_radar.use_cases.models import DecisionAssessment, UseCase
 from ki_radar.use_cases.services import (
     confirm_conditional_decision,
@@ -26,6 +27,8 @@ def complete_intake_data(business_unit, **overrides):
             "Mitarbeitende benötigen zu viel Zeit, um verbindliche Informationen zu finden."
         ),
         "affected_process": "Interne Wissenssuche",
+        "business_domain": BusinessDomain.CORPORATE_SERVICES,
+        "business_capability": "Knowledge Management",
         "summary": "Eine Anfrage löst heute eine manuelle Suche aus.",
         "target_users": "Mitarbeitende im Kundenservice",
         "source_systems": "SharePoint und PDF-Richtlinien",
@@ -298,6 +301,8 @@ def test_guided_intake_creates_assessment_ready_use_case(client, owner, business
     response = client.post(
         reverse("use_cases:intake_step", args=[2]),
         {
+            "business_domain": BusinessDomain.CORPORATE_SERVICES,
+            "business_capability": "Knowledge Management",
             "affected_process": "Interne Wissenssuche",
             "summary": "Eine Anfrage löst heute eine manuelle Suche in mehreren Ablagen aus.",
             "target_users": "Mitarbeitende im Kundenservice",

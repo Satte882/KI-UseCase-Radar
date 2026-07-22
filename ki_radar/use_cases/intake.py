@@ -3,6 +3,7 @@ from decimal import Decimal
 from django import forms
 
 from ki_radar.accounts.models import BusinessUnit
+from ki_radar.core.taxonomy import BusinessDomain
 
 from .models import UseCase
 
@@ -51,6 +52,16 @@ class ProblemStepForm(IntakeStepForm):
 
 
 class ProcessStepForm(IntakeStepForm):
+    business_domain = forms.ChoiceField(
+        choices=BusinessDomain.choices,
+        label="Fachdomäne",
+        help_text="Fachliche Zuordnung unabhängig von der organisatorischen Verantwortung.",
+    )
+    business_capability = forms.CharField(
+        max_length=200,
+        label="Business Capability",
+        help_text="Zum Beispiel Source-to-Pay, Accounts Payable oder Customer Service Management.",
+    )
     affected_process = forms.CharField(max_length=200, label="Betroffener Prozess")
     summary = forms.CharField(
         label="Heutiger Ablauf und Auslöser",
@@ -164,8 +175,10 @@ WIZARD_STEPS = {
         ),
     },
     2: {
-        "title": "Prozess einordnen",
-        "subtitle": "Ordnen Sie Problem, Auslöser, Beteiligte und heutige Arbeitsmittel ein.",
+        "title": "Prozess und Fachdomäne einordnen",
+        "subtitle": (
+            "Ordnen Sie das Problem einer fachlichen Capability und dem betroffenen Prozess zu."
+        ),
         "form": ProcessStepForm,
     },
     3: {

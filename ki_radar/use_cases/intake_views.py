@@ -6,6 +6,7 @@ from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect, render
 
 from ki_radar.accounts.models import BusinessUnit
+from ki_radar.core.taxonomy import BusinessDomain
 
 from .intake import WIZARD_STEPS
 from .models import UseCase
@@ -75,7 +76,7 @@ def _wizard_step_states(
 
 
 def _build_use_case(*, stored: dict, user) -> UseCase:
-    return UseCase(
+    candidate = UseCase(
         title=stored["title"],
         summary=stored["summary"],
         problem_statement=stored["problem_statement"],
@@ -103,6 +104,12 @@ def _build_use_case(*, stored: dict, user) -> UseCase:
         hosting_type=stored["hosting_type"],
         decision_status=UseCase.DecisionStatus.READY,
     )
+    candidate._classification_payload = {
+        "business_domain": stored.get("business_domain", BusinessDomain.OTHER),
+        "capability": stored.get("business_capability", ""),
+        "process_area": stored["affected_process"],
+    }
+    return candidate
 
 
 def _persist_optional_origin(*, candidate: UseCase, stored: dict) -> None:

@@ -17,6 +17,13 @@ class ValueStream(TimeStampedModel):
         ARCHIVED = "archived", "Archiviert"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    demo_key = models.SlugField(
+        max_length=100,
+        null=True,
+        blank=True,
+        unique=True,
+        editable=False,
+    )
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     business_unit = models.ForeignKey(
@@ -213,6 +220,16 @@ class SolutionOption(TimeStampedModel):
 
     def get_absolute_url(self):
         return self.process_analysis.get_absolute_url()
+
+    @property
+    def starts_ai_use_case(self) -> bool:
+        non_ai_option_types = {
+            self.OptionType.ORGANIZATIONAL,
+            self.OptionType.RULE_AUTOMATION,
+            self.OptionType.STANDARD_SOFTWARE,
+            self.OptionType.NO_TECH,
+        }
+        return self.option_type not in non_ai_option_types
 
 
 class UseCaseOrigin(TimeStampedModel):

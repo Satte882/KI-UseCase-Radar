@@ -35,7 +35,7 @@
       {% endif %}
       <div class="row g-3">
         {% for field in form %}
-        <div id="field-{{ field.name }}" class="col-12{% if field.errors %} field-attention{% endif %}">
+        <div id="field-{{ field.name }}" class="col-12{% if field.errors %} field-attention field-error{% endif %}">
           {% if field.field.widget.input_type == 'checkbox' %}
           <div class="form-check mt-2">{{ field }}<label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label></div>
           {% else %}

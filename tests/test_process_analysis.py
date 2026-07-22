@@ -1,6 +1,7 @@
 import pytest
 from django.urls import reverse
 
+from ki_radar.architecture.focus import ValueStreamFocus
 from ki_radar.architecture.forms import SolutionOptionForm
 from ki_radar.architecture.models import (
     ProcessAnalysis,
@@ -9,6 +10,7 @@ from ki_radar.architecture.models import (
     ValueStream,
     ValueStreamStage,
 )
+from ki_radar.core.taxonomy import BusinessDomain, ScreeningLevel
 from ki_radar.use_cases.intake_views import SESSION_KEY, _persist_optional_origin
 from ki_radar.use_cases.models import UseCase
 
@@ -24,6 +26,21 @@ def architecture_context(owner, business_unit):
         outcome="Bezahlte Leistung",
         scope="Bedarf bis Zahlung",
         status=ValueStream.Status.ACTIVE,
+    )
+    ValueStreamFocus.objects.update_or_create(
+        value_stream=stream,
+        defaults={
+            "business_domain": BusinessDomain.PROCUREMENT,
+            "capability": "Source-to-Pay",
+            "strategic_impact": ScreeningLevel.HIGH,
+            "economic_potential": ScreeningLevel.HIGH,
+            "pain_intensity": ScreeningLevel.HIGH,
+            "data_accessibility": ScreeningLevel.MEDIUM,
+            "change_effort": ScreeningLevel.MEDIUM,
+            "status": ValueStreamFocus.Status.SELECTED,
+            "rationale": "Hoher fachlicher Hebel und belastbare Baseline.",
+            "updated_by": owner,
+        },
     )
     stage = ValueStreamStage.objects.create(
         value_stream=stream,
@@ -200,6 +217,39 @@ def test_only_preferred_solution_prefills_governed_intake(
     assert stored["solution_type"] == UseCase.SolutionType.ASSISTANT
     assert stored["source_process_analysis_id"] == str(process.pk)
     assert stored["source_solution_option_id"] == str(preferred_option.pk)
+
+
+@pytest.mark.django_db
+def test_preferred_non_ai_solution_does_not_start_use_case_intake(
+    client,
+    owner,
+    architecture_context,
+):
+    _stream, _stage, process = architecture_context
+    option = SolutionOption.objects.create(
+        process_analysis=process,
+        name="Regelbasierte Freigabe",
+        option_type=SolutionOption.OptionType.RULE_AUTOMATION,
+        recommendation=SolutionOption.Recommendation.PREFERRED,
+        description="Eindeutige Regeln automatisieren Standardfälle.",
+        expected_value="Wartezeit ohne KI reduzieren.",
+        created_by=owner,
+    )
+    client.force_login(owner)
+
+    detail_response = client.get(process.get_absolute_url())
+    assert detail_response.status_code == 200
+    assert "Bevorzugte Option als Use Case prüfen" not in detail_response.content.decode()
+
+    response = client.get(
+        reverse(
+            "architecture:solution_option_start_use_case",
+            kwargs={"pk": option.pk},
+        )
+    )
+    assert response.status_code == 302
+    assert response.url == option.process_analysis.get_absolute_url()
+    assert SESSION_KEY not in client.session
 
 
 @pytest.mark.django_db

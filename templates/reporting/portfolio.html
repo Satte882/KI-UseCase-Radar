@@ -5,7 +5,7 @@
   <div>
     <div class="eyebrow mb-2">Deskriptive Portfolio-Sicht</div>
     <h1 class="page-title">Portfolio</h1>
-    <p class="page-subtitle">Use Cases nach wirtschaftlichem Nutzen, technischer Machbarkeit und belastbarer Entscheidungsgrundlage einordnen.</p>
+    <p class="page-subtitle">Use Cases nach Fachdomäne, wirtschaftlichem Nutzen, technischer Machbarkeit und belastbarer Entscheidungsgrundlage einordnen.</p>
   </div>
   <a class="btn btn-outline-secondary" href="{% url 'use_cases:list' %}">Alle Use Cases</a>
 </div>
@@ -37,6 +37,15 @@
 </div>
 
 <div class="app-card mb-4">
+  <div class="card-header"><strong>Fachdomänen im Portfolio</strong><div class="small text-muted mt-1">Kontrollierte Zuordnung unabhängig von der organisatorischen Verantwortung.</div></div>
+  <div class="card-body"><div class="portfolio-landscape">
+    {% for group in business_domain_groups %}
+    <section class="landscape-card"><div class="d-flex justify-content-between gap-3 align-items-center"><div><div class="section-title mb-1">Fachdomäne</div><h2 class="h6 mb-0">{{ group.label }}</h2></div><span class="landscape-total">{{ group.total }}</span></div></section>
+    {% empty %}<p class="text-muted mb-0">Noch keine fachliche Zuordnung vorhanden.</p>{% endfor %}
+  </div></div>
+</div>
+
+<div class="app-card mb-4">
   <div class="card-header d-flex flex-wrap justify-content-between align-items-start gap-3">
     <div><strong>Entscheidungs-Matrix</strong><div class="small text-muted mt-1">Y-Achse: wirtschaftlicher Nutzen · X-Achse: technische Machbarkeit. Die Kategorien der neuesten Bewertung werden direkt verwendet.</div></div>
     <div class="portfolio-legend" aria-label="Legende">
@@ -58,8 +67,8 @@
             <div class="matrix-cell-heading"><strong>{{ cell.hint }}</strong><span>{{ cell.items|length }}</span></div>
             <div class="matrix-items">
             {% for item in cell.items %}
-              <a class="portfolio-chip portfolio-status-{{ item.decision_status }} confidence-{{ item.portfolio_confidence }}{% if item.portfolio_is_not_pursued %} portfolio-chip-muted{% endif %}" href="{{ item.get_absolute_url }}" title="{{ item.short_id }} · {{ item.title }} · {{ item.get_decision_status_display }} · Confidence {{ item.portfolio_confidence_label }}">
-                <span class="portfolio-chip-id">{% if item.portfolio_confidence == 'low' %}<span aria-hidden="true">⚠</span> {% endif %}{{ item.short_id }}</span><strong>{{ item.title|truncatechars:42 }}</strong>
+              <a class="portfolio-chip portfolio-status-{{ item.decision_status }} confidence-{{ item.portfolio_confidence }}{% if item.portfolio_is_not_pursued %} portfolio-chip-muted{% endif %}" href="{{ item.get_absolute_url }}" title="{{ item.short_id }} · {{ item.title }} · {{ item.classification.get_business_domain_display }} · {{ item.get_decision_status_display }} · Confidence {{ item.portfolio_confidence_label }}">
+                <span class="portfolio-chip-id">{% if item.portfolio_confidence == 'low' %}<span aria-hidden="true">⚠</span> {% endif %}{{ item.short_id }}</span><strong>{{ item.title|truncatechars:42 }}</strong><span>{{ item.classification.get_business_domain_display }}</span>
               </a>
             {% empty %}<span class="matrix-empty">Keine Use Cases</span>{% endfor %}
             </div>
@@ -78,8 +87,8 @@
   <div class="card-header"><strong>Tabellarische Matrix-Alternative</strong><div class="small text-muted mt-1">Dieselben einordenbaren Daten ohne räumliche Kodierung.</div></div>
   <div class="table-responsive">
     <table class="table align-middle">
-      <thead><tr><th>Use Case</th><th>Organisationseinheit</th><th>Nutzen</th><th>Machbarkeit</th><th>Confidence</th><th>Entscheidungsstatus</th></tr></thead>
-      <tbody>{% for item in classified_items %}<tr><td><a href="{{ item.get_absolute_url }}">{{ item.short_id }} · {{ item.title }}</a></td><td>{{ item.business_unit }}</td><td>{{ item.portfolio_business_value_label }}</td><td>{{ item.portfolio_technical_feasibility_label }}</td><td>{{ item.portfolio_confidence_label }}</td><td>{{ item.get_decision_status_display }}</td></tr>{% empty %}<tr><td colspan="6" class="text-center text-muted py-4">Keine einordenbaren Use Cases im aktuellen Filter.</td></tr>{% endfor %}</tbody>
+      <thead><tr><th>Use Case</th><th>Fachdomäne / Capability</th><th>Organisationseinheit</th><th>Nutzen</th><th>Machbarkeit</th><th>Confidence</th><th>Entscheidungsstatus</th></tr></thead>
+      <tbody>{% for item in classified_items %}<tr><td><a href="{{ item.get_absolute_url }}">{{ item.short_id }} · {{ item.title }}</a></td><td>{{ item.classification.get_business_domain_display }}{% if item.classification.capability %}<div class="small text-muted">{{ item.classification.capability }}</div>{% endif %}</td><td>{{ item.business_unit }}</td><td>{{ item.portfolio_business_value_label }}</td><td>{{ item.portfolio_technical_feasibility_label }}</td><td>{{ item.portfolio_confidence_label }}</td><td>{{ item.get_decision_status_display }}</td></tr>{% empty %}<tr><td colspan="7" class="text-center text-muted py-4">Keine einordenbaren Use Cases im aktuellen Filter.</td></tr>{% endfor %}</tbody>
     </table>
   </div>
 </div>
@@ -106,7 +115,7 @@
 <div class="app-card">
   <div class="card-header"><strong>Nicht einordenbar – {{ unclassified_total }} Use Cases</strong><div class="small text-muted mt-1">Diese Vorhaben verschwinden nicht aus der Portfoliosicht, sondern werden mit dem konkreten Grund separat ausgewiesen.</div></div>
   <div class="list-group list-group-flush">
-    {% for entry in unclassified_items %}<a class="list-group-item list-group-item-action bg-transparent py-3" href="{{ entry.item.get_absolute_url }}"><div class="d-flex flex-wrap justify-content-between gap-3"><div><strong>{{ entry.item.short_id }} · {{ entry.item.title }}</strong><div class="small text-muted mt-1">{{ entry.item.business_unit }} · {{ entry.item.get_decision_status_display }}</div></div><span class="badge state-review">{{ entry.reason }}</span></div></a>{% empty %}<div class="list-group-item bg-transparent text-muted py-4">Alle sichtbaren Use Cases sind in der Matrix einordenbar.</div>{% endfor %}
+    {% for entry in unclassified_items %}<a class="list-group-item list-group-item-action bg-transparent py-3" href="{{ entry.item.get_absolute_url }}"><div class="d-flex flex-wrap justify-content-between gap-3"><div><strong>{{ entry.item.short_id }} · {{ entry.item.title }}</strong><div class="small text-muted mt-1">{{ entry.item.classification.get_business_domain_display }} · {{ entry.item.business_unit }} · {{ entry.item.get_decision_status_display }}</div></div><span class="badge state-review">{{ entry.reason }}</span></div></a>{% empty %}<div class="list-group-item bg-transparent text-muted py-4">Alle sichtbaren Use Cases sind in der Matrix einordenbar.</div>{% endfor %}
   </div>
 </div>
 {% endblock %}

@@ -5,7 +5,9 @@ services:
     environment:
       POSTGRES_DB: ki_radar
       POSTGRES_USER: ki_radar
-      POSTGRES_PASSWORD: ki_radar_local
+      POSTGRES_PASSWORD_FILE: /run/secrets/local_postgres_password
+    secrets:
+      - local_postgres_password
     ports:
       - "127.0.0.1:5433:5432"
     volumes:
@@ -25,10 +27,9 @@ services:
       POSTGRES_PORT: 5432
       POSTGRES_DB: ki_radar
       POSTGRES_USER: ki_radar
-      POSTGRES_PASSWORD: ki_radar_local
-      DJANGO_SECRET_KEY: local-development-only
+      POSTGRES_PASSWORD_FILE: /run/secrets/local_postgres_password
+      DJANGO_SECRET_KEY_FILE: /run/secrets/local_django_secret_key
       ANONYMIZATION_LEDGER_PATH: /app/var/anonymization-ledger.jsonl
-      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       OPENROUTER_MODEL: ${OPENROUTER_MODEL:-}
       OPENROUTER_API_URL: ${OPENROUTER_API_URL:-https://openrouter.ai/api/v1/chat/completions}
       OPENROUTER_TIMEOUT_SECONDS: ${OPENROUTER_TIMEOUT_SECONDS:-30}
@@ -44,7 +45,15 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    secrets:
+      - local_postgres_password
+      - local_django_secret_key
 volumes:
   local_db:
   local_venv:
   local_var:
+secrets:
+  local_postgres_password:
+    environment: POSTGRES_PASSWORD
+  local_django_secret_key:
+    environment: DJANGO_SECRET_KEY
