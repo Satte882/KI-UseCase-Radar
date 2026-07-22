@@ -26,7 +26,8 @@
     </nav>
   </div>
 
-  {% if journey.next_action %}
+  {% if request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'outcome_workspace' %}
+  {% elif journey.next_action %}
   {% with action=journey.next_action %}
   <div class="journey-topbar-next journey-topbar-next-{{ action.state }}">
     <div class="journey-topbar-next-copy">
@@ -51,14 +52,6 @@
       <span class="journey-topbar-next-reason">{{ journey.completion_message }}</span>
     </div>
     <span class="badge state-ready">Abgeschlossen</span>
-  </div>
-  {% elif request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'outcome_workspace' %}
-  <div class="journey-topbar-next journey-topbar-context-note">
-    <div class="journey-topbar-next-copy">
-      <span class="journey-topbar-kicker">Wirkung &amp; Betrieb</span>
-      <strong>Gemeinsamer Lebenszyklus</strong>
-      <span class="journey-topbar-next-reason">Review- und Entscheidungsinformationen folgen dem bestehenden Status des Use Cases.</span>
-    </div>
   </div>
   {% elif request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'portfolio' %}
   <div class="journey-topbar-next journey-topbar-context-note">
