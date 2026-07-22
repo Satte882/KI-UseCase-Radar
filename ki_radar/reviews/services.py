@@ -34,38 +34,42 @@ def _validate_review_transition(*, use_case: UseCase, actor, review_data: dict) 
             f"{UseCase.Status(expected_status).label}."
         )
 
-    if decision in {Review.Decision.PAUSE, Review.Decision.REWORK, Review.Decision.CONTINUE}:
-        if target_status != use_case.status:
-            raise ValidationError(
-                "Fortführen, Pausieren und Überarbeiten dürfen den Lifecycle-Status nicht ändern."
-            )
+    status_must_stay = decision in {
+        Review.Decision.PAUSE,
+        Review.Decision.REWORK,
+        Review.Decision.CONTINUE,
+    }
+    if status_must_stay and target_status != use_case.status:
+        raise ValidationError(
+            "Fortführen, Pausieren und Überarbeiten dürfen den Lifecycle-Status nicht ändern."
+        )
 
-    if decision == Review.Decision.RETURN:
-        if not target_status or STATUS_ORDER[target_status] >= STATUS_ORDER[use_case.status]:
-            raise ValidationError("Eine Rückstufung erfordert eine frühere Lifecycle-Phase.")
+    invalid_return = decision == Review.Decision.RETURN and (
+        not target_status or STATUS_ORDER[target_status] >= STATUS_ORDER[use_case.status]
+    )
+    if invalid_return:
+        raise ValidationError("Eine Rückstufung erfordert eine frühere Lifecycle-Phase.")
 
-    if decision == Review.Decision.GO_LIVE:
-        if use_case.status != UseCase.Status.PILOT:
-            raise ValidationError("Ein Go-live ist ausschließlich aus dem Status Pilot möglich.")
-        exception_required = use_case.metric_result == UseCase.MetricResult.NOT_ACHIEVED
-        if exception_required:
-            if not review_data.get("go_live_exception_confirmed"):
-                raise ValidationError(
-                    "Ein Go-live bei verfehltem Pilotziel benötigt eine ausdrücklich bestätigte "
-                    "Ausnahme."
-                )
-            if not can_confirm_go_live_exception(actor):
-                raise PermissionDenied(
-                    "Nur ein Mitglied der Gruppe KI-Koordinator darf eine Go-live-Ausnahme "
-                    "bestätigen."
-                )
-            if not str(review_data.get("rationale", "")).strip():
-                raise ValidationError(
-                    "Die Go-live-Ausnahme benötigt eine konkrete Entscheidungsbegründung."
-                )
-        else:
-            review_data["go_live_exception_confirmed"] = False
-    else:
+    if decision == Review.Decision.GO_LIVE and use_case.status != UseCase.Status.PILOT:
+        raise ValidationError("Ein Go-live ist ausschließlich aus dem Status Pilot möglich.")
+
+    exception_required = (
+        decision == Review.Decision.GO_LIVE
+        and use_case.metric_result == UseCase.MetricResult.NOT_ACHIEVED
+    )
+    if exception_required and not review_data.get("go_live_exception_confirmed"):
+        raise ValidationError(
+            "Ein Go-live bei verfehltem Pilotziel benötigt eine ausdrücklich bestätigte Ausnahme."
+        )
+    if exception_required and not can_confirm_go_live_exception(actor):
+        raise PermissionDenied(
+            "Nur ein Mitglied der Gruppe KI-Koordinator darf eine Go-live-Ausnahme bestätigen."
+        )
+    if exception_required and not str(review_data.get("rationale", "")).strip():
+        raise ValidationError(
+            "Die Go-live-Ausnahme benötigt eine konkrete Entscheidungsbegründung."
+        )
+    if not exception_required:
         review_data["go_live_exception_confirmed"] = False
 
     if decision == Review.Decision.END:
