@@ -73,7 +73,7 @@ class Command(BaseCommand):
         document.status = UseCase.Status.PILOT
         document.pilot_start = timezone.localdate(document_package.handed_over_at)
         document.planned_pilot_end = today + timedelta(days=30)
-        document.next_review_date = today + timedelta(days=14)
+        document.next_review_date = today - timedelta(days=3)
         document.save(
             update_fields=[
                 "status",
