@@ -66,10 +66,6 @@ def _measurement_fields_complete(use_case: UseCase) -> bool:
     return not _measurement_missing(use_case)
 
 
-def _measurement_fields_complete(use_case: UseCase) -> bool:
-    return not _measurement_missing(use_case)
-
-
 def _measurement_complete(use_case: UseCase) -> bool:
     if not _measurement_fields_complete(use_case) or use_case.pilot_start is None:
         return False
