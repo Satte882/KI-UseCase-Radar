@@ -8,7 +8,7 @@
   <div>
     <div class="outcome-eyebrow">Review- und Entscheidungsinformationen</div>
     <h1 class="page-title">Wirkung &amp; Betrieb</h1>
-    <p class="page-subtitle">Kompakter Entscheidungs-Snapshot mit direkten Einstiegen in die bereits führenden Oberflächen.</p>
+    <p class="page-subtitle">Wirkung, Ergebnisentscheidung und Betrieb werden mit bestehenden Use-Case-, Metrik- und Delivery-Daten zusammengeführt.</p>
   </div>
 </div>
 
@@ -17,10 +17,10 @@
   <div class="app-card outcome-use-case-card">
     <div class="card-body">
       <div class="outcome-use-case-heading">
-        <div class="min-w-0">
+        <div>
           <div class="outcome-eyebrow">{{ selected_use_case.short_id }} · {{ selected_use_case.get_status_display }}</div>
           <h2>{{ selected_use_case.title }}</h2>
-          <p class="outcome-use-case-summary">{{ selected_use_case.summary|default:selected_use_case.problem_statement }}</p>
+          <p>{{ selected_use_case.summary|default:selected_use_case.problem_statement }}</p>
         </div>
         <a class="btn btn-outline-secondary btn-sm" href="{{ selected_use_case.get_absolute_url }}">Use Case öffnen</a>
       </div>
@@ -71,10 +71,17 @@
       </form>
 
       {% if active_stage_action %}
-      <div class="outcome-stage-status outcome-stage-status-{{ active_stage_action.state }}">
-        <div class="outcome-eyebrow">Handlungsstatus</div>
-        <strong>{% if active_stage_action.url %}{{ active_stage_action.action_label }} verfügbar{% else %}Keine Aktion erforderlich{% endif %}</strong>
-        <p>{{ active_stage_action.reason }}</p>
+      <div class="outcome-stage-action">
+        <div class="outcome-stage-action-copy">
+          <div class="outcome-eyebrow">{% if active_stage_action.url %}Nächster Schritt{% else %}Status{% endif %}</div>
+          <strong>{% if active_stage_action.url %}Handlung verfügbar{% else %}Kein Handlungsbedarf{% endif %}</strong>
+          <p>{{ active_stage_action.reason }}</p>
+        </div>
+        {% if active_stage_action.url %}
+        <a class="btn btn-primary btn-sm" href="{{ active_stage_action.url }}"{% if active_stage_action.external %} target="_blank" rel="noopener noreferrer"{% endif %}>{{ active_stage_action.action_label }} →</a>
+        {% else %}
+        <span class="badge badge-soft">Keine Aktion erforderlich</span>
+        {% endif %}
       </div>
       {% endif %}
 

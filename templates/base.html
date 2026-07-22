@@ -7,7 +7,7 @@
   <meta name="color-scheme" content="dark">
   <title>{% block title %}KI-Radar{% endblock %}</title>
   <link rel="icon" href="{% static 'favicon.svg' %}" type="image/svg+xml">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILvFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
   <link rel="stylesheet" href="{% static 'css/context-topbar.css' %}">
   <link rel="stylesheet" href="{% static 'css/sidebar-journey.css' %}">
@@ -106,7 +106,7 @@
       <button class="sidebar-account-trigger" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Benutzermenü öffnen">
         <span class="user-avatar">{{ user.get_display_name|slice:":1" }}</span>
         <span class="sidebar-account-name text-truncate">{{ user.get_display_name }}</span>
-        <span class="sidebar-account-chevron" aria-hidden="true">⌃</span>
+        <span class="sidebar-account-chevron" aria-hidden="true">⋯</span>
       </button>
       <div class="dropdown-menu sidebar-account-menu">
         {% if nav_is_technical_admin %}

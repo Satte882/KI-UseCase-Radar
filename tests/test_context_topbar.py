@@ -1,4 +1,11 @@
 from pathlib import Path
+from types import SimpleNamespace
+
+from django.contrib.auth.models import AnonymousUser
+from django.template.loader import render_to_string
+from django.test import RequestFactory
+
+from ki_radar.use_cases.journey import JourneyState, JourneyStep
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -38,3 +45,35 @@ def test_context_topbar_contains_permanent_workflow_and_next_action():
     assert "journey-progress-current" in stylesheet
     assert "journey-progress-blocked" in stylesheet
     assert "journey-topbar-next" in stylesheet
+
+
+def test_outcome_workspace_topbar_does_not_repeat_the_stage_action():
+    request = RequestFactory().get("/wirkung-betrieb/?stage=pilot")
+    request.user = AnonymousUser()
+    request.resolver_match = SimpleNamespace(
+        namespace="reporting",
+        url_name="outcome_workspace",
+    )
+    action = JourneyStep(
+        key="pilot",
+        label="Pilot",
+        state="current",
+        url="/wirkung-betrieb/?stage=pilot",
+        action_label="Pilotübersicht öffnen",
+        reason="Der Pilot läuft im externen Delivery-System.",
+    )
+    journey = JourneyState(
+        path_label="KI-0001 · Wirkung & Betrieb",
+        steps=(action,),
+        next_action=action,
+    )
+
+    rendered = render_to_string(
+        "includes/context_topbar.html",
+        {"journey": journey, "request": request},
+        request=request,
+    )
+
+    assert "Pilotübersicht öffnen" not in rendered
+    assert "journey-topbar-next" not in rendered
+    assert 'aria-label="Phasen des Arbeitsmodells"' in rendered

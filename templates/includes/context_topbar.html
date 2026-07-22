@@ -27,30 +27,6 @@
   </div>
 
   {% if request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'outcome_workspace' %}
-    {% if active_stage_action %}
-    <div class="journey-topbar-next journey-topbar-next-{{ active_stage_action.state }}">
-      <div class="journey-topbar-next-copy">
-        <span class="journey-topbar-kicker">Aktion im Bereich</span>
-        <strong>{{ active_stage_action.phase }}</strong>
-        <span class="journey-topbar-next-reason">{{ active_stage_action.reason }}</span>
-      </div>
-      {% if active_stage_action.url %}
-      <a class="btn btn-sm btn-primary" href="{{ active_stage_action.url }}"{% if active_stage_action.external %} target="_blank" rel="noopener noreferrer"{% endif %}>
-        {{ active_stage_action.action_label }} →
-      </a>
-      {% else %}
-      <span class="badge badge-soft">Keine Aktion erforderlich</span>
-      {% endif %}
-    </div>
-    {% else %}
-    <div class="journey-topbar-next journey-topbar-context-note">
-      <div class="journey-topbar-next-copy">
-        <span class="journey-topbar-kicker">Wirkung &amp; Betrieb</span>
-        <strong>Use Case auswählen</strong>
-        <span class="journey-topbar-next-reason">Nach der Auswahl wird die verfügbare Aktion für den aktiven Bereich angezeigt.</span>
-      </div>
-    </div>
-    {% endif %}
   {% elif journey.next_action %}
   {% with action=journey.next_action %}
   <div class="journey-topbar-next journey-topbar-next-{{ action.state }}">
