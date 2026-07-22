@@ -1,8 +1,8 @@
 name: Mobile Overflow Diagnostic
 
 on:
-  pull_request:
-    branches: [main]
+  push:
+    branches: [feature/delivery-to-pilot-gate]
 
 permissions:
   contents: read
