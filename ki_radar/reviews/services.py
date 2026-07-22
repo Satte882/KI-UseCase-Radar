@@ -7,7 +7,6 @@ from ki_radar.use_cases.services import apply_status_transition
 
 from .models import Review
 
-
 DECISION_TARGETS = {
     Review.Decision.START_REVIEW: UseCase.Status.REVIEW,
     Review.Decision.START_PILOT: UseCase.Status.PILOT,
