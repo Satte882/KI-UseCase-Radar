@@ -26,7 +26,7 @@ def review_create(request, use_case_id):
         pk=use_case_id,
     )
     coordinator_access = is_coordinator(request.user)
-    pilot_start_only = request.GET.get("action") == "pilot_start" or not coordinator_access
+    pilot_start_only = request.GET.get("action") == "pilot_start"
     if pilot_start_only:
         if not can_start_pilot(request.user, use_case):
             raise PermissionDenied
