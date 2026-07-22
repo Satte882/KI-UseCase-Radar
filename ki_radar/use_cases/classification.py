@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -72,9 +73,7 @@ def persist_classification_payload(sender, instance, **kwargs):
 def inherit_classification_from_discovery(sender, instance, **kwargs):
     try:
         focus = instance.stage.value_stream.focus
-    except ValueError:
-        return
-    except models.ObjectDoesNotExist:
+    except (ObjectDoesNotExist, ValueError):
         return
     UseCaseClassification.objects.update_or_create(
         use_case=instance.use_case,
