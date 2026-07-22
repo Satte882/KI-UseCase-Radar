@@ -8,3 +8,6 @@ class DeliveryConfig(AppConfig):
 
     def ready(self):
         from . import architecture_artifacts  # noqa: F401, PLC0415
+        from .readiness import install  # noqa: PLC0415
+
+        install()
