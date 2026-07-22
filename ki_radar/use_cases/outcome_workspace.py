@@ -6,6 +6,7 @@ from django.urls import reverse
 
 from ki_radar.delivery.models import DeliveryPackage
 from ki_radar.delivery.services import current_delivery_package, current_handed_over_package
+from ki_radar.reviews.models import Review
 
 from .models import UseCase
 from .permissions import can_start_pilot
@@ -26,6 +27,12 @@ OUTCOME_STAGES = (
     ("closure", "Abschluss", "closure"),
 )
 OUTCOME_STAGE_KEYS = {stage for stage, _label, _step_key in OUTCOME_STAGES}
+MEASUREMENT_REQUIRED_FIELDS = (
+    ("metric_actual", "Ist-Wert"),
+    ("metric_measurement_period", "Messzeitraum"),
+    ("metric_measured_at", "Messdatum"),
+    ("metric_evidence_url", "Messnachweis"),
+)
 
 
 def normalize_outcome_stage(value: str | None) -> str:
@@ -43,15 +50,55 @@ def outcome_workspace_url(
     return f"{reverse('reporting:outcome_workspace')}?{urlencode(query)}"
 
 
-def _handover_step(package: DeliveryPackage | None) -> JourneyStep:
+def _measurement_missing(use_case: UseCase) -> tuple[str, ...]:
+    return tuple(
+        label
+        for field_name, label in MEASUREMENT_REQUIRED_FIELDS
+        if getattr(use_case, field_name) in (None, "")
+    )
+
+
+def _measurement_complete(use_case: UseCase) -> bool:
+    return not _measurement_missing(use_case)
+
+
+def _has_measurement_data(use_case: UseCase) -> bool:
+    return any(
+        getattr(use_case, field_name) not in (None, "")
+        for field_name, _label in MEASUREMENT_REQUIRED_FIELDS
+    )
+
+
+def _has_review(use_case: UseCase, *, decision: str, new_status: str) -> bool:
+    return use_case.reviews.filter(decision=decision, new_status=new_status).exists()
+
+
+def _handover_step(
+    use_case: UseCase,
+    package: DeliveryPackage | None,
+    *,
+    handed_over: bool,
+    lifecycle_advanced: bool,
+) -> JourneyStep:
     if package is None:
+        if lifecycle_advanced:
+            return JourneyStep(
+                key="handover",
+                label="Übergabe",
+                state="blocked",
+                reason=(
+                    "Dateninkonsistenz: Der Lifecycle ist bereits fortgeschritten, aber es "
+                    "existiert kein aktuelles Delivery Package mit verbindlicher Übergabe."
+                ),
+                details=("Delivery Package", "Übergabezeitpunkt"),
+            )
         return JourneyStep(
             key="handover",
             label="Übergabe",
             state="upcoming",
             reason="Die verbindliche Übergabe beginnt nach einem vollständigen Delivery Package.",
         )
-    if package.status == DeliveryPackage.Status.HANDED_OVER and package.handed_over_at:
+    if handed_over:
         return JourneyStep(
             key="handover",
             label="Übergabe",
@@ -68,6 +115,19 @@ def _handover_step(package: DeliveryPackage | None) -> JourneyStep:
             url=package.get_absolute_url(),
             action_label="Übergabe prüfen",
             reason="Der Übergabestatus besitzt keinen verbindlichen Übergabezeitpunkt.",
+        )
+    if lifecycle_advanced:
+        return JourneyStep(
+            key="handover",
+            label="Übergabe",
+            state="blocked",
+            url=package.get_absolute_url(),
+            action_label="Delivery Package prüfen",
+            reason=(
+                "Dateninkonsistenz: Der Lifecycle ist bereits fortgeschritten, obwohl die "
+                "aktuelle Package-Version noch nicht verbindlich übergeben wurde."
+            ),
+            details=("Aktuelle Package-Version", "verbindliche Übergabe"),
         )
     return JourneyStep(
         key="handover",
@@ -87,6 +147,9 @@ def _pilot_step(
     use_case: UseCase,
     *,
     handed_over: bool,
+    pilot_started: bool,
+    pilot_complete: bool,
+    lifecycle_advanced: bool,
     user,
 ) -> JourneyStep:
     url = outcome_workspace_url("pilot", use_case=use_case)
@@ -94,34 +157,58 @@ def _pilot_step(
         return JourneyStep(
             key="pilot",
             label="Pilot",
-            state="upcoming",
-            reason="Die Pilotbeobachtung beginnt erst nach der verbindlichen Übergabe.",
-        )
-    if use_case.status == UseCase.Status.PILOT:
-        return JourneyStep(
-            key="pilot",
-            label="Pilot",
-            state="current",
-            url=url,
-            action_label="Pilotübersicht öffnen",
+            state="blocked" if lifecycle_advanced else "upcoming",
             reason=(
-                "Der Pilot läuft im externen Delivery-System; KI-Radar hält den Review-Snapshot."
+                "Dateninkonsistenz: Pilot- oder Folgedaten liegen vor, obwohl die verbindliche "
+                "Übergabe der aktuellen Package-Version fehlt."
+                if lifecycle_advanced
+                else "Die Pilotbeobachtung beginnt erst nach der verbindlichen Übergabe."
             ),
         )
-    if (
-        use_case.status in {UseCase.Status.OPERATION, UseCase.Status.ENDED}
-        or use_case.actual_end_date
-    ):
+    if pilot_complete:
         return JourneyStep(
             key="pilot",
             label="Pilot",
             state="complete",
             url=url,
-            action_label="Pilotübersicht öffnen",
+            action_label="Pilot öffnen",
+            reason="Der Pilot ist fachlich abgeschlossen; die Folgeentscheidung ist vorbereitet.",
+        )
+    if pilot_started:
+        if use_case.status != UseCase.Status.PILOT:
+            return JourneyStep(
+                key="pilot",
+                label="Pilot",
+                state="blocked",
+                url=url,
+                action_label="Pilot prüfen",
+                reason=(
+                    "Dateninkonsistenz: Ein Pilotstart ist dokumentiert, der Lifecycle-Status "
+                    "steht jedoch nicht auf Pilot, Betrieb oder Beendet."
+                ),
+            )
+        return JourneyStep(
+            key="pilot",
+            label="Pilot",
+            state="current",
+            url=url,
+            action_label="Pilot öffnen",
+            reason="Der Pilot läuft; die Wirkungsmessung ist noch nicht vollständig abgeschlossen.",
+        )
+    if use_case.status in {
+        UseCase.Status.PILOT,
+        UseCase.Status.OPERATION,
+        UseCase.Status.ENDED,
+    }:
+        return JourneyStep(
+            key="pilot",
+            label="Pilot",
+            state="blocked",
             reason=(
-                "Der Pilot ist fachlich abgeschlossen oder das Vorhaben befindet sich "
-                "bereits im Betrieb."
+                "Dateninkonsistenz: Der Lifecycle-Status setzt einen gestarteten Pilot voraus, "
+                "aber ein verbindlicher Pilotbeginn fehlt."
             ),
+            details=("Pilotbeginn",),
         )
     check = check_pilot_start(use_case)
     allowed = can_start_pilot(user, use_case)
@@ -143,129 +230,254 @@ def _measurement_step(
     use_case: UseCase,
     *,
     handed_over: bool,
+    pilot_started: bool,
+    pilot_complete: bool,
+    measurement_complete: bool,
+    end_recorded: bool,
 ) -> JourneyStep:
-    url = reverse("use_cases:edit", kwargs={"pk": use_case.pk})
-    if use_case.metric_actual is not None and use_case.metric_evidence_url:
+    edit_url = reverse("use_cases:edit", kwargs={"pk": use_case.pk})
+    missing = _measurement_missing(use_case)
+    has_data = _has_measurement_data(use_case)
+    if not handed_over or not pilot_started:
+        return JourneyStep(
+            key="measurement",
+            label="Wirkungsmessung",
+            state="blocked" if has_data else "upcoming",
+            reason=(
+                "Dateninkonsistenz: Messdaten liegen vor, obwohl Übergabe und Pilotbeginn nicht "
+                "vollständig nachgewiesen sind."
+                if has_data
+                else "Die Wirkungsmessung folgt nach Übergabe und gestartetem Pilot."
+            ),
+            details=missing if has_data else (),
+        )
+    if measurement_complete:
         return JourneyStep(
             key="measurement",
             label="Wirkungsmessung",
             state="complete",
             url=outcome_workspace_url("effect", use_case=use_case),
             action_label="Wirkung öffnen",
-            reason=f"{use_case.metric_result_label}; Messwert und Nachweis liegen vor.",
+            reason=f"{use_case.metric_result_label}; Messwert und vollständiger Nachweis liegen vor.",
         )
-    if use_case.metric_actual is not None:
+    if end_recorded:
+        return JourneyStep(
+            key="measurement",
+            label="Wirkungsmessung",
+            state="optional",
+            url=outcome_workspace_url("effect", use_case=use_case),
+            action_label="Wirkung öffnen",
+            reason="Der Use Case wurde beendet, ohne in den produktiven Betrieb überführt zu werden.",
+            details=missing,
+        )
+    if pilot_complete:
+        first_missing_field = next(
+            field_name
+            for field_name, _label in MEASUREMENT_REQUIRED_FIELDS
+            if getattr(use_case, field_name) in (None, "")
+        )
         return JourneyStep(
             key="measurement",
             label="Wirkungsmessung",
             state="blocked",
-            url=f"{url}?highlight=metric_evidence_url",
-            action_label="Messnachweis ergänzen",
-            reason="Ein Ist-Wert ist erfasst, aber der verbindliche Messnachweis fehlt.",
-            details=("Messnachweis",),
+            url=f"{edit_url}?highlight={first_missing_field}",
+            action_label="Wirkungsmessung vervollständigen",
+            reason="Der Pilot ist abgeschlossen, aber die Wirkungsmessung ist noch unvollständig.",
+            details=missing,
         )
-    if not handed_over:
-        return JourneyStep(
-            key="measurement",
-            label="Wirkungsmessung",
-            state="upcoming",
-            reason="Die Wirkungsmessung folgt nach Übergabe und Pilotdurchführung.",
-        )
-    pilot_active = use_case.status == UseCase.Status.PILOT
     return JourneyStep(
         key="measurement",
         label="Wirkungsmessung",
-        state="current" if pilot_active else "upcoming",
-        url=f"{url}?highlight=metric_actual" if pilot_active else None,
-        action_label="Ist-Wert erfassen" if pilot_active else "",
-        reason=(
-            "Baseline, Ziel, Ist-Wert und Messnachweis werden zum Review manuell "
-            "in KI-Radar bestätigt."
-            if pilot_active
-            else "Die Messung wird zum vereinbarten Review-Zeitpunkt dokumentiert."
-        ),
+        state="upcoming",
+        url=f"{edit_url}?highlight=metric_actual",
+        action_label="Wirkungsmessung vorbereiten",
+        reason="Der Pilot läuft; die vollständige Messung wird zum Review-Zeitpunkt bestätigt.",
+        details=missing,
     )
 
 
 def _outcome_decision_step(
     use_case: UseCase,
     *,
+    handed_over: bool,
+    pilot_started: bool,
     measurement_complete: bool,
+    go_live_recorded: bool,
+    end_recorded: bool,
 ) -> JourneyStep:
-    if not measurement_complete:
+    url = outcome_workspace_url("decision", use_case=use_case)
+    if not handed_over or not pilot_started:
+        advanced = go_live_recorded or end_recorded or use_case.status in {
+            UseCase.Status.OPERATION,
+            UseCase.Status.ENDED,
+        }
         return JourneyStep(
             key="outcome_decision",
             label="Ergebnisentscheidung",
-            state="upcoming",
-            reason="Eine belastbare Folgeentscheidung setzt Messwert und Nachweis voraus.",
+            state="blocked" if advanced else "upcoming",
+            reason=(
+                "Dateninkonsistenz: Eine Folgeentscheidung ist dokumentiert oder im Status "
+                "abgebildet, obwohl Übergabe oder Pilotbeginn fehlen."
+                if advanced
+                else "Eine Folgeentscheidung setzt Übergabe, Pilot und belastbare Evidenz voraus."
+            ),
+        )
+    if end_recorded:
+        return JourneyStep(
+            key="outcome_decision",
+            label="Ergebnisentscheidung",
+            state="complete" if use_case.status == UseCase.Status.ENDED else "blocked",
+            url=url,
+            action_label="Ergebnisentscheidung öffnen",
+            reason=(
+                "Die Beendigungsentscheidung ist im Lifecycle-Review dokumentiert."
+                if use_case.status == UseCase.Status.ENDED
+                else "Dateninkonsistenz: Eine Beendigungsentscheidung liegt vor, der Status ist nicht Beendet."
+            ),
+        )
+    if go_live_recorded:
+        valid_status = use_case.status in {UseCase.Status.OPERATION, UseCase.Status.ENDED}
+        valid = measurement_complete and valid_status
+        return JourneyStep(
+            key="outcome_decision",
+            label="Ergebnisentscheidung",
+            state="complete" if valid else "blocked",
+            url=url,
+            action_label="Ergebnisentscheidung öffnen",
+            reason=(
+                "Die Go-live-Entscheidung ist mit vollständiger Messgrundlage dokumentiert."
+                if valid
+                else "Dateninkonsistenz: Die Go-live-Entscheidung passt nicht zu Messung oder Status."
+            ),
+            details=() if valid else _measurement_missing(use_case),
         )
     if use_case.status in {UseCase.Status.OPERATION, UseCase.Status.ENDED}:
         return JourneyStep(
             key="outcome_decision",
             label="Ergebnisentscheidung",
-            state="complete",
-            url=outcome_workspace_url("decision", use_case=use_case),
-            action_label="Entscheidungsrahmen öffnen",
+            state="blocked",
+            url=url,
+            action_label="Ergebnisentscheidung prüfen",
             reason=(
-                "Der Lifecycle-Status zeigt bereits Betrieb oder Abschluss; das versionierte "
-                "Review-Artefakt folgt in einem separaten Inkrement."
+                "Dateninkonsistenz: Der Lifecycle-Status ist bereits fortgeschritten, aber ein "
+                "passendes Go-live- oder Abschlussreview fehlt."
             ),
+        )
+    if measurement_complete:
+        return JourneyStep(
+            key="outcome_decision",
+            label="Ergebnisentscheidung",
+            state="current",
+            url=url,
+            action_label="Ergebnisentscheidung prüfen",
+            reason="Die vollständige Messgrundlage liegt vor; jetzt steht die Folgeentscheidung an.",
         )
     return JourneyStep(
         key="outcome_decision",
         label="Ergebnisentscheidung",
-        state="current",
-        url=outcome_workspace_url("decision", use_case=use_case),
-        action_label="Entscheidungsrahmen prüfen",
-        reason=("Scale-, Continue- oder Stop-Entscheidung wird noch nicht gespeichert."),
+        state="upcoming",
+        reason="Eine belastbare Folgeentscheidung setzt die vollständige Wirkungsmessung voraus.",
     )
 
 
-def _operation_step(use_case: UseCase) -> JourneyStep:
+def _operation_step(
+    use_case: UseCase,
+    *,
+    handed_over: bool,
+    pilot_started: bool,
+    measurement_complete: bool,
+    go_live_recorded: bool,
+    end_recorded: bool,
+) -> JourneyStep:
     url = outcome_workspace_url("operation", use_case=use_case)
-    if use_case.status == UseCase.Status.ENDED:
+    if go_live_recorded:
+        prerequisites_complete = handed_over and pilot_started and measurement_complete
+        valid_status = use_case.status in {UseCase.Status.OPERATION, UseCase.Status.ENDED}
+        if not prerequisites_complete or not valid_status:
+            return JourneyStep(
+                key="operation",
+                label="Betrieb",
+                state="blocked",
+                url=url,
+                action_label="Betriebskontext prüfen",
+                reason=(
+                    "Dateninkonsistenz: Der Go-live ist dokumentiert, aber Status oder zwingende "
+                    "Voraussetzungen sind nicht vollständig."
+                ),
+                details=_measurement_missing(use_case),
+            )
         return JourneyStep(
             key="operation",
             label="Betrieb",
-            state="complete",
+            state="complete" if use_case.status == UseCase.Status.ENDED else "current",
             url=url,
             action_label="Betriebskontext öffnen",
-            reason="Der produktive Betrieb ist beendet.",
+            reason=(
+                "Der produktive Betrieb wurde beendet."
+                if use_case.status == UseCase.Status.ENDED
+                else "Das Vorhaben befindet sich nach dokumentiertem Go-live im produktiven Betrieb."
+            ),
         )
     if use_case.status == UseCase.Status.OPERATION:
         return JourneyStep(
             key="operation",
             label="Betrieb",
-            state="current",
+            state="blocked",
             url=url,
-            action_label="Betriebskontext öffnen",
-            reason="Das Vorhaben befindet sich im produktiven Betrieb.",
+            action_label="Betriebskontext prüfen",
+            reason=(
+                "Dateninkonsistenz: Der Status steht auf Betrieb, aber ein dokumentiertes "
+                "Go-live-Review fehlt."
+            ),
+        )
+    if use_case.status == UseCase.Status.ENDED and end_recorded:
+        return JourneyStep(
+            key="operation",
+            label="Betrieb",
+            state="optional",
+            reason="Der Use Case wurde beendet, ohne einen dokumentierten Go-live zu durchlaufen.",
+        )
+    if use_case.status == UseCase.Status.ENDED:
+        return JourneyStep(
+            key="operation",
+            label="Betrieb",
+            state="blocked",
+            reason="Dateninkonsistenz: Der Use Case ist beendet, aber das Abschlussreview fehlt.",
         )
     return JourneyStep(
         key="operation",
         label="Betrieb",
         state="upcoming",
-        reason=(
-            "Betriebsverantwortung wird erst nach einer positiven Ergebnisentscheidung relevant."
-        ),
+        reason="Betrieb wird erst nach einer dokumentierten positiven Ergebnisentscheidung relevant.",
     )
 
 
-def _closure_step(use_case: UseCase) -> JourneyStep:
-    if use_case.status == UseCase.Status.ENDED:
+def _closure_step(
+    use_case: UseCase,
+    *,
+    handed_over: bool,
+    pilot_started: bool,
+    end_recorded: bool,
+) -> JourneyStep:
+    if use_case.status != UseCase.Status.ENDED:
         return JourneyStep(
             key="closure",
             label="Abschluss",
-            state="complete",
-            url=outcome_workspace_url("closure", use_case=use_case),
-            action_label="Abschluss öffnen",
-            reason="Das Vorhaben ist beendet; Abschlussinformationen liegen am Use Case.",
+            state="upcoming",
+            reason="Abschluss oder Stilllegung ist kein aktueller Schritt.",
         )
+    valid = handed_over and pilot_started and end_recorded
     return JourneyStep(
         key="closure",
         label="Abschluss",
-        state="upcoming",
-        reason="Abschluss oder Stilllegung ist kein aktueller Schritt.",
+        state="complete" if valid else "blocked",
+        url=outcome_workspace_url("closure", use_case=use_case),
+        action_label="Abschluss öffnen" if valid else "Abschluss prüfen",
+        reason=(
+            "Das Abschlussreview und die Beendigung sind vollständig dokumentiert."
+            if valid
+            else "Dateninkonsistenz: Status Beendet ohne vollständige Übergabe-, Pilot- oder Review-Kette."
+        ),
     )
 
 
@@ -278,23 +490,93 @@ def build_outcome_workspace_journey(
     selection_journey = build_use_case_journey(use_case, user)
     package = current_delivery_package(use_case)
     handed_over = current_handed_over_package(use_case) is not None
-    measurement_complete = bool(use_case.metric_actual is not None and use_case.metric_evidence_url)
+    measurement_complete = _measurement_complete(use_case)
+    go_live_recorded = _has_review(
+        use_case,
+        decision=Review.Decision.GO_LIVE,
+        new_status=UseCase.Status.OPERATION,
+    )
+    end_recorded = _has_review(
+        use_case,
+        decision=Review.Decision.END,
+        new_status=UseCase.Status.ENDED,
+    )
+    pilot_started = bool(use_case.pilot_start)
+    pilot_complete = bool(
+        pilot_started
+        and (
+            measurement_complete
+            or go_live_recorded
+            or end_recorded
+            or use_case.actual_end_date
+        )
+    )
+    lifecycle_advanced = bool(
+        use_case.status in {
+            UseCase.Status.PILOT,
+            UseCase.Status.OPERATION,
+            UseCase.Status.ENDED,
+        }
+        or pilot_started
+        or _has_measurement_data(use_case)
+        or go_live_recorded
+        or end_recorded
+        or use_case.actual_end_date
+    )
 
     outcome_steps = [
-        _handover_step(package),
-        _pilot_step(use_case, handed_over=handed_over, user=user),
-        _measurement_step(use_case, handed_over=handed_over),
+        _handover_step(
+            use_case,
+            package,
+            handed_over=handed_over,
+            lifecycle_advanced=lifecycle_advanced,
+        ),
+        _pilot_step(
+            use_case,
+            handed_over=handed_over,
+            pilot_started=pilot_started,
+            pilot_complete=pilot_complete,
+            lifecycle_advanced=lifecycle_advanced,
+            user=user,
+        ),
+        _measurement_step(
+            use_case,
+            handed_over=handed_over,
+            pilot_started=pilot_started,
+            pilot_complete=pilot_complete,
+            measurement_complete=measurement_complete,
+            end_recorded=end_recorded,
+        ),
         _outcome_decision_step(
             use_case,
+            handed_over=handed_over,
+            pilot_started=pilot_started,
             measurement_complete=measurement_complete,
+            go_live_recorded=go_live_recorded,
+            end_recorded=end_recorded,
         ),
-        _operation_step(use_case),
-        _closure_step(use_case),
+        _operation_step(
+            use_case,
+            handed_over=handed_over,
+            pilot_started=pilot_started,
+            measurement_complete=measurement_complete,
+            go_live_recorded=go_live_recorded,
+            end_recorded=end_recorded,
+        ),
+        _closure_step(
+            use_case,
+            handed_over=handed_over,
+            pilot_started=pilot_started,
+            end_recorded=end_recorded,
+        ),
     ]
+    current_steps = [step for step in outcome_steps if step.state == "current"]
+    if len(current_steps) > 1:
+        raise RuntimeError("Outcome journey must expose at most one current phase.")
+
+    closure_complete = outcome_steps[-1].state == "complete"
     completion_message = (
-        "Lebenszyklus abgeschlossen: Das Vorhaben ist beendet."
-        if use_case.status == UseCase.Status.ENDED
-        else ""
+        "Lebenszyklus abgeschlossen: Das Vorhaben ist beendet." if closure_complete else ""
     )
     return _state(
         path_label=f"{use_case.short_id} · Wirkung & Betrieb",
