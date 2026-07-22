@@ -42,10 +42,9 @@ jobs:
           path = Path("ki_radar/use_cases/outcome_workspace.py")
           text = path.read_text(encoding="utf-8")
 
-          old = """def _measurement_complete(use_case: UseCase) -> bool:
-              return not _measurement_missing(use_case)
-          """
-          new = """def _measurement_fields_complete(use_case: UseCase) -> bool:
+          start = text.index("def _measurement_complete")
+          end = text.index("\ndef _has_measurement_data", start)
+          helper = '''def _measurement_fields_complete(use_case: UseCase) -> bool:
               return not _measurement_missing(use_case)
 
 
@@ -61,53 +60,37 @@ jobs:
                   and use_case.pilot_start is not None
                   and use_case.metric_measured_at < use_case.pilot_start
               )
-          """
-          if old not in text:
-              raise SystemExit("measurement helper pattern not found")
-          text = text.replace(old, new, 1)
 
-          old = (
-              '                    "Dateninkonsistenz: Ein Pilotstart ist dokumentiert, der "\n'
-              '                    "Lifecycle-Status steht jedoch nicht auf Pilot, Betrieb oder Beendet."'
-          )
-          new = (
-              '                    "Dateninkonsistenz: Ein Pilotstart ist dokumentiert, aber der "\n'
+          '''
+          text = text[:start] + helper + text[end + 1 :]
+
+          text = text.replace(
+              '"Dateninkonsistenz: Ein Pilotstart ist dokumentiert, der "\n'
+              '                    "Lifecycle-Status steht jedoch nicht auf Pilot, Betrieb oder Beendet."',
+              '"Dateninkonsistenz: Ein Pilotstart ist dokumentiert, aber der "\n'
               '                    "Lifecycle-Status oder die Nachweise belegen keinen laufenden oder "\n'
-              '                    "abgeschlossenen Pilot."'
+              '                    "abgeschlossenen Pilot."',
+              1,
           )
-          if old not in text:
-              raise SystemExit("pilot reason pattern not found")
-          text = text.replace(old, new, 1)
 
-          marker = """            details=missing if has_data else (),
+          measurement_start = text.index("def _measurement_step")
+          complete_marker = text.index("    if measurement_complete:\n", measurement_start)
+          stale_block = '''    if _measurement_predates_pilot(use_case):
+              return JourneyStep(
+                  key="measurement",
+                  label="Wirkungsmessung",
+                  state="upcoming",
+                  url=f"{edit_url}?highlight=metric_measured_at",
+                  action_label="Messung für aktuellen Pilot aktualisieren",
+                  reason=(
+                      "Die vorhandene Messung stammt aus der Zeit vor dem aktuellen "
+                      "Pilotbeginn und schließt diesen Pilot nicht ab."
+                  ),
+                  details=("Messdatum nach Pilotbeginn",),
               )
-              if measurement_complete:
-          """
-          insertion = """            details=missing if has_data else (),
-              )
-              if _measurement_predates_pilot(use_case):
-                  return JourneyStep(
-                      key="measurement",
-                      label="Wirkungsmessung",
-                      state="upcoming",
-                      url=f"{edit_url}?highlight=metric_measured_at",
-                      action_label="Messung für aktuellen Pilot aktualisieren",
-                      reason=(
-                          "Die vorhandene Messung stammt aus der Zeit vor dem aktuellen "
-                          "Pilotbeginn und schließt diesen Pilot nicht ab."
-                      ),
-                      details=("Messdatum nach Pilotbeginn",),
-                  )
-              if measurement_complete:
-          """
-          if marker not in text:
-              raise SystemExit("measurement step pattern not found")
-          text = text.replace(marker, insertion, 1)
-
-          stale_advanced = "        or _has_measurement_data(use_case)\n"
-          if stale_advanced not in text:
-              raise SystemExit("lifecycle advanced pattern not found")
-          text = text.replace(stale_advanced, "", 1)
+          '''
+          text = text[:complete_marker] + stale_block + text[complete_marker:]
+          text = text.replace("        or _has_measurement_data(use_case)\n", "", 1)
 
           path.write_text(text, encoding="utf-8")
           PY
