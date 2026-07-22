@@ -91,11 +91,13 @@ class ReviewForm(forms.ModelForm):
         use_case: UseCase,
         actor=None,
         pilot_start_only: bool = False,
+        requested_action: str | None = None,
         **kwargs,
     ):
         self.use_case = use_case
         self.actor = actor
         self.pilot_start_only = pilot_start_only
+        self.requested_action = requested_action
         super().__init__(*args, **kwargs)
         today = timezone.localdate()
         self.fields["review_date"].initial = today
@@ -103,20 +105,27 @@ class ReviewForm(forms.ModelForm):
         self.fields["pilot_start"].widget.attrs["max"] = today.isoformat()
         self.fields["next_review_date"].initial = use_case.next_review_date
         if not self.is_bound:
-            decision = current_decision_check(use_case)
-            initial_decision = {
-                UseCase.Status.REVIEW: Review.Decision.START_REVIEW,
-                UseCase.Status.PILOT: Review.Decision.START_PILOT,
-                UseCase.Status.OPERATION: (
-                    Review.Decision.CONTINUE
-                    if use_case.status == UseCase.Status.OPERATION
-                    else Review.Decision.GO_LIVE
-                ),
-                UseCase.Status.ENDED: Review.Decision.END,
-            }.get(decision.target_status)
-            if initial_decision:
-                self.fields["decision"].initial = initial_decision
-            self.fields["new_status"].initial = decision.target_status
+            if requested_action == "go_live" and use_case.status == UseCase.Status.PILOT:
+                self.fields["decision"].initial = Review.Decision.GO_LIVE
+                self.fields["new_status"].initial = UseCase.Status.OPERATION
+            elif requested_action == "closure" and use_case.status != UseCase.Status.ENDED:
+                self.fields["decision"].initial = Review.Decision.END
+                self.fields["new_status"].initial = UseCase.Status.ENDED
+            else:
+                decision = current_decision_check(use_case)
+                initial_decision = {
+                    UseCase.Status.REVIEW: Review.Decision.START_REVIEW,
+                    UseCase.Status.PILOT: Review.Decision.START_PILOT,
+                    UseCase.Status.OPERATION: (
+                        Review.Decision.CONTINUE
+                        if use_case.status == UseCase.Status.OPERATION
+                        else Review.Decision.GO_LIVE
+                    ),
+                    UseCase.Status.ENDED: Review.Decision.END,
+                }.get(decision.target_status)
+                if initial_decision:
+                    self.fields["decision"].initial = initial_decision
+                self.fields["new_status"].initial = decision.target_status
         if pilot_start_only:
             self.fields["decision"].initial = Review.Decision.START_PILOT
             self.fields["new_status"].initial = UseCase.Status.PILOT
