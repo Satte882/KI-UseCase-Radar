@@ -7,3 +7,6 @@ class UseCasesConfig(AppConfig):
 
     def ready(self):
         from . import classification  # noqa: F401, PLC0415
+        from .workflow import install  # noqa: PLC0415
+
+        install()
