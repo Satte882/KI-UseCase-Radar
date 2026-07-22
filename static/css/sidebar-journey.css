@@ -81,6 +81,71 @@
   letter-spacing: .06em;
 }
 
+.sidebar-footer {
+  position: relative;
+  padding-top: 10px;
+}
+
+.sidebar-account-trigger {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  color: var(--text);
+  background: transparent;
+  text-align: left;
+}
+
+.sidebar-account-trigger:hover,
+.sidebar-account-trigger[aria-expanded="true"] {
+  border-color: var(--border);
+  background: var(--panel-hover);
+}
+
+.sidebar-account-name {
+  font-size: .84rem;
+  font-weight: 700;
+}
+
+.sidebar-account-chevron {
+  color: var(--muted);
+  font-size: .78rem;
+}
+
+.sidebar-account-menu {
+  width: calc(100% - 4px);
+  min-width: 0;
+  padding: 7px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #111827;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, .42);
+}
+
+.sidebar-account-menu .dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  color: #d6dfec;
+  font-size: .8rem;
+}
+
+.sidebar-account-menu .dropdown-item:hover,
+.sidebar-account-menu .dropdown-item:focus {
+  color: white;
+  background: var(--panel-hover);
+}
+
+.sidebar-account-menu form {
+  margin: 0;
+}
+
 @media (max-width: 1100px) {
   .sidebar-local-depth {
     display: none;
