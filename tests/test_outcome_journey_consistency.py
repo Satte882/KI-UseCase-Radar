@@ -86,10 +86,10 @@ def _start_pilot(use_case):
     use_case.save(update_fields=["pilot_start", "updated_at"])
 
 
-def _complete_measurement(use_case):
+def _complete_measurement(use_case, *, measured_at=None):
     use_case.metric_actual = Decimal("2.8")
     use_case.metric_measurement_period = "Mai bis Juni 2026"
-    use_case.metric_measured_at = timezone.localdate()
+    use_case.metric_measured_at = measured_at or timezone.localdate()
     use_case.metric_evidence_url = "https://example.invalid/evidence/pilot"
     use_case.save(
         update_fields=[
@@ -227,6 +227,33 @@ def test_direct_end_from_pilot_marks_operation_optional(
         "closure": "complete",
     }
     assert journey.completion_message
+
+
+@pytest.mark.django_db
+def test_measurement_before_current_pilot_does_not_complete_pilot(
+    coordinator,
+    owner,
+    business_unit,
+):
+    use_case = _use_case(owner, business_unit)
+    _handed_over_package(use_case, coordinator)
+    _start_pilot(use_case)
+    _complete_measurement(
+        use_case,
+        measured_at=use_case.pilot_start - timedelta(days=1),
+    )
+
+    states = _outcome_states(build_outcome_workspace_journey(use_case, coordinator))
+
+    assert states == {
+        "handover": "complete",
+        "pilot": "current",
+        "measurement": "upcoming",
+        "outcome_decision": "upcoming",
+        "operation": "upcoming",
+        "closure": "upcoming",
+    }
+    assert list(states.values()).count("current") == 1
 
 
 @pytest.mark.django_db

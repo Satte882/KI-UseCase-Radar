@@ -66,6 +66,10 @@ def _measurement_fields_complete(use_case: UseCase) -> bool:
     return not _measurement_missing(use_case)
 
 
+def _measurement_fields_complete(use_case: UseCase) -> bool:
+    return not _measurement_missing(use_case)
+
+
 def _measurement_complete(use_case: UseCase) -> bool:
     if not _measurement_fields_complete(use_case) or use_case.pilot_start is None:
         return False
@@ -262,17 +266,31 @@ def _measurement_step(
     missing = _measurement_missing(use_case)
     has_data = _has_measurement_data(use_case)
     if not handed_over or not pilot_started:
+        lifecycle_requires_pilot = (
+            use_case.status
+            in {
+                UseCase.Status.PILOT,
+                UseCase.Status.OPERATION,
+                UseCase.Status.ENDED,
+            }
+            or end_recorded
+        )
         return JourneyStep(
             key="measurement",
             label="Wirkungsmessung",
-            state="blocked" if has_data else "upcoming",
+            state="blocked" if lifecycle_requires_pilot else "upcoming",
             reason=(
-                "Dateninkonsistenz: Messdaten liegen vor, obwohl Übergabe und "
-                "Pilotbeginn nicht vollständig nachgewiesen sind."
-                if has_data
-                else "Die Wirkungsmessung folgt nach Übergabe und gestartetem Pilot."
+                "Dateninkonsistenz: Der Lifecycle ist bereits fortgeschritten, obwohl "
+                "Übergabe oder Pilotbeginn fehlen."
+                if lifecycle_requires_pilot
+                else (
+                    "Vorhandene Messwerte schließen keinen Pilot ab, solange kein "
+                    "verbindlicher Pilotbeginn dokumentiert ist."
+                    if has_data
+                    else "Die Wirkungsmessung folgt nach Übergabe und gestartetem Pilot."
+                )
             ),
-            details=missing if has_data else (),
+            details=("Übergabe", "Pilotbeginn") if lifecycle_requires_pilot else (),
         )
     if _measurement_predates_pilot(use_case):
         return JourneyStep(
@@ -285,7 +303,7 @@ def _measurement_step(
                 "Die vorhandene Messung stammt aus der Zeit vor dem aktuellen "
                 "Pilotbeginn und schließt diesen Pilot nicht ab."
             ),
-            details=("Messdatum nach Pilotbeginn",),
+            details=("Messdatum ab Pilotbeginn",),
         )
     if measurement_complete:
         return JourneyStep(
