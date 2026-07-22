@@ -3,17 +3,18 @@ from datetime import timedelta
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count
 from django.shortcuts import render
+from django.urls import reverse
 from django.utils import timezone
 
+from ki_radar.accounts.permissions import is_coordinator
 from ki_radar.core.taxonomy import BusinessDomain
 from ki_radar.delivery.models import DeliveryPackage
+from ki_radar.delivery.permissions import can_edit_package, can_transition_package
 from ki_radar.use_cases.blockers import build_blocker_details
 from ki_radar.use_cases.classification import UseCaseClassification
 from ki_radar.use_cases.models import UseCase
-from ki_radar.use_cases.outcome_workspace import (
-    build_outcome_workspace_journey,
-    normalize_outcome_stage,
-)
+from ki_radar.use_cases.outcome_workspace import build_outcome_workspace_journey
+from ki_radar.use_cases.permissions import can_edit_use_case
 from ki_radar.use_cases.services import (
     current_decision_check,
     decision_due_date,
@@ -24,10 +25,16 @@ from ki_radar.use_cases.workflow import build_use_case_journey
 from .portfolio import build_portfolio_context
 
 OUTCOME_STAGE_COPY = {
+    "handover": {
+        "title": "Übergabe",
+        "purpose": "Das freigegebene Delivery Package verbindlich an Delivery übergeben.",
+        "ki_radar": "Delivery Readiness, Package-Version, Übergabestatus und externer Delivery-Link.",
+        "external": "Übernahme von Backlog, Umsetzung, Tests und technischem Fortschritt.",
+    },
     "pilot": {
-        "title": "Piloten",
-        "purpose": "Laufende oder übergebene Vorhaben für den nächsten Review sichtbar machen.",
-        "ki_radar": "Review-Termin, Zielmetrik, Status-Snapshot und Link zum Delivery-System.",
+        "title": "Pilot",
+        "purpose": "Den operativen Pilot im führenden Delivery-System verfolgen.",
+        "ki_radar": "Pilotzeitraum, Review-Termin, Zielmetrik und Link zum Delivery-System.",
         "external": "Backlog, Tasks, Sprints, technische Detailprobleme und täglicher Fortschritt.",
     },
     "effect": {
@@ -38,23 +45,257 @@ OUTCOME_STAGE_COPY = {
     },
     "decision": {
         "title": "Ergebnisentscheidung",
-        "purpose": "Scale-, Continue-, Nachbesserungs- oder Stop-Entscheidung vorbereiten.",
-        "ki_radar": "Evidenz, Empfehlung, Begründung und später ein versioniertes Review-Artefakt.",
+        "purpose": "Die konkret verfügbare Lifecycle-Entscheidung auf Basis der Messung treffen.",
+        "ki_radar": "Messgrundlage, Entscheidung, Begründung und Statuswechsel im Lifecycle-Review.",
         "external": "Umsetzungsplanung der beschlossenen Maßnahmen oder Skalierung.",
     },
     "operation": {
         "title": "Betrieb",
-        "purpose": "Verantwortung und wiederkehrende Management-Reviews sichtbar machen.",
+        "purpose": "Verantwortung und fällige Management-Reviews sichtbar machen.",
         "ki_radar": "Owner, nächster Review, Nutzenstatus und entscheidungsrelevante Auflagen.",
         "external": "Incident-, Change-, Release- und Service-Management.",
     },
     "closure": {
         "title": "Abschluss",
         "purpose": "Beendigung, Datenbehandlung und Lessons Learned nachvollziehbar machen.",
-        "ki_radar": "Abschlussentscheidung, Ergebnis, Beendigungsgrund und Lessons Learned.",
+        "ki_radar": "Abschlussentscheidung, Beendigungsgrund, Datenbehandlung und Lessons Learned.",
         "external": "Technische Stilllegung, Archivierung und operative Restarbeiten.",
     },
 }
+OUTCOME_STAGE_KEYS = set(OUTCOME_STAGE_COPY)
+
+
+def _normalize_outcome_stage(value: str | None) -> str:
+    return value if value in OUTCOME_STAGE_KEYS else "pilot"
+
+
+def _stage_action(
+    phase: str,
+    reason: str,
+    *,
+    action_label: str = "",
+    url: str = "",
+    external: bool = False,
+    state: str = "neutral",
+) -> dict[str, str | bool]:
+    return {
+        "phase": phase,
+        "reason": reason,
+        "action_label": action_label,
+        "url": url,
+        "external": external,
+        "state": state,
+    }
+
+
+def _measurement_edit_action(use_case: UseCase, user) -> dict[str, str | bool]:
+    phase = "Wirkung"
+    if not can_edit_use_case(user, use_case):
+        return _stage_action(
+            phase,
+            "Die Wirkungsmessung ist sichtbar, kann mit der aktuellen Rolle aber nicht bearbeitet werden.",
+        )
+    edit_url = reverse("use_cases:edit", kwargs={"pk": use_case.pk})
+    required_fields = (
+        ("metric_actual", use_case.metric_actual, "Ist-Wert erfassen"),
+        ("metric_measurement_period", use_case.metric_measurement_period, "Messzeitraum ergänzen"),
+        ("metric_measured_at", use_case.metric_measured_at, "Messdatum ergänzen"),
+        ("metric_evidence_url", use_case.metric_evidence_url, "Messnachweis ergänzen"),
+    )
+    for field_name, value, label in required_fields:
+        if value in (None, ""):
+            return _stage_action(
+                phase,
+                "Die vorhandene Use-Case-Bearbeitung öffnet direkt das nächste fehlende Messfeld.",
+                action_label=label,
+                url=f"{edit_url}?highlight={field_name}",
+                state="available",
+            )
+    return _stage_action(
+        phase,
+        "Messwert, Zeitraum, Datum und Nachweis liegen vor und können am Use Case geprüft werden.",
+        action_label="Wirkungsmessung bearbeiten",
+        url=f"{edit_url}?highlight=metric_actual",
+        state="available",
+    )
+
+
+def _build_outcome_stage_action(
+    *,
+    active_stage: str,
+    use_case: UseCase,
+    user,
+) -> dict[str, str | bool]:
+    package = use_case.latest_delivery
+    phase = OUTCOME_STAGE_COPY[active_stage]["title"]
+
+    if active_stage == "handover":
+        if package is None:
+            return _stage_action(
+                phase,
+                "Für diesen Use Case existiert noch kein Delivery Package.",
+            )
+        if package.status == DeliveryPackage.Status.HANDED_OVER:
+            return _stage_action(
+                phase,
+                f"Delivery Package v{package.version} wurde bereits verbindlich übergeben.",
+            )
+        if package.status == DeliveryPackage.Status.READY:
+            if can_transition_package(user):
+                return _stage_action(
+                    phase,
+                    "Das vollständige Package ist bereit für die verbindliche Übergabe.",
+                    action_label="Übergabe durchführen",
+                    url=package.get_absolute_url(),
+                    state="available",
+                )
+            return _stage_action(
+                phase,
+                "Das Package ist bereit. Nur ein KI-Koordinator darf die Übergabe bestätigen.",
+            )
+        if can_edit_package(user, package):
+            return _stage_action(
+                phase,
+                "Das Delivery Package muss vor der Übergabe vervollständigt werden.",
+                action_label="Delivery Package vervollständigen",
+                url=reverse("delivery:package_update", kwargs={"pk": package.pk}),
+                state="available",
+            )
+        return _stage_action(
+            phase,
+            "Das Delivery Package ist noch unvollständig und mit der aktuellen Rolle nicht bearbeitbar.",
+        )
+
+    if active_stage == "pilot":
+        if use_case.status != UseCase.Status.PILOT:
+            return _stage_action(
+                phase,
+                "Ein operativer Pilot-Link wird erst für einen gestarteten Pilot angezeigt.",
+            )
+        if package and package.external_delivery_url:
+            return _stage_action(
+                phase,
+                "Der operative Pilot läuft im externen Delivery-System; KI-Radar hält den Review-Snapshot.",
+                action_label="Externen Pilot öffnen",
+                url=package.external_delivery_url,
+                external=True,
+                state="available",
+            )
+        if package and can_edit_package(user, package):
+            return _stage_action(
+                phase,
+                "Im Delivery Package ist noch kein externer Pilot-Link hinterlegt.",
+                action_label="Delivery-Link ergänzen",
+                url=(
+                    f"{reverse('delivery:package_update', kwargs={'pk': package.pk})}"
+                    "?highlight=external_delivery_url"
+                ),
+                state="available",
+            )
+        if package and package.status == DeliveryPackage.Status.HANDED_OVER:
+            return _stage_action(
+                phase,
+                "Kein externer Pilot-Link hinterlegt. Das übergebene Package ist unveränderlich; "
+                "der Link muss bei einer neuen Package-Version ergänzt werden.",
+            )
+        return _stage_action(
+            phase,
+            "Kein externer Pilot-Link hinterlegt und aktuell keine zulässige Bearbeitungsaktion verfügbar.",
+        )
+
+    if active_stage == "effect":
+        return _measurement_edit_action(use_case, user)
+
+    if active_stage == "decision":
+        measurement_complete = all(
+            (
+                use_case.metric_actual is not None,
+                bool(use_case.metric_measurement_period),
+                use_case.metric_measured_at is not None,
+                bool(use_case.metric_evidence_url),
+            )
+        )
+        if not measurement_complete:
+            action = _measurement_edit_action(use_case, user)
+            action["phase"] = phase
+            action["reason"] = (
+                "Die Ergebnisentscheidung bleibt blockiert, bis die vollständige Wirkungsmessung vorliegt."
+            )
+            return action
+        if use_case.status == UseCase.Status.PILOT and is_coordinator(user):
+            return _stage_action(
+                phase,
+                "Die vollständige Messgrundlage liegt vor; jetzt kann über den Go-live entschieden werden.",
+                action_label="Go-live entscheiden",
+                url=(
+                    f"{reverse('reviews:create', kwargs={'use_case_id': use_case.pk})}"
+                    "?action=go_live"
+                ),
+                state="available",
+            )
+        if use_case.status in {UseCase.Status.OPERATION, UseCase.Status.ENDED}:
+            return _stage_action(
+                phase,
+                "Die wirksame Lifecycle-Entscheidung ist bereits im Review und Status dokumentiert.",
+            )
+        return _stage_action(
+            phase,
+            "Eine Ergebnisentscheidung kann ausschließlich ein KI-Koordinator dokumentieren.",
+        )
+
+    if active_stage == "operation":
+        if use_case.status == UseCase.Status.ENDED:
+            return _stage_action(phase, "Der produktive Betrieb ist bereits abgeschlossen.")
+        if use_case.status != UseCase.Status.OPERATION:
+            return _stage_action(phase, "Der Betriebsbereich wird erst nach dem Go-live relevant.")
+        today = timezone.localdate()
+        review_due = use_case.next_review_date is None or use_case.next_review_date <= today
+        if review_due and is_coordinator(user):
+            return _stage_action(
+                phase,
+                "Der nächste Betriebsreview ist fällig oder noch nicht terminiert.",
+                action_label="Review dokumentieren",
+                url=reverse("reviews:create", kwargs={"use_case_id": use_case.pk}),
+                state="available",
+            )
+        if review_due:
+            return _stage_action(
+                phase,
+                "Ein Betriebsreview ist fällig, kann mit der aktuellen Rolle aber nicht dokumentiert werden.",
+            )
+        return _stage_action(
+            phase,
+            f"Aktuell keine Aktion erforderlich. Nächster Review: {use_case.next_review_date:%d.%m.%Y}.",
+        )
+
+    if active_stage == "closure":
+        if use_case.status == UseCase.Status.ENDED:
+            return _stage_action(
+                phase,
+                "Der Abschluss ist dokumentiert; der Use Case befindet sich im Status Beendet.",
+            )
+        if use_case.status in {UseCase.Status.PILOT, UseCase.Status.OPERATION} and is_coordinator(user):
+            return _stage_action(
+                phase,
+                "Beendigungsgrund und Daten-/Zugangsbehandlung werden im bestehenden Review erfasst.",
+                action_label="Abschluss dokumentieren",
+                url=(
+                    f"{reverse('reviews:create', kwargs={'use_case_id': use_case.pk})}"
+                    "?action=closure"
+                ),
+                state="available",
+            )
+        if use_case.status in {UseCase.Status.PILOT, UseCase.Status.OPERATION}:
+            return _stage_action(
+                phase,
+                "Ein Abschluss ist möglich, kann mit der aktuellen Rolle aber nicht dokumentiert werden.",
+            )
+        return _stage_action(
+            phase,
+            "Der Abschluss wird relevant, sobald der Use Case im Pilot oder Betrieb beendet werden soll.",
+        )
+
+    return _stage_action(phase, "Für diesen Bereich ist aktuell keine Aktion verfügbar.")
 
 
 @login_required
@@ -142,7 +383,7 @@ def portfolio(request):
 
 @login_required
 def outcome_workspace(request):
-    active_stage = normalize_outcome_stage(request.GET.get("stage"))
+    active_stage = _normalize_outcome_stage(request.GET.get("stage"))
     use_cases = list(
         UseCase.objects.filter(is_archived=False)
         .select_related("business_owner", "technical_owner", "business_unit")
@@ -181,9 +422,19 @@ def outcome_workspace(request):
         if selected_use_case
         else None
     )
+    active_stage_action = (
+        _build_outcome_stage_action(
+            active_stage=active_stage,
+            use_case=selected_use_case,
+            user=request.user,
+        )
+        if selected_use_case
+        else None
+    )
     context = {
         "active_stage": active_stage,
         "active_stage_copy": OUTCOME_STAGE_COPY[active_stage],
+        "active_stage_action": active_stage_action,
         "journey": journey,
         "selected_use_case": selected_use_case,
         "use_cases": use_cases,
