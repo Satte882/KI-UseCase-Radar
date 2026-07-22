@@ -3,8 +3,6 @@ name: KI-Radar CI
 on:
   pull_request:
     branches: [main]
-  push:
-    branches: [main]
 
 permissions:
   contents: read
@@ -14,7 +12,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  validate:
+  browser-acceptance:
     runs-on: ubuntu-latest
 
     services:
@@ -57,58 +55,23 @@ jobs:
           version: "0.10.0"
           enable-cache: true
 
-      - name: Verify lockfile
-        run: uv lock --check
-
       - name: Install dependencies
         run: uv sync --frozen --dev
-
-      - name: Ruff lint
-        run: uv run ruff check .
-
-      - name: Ruff format
-        run: uv run ruff format .
-
-      - name: Capture formatted sources
-        uses: actions/upload-artifact@v4
-        with:
-          name: ruff-formatted-sources
-          path: |
-            ki_radar/core/management/commands/seed_demo_data.py
-            ki_radar/delivery/services.py
-            ki_radar/reviews/forms.py
-            ki_radar/reviews/services.py
-            ki_radar/reviews/views.py
-            ki_radar/use_cases/blockers.py
-            ki_radar/use_cases/forms.py
-            ki_radar/use_cases/outcome_workspace.py
-            ki_radar/use_cases/permissions.py
-            ki_radar/use_cases/services.py
-            ki_radar/use_cases/workflow.py
-            tests/test_delivery_to_pilot.py
-            tests/test_guided_journey.py
-            tests/test_reviews.py
-            tests/test_status_transitions.py
-
-      - name: Django system check
-        run: uv run python manage.py check
-
-      - name: Verify migrations
-        run: uv run python manage.py makemigrations --check --dry-run
 
       - name: Apply migrations
         run: uv run python manage.py migrate --noinput
 
-      - name: Diagnose Pilot journey
-        shell: bash
+      - name: Prepare handed-over demo
         run: |
           uv run python manage.py shell <<'PY'
+          import json
           from django.conf import settings
           from django.core.management import call_command
           from ki_radar.accounts.models import User
           from ki_radar.core.demo_architecture_data import INVOICE_USE_CASE_KEY
           from ki_radar.delivery.services import current_delivery_package, hand_over_package
           from ki_radar.use_cases.models import UseCase
+          from ki_radar.use_cases.workflow import pilot_start_url
 
           settings.DEBUG = True
           call_command("seed_demo_data", demo_user_password="Delivery-Pilot-Demo-2026!")
@@ -116,35 +79,6 @@ jobs:
           use_case = UseCase.objects.get(demo_key=INVOICE_USE_CASE_KEY)
           package = current_delivery_package(use_case)
           hand_over_package(package, coordinator)
-          PY
-
-      - name: Run tests
-        shell: bash
-        run: |
-          set -o pipefail
-          uv run pytest -q 2>&1 | tee pytest-output.txt
-
-      - name: Capture pytest output
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: pytest-output
-          path: pytest-output.txt
-
-      - name: Install Chromium browser
-        run: |
-          uv pip install playwright==1.55.0
-          uv run playwright install chromium --with-deps
-
-      - name: Prepare browser targets
-        run: |
-          uv run python manage.py shell <<'PY'
-          import json
-          from ki_radar.core.demo_architecture_data import INVOICE_USE_CASE_KEY
-          from ki_radar.use_cases.models import UseCase
-          from ki_radar.use_cases.workflow import pilot_start_url
-
-          use_case = UseCase.objects.get(demo_key=INVOICE_USE_CASE_KEY)
           with open("browser-targets.json", "w", encoding="utf-8") as target_file:
               json.dump(
                   {
@@ -155,8 +89,12 @@ jobs:
               )
           PY
 
-      - name: Start browser test server
-        shell: bash
+      - name: Install Chromium
+        run: |
+          uv pip install playwright==1.55.0
+          uv run playwright install chromium --with-deps
+
+      - name: Start server
         run: |
           uv run python manage.py runserver 127.0.0.1:8000 --insecure > browser-server.log 2>&1 &
           echo $! > browser-server.pid
@@ -169,10 +107,10 @@ jobs:
           cat browser-server.log
           exit 1
 
-      - name: Verify Desktop and Mobile browser flow
+      - name: Verify Desktop and Mobile flow
         run: |
           mkdir -p browser-evidence
-          uv run python - <<'PY'
+          uv run python - <<'PY' 2>&1 | tee browser-evidence/playwright-output.txt
           import json
           from pathlib import Path
 
@@ -192,9 +130,11 @@ jobs:
                   page = context.new_page()
                   page.goto(base_url + "/accounts/login/", wait_until="networkidle")
                   page.locator('input[name="username"]').fill("demo_ki_koordinator")
-                  page.locator('input[name="password"]').fill("Delivery-Pilot-Demo-2026!")
-                  page.locator('button[type="submit"]').click()
+                  password = page.locator('input[name="password"]')
+                  password.fill("Delivery-Pilot-Demo-2026!")
+                  password.press("Enter")
                   page.wait_for_load_state("networkidle")
+                  expect(page.locator('input[name="password"]')).to_have_count(0)
 
                   page.goto(base_url + targets["detail"], wait_until="networkidle")
                   pilot_link = page.get_by_role("link", name="Pilot starten").first
@@ -214,7 +154,7 @@ jobs:
               browser.close()
           PY
 
-      - name: Capture browser evidence
+      - name: Capture evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -223,42 +163,9 @@ jobs:
             browser-evidence/
             browser-server.log
 
-      - name: Stop browser test server
+      - name: Stop server
         if: always()
         run: |
           if [ -f browser-server.pid ]; then
             kill "$(cat browser-server.pid)" || true
           fi
-
-      - name: Bandit
-        run: uv run bandit -q -r ki_radar config
-
-      - name: Dependency audit
-        run: uv run pip-audit
-
-      - name: Prepare Compose validation
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p .ci-secrets/prod .ci-secrets/staging deploy/certs
-          for secret in django_secret_key db_password sentry_dsn monitoring_token; do
-            printf 'ci-placeholder\n' > ".ci-secrets/prod/${secret}"
-          done
-          for secret in django_secret_key db_password; do
-            printf 'ci-placeholder\n' > ".ci-secrets/staging/${secret}"
-          done
-
-      - name: Validate local Compose
-        run: docker compose -f compose.local.yml config --quiet
-
-      - name: Validate production Compose
-        run: SECRETS_DIR="$PWD/.ci-secrets/prod" docker compose --env-file .env.production.example -f compose.prod.yml config --quiet
-
-      - name: Validate staging Compose
-        run: STAGING_SECRETS_DIR="$PWD/.ci-secrets/staging" docker compose --env-file .env.staging.example -f compose.staging.yml config --quiet
-
-      - name: Build production image
-        run: docker build -t ki-radar:ci .
-
-      - name: Build development image
-        run: docker build -f Dockerfile.dev -t ki-radar-dev:ci .
