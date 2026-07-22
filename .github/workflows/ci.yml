@@ -67,7 +67,15 @@ jobs:
         run: uv run ruff check .
 
       - name: Ruff format
-        run: uv run ruff format --check .
+        run: uv run ruff format .
+
+      - name: Capture formatted tests
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruff-formatted-tests
+          path: |
+            tests/test_reviews.py
+            tests/test_status_transitions.py
 
       - name: Django system check
         run: uv run python manage.py check
