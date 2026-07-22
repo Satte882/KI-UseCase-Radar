@@ -100,13 +100,14 @@ Die Statusableitung verwendet vorhandene, verbindliche Nachweise:
 
 - aktuelle verbindliche Delivery-Übergabe,
 - dokumentierten `pilot_start`,
-- vollständige Wirkungsmessung aus Ist-Wert, Messzeitraum, Messdatum und Nachweis,
+- vollständige Wirkungsmessung aus Ist-Wert, Messzeitraum, Messdatum und Nachweis, deren Messdatum nicht vor dem aktuellen Pilotbeginn liegt,
 - persistierte Lifecycle-Reviews für `GO_LIVE` und `END`.
 
 Dabei gelten folgende Invarianten:
 
 - Es gibt höchstens eine Phase mit dem Zustand `current`.
-- Ein gestarteter Pilot wird erst nach vollständiger Messung oder dokumentierter Folgeentscheidung als abgeschlossen dargestellt.
+- Ein gestarteter Pilot wird erst nach einer vollständigen Messung für den aktuellen Pilot oder einer dokumentierten Folgeentscheidung als abgeschlossen dargestellt.
+- Eine ältere Messung vor dem aktuellen `pilot_start` bleibt sichtbar, schließt den aktuellen Pilot aber nicht ab.
 - Betrieb ist nur nach vollständiger Messung und persistiertem Go-live-Review gültig.
 - Ein direkter Abschluss aus dem Pilot überspringt Betrieb bewusst als `optional`.
 - Widersprechen Lifecycle-Status und Nachweise einander, werden die betroffenen Phasen als `blocked` mit dem Hinweis `Dateninkonsistenz` angezeigt. Spätere Phasen werden nicht fälschlich als abgeschlossen oder aktuell dargestellt.
@@ -135,5 +136,6 @@ Es entsteht keine Migration.
 - Der Account-Footer blockiert keinen dauerhaften Platz für Administration und Abmelden.
 - Die obere Leiste trennt geöffneten Bereich und fachlichen Lifecycle-Status.
 - Die Lifecycle-Reihenfolge zeigt keine späteren grünen oder gelben Phasen bei fehlenden zwingenden Nachweisen.
+- Eine Messung vor dem aktuellen Pilotbeginn wird nicht als Abschluss des aktuellen Piloten gewertet.
 - Die bestehende Systemgrenze bleibt sichtbar.
 - Es entsteht kein neues Datenmodell und keine Migration.
