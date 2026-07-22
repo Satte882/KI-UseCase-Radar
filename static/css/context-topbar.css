@@ -219,7 +219,31 @@
     display: none;
   }
 
+  .journey-topbar-main {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .journey-topbar-heading {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    max-width: 100%;
+  }
+
+  .journey-topbar-heading > *,
+  .journey-topbar-next-copy {
+    max-width: 100%;
+  }
+
+  .journey-topbar-heading strong,
+  .journey-topbar-kicker {
+    overflow-wrap: anywhere;
+  }
+
   .journey-progress {
+    width: 100%;
+    max-width: 100%;
     margin-inline: -2px;
   }
 
@@ -228,6 +252,8 @@
   }
 
   .journey-topbar-next {
+    min-width: 0;
+    max-width: 100%;
     align-items: flex-end;
   }
 }
