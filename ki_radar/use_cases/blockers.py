@@ -130,9 +130,7 @@ def build_blocker_details(use_case: UseCase, blockers: list[str]) -> list[Blocke
                         "Delivery Package öffnen" if package else "Delivery-Bereich öffnen"
                     ),
                     target_url=(
-                        package.get_absolute_url()
-                        if package
-                        else reverse("delivery:package_list")
+                        package.get_absolute_url() if package else reverse("delivery:package_list")
                     ),
                 )
             )
