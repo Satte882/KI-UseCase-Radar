@@ -67,25 +67,7 @@ jobs:
         run: uv run ruff check .
 
       - name: Ruff format
-        run: uv run ruff format .
-
-      - name: Capture formatted sources
-        uses: actions/upload-artifact@v4
-        with:
-          name: ruff-formatted-sources
-          path: |
-            ki_radar/delivery/services.py
-            ki_radar/reviews/forms.py
-            ki_radar/reviews/services.py
-            ki_radar/reviews/views.py
-            ki_radar/use_cases/blockers.py
-            ki_radar/use_cases/forms.py
-            ki_radar/use_cases/outcome_workspace.py
-            ki_radar/use_cases/permissions.py
-            ki_radar/use_cases/services.py
-            ki_radar/use_cases/workflow.py
-            tests/test_delivery_to_pilot.py
-            tests/test_guided_journey.py
+        run: uv run ruff format --check .
 
       - name: Django system check
         run: uv run python manage.py check
@@ -97,17 +79,7 @@ jobs:
         run: uv run python manage.py migrate --noinput
 
       - name: Run tests
-        shell: bash
-        run: |
-          set -o pipefail
-          uv run pytest -q 2>&1 | tee pytest-output.txt
-
-      - name: Capture pytest output
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: pytest-output
-          path: pytest-output.txt
+        run: uv run pytest -q
 
       - name: Bandit
         run: uv run bandit -q -r ki_radar config
