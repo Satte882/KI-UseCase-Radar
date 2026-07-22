@@ -43,10 +43,10 @@ class Command(BaseCommand):
         counts = seed_demo_data(demo_user_password=password)
         metric_count = enrich_demo_metrics()
         architecture_counts = seed_demo_architecture_data()
+        assign_demo_identities()
         UseCase.objects.filter(
             demo_key__in=[INVOICE_USE_CASE_KEY, DOCUMENT_USE_CASE_KEY]
         ).update(status=UseCase.Status.REVIEW)
-        assign_demo_identities()
         self.stdout.write(
             self.style.SUCCESS(
                 "Demo-Daten eingespielt: "
