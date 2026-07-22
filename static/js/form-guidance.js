@@ -42,13 +42,11 @@
       "(z. B. neue lesende SAP-Schnittstelle und Rückgabe von Prüfstatus und Begründung)",
     integration_contracts:
       "(z. B. SAP-Team verantwortet die API; Buchhaltung verantwortet Freigaberegeln und Ausnahmen)",
-    architecture_artifacts_url:
-      "(z. B. Link zum Systemkontext- oder Datenflussdiagramm in Confluence)",
-    artifacts_url: "(z. B. Link zum Systemkontext- oder Datenflussdiagramm in Confluence)",
-    external_delivery_url: "(z. B. Link zum Jira-Epic oder Azure-DevOps-Backlog)",
-    evidence_url:
-      "(z. B. Link zur freigegebenen Pilot-Auswertung in SharePoint, Power BI oder Confluence)",
-    metric_evidence_url: "(z. B. Link zum freigegebenen Messbericht oder Power-BI-Dashboard)",
+    architecture_artifacts_url: "(z. B. Link zum Systemkontextdiagramm)",
+    artifacts_url: "(z. B. Link zum Systemkontextdiagramm)",
+    external_delivery_url: "(z. B. Jira-Epic oder DevOps-Backlog)",
+    evidence_url: "(z. B. freigegebene Pilot-Auswertung)",
+    metric_evidence_url: "(z. B. freigegebener Messbericht oder Dashboard)",
     expected_benefit: "(z. B. Prüfzeit von elf auf fünf Minuten je Rechnung senken)",
     benefit_category: "(z. B. Durchlaufzeit, Qualität, Kosten oder Risikoreduktion)",
     metric_name: "(z. B. durchschnittliche Prüfzeit je Rechnung)",

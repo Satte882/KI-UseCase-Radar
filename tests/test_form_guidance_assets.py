@@ -40,13 +40,13 @@ def test_form_guidance_uses_informative_examples_instead_of_repeating_labels():
     assert "TYPE_FALLBACKS" in script
 
     assert "evidence_url:" in script
-    assert "Link zur freigegebenen Pilot-Auswertung" in script
+    assert "freigegebene Pilot-Auswertung" in script
     assert "metric_evidence_url:" in script
-    assert "Link zum freigegebenen Messbericht" in script
+    assert "freigegebener Messbericht oder Dashboard" in script
     assert "artifacts_url:" in script
-    assert "Link zum Systemkontext- oder Datenflussdiagramm" in script
+    assert "Link zum Systemkontextdiagramm" in script
     assert "external_delivery_url:" in script
-    assert "Link zum Jira-Epic oder Azure-DevOps-Backlog" in script
+    assert "Jira-Epic oder DevOps-Backlog" in script
 
     assert "architecture_decisions:" in script
     assert "SAP bleibt führend; Verarbeitung erfolgt in Azure" in script
