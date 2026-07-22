@@ -64,16 +64,7 @@ jobs:
         run: uv sync --frozen --dev
 
       - name: Ruff lint
-        run: |
-          set -o pipefail
-          uv run ruff check ki_radar/reviews/services.py --fix --diff 2>&1 | tee ruff-lint.txt
-
-      - name: Upload Ruff diagnostics
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ruff-lint-diagnostics
-          path: ruff-lint.txt
+        run: uv run ruff check .
 
       - name: Ruff format
         run: uv run ruff format --check .
