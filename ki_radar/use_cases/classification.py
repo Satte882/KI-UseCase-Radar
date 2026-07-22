@@ -41,13 +41,26 @@ class UseCaseClassification(TimeStampedModel):
 
 
 DEMO_CLASSIFICATION_DEFAULTS = {
-    "invoice-check-golden-path": (BusinessDomain.FINANCE, "Accounts Payable und Rechnungsprüfung"),
-    "supplier-selection-incomplete": (BusinessDomain.PROCUREMENT, "Supplier Sourcing"),
-    "order-approval-non-ai": (BusinessDomain.PROCUREMENT, "Purchase Approval"),
-    "customer-service-conditional": (BusinessDomain.CUSTOMER_SERVICE, "Customer Service Management"),
-    "applicant-screening-stopped": (BusinessDomain.HUMAN_RESOURCES, "Talent Acquisition"),
-    "document-routing-handed-over": (BusinessDomain.CORPORATE_SERVICES, "Document Management"),
-    "direct-intake-incomplete": (BusinessDomain.CORPORATE_SERVICES, "Request Management"),
+    "invoice-check-golden-path": (
+        BusinessDomain.FINANCE,
+        "Accounts Payable und Rechnungsprüfung",
+    ),
+    "customer-service-conditional": (
+        BusinessDomain.CUSTOMER_SERVICE,
+        "Customer Service Management",
+    ),
+    "applicant-screening-stopped": (
+        BusinessDomain.HUMAN_RESOURCES,
+        "Talent Acquisition",
+    ),
+    "document-routing-handed-over": (
+        BusinessDomain.CORPORATE_SERVICES,
+        "Document Management",
+    ),
+    "direct-intake-incomplete": (
+        BusinessDomain.CORPORATE_SERVICES,
+        "Request Management",
+    ),
 }
 
 
@@ -62,7 +75,11 @@ def persist_classification_payload(sender, instance, **kwargs):
             "process_area": instance.affected_process,
         }
     if payload is None:
-        return
+        payload = {
+            "business_domain": BusinessDomain.OTHER,
+            "capability": "",
+            "process_area": instance.affected_process,
+        }
     UseCaseClassification.objects.update_or_create(
         use_case=instance,
         defaults=payload,
