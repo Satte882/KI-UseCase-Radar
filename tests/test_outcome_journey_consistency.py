@@ -102,10 +102,18 @@ def _complete_measurement(use_case, *, measured_at=None):
     )
 
 
-def _review(use_case, coordinator, *, decision, previous_status, new_status):
+def _review(
+    use_case,
+    coordinator,
+    *,
+    decision,
+    previous_status,
+    new_status,
+    review_date=None,
+):
     return Review.objects.create(
         use_case=use_case,
-        review_date=timezone.localdate(),
+        review_date=review_date or timezone.localdate(),
         reviewer=coordinator,
         previous_status=previous_status,
         new_status=new_status,
@@ -197,6 +205,31 @@ def test_valid_operation_has_complete_predecessors_and_one_current_phase(
 
 
 @pytest.mark.django_db
+def test_go_live_review_with_wrong_previous_status_does_not_validate_operation(
+    coordinator,
+    owner,
+    business_unit,
+):
+    use_case = _use_case(owner, business_unit, status=UseCase.Status.OPERATION)
+    _handed_over_package(use_case, coordinator)
+    _start_pilot(use_case)
+    _complete_measurement(use_case)
+    _review(
+        use_case,
+        coordinator,
+        decision=Review.Decision.GO_LIVE,
+        previous_status=UseCase.Status.REVIEW,
+        new_status=UseCase.Status.OPERATION,
+    )
+
+    states = _outcome_states(build_outcome_workspace_journey(use_case, coordinator))
+
+    assert states["outcome_decision"] == "blocked"
+    assert states["operation"] == "blocked"
+    assert "current" not in states.values()
+
+
+@pytest.mark.django_db
 def test_direct_end_from_pilot_marks_operation_optional(
     coordinator,
     owner,
@@ -230,6 +263,35 @@ def test_direct_end_from_pilot_marks_operation_optional(
 
 
 @pytest.mark.django_db
+def test_end_review_outside_pilot_or_operation_does_not_validate_closure(
+    coordinator,
+    owner,
+    business_unit,
+):
+    use_case = _use_case(owner, business_unit, status=UseCase.Status.ENDED)
+    _handed_over_package(use_case, coordinator)
+    _start_pilot(use_case)
+    _review(
+        use_case,
+        coordinator,
+        decision=Review.Decision.END,
+        previous_status=UseCase.Status.REVIEW,
+        new_status=UseCase.Status.ENDED,
+    )
+
+    states = _outcome_states(build_outcome_workspace_journey(use_case, coordinator))
+
+    assert states["outcome_decision"] == "blocked"
+    assert states["operation"] == "blocked"
+    assert states["closure"] == "blocked"
+    assert "complete" not in {
+        states["outcome_decision"],
+        states["operation"],
+        states["closure"],
+    }
+
+
+@pytest.mark.django_db
 def test_measurement_before_current_pilot_does_not_complete_pilot(
     coordinator,
     owner,
@@ -241,6 +303,14 @@ def test_measurement_before_current_pilot_does_not_complete_pilot(
     _complete_measurement(
         use_case,
         measured_at=use_case.pilot_start - timedelta(days=1),
+    )
+    _review(
+        use_case,
+        coordinator,
+        decision=Review.Decision.GO_LIVE,
+        previous_status=UseCase.Status.PILOT,
+        new_status=UseCase.Status.OPERATION,
+        review_date=use_case.pilot_start - timedelta(days=60),
     )
 
     states = _outcome_states(build_outcome_workspace_journey(use_case, coordinator))

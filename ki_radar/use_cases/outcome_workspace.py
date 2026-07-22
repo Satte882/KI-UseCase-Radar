@@ -87,11 +87,21 @@ def _has_measurement_data(use_case: UseCase) -> bool:
     )
 
 
-def _has_review(use_case: UseCase, *, decision: str, new_status: str) -> bool:
-    return use_case.reviews.filter(
+def _has_review(
+    use_case: UseCase,
+    *,
+    decision: str,
+    previous_statuses: tuple[str, ...],
+    new_status: str,
+) -> bool:
+    reviews = use_case.reviews.filter(
         decision=decision,
+        previous_status__in=previous_statuses,
         new_status=new_status,
-    ).exists()
+    )
+    if use_case.pilot_start is not None:
+        reviews = reviews.filter(review_date__gte=use_case.pilot_start)
+    return reviews.exists()
 
 
 def _handover_step(
@@ -580,11 +590,13 @@ def build_outcome_workspace_journey(
     go_live_recorded = _has_review(
         use_case,
         decision=Review.Decision.GO_LIVE,
+        previous_statuses=(UseCase.Status.PILOT,),
         new_status=UseCase.Status.OPERATION,
     )
     end_recorded = _has_review(
         use_case,
         decision=Review.Decision.END,
+        previous_statuses=(UseCase.Status.PILOT, UseCase.Status.OPERATION),
         new_status=UseCase.Status.ENDED,
     )
     pilot_started = bool(use_case.pilot_start)
