@@ -25,6 +25,14 @@ OUTCOME_WORKFLOW = (
 )
 WORKFLOW = SELECTION_WORKFLOW
 OUTCOME_STEP_KEYS = {key for key, _label, _raw_keys in OUTCOME_WORKFLOW}
+OUTCOME_STAGE_TO_STEP = {
+    "handover": "handover",
+    "pilot": "pilot",
+    "effect": "measurement",
+    "decision": "outcome_decision",
+    "operation": "operation",
+    "closure": "closure",
+}
 
 
 def _aggregate_state(raw_steps, keys):
@@ -119,17 +127,13 @@ def _selection_route_states(request):
     return states
 
 
-def _outcome_route_states(request):
+def _outcome_current_step(request):
     current_stage = request.GET.get("stage", "pilot")
-    stage_to_step = {
-        "handover": "handover",
-        "pilot": "pilot",
-        "effect": "measurement",
-        "decision": "outcome_decision",
-        "operation": "operation",
-        "closure": "closure",
-    }
-    current_step = stage_to_step.get(current_stage, "pilot")
+    return OUTCOME_STAGE_TO_STEP.get(current_stage, "pilot")
+
+
+def _outcome_route_states(request):
+    current_step = _outcome_current_step(request)
     states = {key: "upcoming" for key, _label, _keys in OUTCOME_WORKFLOW}
     states[current_step] = "current"
     return states
@@ -166,6 +170,8 @@ def workflow_steps(journey, request):
     raw_steps = journey.steps if journey else ()
     selection_states = _selection_route_states(request)
     outcome_states = _outcome_route_states(request)
+    is_outcome_workspace = _is_outcome_workspace(journey, request)
+    selected_outcome_step = _outcome_current_step(request)
     result = []
     for key, label, raw_keys, divider_before in definitions:
         if journey:
@@ -181,6 +187,7 @@ def workflow_steps(journey, request):
                 "state": state,
                 "url": links[key],
                 "divider_before": divider_before,
+                "view_active": is_outcome_workspace and key == selected_outcome_step,
             }
         )
     return result
