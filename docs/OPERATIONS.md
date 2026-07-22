@@ -10,6 +10,37 @@
 - Sentry-kompatibles Fehlertracking, sofern konfiguriert
 - externer Uptime-Monitor
 
+## Datenhaltung und Verantwortlichkeit
+
+PostgreSQL ist das führende Speichersystem für die in der Weboberfläche erfassten fachlichen Anwendungsdaten. Dazu gehören unter anderem Use Cases, Architecture- und Discovery-Artefakte, Bewertungen, Freigaben, Governance-Screenings, Lifecycle-Reviews, Delivery Packages und technische Änderungshistorien.
+
+Git und GitHub enthalten Code, Migrationen und Dokumentation, aber nicht automatisch die über die Oberfläche erfassten Produktionsdaten.
+
+Der Produktionsstack verwendet getrennte persistente Volumes:
+
+```text
+prod_db      → PostgreSQL-Daten
+prod_var     → variable Anwendungsdaten und Anonymisierungs-Ledger
+prod_backups → Datenbank-Backups
+prod_static  → gesammelte statische Dateien
+```
+
+Das Anonymisierungs-Ledger liegt bewusst außerhalb der Datenbank und muss neben Datenbank-Backups gesichert und nach einem Restore erneut angewendet werden.
+
+Der technische Administrator beziehungsweise der festgelegte Betreiber ist verantwortlich für:
+
+- Verfügbarkeit und Schutz der Datenbank,
+- tägliche Backups und deren Überwachung,
+- regelmäßige Restore-Tests,
+- Sicherung des Anonymisierungs-Ledgers,
+- Offsite-Sicherung, sofern für den Betrieb erforderlich,
+- Speicherkapazität und Aufbewahrungsfristen,
+- dokumentierte Lösch-, Auskunfts- und Wiederherstellungsprozesse.
+
+Persistente Docker-Volumes sind kein Ersatz für ein Backup. Ein Löschen der produktiven Volumes darf nur im Rahmen eines kontrollierten Betriebs- oder Wiederanlaufverfahrens erfolgen.
+
+Die vollständige Datenfluss- und Speicherübersicht steht in [`DATA_STORAGE.md`](DATA_STORAGE.md). Backup- und Restore-Details stehen in [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md).
+
 ## Regelbetrieb
 
 Täglich automatisch:
@@ -50,6 +81,8 @@ KI_RADAR_IMAGE=ki-radar:<version> docker compose -f compose.prod.yml up -d
 ```
 
 Vor Produktion immer Backup und Staging-Test durchführen.
+
+Ein Deployment oder Git-Update ersetzt weder Datenbank-Backups noch Datenmigrationen. Django-Migrationen verändern die Datenbankstruktur kontrolliert; die fachlichen Daten verbleiben in PostgreSQL.
 
 ## Review-Scan
 

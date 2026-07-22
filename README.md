@@ -238,6 +238,18 @@ KI-Radar bleibt fachlich und technisch ein klar abgegrenztes System:
 
 ---
 
+## Datenspeicherung
+
+Fachliche Eingaben aus der Weboberfläche werden nach erfolgreicher Validierung in PostgreSQL gespeichert. Git und GitHub enthalten Code, Migrationen und Dokumentation, aber nicht automatisch die erfassten Use Cases, Bewertungen, Governance-Screenings, Reviews oder Delivery Packages.
+
+Im lokalen Docker-Setup liegen die PostgreSQL-Daten persistent im Volume `local_db`. Ein normaler Container-Neustart, Rebuild oder Branchwechsel lässt dieses Volume bestehen. `docker compose -f compose.local.yml down -v` löscht dagegen die lokale Datenbank und alle lokalen Volumes vollständig.
+
+Ohne konfigurierten API-Key werden keine Use-Case-Daten an OpenRouter gesendet. Erst eine ausdrücklich gestartete Copilot-Analyse überträgt ausgewählte Daten an die konfigurierte API.
+
+Details zu Datenarten, Änderungshistorie, Nachweislinks, lokalen und produktiven Volumes, Backups, Löschung und optionalen externen Übertragungen stehen in [Datenspeicherung und Datenfluss](docs/DATA_STORAGE.md).
+
+---
+
 ## Zentrale Architekturentscheidungen
 
 Architekturentscheidungen werden als Architecture Decision Records dokumentiert. Sie halten nicht nur das Ergebnis, sondern auch Kontext, Trade-offs und Konsequenzen einer Entscheidung fest.
@@ -405,6 +417,7 @@ Ohne SSO sollte der Zugriff auf ein internes Netz oder VPN beschränkt bleiben.
 
 * [Discovery & Architecture](docs/DISCOVERY_ARCHITECTURE.md)
 * [Lokales Setup](SETUP.md)
+* [Datenspeicherung und Datenfluss](docs/DATA_STORAGE.md)
 * [Security](docs/SECURITY.md)
 * [Betrieb](docs/OPERATIONS.md)
 * [Backup und Restore](docs/BACKUP_RESTORE.md)
