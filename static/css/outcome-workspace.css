@@ -1,0 +1,350 @@
+.app-content-wide {
+  max-width: none;
+}
+
+.outcome-workspace-content {
+  padding-inline: clamp(18px, 2.5vw, 42px);
+}
+
+.outcome-page-header {
+  align-items: center;
+}
+
+.outcome-eyebrow,
+.outcome-boundary-label {
+  color: var(--muted);
+  font-size: .68rem;
+  font-weight: 750;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.outcome-layout-switch,
+.outcome-stage-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.outcome-spike-banner {
+  margin-bottom: 18px;
+  padding: 13px 16px;
+  border: 1px solid rgba(243, 185, 95, .28);
+  border-radius: 13px;
+  background: rgba(243, 185, 95, .07);
+  color: #d9e2f0;
+  font-size: .84rem;
+}
+
+.outcome-spike-banner strong {
+  color: #ffd38a;
+}
+
+.outcome-stage-nav {
+  margin-bottom: 20px;
+  padding: 7px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(13, 20, 34, .72);
+}
+
+.outcome-stage-link {
+  min-width: 132px;
+  flex: 1 1 150px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: .78rem;
+  font-weight: 680;
+}
+
+.outcome-stage-link span {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(148, 163, 184, .28);
+  border-radius: 50%;
+  font-size: .66rem;
+}
+
+.outcome-stage-link:hover,
+.outcome-stage-link.active {
+  color: var(--text);
+  background: var(--panel-hover);
+}
+
+.outcome-stage-link.active {
+  box-shadow: inset 0 0 0 1px rgba(124, 92, 255, .35);
+}
+
+.outcome-boundary-grid {
+  display: grid;
+  grid-template-columns: minmax(360px, 1.55fr) repeat(2, minmax(250px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.outcome-boundary-intro h2,
+.outcome-control-card h2,
+.outcome-use-case-card h2,
+.outcome-decision-note h2,
+.outcome-empty-state h2 {
+  margin: 5px 0 8px;
+  font-size: 1.08rem;
+}
+
+.outcome-boundary-intro p,
+.outcome-control-card p,
+.outcome-use-case-card p,
+.outcome-decision-note p,
+.outcome-empty-state p {
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: .84rem;
+  line-height: 1.5;
+}
+
+.outcome-transfer-flow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 8px;
+}
+
+.outcome-transfer-flow span {
+  padding: 9px 11px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(9, 15, 27, .55);
+  text-align: center;
+  font-size: .76rem;
+  font-weight: 700;
+}
+
+.outcome-transfer-flow strong {
+  color: var(--accent-2);
+  font-size: .7rem;
+  white-space: nowrap;
+}
+
+.outcome-boundary-card ul {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  color: #c4cfdf;
+  font-size: .82rem;
+}
+
+.outcome-boundary-card li + li {
+  margin-top: 8px;
+}
+
+.outcome-workbench {
+  display: grid;
+  grid-template-columns: minmax(330px, .8fr) minmax(520px, 1.5fr);
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.outcome-use-case-picker label {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--muted);
+  font-size: .74rem;
+  font-weight: 700;
+}
+
+.outcome-use-case-picker > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.outcome-responsibility-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.outcome-responsibility-pair > div {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: rgba(9, 15, 27, .48);
+}
+
+.outcome-responsibility-pair span {
+  color: #c8d4e6;
+  font-size: .72rem;
+  font-weight: 750;
+}
+
+.outcome-responsibility-pair p {
+  margin: 6px 0 0;
+  font-size: .78rem;
+}
+
+.outcome-use-case-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.outcome-metric-grid,
+.outcome-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.outcome-metric-grid {
+  margin: 17px 0;
+}
+
+.outcome-metric-grid > div,
+.outcome-summary-grid .card-body {
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: rgba(9, 15, 27, .48);
+}
+
+.outcome-metric-grid small,
+.outcome-summary-grid small {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--muted);
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+}
+
+.outcome-metric-grid strong {
+  font-size: .9rem;
+}
+
+.outcome-summary-grid {
+  margin-bottom: 18px;
+}
+
+.outcome-summary-grid strong {
+  font-size: 1.5rem;
+}
+
+.outcome-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--border);
+}
+
+.outcome-facts > div {
+  padding: 11px 13px;
+  background: var(--panel);
+}
+
+.outcome-facts dt {
+  color: var(--muted);
+  font-size: .68rem;
+}
+
+.outcome-facts dd {
+  margin: 4px 0 0;
+  color: #cbd6e6;
+  font-size: .78rem;
+}
+
+.outcome-external-link {
+  display: inline-flex;
+  margin-top: 14px;
+  font-size: .78rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.outcome-decision-note .card-body {
+  display: grid;
+  grid-template-columns: minmax(260px, .8fr) minmax(320px, 1fr) minmax(280px, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.outcome-decision-note ol {
+  margin: 0;
+  padding-left: 20px;
+  color: #c4cfdf;
+  font-size: .82rem;
+}
+
+.outcome-decision-note li + li {
+  margin-top: 9px;
+}
+
+@media (max-width: 1220px) {
+  .outcome-boundary-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .outcome-boundary-intro {
+    grid-column: 1 / -1;
+  }
+
+  .outcome-workbench {
+    grid-template-columns: 1fr;
+  }
+
+  .outcome-decision-note .card-body {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .outcome-decision-note p {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .outcome-page-header,
+  .outcome-use-case-heading {
+    flex-direction: column;
+  }
+
+  .outcome-layout-switch {
+    width: 100%;
+  }
+
+  .outcome-layout-switch .btn {
+    flex: 1 1 180px;
+  }
+
+  .outcome-boundary-grid,
+  .outcome-responsibility-pair,
+  .outcome-metric-grid,
+  .outcome-summary-grid,
+  .outcome-facts,
+  .outcome-decision-note .card-body {
+    grid-template-columns: 1fr;
+  }
+
+  .outcome-transfer-flow {
+    grid-template-columns: 1fr;
+  }
+
+  .outcome-transfer-flow strong {
+    text-align: center;
+  }
+
+  .outcome-use-case-picker > div {
+    grid-template-columns: 1fr;
+  }
+}
