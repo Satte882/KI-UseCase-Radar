@@ -102,10 +102,7 @@ def _handover_step(
             key="handover",
             label="Übergabe",
             state="upcoming",
-            reason=(
-                "Die verbindliche Übergabe beginnt nach einem vollständigen "
-                "Delivery Package."
-            ),
+            reason=("Die verbindliche Übergabe beginnt nach einem vollständigen Delivery Package."),
         )
     if handed_over:
         return JourneyStep(
@@ -123,9 +120,7 @@ def _handover_step(
             state="blocked",
             url=package.get_absolute_url(),
             action_label="Übergabe prüfen",
-            reason=(
-                "Der Übergabestatus besitzt keinen verbindlichen Übergabezeitpunkt."
-            ),
+            reason=("Der Übergabestatus besitzt keinen verbindlichen Übergabezeitpunkt."),
         )
     if lifecycle_advanced:
         return JourneyStep(
@@ -183,10 +178,7 @@ def _pilot_step(
             state="complete",
             url=url,
             action_label="Pilot öffnen",
-            reason=(
-                "Der Pilot ist fachlich abgeschlossen; die Folgeentscheidung ist "
-                "vorbereitet."
-            ),
+            reason=("Der Pilot ist fachlich abgeschlossen; die Folgeentscheidung ist vorbereitet."),
         )
     if pilot_started:
         if use_case.status != UseCase.Status.PILOT:
@@ -208,8 +200,7 @@ def _pilot_step(
             url=url,
             action_label="Pilot öffnen",
             reason=(
-                "Der Pilot läuft; die Wirkungsmessung ist noch nicht vollständig "
-                "abgeschlossen."
+                "Der Pilot läuft; die Wirkungsmessung ist noch nicht vollständig abgeschlossen."
             ),
         )
     if use_case.status in {
@@ -231,9 +222,7 @@ def _pilot_step(
     allowed = can_start_pilot(user, use_case)
     reason = "Die Übergabe ist erfolgt; der tatsächliche Pilotbeginn muss bestätigt werden."
     if not allowed:
-        reason += (
-            " Nur ein KI-Koordinator oder der zuständige Business Owner darf starten."
-        )
+        reason += " Nur ein KI-Koordinator oder der zuständige Business Owner darf starten."
     return JourneyStep(
         key="pilot",
         label="Pilot",
@@ -278,8 +267,7 @@ def _measurement_step(
             url=outcome_workspace_url("effect", use_case=use_case),
             action_label="Wirkung öffnen",
             reason=(
-                f"{use_case.metric_result_label}; Messwert und vollständiger "
-                "Nachweis liegen vor."
+                f"{use_case.metric_result_label}; Messwert und vollständiger Nachweis liegen vor."
             ),
         )
     if end_recorded:
@@ -290,8 +278,7 @@ def _measurement_step(
             url=outcome_workspace_url("effect", use_case=use_case),
             action_label="Wirkung öffnen",
             reason=(
-                "Der Use Case wurde beendet, ohne in den produktiven Betrieb "
-                "überführt zu werden."
+                "Der Use Case wurde beendet, ohne in den produktiven Betrieb überführt zu werden."
             ),
             details=missing,
         )
@@ -308,8 +295,7 @@ def _measurement_step(
             url=f"{edit_url}?highlight={first_missing_field}",
             action_label="Wirkungsmessung vervollständigen",
             reason=(
-                "Der Pilot ist abgeschlossen, aber die Wirkungsmessung ist noch "
-                "unvollständig."
+                "Der Pilot ist abgeschlossen, aber die Wirkungsmessung ist noch unvollständig."
             ),
             details=missing,
         )
@@ -319,10 +305,7 @@ def _measurement_step(
         state="upcoming",
         url=f"{edit_url}?highlight=metric_actual",
         action_label="Wirkungsmessung vorbereiten",
-        reason=(
-            "Der Pilot läuft; die vollständige Messung wird zum Review-Zeitpunkt "
-            "bestätigt."
-        ),
+        reason=("Der Pilot läuft; die vollständige Messung wird zum Review-Zeitpunkt bestätigt."),
         details=missing,
     )
 
@@ -338,10 +321,15 @@ def _outcome_decision_step(
 ) -> JourneyStep:
     url = outcome_workspace_url("decision", use_case=use_case)
     if not handed_over or not pilot_started:
-        advanced = go_live_recorded or end_recorded or use_case.status in {
-            UseCase.Status.OPERATION,
-            UseCase.Status.ENDED,
-        }
+        advanced = (
+            go_live_recorded
+            or end_recorded
+            or use_case.status
+            in {
+                UseCase.Status.OPERATION,
+                UseCase.Status.ENDED,
+            }
+        )
         return JourneyStep(
             key="outcome_decision",
             label="Ergebnisentscheidung",
@@ -350,10 +338,7 @@ def _outcome_decision_step(
                 "Dateninkonsistenz: Eine Folgeentscheidung ist dokumentiert oder im "
                 "Status abgebildet, obwohl Übergabe oder Pilotbeginn fehlen."
                 if advanced
-                else (
-                    "Eine Folgeentscheidung setzt Übergabe, Pilot und belastbare "
-                    "Evidenz voraus."
-                )
+                else ("Eine Folgeentscheidung setzt Übergabe, Pilot und belastbare Evidenz voraus.")
             ),
         )
     if end_recorded:
@@ -386,8 +371,7 @@ def _outcome_decision_step(
             url=url,
             action_label="Ergebnisentscheidung öffnen",
             reason=(
-                "Die Go-live-Entscheidung ist mit vollständiger Messgrundlage "
-                "dokumentiert."
+                "Die Go-live-Entscheidung ist mit vollständiger Messgrundlage dokumentiert."
                 if valid
                 else (
                     "Dateninkonsistenz: Die Go-live-Entscheidung passt nicht zu "
@@ -416,18 +400,14 @@ def _outcome_decision_step(
             url=url,
             action_label="Ergebnisentscheidung prüfen",
             reason=(
-                "Die vollständige Messgrundlage liegt vor; jetzt steht die "
-                "Folgeentscheidung an."
+                "Die vollständige Messgrundlage liegt vor; jetzt steht die Folgeentscheidung an."
             ),
         )
     return JourneyStep(
         key="outcome_decision",
         label="Ergebnisentscheidung",
         state="upcoming",
-        reason=(
-            "Eine belastbare Folgeentscheidung setzt die vollständige "
-            "Wirkungsmessung voraus."
-        ),
+        reason=("Eine belastbare Folgeentscheidung setzt die vollständige Wirkungsmessung voraus."),
     )
 
 
@@ -471,8 +451,7 @@ def _operation_step(
                 "Der produktive Betrieb wurde beendet."
                 if ended
                 else (
-                    "Das Vorhaben befindet sich nach dokumentiertem Go-live im "
-                    "produktiven Betrieb."
+                    "Das Vorhaben befindet sich nach dokumentiertem Go-live im produktiven Betrieb."
                 )
             ),
         )
@@ -494,8 +473,7 @@ def _operation_step(
             label="Betrieb",
             state="optional",
             reason=(
-                "Der Use Case wurde beendet, ohne einen dokumentierten Go-live "
-                "zu durchlaufen."
+                "Der Use Case wurde beendet, ohne einen dokumentierten Go-live zu durchlaufen."
             ),
         )
     if use_case.status == UseCase.Status.ENDED:
@@ -503,18 +481,14 @@ def _operation_step(
             key="operation",
             label="Betrieb",
             state="blocked",
-            reason=(
-                "Dateninkonsistenz: Der Use Case ist beendet, aber das "
-                "Abschlussreview fehlt."
-            ),
+            reason=("Dateninkonsistenz: Der Use Case ist beendet, aber das Abschlussreview fehlt."),
         )
     return JourneyStep(
         key="operation",
         label="Betrieb",
         state="upcoming",
         reason=(
-            "Betrieb wird erst nach einer dokumentierten positiven "
-            "Ergebnisentscheidung relevant."
+            "Betrieb wird erst nach einer dokumentierten positiven Ergebnisentscheidung relevant."
         ),
     )
 
@@ -574,15 +548,11 @@ def build_outcome_workspace_journey(
     pilot_started = bool(use_case.pilot_start)
     pilot_complete = bool(
         pilot_started
-        and (
-            measurement_complete
-            or go_live_recorded
-            or end_recorded
-            or use_case.actual_end_date
-        )
+        and (measurement_complete or go_live_recorded or end_recorded or use_case.actual_end_date)
     )
     lifecycle_advanced = bool(
-        use_case.status in {
+        use_case.status
+        in {
             UseCase.Status.PILOT,
             UseCase.Status.OPERATION,
             UseCase.Status.ENDED,
@@ -645,9 +615,7 @@ def build_outcome_workspace_journey(
 
     closure_complete = outcome_steps[-1].state == "complete"
     completion_message = (
-        "Lebenszyklus abgeschlossen: Das Vorhaben ist beendet."
-        if closure_complete
-        else ""
+        "Lebenszyklus abgeschlossen: Das Vorhaben ist beendet." if closure_complete else ""
     )
     return _state(
         path_label=f"{use_case.short_id} · Wirkung & Betrieb",
