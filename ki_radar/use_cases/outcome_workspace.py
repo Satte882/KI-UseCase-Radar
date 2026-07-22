@@ -42,7 +42,7 @@ def outcome_workspace_url(
     return f"{reverse('reporting:outcome_workspace')}?{urlencode(query)}"
 
 
-def _handover_step(use_case: UseCase, package: DeliveryPackage | None) -> JourneyStep:
+def _handover_step(package: DeliveryPackage | None) -> JourneyStep:
     if package is None:
         return JourneyStep(
             key="handover",
@@ -94,16 +94,25 @@ def _pilot_step(
             state="current",
             url=url,
             action_label="Pilotübersicht öffnen",
-            reason="Der Pilot läuft im externen Delivery-System; KI-Radar hält den Review-Snapshot.",
+            reason=(
+                "Der Pilot läuft im externen Delivery-System; "
+                "KI-Radar hält den Review-Snapshot."
+            ),
         )
-    if use_case.status in {UseCase.Status.OPERATION, UseCase.Status.ENDED} or use_case.actual_end_date:
+    if (
+        use_case.status in {UseCase.Status.OPERATION, UseCase.Status.ENDED}
+        or use_case.actual_end_date
+    ):
         return JourneyStep(
             key="pilot",
             label="Pilot",
             state="complete",
             url=url,
             action_label="Pilotübersicht öffnen",
-            reason="Der Pilot ist fachlich abgeschlossen oder das Vorhaben befindet sich bereits im Betrieb.",
+            reason=(
+                "Der Pilot ist fachlich abgeschlossen oder das Vorhaben befindet sich "
+                "bereits im Betrieb."
+            ),
         )
     return JourneyStep(
         key="pilot",
@@ -111,7 +120,10 @@ def _pilot_step(
         state="current",
         url=url,
         action_label="Pilotstatus prüfen",
-        reason="Die Übergabe ist erfolgt; Pilotstatus und Review-Termin müssen fachlich bestätigt werden.",
+        reason=(
+            "Die Übergabe ist erfolgt; Pilotstatus und Review-Termin müssen fachlich "
+            "bestätigt werden."
+        ),
     )
 
 
@@ -148,15 +160,17 @@ def _measurement_step(
             state="upcoming",
             reason="Die Wirkungsmessung folgt nach Übergabe und Pilotdurchführung.",
         )
+    pilot_active = use_case.status == UseCase.Status.PILOT
     return JourneyStep(
         key="measurement",
         label="Wirkungsmessung",
-        state="current" if use_case.status == UseCase.Status.PILOT else "upcoming",
-        url=f"{url}?highlight=metric_actual" if use_case.status == UseCase.Status.PILOT else None,
-        action_label="Ist-Wert erfassen" if use_case.status == UseCase.Status.PILOT else "",
+        state="current" if pilot_active else "upcoming",
+        url=f"{url}?highlight=metric_actual" if pilot_active else None,
+        action_label="Ist-Wert erfassen" if pilot_active else "",
         reason=(
-            "Baseline, Ziel, Ist-Wert und Messnachweis werden zum Review manuell in KI-Radar bestätigt."
-            if use_case.status == UseCase.Status.PILOT
+            "Baseline, Ziel, Ist-Wert und Messnachweis werden zum Review manuell "
+            "in KI-Radar bestätigt."
+            if pilot_active
             else "Die Messung wird zum vereinbarten Review-Zeitpunkt dokumentiert."
         ),
     )
@@ -182,7 +196,10 @@ def _outcome_decision_step(
             state="complete",
             url=outcome_workspace_url("decision", use_case=use_case, layout=layout),
             action_label="Entscheidungsrahmen öffnen",
-            reason="Der Lifecycle-Status zeigt bereits Betrieb oder Abschluss; das versionierte Review-Artefakt folgt in einem separaten Inkrement.",
+            reason=(
+                "Der Lifecycle-Status zeigt bereits Betrieb oder Abschluss; das versionierte "
+                "Review-Artefakt folgt in einem separaten Inkrement."
+            ),
         )
     return JourneyStep(
         key="outcome_decision",
@@ -190,7 +207,9 @@ def _outcome_decision_step(
         state="current",
         url=outcome_workspace_url("decision", use_case=use_case, layout=layout),
         action_label="Entscheidungsrahmen prüfen",
-        reason="UX-Spike: Scale-, Continue- oder Stop-Entscheidung wird noch nicht gespeichert.",
+        reason=(
+            "UX-Spike: Scale-, Continue- oder Stop-Entscheidung wird noch nicht gespeichert."
+        ),
     )
 
 
@@ -218,7 +237,10 @@ def _operation_step(use_case: UseCase, *, layout: str) -> JourneyStep:
         key="operation",
         label="Betrieb",
         state="upcoming",
-        reason="Betriebsverantwortung wird erst nach einer positiven Ergebnisentscheidung relevant.",
+        reason=(
+            "Betriebsverantwortung wird erst nach einer positiven Ergebnisentscheidung "
+            "relevant."
+        ),
     )
 
 
@@ -257,7 +279,7 @@ def build_outcome_workspace_journey(
     )
 
     outcome_steps = [
-        _handover_step(use_case, package),
+        _handover_step(package),
         _pilot_step(use_case, handed_over=handed_over, layout=normalized_layout),
         _measurement_step(use_case, handed_over=handed_over, layout=normalized_layout),
         _outcome_decision_step(
