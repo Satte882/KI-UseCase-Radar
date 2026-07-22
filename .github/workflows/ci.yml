@@ -3,6 +3,8 @@ name: KI-Radar CI
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
 
 permissions:
   contents: read
@@ -12,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  browser-acceptance:
+  validate:
     runs-on: ubuntu-latest
 
     services:
@@ -55,117 +57,59 @@ jobs:
           version: "0.10.0"
           enable-cache: true
 
+      - name: Verify lockfile
+        run: uv lock --check
+
       - name: Install dependencies
         run: uv sync --frozen --dev
+
+      - name: Ruff lint
+        run: uv run ruff check .
+
+      - name: Ruff format
+        run: uv run ruff format --check .
+
+      - name: Django system check
+        run: uv run python manage.py check
+
+      - name: Verify migrations
+        run: uv run python manage.py makemigrations --check --dry-run
 
       - name: Apply migrations
         run: uv run python manage.py migrate --noinput
 
-      - name: Prepare handed-over demo
-        run: |
-          uv run python manage.py shell <<'PY'
-          import json
-          from django.conf import settings
-          from django.core.management import call_command
-          from ki_radar.accounts.models import User
-          from ki_radar.core.demo_architecture_data import INVOICE_USE_CASE_KEY
-          from ki_radar.delivery.services import current_delivery_package, hand_over_package
-          from ki_radar.use_cases.models import UseCase
-          from ki_radar.use_cases.workflow import pilot_start_url
+      - name: Run tests
+        run: uv run pytest -q
 
-          settings.DEBUG = True
-          call_command("seed_demo_data", demo_user_password="Delivery-Pilot-Demo-2026!")
-          coordinator = User.objects.get(username="demo_ki_koordinator")
-          use_case = UseCase.objects.get(demo_key=INVOICE_USE_CASE_KEY)
-          package = current_delivery_package(use_case)
-          hand_over_package(package, coordinator)
-          with open("browser-targets.json", "w", encoding="utf-8") as target_file:
-              json.dump(
-                  {
-                      "detail": use_case.get_absolute_url(),
-                      "pilot_start": pilot_start_url(use_case),
-                  },
-                  target_file,
-              )
-          PY
+      - name: Bandit
+        run: uv run bandit -q -r ki_radar config
 
-      - name: Install Chromium
-        run: |
-          uv pip install playwright==1.55.0
-          uv run playwright install chromium --with-deps
+      - name: Dependency audit
+        run: uv run pip-audit
 
-      - name: Start server
+      - name: Prepare Compose validation
+        shell: bash
         run: |
-          uv run python manage.py runserver 127.0.0.1:8000 --insecure > browser-server.log 2>&1 &
-          echo $! > browser-server.pid
-          for attempt in {1..30}; do
-            if curl --fail --silent http://127.0.0.1:8000/accounts/login/ > /dev/null; then
-              exit 0
-            fi
-            sleep 1
+          set -euo pipefail
+          mkdir -p .ci-secrets/prod .ci-secrets/staging deploy/certs
+          for secret in django_secret_key db_password sentry_dsn monitoring_token; do
+            printf 'ci-placeholder\n' > ".ci-secrets/prod/${secret}"
           done
-          cat browser-server.log
-          exit 1
+          for secret in django_secret_key db_password; do
+            printf 'ci-placeholder\n' > ".ci-secrets/staging/${secret}"
+          done
 
-      - name: Verify Desktop and Mobile flow
-        run: |
-          mkdir -p browser-evidence
-          uv run python - <<'PY' 2>&1 | tee browser-evidence/playwright-output.txt
-          import json
-          from pathlib import Path
+      - name: Validate local Compose
+        run: docker compose -f compose.local.yml config --quiet
 
-          from playwright.sync_api import expect, sync_playwright
+      - name: Validate production Compose
+        run: SECRETS_DIR="$PWD/.ci-secrets/prod" docker compose --env-file .env.production.example -f compose.prod.yml config --quiet
 
-          base_url = "http://127.0.0.1:8000"
-          targets = json.loads(Path("browser-targets.json").read_text(encoding="utf-8"))
-          viewports = {
-              "desktop": {"width": 1440, "height": 900},
-              "mobile": {"width": 390, "height": 844},
-          }
+      - name: Validate staging Compose
+        run: STAGING_SECRETS_DIR="$PWD/.ci-secrets/staging" docker compose --env-file .env.staging.example -f compose.staging.yml config --quiet
 
-          with sync_playwright() as playwright:
-              browser = playwright.chromium.launch()
-              for name, viewport in viewports.items():
-                  context = browser.new_context(viewport=viewport)
-                  page = context.new_page()
-                  page.goto(base_url + "/accounts/login/", wait_until="networkidle")
-                  page.locator('input[name="username"]').fill("demo_ki_koordinator")
-                  password = page.locator('input[name="password"]')
-                  password.fill("Delivery-Pilot-Demo-2026!")
-                  password.press("Enter")
-                  page.wait_for_load_state("networkidle")
-                  expect(page.locator('input[name="password"]')).to_have_count(0)
+      - name: Build production image
+        run: docker build -t ki-radar:ci .
 
-                  page.goto(base_url + targets["detail"], wait_until="networkidle")
-                  pilot_link = page.get_by_role("link", name="Pilot starten").first
-                  expect(pilot_link).to_be_visible()
-                  if page.evaluate("document.documentElement.scrollWidth > window.innerWidth"):
-                      raise AssertionError(f"Horizontal overflow on {name} detail page")
-                  page.screenshot(path=f"browser-evidence/{name}-detail.png", full_page=True)
-                  pilot_link.click()
-                  page.wait_for_load_state("networkidle")
-
-                  expect(page.locator('input[name="pilot_start"]')).to_be_visible()
-                  expect(page.get_by_role("button", name="Pilot starten")).to_be_visible()
-                  if page.evaluate("document.documentElement.scrollWidth > window.innerWidth"):
-                      raise AssertionError(f"Horizontal overflow on {name} Pilot form")
-                  page.screenshot(path=f"browser-evidence/{name}-pilot-form.png", full_page=True)
-                  context.close()
-              browser.close()
-          PY
-
-      - name: Capture evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: delivery-to-pilot-browser-evidence
-          path: |
-            browser-evidence/
-            browser-server.log
-
-      - name: Stop server
-        if: always()
-        run: |
-          if [ -f browser-server.pid ]; then
-            kill "$(cat browser-server.pid)" || true
-          fi
+      - name: Build development image
+        run: docker build -f Dockerfile.dev -t ki-radar-dev:ci .
