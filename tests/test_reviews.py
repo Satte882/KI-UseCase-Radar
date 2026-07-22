@@ -11,7 +11,7 @@ from ki_radar.governance.models import GovernanceAssessment
 from ki_radar.reviews.forms import ReviewForm
 from ki_radar.reviews.models import Review
 from ki_radar.reviews.services import create_review
-from ki_radar.use_cases.models import UseCase
+from ki_radar.use_cases.models import ApprovalDecision, DecisionAssessment, UseCase
 
 
 @pytest.fixture
@@ -23,6 +23,37 @@ def use_case(owner, business_unit):
         affected_process="Prozess",
         business_owner=owner,
         expected_benefit="Nutzen",
+    )
+
+
+def create_final_approval(use_case, coordinator):
+    assessment = DecisionAssessment.objects.create(
+        use_case=use_case,
+        version=1,
+        assessed_by=coordinator,
+        business_value=UseCase.Level.HIGH,
+        strategic_fit=UseCase.Level.HIGH,
+        technical_feasibility=UseCase.Level.HIGH,
+        data_readiness=UseCase.Level.HIGH,
+        risk_complexity=UseCase.Level.LOW,
+        evidence_quality=DecisionAssessment.EvidenceQuality.REPRESENTATIVE,
+        evidence_recency=DecisionAssessment.ConfidenceFactor.SOLID,
+        evidence_coverage=DecisionAssessment.ConfidenceFactor.SOLID,
+        independent_review=DecisionAssessment.ConfidenceFactor.SOLID,
+        assumptions_resolved=DecisionAssessment.ConfidenceFactor.SOLID,
+        evidence_url="https://example.invalid/evidence",
+        rationale="Testfreigabe ist fachlich und technisch belegt.",
+        governance_precheck_completed=True,
+        recommendation=UseCase.DecisionStatus.APPROVED,
+    )
+    return ApprovalDecision.objects.create(
+        use_case=use_case,
+        assessment=assessment,
+        decision_status=UseCase.DecisionStatus.APPROVED,
+        rationale="Pilot ist freigegeben.",
+        decided_by=coordinator,
+        governance_confirmed=True,
+        finalized_at=timezone.now(),
     )
 
 
@@ -161,10 +192,12 @@ def test_review_can_supply_required_review_date_for_pilot_transition(coordinator
         result=GovernanceAssessment.Result.NO_FLAGS,
         rationale="Keine besonderen Hinweise",
     )
+    decision = create_final_approval(use_case, coordinator)
     package = DeliveryPackage.objects.create(
         use_case=use_case,
         version=1,
         status=DeliveryPackage.Status.READY,
+        generated_from_decision=decision,
         created_by=coordinator,
     )
     hand_over_package(package, coordinator)
