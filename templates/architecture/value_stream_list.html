@@ -4,14 +4,14 @@
 <div class="page-header">
   <div>
     <div class="eyebrow mb-2">Discovery &amp; Business Architecture</div>
-    <h1 class="page-title">Value Streams</h1>
-    <p class="page-subtitle">End-to-End-Wertschöpfung erfassen, Probleme lokalisieren und KI-Use-Cases nachvollziehbar ableiten.</p>
+    <h1 class="page-title">Value Streams und Fokusfelder</h1>
+    <p class="page-subtitle">End-to-End-Wertschöpfung erfassen, anhand einheitlicher Kriterien priorisieren und nur ausgewählte Bereiche vertiefen.</p>
   </div>
   {% if can_create %}<a class="btn btn-primary" href="{% url 'architecture:value_stream_create' %}">Value Stream anlegen</a>{% endif %}
 </div>
 
 <div class="alert alert-secondary mb-4">
-  <strong>Optionaler Discovery-Pfad:</strong> Use Cases können weiterhin direkt aufgenommen werden. Value Streams schaffen zusätzliche Herkunfts- und Architekturtransparenz, sind aber keine Pflichtvoraussetzung.
+  <strong>Systematischer Pfad:</strong> Erst Discovery und Fokusentscheidung, danach Prozess-Deep-Dive und Use-Case-Ableitung. Bereits bekannte Einzelvorhaben können weiterhin direkt aufgenommen werden.
 </div>
 
 <div class="architecture-grid">
@@ -19,12 +19,13 @@
   <a class="app-card architecture-card" href="{{ stream.get_absolute_url }}">
     <div class="d-flex justify-content-between gap-3 align-items-start">
       <div>
-        <div class="section-title mb-1">{{ stream.business_unit }}</div>
+        <div class="section-title mb-1">{% if stream.focus %}{{ stream.focus.get_business_domain_display }}{% else %}{{ stream.business_unit }}{% endif %}</div>
         <h2 class="h5 mb-2">{{ stream.name }}</h2>
       </div>
-      <span class="badge badge-soft">{{ stream.get_status_display }}</span>
+      {% if stream.focus %}<span class="badge {% if stream.focus.is_selected %}state-ready{% elif stream.focus.is_terminal %}state-blocked{% else %}state-review{% endif %}">{{ stream.focus.get_status_display }}</span>{% else %}<span class="badge state-blocked">Screening fehlt</span>{% endif %}
     </div>
     <p class="text-muted mb-3">{{ stream.description|default:stream.scope|truncatechars:180 }}</p>
+    {% if stream.focus.capability %}<div class="small mb-3"><strong>Capability:</strong> {{ stream.focus.capability }}</div>{% endif %}
     <div class="architecture-card-meta">
       <span>{{ stream.stage_total }} Phasen</span>
       <span>{% if stream.owner %}Owner: {{ stream.owner.get_display_name }}{% else %}Owner offen{% endif %}</span>
