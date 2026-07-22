@@ -153,9 +153,7 @@ def test_operation_without_handover_or_reviews_is_blocked_as_data_inconsistency(
 
     journey = build_outcome_workspace_journey(use_case, coordinator)
     states = _outcome_states(journey)
-    reasons = {
-        step.key: step.reason for step in journey.steps if step.key in OUTCOME_KEYS
-    }
+    reasons = {step.key: step.reason for step in journey.steps if step.key in OUTCOME_KEYS}
 
     assert states["handover"] == "blocked"
     assert states["pilot"] == "blocked"
@@ -251,9 +249,6 @@ def test_selected_view_is_marked_independently_from_lifecycle_state(
     content = response.content.decode()
 
     assert content.count("journey-progress-view-active") == 1
-    assert (
-        'journey-progress-step journey-progress-complete journey-progress-view-active'
-        in content
-    )
+    assert "journey-progress-step journey-progress-complete journey-progress-view-active" in content
     assert 'aria-current="page"' in content
-    assert 'journey-progress-step journey-progress-current' in content
+    assert "journey-progress-step journey-progress-current" in content
