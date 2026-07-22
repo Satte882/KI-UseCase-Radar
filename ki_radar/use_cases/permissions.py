@@ -34,4 +34,4 @@ def can_start_pilot(user, use_case) -> bool:
 def can_confirm_go_live_exception(user) -> bool:
     """Allow a failed-pilot go-live exception only to the explicit coordinator group."""
 
-    return bool(user.is_authenticated and in_group(user, GROUP_COORDINATOR))
+    return bool(user and user.is_authenticated and in_group(user, GROUP_COORDINATOR))
