@@ -76,6 +76,19 @@
   color: var(--text);
 }
 
+.journey-progress-view-active .journey-progress-marker {
+  outline: 2px solid rgba(169, 154, 255, .78);
+  outline-offset: 2px;
+}
+
+.journey-progress-view-active .journey-progress-label {
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: rgba(169, 154, 255, .78);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
 .journey-progress-marker {
   width: 23px;
   height: 23px;

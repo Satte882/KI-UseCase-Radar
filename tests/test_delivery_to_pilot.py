@@ -202,7 +202,11 @@ def test_golden_path_uses_one_use_case_from_value_stream_to_pilot(settings):
     assert review.new_status == UseCase.Status.PILOT
     assert package.status == DeliveryPackage.Status.HANDED_OVER
     outcome = build_outcome_workspace_journey(use_case, coordinator)
-    assert next(step for step in outcome.steps if step.key == "pilot").state == "current"
+    outcome_steps = {step.key: step for step in outcome.steps}
+    assert outcome_steps["pilot"].state == "current"
+    assert outcome_steps["measurement"].state == "upcoming"
+    assert outcome_steps["outcome_decision"].state == "upcoming"
+    assert sum(step.state == "current" for step in outcome_steps.values()) == 1
 
 
 @pytest.mark.django_db

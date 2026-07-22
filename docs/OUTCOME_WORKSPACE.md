@@ -85,6 +85,33 @@ Die Darstellung ist verdichtet, damit der phasenspezifische Handlungsstatus sich
 
 Die sechs Bereiche besitzen getrennte Sidebar-Einstiege. Der Footer zeigt dauerhaft nur Avatar und Benutzername. Administration und Abmelden liegen in einem aufklappbaren Account-Menü.
 
+## Topbar: Lifecycle-Status und geöffnete Ansicht
+
+Die obere Leiste stellt zwei voneinander unabhängige Informationen dar:
+
+- Farbe und Symbol zeigen den fachlich abgeleiteten Lifecycle-Status der Phase.
+- Eine zusätzliche violette Kontur und Unterstreichung markieren die aktuell geöffnete Ansicht.
+
+Ein Klick auf einen Bereich verändert deshalb nicht den fachlichen Status. Er wechselt ausschließlich die geöffnete Perspektive.
+
+## Konsistente Lifecycle-Reihenfolge
+
+Die Statusableitung verwendet vorhandene, verbindliche Nachweise:
+
+- aktuelle verbindliche Delivery-Übergabe,
+- dokumentierten `pilot_start`,
+- vollständige Wirkungsmessung aus Ist-Wert, Messzeitraum, Messdatum und Nachweis, deren Messdatum nicht vor dem aktuellen Pilotbeginn liegt,
+- persistierte Lifecycle-Reviews für `GO_LIVE` und `END`.
+
+Dabei gelten folgende Invarianten:
+
+- Es gibt höchstens eine Phase mit dem Zustand `current`.
+- Ein gestarteter Pilot wird erst nach einer vollständigen Messung für den aktuellen Pilot oder einer dokumentierten Folgeentscheidung als abgeschlossen dargestellt.
+- Eine ältere Messung vor dem aktuellen `pilot_start` bleibt sichtbar, schließt den aktuellen Pilot aber nicht ab.
+- Betrieb ist nur nach vollständiger Messung und persistiertem Go-live-Review gültig.
+- Ein direkter Abschluss aus dem Pilot überspringt Betrieb bewusst als `optional`.
+- Widersprechen Lifecycle-Status und Nachweise einander, werden die betroffenen Phasen als `blocked` mit dem Hinweis `Dateninkonsistenz` angezeigt. Spätere Phasen werden nicht fälschlich als abgeschlossen oder aktuell dargestellt.
+
 ## Bewusste Nicht-Ziele
 
 Dieses Inkrement implementiert nicht:
@@ -107,5 +134,8 @@ Es entsteht keine Migration.
 - Fehlende oder unzulässige Aktionen werden als bewusster neutraler Zustand dargestellt.
 - Wirkung, Go-live und Abschluss verwenden die bestehenden Formulare.
 - Der Account-Footer blockiert keinen dauerhaften Platz für Administration und Abmelden.
+- Die obere Leiste trennt geöffneten Bereich und fachlichen Lifecycle-Status.
+- Die Lifecycle-Reihenfolge zeigt keine späteren grünen oder gelben Phasen bei fehlenden zwingenden Nachweisen.
+- Eine Messung vor dem aktuellen Pilotbeginn wird nicht als Abschluss des aktuellen Piloten gewertet.
 - Die bestehende Systemgrenze bleibt sichtbar.
 - Es entsteht kein neues Datenmodell und keine Migration.
