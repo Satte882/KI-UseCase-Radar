@@ -6,6 +6,7 @@ from django.core.exceptions import ValidationError
 from django.urls import reverse
 from django.utils import timezone
 
+from config.settings.base import openrouter_api_url
 from ki_radar.governance.models import GovernanceAssessment
 from ki_radar.use_cases.copilot import CopilotUnavailable, analyze_use_case
 from ki_radar.use_cases.models import UseCase
@@ -163,6 +164,13 @@ def test_copilot_button_is_enabled_when_openrouter_key_is_configured(
     assert "OpenRouter ist nicht konfiguriert" not in content
     assert "test-key-not-rendered" not in content
     assert '<button class="btn btn-outline-secondary btn-sm" >Analyse starten</button>' in content
+
+
+def test_openrouter_url_can_be_derived_from_openai_compatible_base_url(monkeypatch):
+    monkeypatch.delenv("OPENROUTER_API_URL", raising=False)
+    monkeypatch.setenv("OPENAI_BASE_URL", "https://openrouter.ai/api/v1")
+
+    assert openrouter_api_url() == "https://openrouter.ai/api/v1/chat/completions"
 
 
 @pytest.mark.django_db

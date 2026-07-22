@@ -43,6 +43,18 @@ def env_bool(name: str, default: bool = False) -> bool:
     return env(name, str(default)).lower() in {"1", "true", "yes", "on"}
 
 
+def openrouter_api_url() -> str:
+    configured_url = env("OPENROUTER_API_URL", "")
+    if configured_url:
+        return configured_url
+    openai_base_url = env("OPENAI_BASE_URL", "").rstrip("/")
+    if "openrouter.ai" in openai_base_url:
+        if openai_base_url.endswith("/chat/completions"):
+            return openai_base_url
+        return f"{openai_base_url}/chat/completions"
+    return "https://openrouter.ai/api/v1/chat/completions"
+
+
 SECRET_KEY = env("DJANGO_SECRET_KEY", "dev-only-insecure-key")
 DEBUG = env_bool("DJANGO_DEBUG", False)
 ALLOWED_HOSTS = [
@@ -168,12 +180,11 @@ ANONYMIZATION_LEDGER_PATH = Path(
     env("ANONYMIZATION_LEDGER_PATH", str(BASE_DIR / "var" / "anonymization-ledger.jsonl"))
 )
 MONITORING_TOKEN = env("MONITORING_TOKEN", "")
-OPENROUTER_API_KEY = env("OPENROUTER_API_KEY", "")
-OPENROUTER_MODEL = env("OPENROUTER_MODEL", "")
-OPENROUTER_API_URL = env(
-    "OPENROUTER_API_URL",
-    "https://openrouter.ai/api/v1/chat/completions",
+OPENROUTER_API_KEY = env("OPENROUTER_API_KEY", "") or (
+    env("OPENAI_API_KEY", "") if "openrouter.ai" in env("OPENAI_BASE_URL", "") else ""
 )
+OPENROUTER_MODEL = env("OPENROUTER_MODEL", "")
+OPENROUTER_API_URL = openrouter_api_url()
 OPENROUTER_TIMEOUT_SECONDS = env("OPENROUTER_TIMEOUT_SECONDS", "30")
 OPENROUTER_APP_NAME = env("OPENROUTER_APP_NAME", "KI-Radar")
 OPENROUTER_SITE_URL = env("OPENROUTER_SITE_URL", "")
