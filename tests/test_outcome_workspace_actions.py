@@ -122,8 +122,11 @@ def test_effect_deep_link_targets_existing_metric_fields(client, owner, business
     )
 
     action = response.context["active_stage_action"]
+    expected_url = (
+        f"{reverse('use_cases:edit', kwargs={'pk': use_case.pk})}?highlight=metric_actual"
+    )
     assert action["action_label"] == "Ist-Wert erfassen"
-    assert action["url"].endswith(f"{reverse('use_cases:edit', kwargs={'pk': use_case.pk})}?highlight=metric_actual")
+    assert action["url"].endswith(expected_url)
 
 
 @pytest.mark.django_db
