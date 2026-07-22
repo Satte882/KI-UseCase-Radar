@@ -1,0 +1,74 @@
+{% if journey %}
+<header class="app-topbar app-topbar-journey" aria-label="Arbeitsfortschritt">
+  <span class="visually-hidden">Geführte Initiative Journey</span>
+  <div class="journey-topbar-main">
+    <div class="journey-topbar-heading">
+      <span class="journey-topbar-kicker">Arbeitsfortschritt</span>
+      <strong>{{ journey.path_label }}</strong>
+    </div>
+    <nav class="journey-progress" aria-label="Schritte der Initiative">
+      {% for step in journey.steps %}
+        {% if step.url %}<a class="journey-progress-step journey-progress-{{ step.state }}" href="{{ step.url }}"{% if step.state == 'current' or step.state == 'blocked' %} aria-current="step"{% endif %}>{% else %}<span class="journey-progress-step journey-progress-{{ step.state }}"{% if step.state == 'current' or step.state == 'blocked' %} aria-current="step"{% endif %}>{% endif %}
+          <span class="journey-progress-marker" aria-hidden="true">
+            {% if step.state == 'complete' %}✓{% elif step.state == 'current' %}●{% elif step.state == 'blocked' %}!{% elif step.state == 'optional' %}–{% else %}○{% endif %}
+          </span>
+          <span class="journey-progress-label">{{ step.label }}</span>
+        {% if step.url %}</a>{% else %}</span>{% endif %}
+      {% endfor %}
+    </nav>
+  </div>
+
+  {% if journey.next_action %}
+  {% with action=journey.next_action %}
+  <div class="journey-topbar-next journey-topbar-next-{{ action.state }}">
+    <div class="journey-topbar-next-copy">
+      <span class="journey-topbar-kicker">Nächster Schritt</span>
+      <strong>{{ action.label }}</strong>
+      {% if action.reason %}<span class="journey-topbar-next-reason">{{ action.reason }}</span>{% endif %}
+    </div>
+    {% if action.url %}
+    <a class="btn btn-sm {% if action.state == 'blocked' %}btn-outline-danger{% else %}btn-primary{% endif %}" href="{{ action.url }}">
+      {{ action.action_label|default:"Öffnen" }} →
+    </a>
+    {% else %}
+    <span class="badge badge-soft">Berechtigte Rolle erforderlich</span>
+    {% endif %}
+  </div>
+  {% endwith %}
+  {% elif journey.completion_message %}
+  <div class="journey-topbar-next journey-topbar-complete">
+    <div class="journey-topbar-next-copy">
+      <span class="journey-topbar-kicker">Status</span>
+      <strong>Journey abgeschlossen</strong>
+      <span class="journey-topbar-next-reason">{{ journey.completion_message }}</span>
+    </div>
+    <span class="badge state-ready">Abgeschlossen</span>
+  </div>
+  {% endif %}
+</header>
+{% else %}
+<header class="app-topbar app-topbar-context" aria-label="Aktueller Arbeitsbereich">
+  <div class="topbar-context-copy">
+    <span class="topbar-context-kicker">Arbeitsbereich</span>
+    <strong>
+      {% if request.resolver_match.namespace == 'architecture' %}Analyse
+      {% elif request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'portfolio' %}Portfolio
+      {% elif request.resolver_match.namespace == 'reporting' %}Entscheidungen
+      {% elif request.resolver_match.namespace == 'use_cases' %}Use Cases
+      {% elif request.resolver_match.namespace == 'delivery' %}Delivery
+      {% elif request.resolver_match.namespace == 'reviews' %}Monatsreview
+      {% elif request.resolver_match.namespace == 'accounts' %}Benutzerkonto
+      {% else %}KI-Radar{% endif %}
+    </strong>
+  </div>
+  <div class="topbar-context-purpose">
+    {% if request.resolver_match.namespace == 'architecture' %}Value Streams, Prozesse und Lösungsoptionen untersuchen
+    {% elif request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'portfolio' %}Vorhaben einordnen und vergleichbar machen
+    {% elif request.resolver_match.namespace == 'reporting' %}Offene Entscheidungen und nächste Schritte bearbeiten
+    {% elif request.resolver_match.namespace == 'use_cases' %}Use Cases erfassen, bewerten und steuern
+    {% elif request.resolver_match.namespace == 'delivery' %}Umsetzungsreife und Übergaben dokumentieren
+    {% elif request.resolver_match.namespace == 'reviews' %}Lifecycle-Entscheidungen nachvollziehbar prüfen
+    {% else %}Business Architecture und KI-Governance{% endif %}
+  </div>
+</header>
+{% endif %}
