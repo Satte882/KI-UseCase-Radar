@@ -73,9 +73,7 @@ Der erste Rückfluss aus Jira, Azure DevOps, GitHub oder einem anderen Delivery-
 - [x] **22.07.2026:** sichtbare Verantwortungsgrenze zwischen KI-Radar und externem Delivery-System
 - [x] **22.07.2026:** responsive Desktop- und Mobile-Darstellung ohne horizontale Seitenüberläufe
 
-### 1.5 Bereits vorhandene Lifecycle-Grundlagen
-
-Diese Punkte sind vorhanden, bilden aber noch keinen vollständig geschlossenen End-to-End-Geschäftsfall:
+### 1.5 Lifecycle-Grundlagen
 
 - [x] **22.07.2026:** Lifecycle-Status `Idee`, `Prüfung`, `Pilot`, `Betrieb`, `Beendet`
 - [x] **22.07.2026:** Lifecycle-Reviews mit Statuswechseln und Begründung
@@ -83,7 +81,13 @@ Diese Punkte sind vorhanden, bilden aber noch keinen vollständig geschlossenen 
 - [x] **22.07.2026:** aktueller Ist-Wert, Messzeitraum, Messdatum und Messnachweis als Datenfelder
 - [x] **22.07.2026:** technische Verantwortung, Support-Verantwortung und Kostenfelder
 - [x] **22.07.2026:** Beendigungsgrund, Daten- und Zugangsbehandlung, Lessons Learned und Ersatzlösung
-- [ ] geschlossener Übergang von Delivery zu Pilot mit konsistenten serverseitigen Gates
+- [x] **22.07.2026:** geschlossener Übergang `Prüfung → Pilot` nur nach verbindlicher Übergabe der aktuellsten Delivery-Package-Version
+- [x] **22.07.2026:** separate Next Action `Pilot starten`; die Delivery-Übergabe startet den Pilot nicht automatisch
+- [x] **22.07.2026:** Pilotstart ausschließlich durch `KI-Koordinator` oder den zuständigen Benutzer mit Rolle `Business Owner`
+- [x] **22.07.2026:** tatsächlicher Pilotbeginn als Pflichtdatum, nicht zukünftig und nicht vor `handed_over_at`
+- [x] **22.07.2026:** atomare Speicherung von Pilotbeginn, Statuswechsel und Lifecycle-Review
+- [x] **22.07.2026:** Golden-Path-Test vom Value Stream bis zum Pilotstart einschließlich serverseitiger Negativ- und Manipulationstests
+- [x] **22.07.2026:** Browserabnahme der Pilotstart-Next-Action auf Desktop und Mobile ohne horizontalen Seitenüberlauf
 - [ ] ein einzelner getesteter Use Case vom Value Stream bis zum Abschluss
 - [ ] versionierte Messungen und Wirkungsreviews
 - [ ] persistierte Scale-/Continue-/Stop-Entscheidung
@@ -92,23 +96,20 @@ Diese Punkte sind vorhanden, bilden aber noch keinen vollständig geschlossenen 
 
 ## 2. Nächster verbindlicher Umfang
 
-### Delivery zu Pilot fachlich schließen
+### Golden Path bis zum Abschluss
 
 **Status am 22.07.2026:** geplant, noch nicht umgesetzt.
 
-- [ ] Pilotstart serverseitig nur nach verbindlich übergebenem Delivery Package erlauben
-- [ ] beim Pilotstart `pilot_start` automatisch setzen oder verpflichtend erfassen
-- [ ] nach der Delivery-Übergabe eine direkte Next Action zu `Pilot starten` anbieten
-- [ ] Oberfläche und serverseitige Lifecycle-Regeln synchronisieren
-- [ ] vollständigen E2E-Test von Value Stream bis Pilotstart ergänzen
-- [ ] Negativtest: Pilotstart ohne übergebenes Delivery Package wird blockiert
-- [ ] bestehende `JourneyState`-Logik verwenden; keine parallele Statuslogik einführen
+- [ ] denselben Use Case von Value Stream und Fokus bis Delivery, Pilot, Betrieb und Abschluss führen
+- [ ] Go-live ohne Messwert oder Messnachweis serverseitig blockieren
+- [ ] bei verfehltem Ziel eine ausdrücklich bestätigte Ausnahme verlangen
+- [ ] Abschluss ohne Beendigungsgrund und Daten-/Zugangsbehandlung blockieren
+- [ ] Demo-Szenario und E2E-Test für den vollständigen Lebenszyklus ergänzen
 
 **Nicht Bestandteil dieses Inkrements:**
 
-- neues Wirkungsreview-Datenmodell
+- neues versioniertes Wirkungsmessungsmodell
 - Jira-/Azure-DevOps-Synchronisation
-- Scale-/Stop-Entscheidung
 - Messzeitreihen
 - lernendes System
 
@@ -120,15 +121,7 @@ Erst nach Abschluss und Abnahme dieses Inkrements wird der nächste Roadmap-Punk
 
 Die Reihenfolge ist verbindlich, solange keine dokumentierte Produktentscheidung sie ändert.
 
-### 3.1 Golden Path bis zum Abschluss
-
-- [ ] denselben Use Case von Value Stream und Fokus bis Delivery, Pilot, Betrieb und Abschluss führen
-- [ ] Go-live ohne Messwert oder Messnachweis serverseitig blockieren
-- [ ] bei verfehltem Ziel eine ausdrücklich bestätigte Ausnahme verlangen
-- [ ] Abschluss ohne Beendigungsgrund und Daten-/Zugangsbehandlung blockieren
-- [ ] Demo-Szenario und E2E-Test für den vollständigen Lebenszyklus ergänzen
-
-### 3.2 Versionierte Wirkungsmessungen
+### 3.1 Versionierte Wirkungsmessungen
 
 - [ ] Messwert und Zeitpunkt versioniert speichern
 - [ ] Zeitraum, Stichprobengröße und betrachtete Population speichern
@@ -137,7 +130,7 @@ Die Reihenfolge ist verbindlich, solange keine dokumentierte Produktentscheidung
 - [ ] Nachweisquelle verknüpfen
 - [ ] Verlauf statt Überschreiben eines einzelnen Ist-Werts ermöglichen
 
-### 3.3 Versionierte Wirkungsreviews
+### 3.2 Versionierte Wirkungsreviews
 
 - [ ] quantitative und qualitative Ergebnisse bündeln
 - [ ] Probleme, Nebenwirkungen und Nutzerfeedback strukturiert erfassen
@@ -145,7 +138,7 @@ Die Reihenfolge ist verbindlich, solange keine dokumentierte Produktentscheidung
 - [ ] Confidence der Ergebnisbewertung dokumentieren
 - [ ] Empfehlung und tatsächliche Folgeentscheidung miteinander verknüpfen
 
-### 3.4 Strukturierte Ergebnisentscheidung
+### 3.3 Strukturierte Ergebnisentscheidung
 
 - [ ] kontrollierte Entscheidungstypen einführen:
   - skalieren
@@ -159,7 +152,7 @@ Die Reihenfolge ist verbindlich, solange keine dokumentierte Produktentscheidung
 - [ ] erwarteten nächsten Effekt und nächsten Review festlegen
 - [ ] Entscheidung versionieren und auditierbar machen
 
-### 3.5 Lifecycle-Event-Log
+### 3.4 Lifecycle-Event-Log
 
 - [ ] Ereignistyp, alten und neuen Status speichern
 - [ ] Zeitpunkt und Akteursrolle speichern
@@ -167,7 +160,7 @@ Die Reihenfolge ist verbindlich, solange keine dokumentierte Produktentscheidung
 - [ ] verwendete Bewertungs-, Evidenz- und Review-Version referenzieren
 - [ ] Time-to-Value und Verweildauer je Phase ableitbar machen
 
-### 3.6 Verdichtete Delivery-Ergebnisse
+### 3.5 Verdichtete Delivery-Ergebnisse
 
 - [ ] geplanten und tatsächlichen Start sowie Abschluss speichern
 - [ ] geplante und tatsächliche Delivery-Dauer vergleichen
@@ -176,7 +169,7 @@ Die Reihenfolge ist verbindlich, solange keine dokumentierte Produktentscheidung
 - [ ] tatsächliche Einmal- und Betriebskosten speichern
 - [ ] Releases oder produktive Versionen auf Managementebene referenzieren
 
-### 3.7 Nutzung und Adoption
+### 3.6 Nutzung und Adoption
 
 - [ ] berechtigte und aktive Nutzer erfassen
 - [ ] Nutzungshäufigkeit und Abbruchquote erfassen
@@ -184,7 +177,7 @@ Die Reihenfolge ist verbindlich, solange keine dokumentierte Produktentscheidung
 - [ ] Nutzerzufriedenheit dokumentieren
 - [ ] Zeit bis zur produktiven Nutzung ableiten
 
-### 3.8 Optionale Integration externer Delivery-Systeme
+### 3.7 Optionale Integration externer Delivery-Systeme
 
 - [ ] erst nach stabiler manueller Review-Strecke bewerten
 - [ ] nur verdichtete, entscheidungsrelevante Daten übernehmen
@@ -192,7 +185,7 @@ Die Reihenfolge ist verbindlich, solange keine dokumentierte Produktentscheidung
 - [ ] Jira, Azure DevOps oder GitHub nicht als führendes Delivery-System ersetzen
 - [ ] Synchronisationsquelle, Aktualität und Konfliktbehandlung sichtbar machen
 
-### 3.9 Grundlage für ein später lernendes System
+### 3.8 Grundlage für ein später lernendes System
 
 - [ ] eindeutige versionierte Feature-Snapshots definieren
 - [ ] kontrollierte Kategorien statt freier Personennamen als Lernmerkmale verwenden
@@ -248,4 +241,4 @@ Personennamen, sensible Rohdaten und unstrukturierte Dokumentinhalte sollen nich
 - KI-Radar bleibt Entscheidungs-Cockpit und kein operatives Delivery-System.
 - Der erste Rückfluss aus Delivery erfolgt als manueller Review-Snapshot.
 - `JourneyState` bleibt die zentrale Status- und Next-Action-Logik.
-- Der nächste Implementierungsumfang ist ausschließlich der geschlossene Übergang von Delivery zu Pilot einschließlich E2E-Test bis zum Pilotstart.
+- Der nächste Implementierungsumfang ist ausschließlich der Golden Path desselben Use Cases bis Betrieb und Abschluss einschließlich der vorhandenen Go-live- und Abschluss-Gates.
