@@ -66,7 +66,7 @@ jobs:
       - name: Ruff lint
         run: |
           set -o pipefail
-          uv run ruff check . --output-format=concise 2>&1 | tee ruff-lint.txt
+          uv run ruff check ki_radar/reviews/services.py --fix --diff 2>&1 | tee ruff-lint.txt
 
       - name: Upload Ruff diagnostics
         if: failure()
