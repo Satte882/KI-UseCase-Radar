@@ -28,7 +28,9 @@ OUTCOME_STAGE_COPY = {
     "handover": {
         "title": "Übergabe",
         "purpose": "Das freigegebene Delivery Package verbindlich an Delivery übergeben.",
-        "ki_radar": "Delivery Readiness, Package-Version, Übergabestatus und externer Delivery-Link.",
+        "ki_radar": (
+            "Delivery Readiness, Package-Version, Übergabestatus und externer Delivery-Link."
+        ),
         "external": "Übernahme von Backlog, Umsetzung, Tests und technischem Fortschritt.",
     },
     "pilot": {
@@ -46,7 +48,9 @@ OUTCOME_STAGE_COPY = {
     "decision": {
         "title": "Ergebnisentscheidung",
         "purpose": "Die konkret verfügbare Lifecycle-Entscheidung auf Basis der Messung treffen.",
-        "ki_radar": "Messgrundlage, Entscheidung, Begründung und Statuswechsel im Lifecycle-Review.",
+        "ki_radar": (
+            "Messgrundlage, Entscheidung, Begründung und Statuswechsel im Lifecycle-Review."
+        ),
         "external": "Umsetzungsplanung der beschlossenen Maßnahmen oder Skalierung.",
     },
     "operation": {
@@ -93,7 +97,10 @@ def _measurement_edit_action(use_case: UseCase, user) -> dict[str, str | bool]:
     if not can_edit_use_case(user, use_case):
         return _stage_action(
             phase,
-            "Die Wirkungsmessung ist sichtbar, kann mit der aktuellen Rolle aber nicht bearbeitet werden.",
+            (
+                "Die Wirkungsmessung ist sichtbar, kann mit der aktuellen Rolle aber nicht "
+                "bearbeitet werden."
+            ),
         )
     edit_url = reverse("use_cases:edit", kwargs={"pk": use_case.pk})
     required_fields = (
@@ -163,7 +170,10 @@ def _build_outcome_stage_action(
             )
         return _stage_action(
             phase,
-            "Das Delivery Package ist noch unvollständig und mit der aktuellen Rolle nicht bearbeitbar.",
+            (
+                "Das Delivery Package ist noch unvollständig und mit der aktuellen Rolle nicht "
+                "bearbeitbar."
+            ),
         )
 
     if active_stage == "pilot":
@@ -175,7 +185,10 @@ def _build_outcome_stage_action(
         if package and package.external_delivery_url:
             return _stage_action(
                 phase,
-                "Der operative Pilot läuft im externen Delivery-System; KI-Radar hält den Review-Snapshot.",
+                (
+                    "Der operative Pilot läuft im externen Delivery-System; KI-Radar hält den "
+                    "Review-Snapshot."
+                ),
                 action_label="Externen Pilot öffnen",
                 url=package.external_delivery_url,
                 external=True,
@@ -200,7 +213,10 @@ def _build_outcome_stage_action(
             )
         return _stage_action(
             phase,
-            "Kein externer Pilot-Link hinterlegt und aktuell keine zulässige Bearbeitungsaktion verfügbar.",
+            (
+                "Kein externer Pilot-Link hinterlegt und aktuell keine zulässige "
+                "Bearbeitungsaktion verfügbar."
+            ),
         )
 
     if active_stage == "effect":
@@ -219,13 +235,17 @@ def _build_outcome_stage_action(
             action = _measurement_edit_action(use_case, user)
             action["phase"] = phase
             action["reason"] = (
-                "Die Ergebnisentscheidung bleibt blockiert, bis die vollständige Wirkungsmessung vorliegt."
+                "Die Ergebnisentscheidung bleibt blockiert, bis die vollständige "
+                "Wirkungsmessung vorliegt."
             )
             return action
         if use_case.status == UseCase.Status.PILOT and is_coordinator(user):
             return _stage_action(
                 phase,
-                "Die vollständige Messgrundlage liegt vor; jetzt kann über den Go-live entschieden werden.",
+                (
+                    "Die vollständige Messgrundlage liegt vor; jetzt kann über den Go-live "
+                    "entschieden werden."
+                ),
                 action_label="Go-live entscheiden",
                 url=(
                     f"{reverse('reviews:create', kwargs={'use_case_id': use_case.pk})}"
@@ -236,7 +256,10 @@ def _build_outcome_stage_action(
         if use_case.status in {UseCase.Status.OPERATION, UseCase.Status.ENDED}:
             return _stage_action(
                 phase,
-                "Die wirksame Lifecycle-Entscheidung ist bereits im Review und Status dokumentiert.",
+                (
+                    "Die wirksame Lifecycle-Entscheidung ist bereits im Review und Status "
+                    "dokumentiert."
+                ),
             )
         return _stage_action(
             phase,
@@ -261,11 +284,17 @@ def _build_outcome_stage_action(
         if review_due:
             return _stage_action(
                 phase,
-                "Ein Betriebsreview ist fällig, kann mit der aktuellen Rolle aber nicht dokumentiert werden.",
+                (
+                    "Ein Betriebsreview ist fällig, kann mit der aktuellen Rolle aber nicht "
+                    "dokumentiert werden."
+                ),
             )
         return _stage_action(
             phase,
-            f"Aktuell keine Aktion erforderlich. Nächster Review: {use_case.next_review_date:%d.%m.%Y}.",
+            (
+                "Aktuell keine Aktion erforderlich. Nächster Review: "
+                f"{use_case.next_review_date:%d.%m.%Y}."
+            ),
         )
 
     if active_stage == "closure":
@@ -274,10 +303,14 @@ def _build_outcome_stage_action(
                 phase,
                 "Der Abschluss ist dokumentiert; der Use Case befindet sich im Status Beendet.",
             )
-        if use_case.status in {UseCase.Status.PILOT, UseCase.Status.OPERATION} and is_coordinator(user):
+        closable_statuses = {UseCase.Status.PILOT, UseCase.Status.OPERATION}
+        if use_case.status in closable_statuses and is_coordinator(user):
             return _stage_action(
                 phase,
-                "Beendigungsgrund und Daten-/Zugangsbehandlung werden im bestehenden Review erfasst.",
+                (
+                    "Beendigungsgrund und Daten-/Zugangsbehandlung werden im bestehenden Review "
+                    "erfasst."
+                ),
                 action_label="Abschluss dokumentieren",
                 url=(
                     f"{reverse('reviews:create', kwargs={'use_case_id': use_case.pk})}"
@@ -285,14 +318,20 @@ def _build_outcome_stage_action(
                 ),
                 state="available",
             )
-        if use_case.status in {UseCase.Status.PILOT, UseCase.Status.OPERATION}:
+        if use_case.status in closable_statuses:
             return _stage_action(
                 phase,
-                "Ein Abschluss ist möglich, kann mit der aktuellen Rolle aber nicht dokumentiert werden.",
+                (
+                    "Ein Abschluss ist möglich, kann mit der aktuellen Rolle aber nicht "
+                    "dokumentiert werden."
+                ),
             )
         return _stage_action(
             phase,
-            "Der Abschluss wird relevant, sobald der Use Case im Pilot oder Betrieb beendet werden soll.",
+            (
+                "Der Abschluss wird relevant, sobald der Use Case im Pilot oder Betrieb beendet "
+                "werden soll."
+            ),
         )
 
     return _stage_action(phase, "Für diesen Bereich ist aktuell keine Aktion verfügbar.")
