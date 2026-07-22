@@ -42,10 +42,10 @@ jobs:
           path = Path("ki_radar/use_cases/outcome_workspace.py")
           text = path.read_text(encoding="utf-8")
 
-          old = '''def _measurement_complete(use_case: UseCase) -> bool:
+          old = """def _measurement_complete(use_case: UseCase) -> bool:
               return not _measurement_missing(use_case)
-          '''
-          new = '''def _measurement_fields_complete(use_case: UseCase) -> bool:
+          """
+          new = """def _measurement_fields_complete(use_case: UseCase) -> bool:
               return not _measurement_missing(use_case)
 
 
@@ -61,31 +61,29 @@ jobs:
                   and use_case.pilot_start is not None
                   and use_case.metric_measured_at < use_case.pilot_start
               )
-          '''
+          """
           if old not in text:
               raise SystemExit("measurement helper pattern not found")
           text = text.replace(old, new, 1)
 
-          old = '''                reason=(
-                          "Dateninkonsistenz: Ein Pilotstart ist dokumentiert, der "
-                          "Lifecycle-Status steht jedoch nicht auf Pilot, Betrieb oder Beendet."
-                      ),
-          '''
-          new = '''                reason=(
-                          "Dateninkonsistenz: Ein Pilotstart ist dokumentiert, aber der "
-                          "Lifecycle-Status oder die Nachweise belegen keinen laufenden oder "
-                          "abgeschlossenen Pilot."
-                      ),
-          '''
+          old = (
+              '                    "Dateninkonsistenz: Ein Pilotstart ist dokumentiert, der "\n'
+              '                    "Lifecycle-Status steht jedoch nicht auf Pilot, Betrieb oder Beendet."'
+          )
+          new = (
+              '                    "Dateninkonsistenz: Ein Pilotstart ist dokumentiert, aber der "\n'
+              '                    "Lifecycle-Status oder die Nachweise belegen keinen laufenden oder "\n'
+              '                    "abgeschlossenen Pilot."'
+          )
           if old not in text:
               raise SystemExit("pilot reason pattern not found")
           text = text.replace(old, new, 1)
 
-          old = '''            details=missing if has_data else (),
+          marker = """            details=missing if has_data else (),
               )
               if measurement_complete:
-          '''
-          new = '''            details=missing if has_data else (),
+          """
+          insertion = """            details=missing if has_data else (),
               )
               if _measurement_predates_pilot(use_case):
                   return JourneyStep(
@@ -101,21 +99,15 @@ jobs:
                       details=("Messdatum nach Pilotbeginn",),
                   )
               if measurement_complete:
-          '''
-          if old not in text:
+          """
+          if marker not in text:
               raise SystemExit("measurement step pattern not found")
-          text = text.replace(old, new, 1)
+          text = text.replace(marker, insertion, 1)
 
-          old = '''        or pilot_started
-                  or _has_measurement_data(use_case)
-                  or go_live_recorded
-          '''
-          new = '''        or pilot_started
-                  or go_live_recorded
-          '''
-          if old not in text:
+          stale_advanced = "        or _has_measurement_data(use_case)\n"
+          if stale_advanced not in text:
               raise SystemExit("lifecycle advanced pattern not found")
-          text = text.replace(old, new, 1)
+          text = text.replace(stale_advanced, "", 1)
 
           path.write_text(text, encoding="utf-8")
           PY
