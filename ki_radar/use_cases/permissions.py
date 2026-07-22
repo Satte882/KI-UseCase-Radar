@@ -29,3 +29,9 @@ def can_start_pilot(user, use_case) -> bool:
     if in_group(user, GROUP_COORDINATOR):
         return True
     return in_group(user, GROUP_BUSINESS_OWNER) and use_case.business_owner_id == user.id
+
+
+def can_confirm_go_live_exception(user) -> bool:
+    """Allow a failed-pilot go-live exception only to the explicit coordinator group."""
+
+    return bool(user.is_authenticated and in_group(user, GROUP_COORDINATOR))
