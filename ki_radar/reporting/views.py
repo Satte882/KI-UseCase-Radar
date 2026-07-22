@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
 from django.db.models import Count
 from django.shortcuts import render
 from django.utils import timezone
@@ -9,6 +10,13 @@ from ki_radar.core.taxonomy import BusinessDomain
 from ki_radar.use_cases.blockers import build_blocker_details
 from ki_radar.use_cases.classification import UseCaseClassification
 from ki_radar.use_cases.models import UseCase
+from ki_radar.use_cases.outcome_workspace import (
+    OUTCOME_STAGES,
+    build_outcome_workspace_journey,
+    normalize_outcome_stage,
+    normalize_workspace_layout,
+    outcome_workspace_url,
+)
 from ki_radar.use_cases.services import (
     current_decision_check,
     decision_due_date,
@@ -17,6 +25,39 @@ from ki_radar.use_cases.services import (
 from ki_radar.use_cases.workflow import build_use_case_journey
 
 from .portfolio import build_portfolio_context
+
+OUTCOME_STAGE_COPY = {
+    "pilot": {
+        "title": "Piloten",
+        "purpose": "Laufende oder übergebene Vorhaben für den nächsten Review sichtbar machen.",
+        "ki_radar": "Review-Termin, Zielmetrik, Status-Snapshot und Link zum Delivery-System.",
+        "external": "Backlog, Tasks, Sprints, technische Detailprobleme und täglicher Fortschritt.",
+    },
+    "effect": {
+        "title": "Wirkung",
+        "purpose": "Baseline, Ziel, Ist-Wert und belastbaren Messnachweis zusammenführen.",
+        "ki_radar": "Entscheidungsrelevanter Mess-Snapshot zum vereinbarten Review-Zeitpunkt.",
+        "external": "Operative Messdatenerhebung, technische Telemetrie und Rohdatenaufbereitung.",
+    },
+    "decision": {
+        "title": "Ergebnisentscheidung",
+        "purpose": "Scale-, Continue-, Nachbesserungs- oder Stop-Entscheidung vorbereiten.",
+        "ki_radar": "Evidenz, Empfehlung, Begründung und später ein versioniertes Review-Artefakt.",
+        "external": "Umsetzungsplanung der beschlossenen Maßnahmen oder Skalierung.",
+    },
+    "operation": {
+        "title": "Betrieb",
+        "purpose": "Verantwortung und wiederkehrende Management-Reviews sichtbar machen.",
+        "ki_radar": "Owner, nächster Review, Nutzenstatus und entscheidungsrelevante Auflagen.",
+        "external": "Incident-, Change-, Release- und Service-Management.",
+    },
+    "closure": {
+        "title": "Abschluss",
+        "purpose": "Beendigung, Datenbehandlung und Lessons Learned nachvollziehbar machen.",
+        "ki_radar": "Abschlussentscheidung, Ergebnis, Beendigungsgrund und Lessons Learned.",
+        "external": "Technische Stilllegung, Archivierung und operative Restarbeiten.",
+    },
+}
 
 
 @login_required
@@ -100,3 +141,100 @@ def portfolio(request):
         for row in domain_rows
     ]
     return render(request, "reporting/portfolio.html", context)
+
+
+@login_required
+def outcome_workspace(request):
+    active_stage = normalize_outcome_stage(request.GET.get("stage"))
+    layout = normalize_workspace_layout(request.GET.get("layout"))
+    use_cases = list(
+        UseCase.objects.filter(is_archived=False)
+        .select_related("business_owner", "technical_owner", "business_unit")
+        .prefetch_related("delivery_packages")
+        .order_by("-updated_at")
+    )
+    for use_case in use_cases:
+        use_case.latest_delivery = use_case.delivery_packages.first()
+
+    selected_use_case = None
+    requested_use_case = request.GET.get("use_case")
+    if requested_use_case:
+        try:
+            selected_use_case = next(
+                (item for item in use_cases if str(item.pk) == requested_use_case),
+                None,
+            )
+        except (TypeError, ValueError, ValidationError):
+            selected_use_case = None
+    if selected_use_case is None:
+        selected_use_case = next(
+            (item for item in use_cases if item.status == UseCase.Status.PILOT),
+            None,
+        )
+    if selected_use_case is None:
+        selected_use_case = next(
+            (
+                item
+                for item in use_cases
+                if item.latest_delivery
+                and item.latest_delivery.status == item.latest_delivery.Status.HANDED_OVER
+            ),
+            use_cases[0] if use_cases else None,
+        )
+
+    journey = (
+        build_outcome_workspace_journey(
+            selected_use_case,
+            request.user,
+            layout=layout,
+        )
+        if selected_use_case
+        else None
+    )
+    stage_links = [
+        {
+            "key": stage,
+            "label": label,
+            "url": outcome_workspace_url(
+                stage,
+                use_case=selected_use_case,
+                layout=layout,
+            ),
+        }
+        for stage, label, _step_key in OUTCOME_STAGES
+    ]
+    layout_links = {
+        "split": outcome_workspace_url(
+            active_stage,
+            use_case=selected_use_case,
+            layout="split",
+        ),
+        "continuous": outcome_workspace_url(
+            active_stage,
+            use_case=selected_use_case,
+            layout="continuous",
+        ),
+    }
+    use_case_links = [
+        {
+            "use_case": item,
+            "url": outcome_workspace_url(active_stage, use_case=item, layout=layout),
+        }
+        for item in use_cases
+    ]
+    context = {
+        "active_stage": active_stage,
+        "active_stage_copy": OUTCOME_STAGE_COPY[active_stage],
+        "journey": journey,
+        "layout": layout,
+        "layout_links": layout_links,
+        "selected_use_case": selected_use_case,
+        "stage_links": stage_links,
+        "use_case_links": use_case_links,
+        "use_cases": use_cases,
+        "pilot_total": sum(item.status == UseCase.Status.PILOT for item in use_cases),
+        "measured_total": sum(item.metric_actual is not None for item in use_cases),
+        "operation_total": sum(item.status == UseCase.Status.OPERATION for item in use_cases),
+        "ended_total": sum(item.status == UseCase.Status.ENDED for item in use_cases),
+    }
+    return render(request, "reporting/outcome_workspace.html", context)
