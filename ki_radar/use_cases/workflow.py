@@ -8,7 +8,6 @@ from django.urls import reverse
 from ki_radar.architecture.focus import ValueStreamFocus, get_value_stream_focus
 from ki_radar.architecture.models import ProcessAnalysis, ValueStream
 from ki_radar.delivery.models import DeliveryPackage
-from ki_radar.delivery.services import current_handed_over_package
 
 from . import journey as legacy
 from .permissions import can_start_pilot
@@ -122,7 +121,8 @@ def pilot_start_url(use_case) -> str:
 def _append_pilot_start(journey: JourneyState, use_case, user) -> JourneyState:
     if use_case.status != use_case.Status.REVIEW:
         return journey
-    if current_handed_over_package(use_case) is None:
+    delivery_step = next((step for step in journey.steps if step.key == "delivery"), None)
+    if delivery_step is None or delivery_step.state != "complete":
         return journey
 
     check = check_pilot_start(use_case)
