@@ -248,6 +248,20 @@ class UseCase(TimeStampedModel):
         if not self.short_id:
             counter = UseCaseCounter.objects.create()
             self.short_id = f"KI-{counter.pk:04d}"
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None:
+            update_fields = set(update_fields)
+        for required_field, completed_field in [
+            ("privacy_review_required", "privacy_review_completed"),
+            ("security_review_required", "security_review_completed"),
+            ("legal_review_required", "legal_review_completed"),
+        ]:
+            if not getattr(self, required_field) and getattr(self, completed_field):
+                setattr(self, completed_field, False)
+                if update_fields is not None:
+                    update_fields.add(completed_field)
+        if update_fields is not None:
+            kwargs["update_fields"] = update_fields
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):

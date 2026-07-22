@@ -1,14 +1,13 @@
 from django import forms
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from django.utils import timezone
+from django.core.exceptions import ObjectDoesNotExist
 
 from ki_radar.accounts.models import BusinessUnit
 from ki_radar.accounts.permissions import is_coordinator
 from ki_radar.core.taxonomy import BusinessDomain
 
+from .governance_status import build_governance_statuses
 from .models import UseCase
-from .services import validate_pilot_start_date
 
 
 class DateInput(forms.DateInput):
@@ -50,7 +49,6 @@ class UseCaseForm(forms.ModelForm):
             "technical_owner",
             "priority",
             "next_review_date",
-            "pilot_start",
             "planned_pilot_end",
             "solution_type",
             "hosting_type",
@@ -93,7 +91,6 @@ class UseCaseForm(forms.ModelForm):
         ]
         widgets = {
             "next_review_date": DateInput(),
-            "pilot_start": DateInput(),
             "planned_pilot_end": DateInput(),
             "metric_measured_at": DateInput(),
             "problem_statement": forms.Textarea(attrs={"rows": 4}),
@@ -127,7 +124,6 @@ class UseCaseForm(forms.ModelForm):
             "technical_owner": "Technischer Owner",
             "priority": "Priorität",
             "next_review_date": "Nächster Entscheidungstermin",
-            "pilot_start": "Pilotbeginn",
             "planned_pilot_end": "Geplantes Pilotende",
             "solution_type": "Lösungstyp",
             "hosting_type": "Hosting",
@@ -175,7 +171,32 @@ class UseCaseForm(forms.ModelForm):
                 )
         self.initial.setdefault("business_domain", BusinessDomain.OTHER)
         self.initial.setdefault("process_area", self.initial.get("affected_process", ""))
-        self.fields["pilot_start"].widget.attrs["max"] = timezone.localdate().isoformat()
+        self.governance_statuses = build_governance_statuses(self.instance)
+        editable_review_fields = {
+            status.kind.completed_field for status in self.governance_statuses if status.editable
+        }
+        for status in self.governance_statuses:
+            field_name = status.kind.completed_field
+            if field_name not in editable_review_fields:
+                self.fields.pop(field_name, None)
+            elif field_name in self.fields:
+                self.fields[field_name].label = {
+                    "privacy": "Datenschutzprüfung abgeschlossen",
+                    "security": "Security-Prüfung abgeschlossen",
+                    "legal": "Rechtsprüfung abgeschlossen",
+                }[status.kind.key]
+                self.fields[field_name].help_text = (
+                    "Laut aktuellem Governance-Screening erforderlich. "
+                    "Der Abschlussstatus wird in der Änderungshistorie protokolliert."
+                )
+        self.governance_boundary_field = next(
+            (
+                status.kind.completed_field
+                for status in self.governance_statuses
+                if status.kind.completed_field in self.fields
+            ),
+            "human_oversight",
+        )
         for field in self.fields.values():
             field.widget.attrs.setdefault(
                 "class",
@@ -215,9 +236,6 @@ class UseCaseForm(forms.ModelForm):
             for name in [
                 "business_owner",
                 "coordinator",
-                "privacy_review_completed",
-                "security_review_completed",
-                "legal_review_completed",
             ]:
                 if name in self.fields:
                     self.fields[name].disabled = True
@@ -236,13 +254,8 @@ class UseCaseForm(forms.ModelForm):
 
     def clean(self):
         cleaned = super().clean()
-        start = cleaned.get("pilot_start")
+        start = self.instance.pilot_start
         end = cleaned.get("planned_pilot_end")
-        if start:
-            try:
-                validate_pilot_start_date(use_case=self.instance, pilot_start=start)
-            except ValidationError as exc:
-                self.add_error("pilot_start", exc)
         if start and end and end < start:
             self.add_error(
                 "planned_pilot_end", "Das geplante Pilotende darf nicht vor dem Pilotbeginn liegen."

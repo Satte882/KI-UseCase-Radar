@@ -216,9 +216,17 @@
       <div class="card-header"><strong>Governance & Nachweise</strong></div>
       <div class="card-body">
         <div class="d-grid gap-2 mb-3">
-          <span class="badge badge-soft text-start">Datenschutz: {% if use_case.privacy_review_completed %}abgeschlossen{% elif use_case.privacy_review_required %}offen{% else %}nicht erforderlich{% endif %}</span>
-          <span class="badge badge-soft text-start">Security: {% if use_case.security_review_completed %}abgeschlossen{% elif use_case.security_review_required %}offen{% else %}nicht erforderlich{% endif %}</span>
-          <span class="badge badge-soft text-start">Recht: {% if use_case.legal_review_completed %}abgeschlossen{% elif use_case.legal_review_required %}offen{% else %}nicht erforderlich{% endif %}</span>
+          {% for status in governance_statuses %}
+          <div class="border rounded p-2">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+              <strong>{{ status.kind.label }}</strong>
+              <span class="badge {{ status.badge_class }}">{{ status.label }}</span>
+            </div>
+            <div class="small text-muted mt-1">
+              {{ status.attribution_note }}{% if status.actor %}: {{ status.actor }}{% endif %}{% if status.changed_at %}, {% if status.changed_at_has_time %}{{ status.changed_at|date:"d.m.Y H:i" }}{% else %}{{ status.changed_at|date:"d.m.Y" }}{% endif %}{% endif %}
+            </div>
+          </div>
+          {% endfor %}
         </div>
         {% if nav_is_coordinator %}<a class="btn btn-outline-secondary w-100 mb-2" href="{% url 'governance:create' use_case.pk %}">Governance-Screening</a>{% endif %}
         {% if can_edit %}<a class="btn btn-outline-secondary w-100" href="{% url 'notifications:evidence_create' use_case.pk %}">Nachweislink hinzufügen</a>{% endif %}
