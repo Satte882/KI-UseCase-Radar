@@ -34,6 +34,8 @@ services:
       OPENROUTER_TIMEOUT_SECONDS: ${OPENROUTER_TIMEOUT_SECONDS:-30}
       OPENROUTER_APP_NAME: ${OPENROUTER_APP_NAME:-KI-Radar}
       OPENROUTER_SITE_URL: ${OPENROUTER_SITE_URL:-http://localhost:8000}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
     command: python manage.py runserver 0.0.0.0:8000
     ports:
       - "127.0.0.1:8000:8000"
