@@ -79,7 +79,14 @@ jobs:
         run: uv run python manage.py migrate --noinput
 
       - name: Run tests
-        run: uv run pytest -q
+        run: uv run pytest -q > pytest-outcome-workspace.txt 2>&1
+
+      - name: Upload pytest diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-outcome-workspace-diagnostics
+          path: pytest-outcome-workspace.txt
 
       - name: Bandit
         run: uv run bandit -q -r ki_radar config
