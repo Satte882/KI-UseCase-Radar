@@ -117,7 +117,7 @@ def seed_supplier_golden_path_demo() -> dict[str, int]:
     value_stream, _ = ValueStream.objects.update_or_create(
         demo_key=SUPPLIER_GOLDEN_PATH_STREAM_KEY,
         defaults={
-            "name": "[DEMO] Beschaffung bis Zahlung – Lieferantenauswahl",
+            "name": "[DEMO] Beschaffung bis Zahlung - Lieferantenauswahl",
             "description": "End-to-End-Wertstrom vom freigegebenen Bedarf bis zur Zahlung.",
             "business_unit": business_unit,
             "owner": owner,
