@@ -1,12 +1,12 @@
 from datetime import timedelta
 
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import ValidationError
 from django.db.models import Count
 from django.shortcuts import render
 from django.utils import timezone
 
 from ki_radar.core.taxonomy import BusinessDomain
+from ki_radar.delivery.models import DeliveryPackage
 from ki_radar.use_cases.blockers import build_blocker_details
 from ki_radar.use_cases.classification import UseCaseClassification
 from ki_radar.use_cases.models import UseCase
@@ -156,16 +156,11 @@ def outcome_workspace(request):
     for use_case in use_cases:
         use_case.latest_delivery = use_case.delivery_packages.first()
 
-    selected_use_case = None
     requested_use_case = request.GET.get("use_case")
-    if requested_use_case:
-        try:
-            selected_use_case = next(
-                (item for item in use_cases if str(item.pk) == requested_use_case),
-                None,
-            )
-        except (TypeError, ValueError, ValidationError):
-            selected_use_case = None
+    selected_use_case = next(
+        (item for item in use_cases if str(item.pk) == requested_use_case),
+        None,
+    )
     if selected_use_case is None:
         selected_use_case = next(
             (item for item in use_cases if item.status == UseCase.Status.PILOT),
@@ -177,7 +172,7 @@ def outcome_workspace(request):
                 item
                 for item in use_cases
                 if item.latest_delivery
-                and item.latest_delivery.status == item.latest_delivery.Status.HANDED_OVER
+                and item.latest_delivery.status == DeliveryPackage.Status.HANDED_OVER
             ),
             use_cases[0] if use_cases else None,
         )
@@ -215,13 +210,6 @@ def outcome_workspace(request):
             layout="continuous",
         ),
     }
-    use_case_links = [
-        {
-            "use_case": item,
-            "url": outcome_workspace_url(active_stage, use_case=item, layout=layout),
-        }
-        for item in use_cases
-    ]
     context = {
         "active_stage": active_stage,
         "active_stage_copy": OUTCOME_STAGE_COPY[active_stage],
@@ -230,7 +218,6 @@ def outcome_workspace(request):
         "layout_links": layout_links,
         "selected_use_case": selected_use_case,
         "stage_links": stage_links,
-        "use_case_links": use_case_links,
         "use_cases": use_cases,
         "pilot_total": sum(item.status == UseCase.Status.PILOT for item in use_cases),
         "measured_total": sum(item.metric_actual is not None for item in use_cases),
