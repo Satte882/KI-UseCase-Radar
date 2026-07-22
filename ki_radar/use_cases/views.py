@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import csv
-import os
 from datetime import timedelta
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
@@ -117,7 +117,7 @@ def _detail_context(request, use_case: UseCase, *, copilot_analysis: str = "") -
         "first_blocker": blocker_details[0] if blocker_details else None,
         "decision_due": decision_due_date(use_case),
         "copilot_analysis": copilot_analysis,
-        "copilot_enabled": bool(os.getenv("OPENROUTER_API_KEY")),
+        "copilot_enabled": bool(settings.OPENROUTER_API_KEY),
     }
 
 

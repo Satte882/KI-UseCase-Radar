@@ -147,6 +147,25 @@ def test_copilot_is_optional_without_openrouter_key(settings, decision_use_case)
 
 
 @pytest.mark.django_db
+def test_copilot_button_is_enabled_when_openrouter_key_is_configured(
+    client,
+    settings,
+    coordinator,
+    decision_use_case,
+):
+    settings.OPENROUTER_API_KEY = "test-key-not-rendered"
+    client.force_login(coordinator)
+
+    response = client.get(decision_use_case.get_absolute_url())
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "OpenRouter ist nicht konfiguriert" not in content
+    assert "test-key-not-rendered" not in content
+    assert '<button class="btn btn-outline-secondary btn-sm" >Analyse starten</button>' in content
+
+
+@pytest.mark.django_db
 def test_copilot_endpoint_rejects_non_coordinator(client, owner, decision_use_case):
     client.force_login(owner)
 

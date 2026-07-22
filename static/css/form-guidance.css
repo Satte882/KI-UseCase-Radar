@@ -25,9 +25,19 @@ textarea.form-control::placeholder {
 }
 
 .form-control.field-guidance-required-empty:focus,
+.form-select.field-guidance-required-empty:focus {
+  background-color: #0b1322;
+  border-color: rgba(255, 107, 130, .72);
+  box-shadow: 0 0 0 .2rem rgba(255, 107, 130, .14);
+}
+
 .form-control.field-guidance-optional-empty:focus,
-.form-select.field-guidance-required-empty:focus,
-.form-select.field-guidance-optional-empty:focus,
+.form-select.field-guidance-optional-empty:focus {
+  background-color: rgba(243, 185, 95, .12);
+  border-color: rgba(243, 185, 95, .45);
+  box-shadow: 0 0 0 .2rem rgba(243, 185, 95, .13);
+}
+
 .form-control.field-guidance-filled:focus,
 .form-select.field-guidance-filled:focus {
   background-color: #0b1322;
@@ -38,6 +48,12 @@ textarea.form-control::placeholder {
 .field-error .form-control.field-guidance-filled,
 .field-error .form-select.field-guidance-filled {
   border-color: rgba(255, 107, 130, .7);
+}
+
+.field-error .form-control.field-guidance-filled:focus,
+.field-error .form-select.field-guidance-filled:focus {
+  border-color: rgba(255, 107, 130, .72);
+  box-shadow: 0 0 0 .2rem rgba(255, 107, 130, .14);
 }
 
 @media (prefers-reduced-motion: no-preference) {

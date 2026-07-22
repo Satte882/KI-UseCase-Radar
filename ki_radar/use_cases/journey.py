@@ -51,13 +51,6 @@ PROCESS_REQUIRED_FIELDS = (
     "baseline_metrics",
 )
 
-NON_AI_OPTION_TYPES = {
-    SolutionOption.OptionType.ORGANIZATIONAL,
-    SolutionOption.OptionType.RULE_AUTOMATION,
-    SolutionOption.OptionType.STANDARD_SOFTWARE,
-    SolutionOption.OptionType.NO_TECH,
-}
-
 FINAL_NEGATIVE_STATUSES = {
     UseCase.DecisionStatus.DEFERRED,
     UseCase.DecisionStatus.NOT_PURSUED,
@@ -530,7 +523,7 @@ def build_process_analysis_journey(process_analysis: ProcessAnalysis, user) -> J
         )
     )
 
-    if preferred.option_type in NON_AI_OPTION_TYPES:
+    if not preferred.starts_ai_use_case:
         steps.extend(
             [
                 JourneyStep(

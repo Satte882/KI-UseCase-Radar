@@ -203,6 +203,39 @@ def test_only_preferred_solution_prefills_governed_intake(
 
 
 @pytest.mark.django_db
+def test_preferred_non_ai_solution_does_not_start_use_case_intake(
+    client,
+    owner,
+    architecture_context,
+):
+    _stream, _stage, process = architecture_context
+    option = SolutionOption.objects.create(
+        process_analysis=process,
+        name="Regelbasierte Freigabe",
+        option_type=SolutionOption.OptionType.RULE_AUTOMATION,
+        recommendation=SolutionOption.Recommendation.PREFERRED,
+        description="Eindeutige Regeln automatisieren Standardfälle.",
+        expected_value="Wartezeit ohne KI reduzieren.",
+        created_by=owner,
+    )
+    client.force_login(owner)
+
+    detail_response = client.get(process.get_absolute_url())
+    assert detail_response.status_code == 200
+    assert "Bevorzugte Option als Use Case prüfen" not in detail_response.content.decode()
+
+    response = client.get(
+        reverse(
+            "architecture:solution_option_start_use_case",
+            kwargs={"pk": option.pk},
+        )
+    )
+    assert response.status_code == 302
+    assert response.url == option.process_analysis.get_absolute_url()
+    assert SESSION_KEY not in client.session
+
+
+@pytest.mark.django_db
 def test_process_and_solution_origin_is_traceable(
     owner,
     business_unit,

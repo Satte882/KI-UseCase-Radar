@@ -70,7 +70,7 @@
           <dt>Begründung</dt><dd>{{ option.architecture_fit|default:"–" }}</dd>
         </dl>
         {% if can_edit %}<a class="btn btn-sm btn-outline-secondary w-100 mt-3" href="{% url 'architecture:solution_option_update' option.pk %}">Option bearbeiten</a>{% endif %}
-        {% if can_create_use_case and option.recommendation == 'preferred' %}<a class="btn btn-sm btn-primary w-100 mt-2" href="{% url 'architecture:solution_option_start_use_case' option.pk %}">Bevorzugte Option als Use Case prüfen</a>{% endif %}
+        {% if can_create_use_case and option.recommendation == 'preferred' and option.starts_ai_use_case %}<a class="btn btn-sm btn-primary w-100 mt-2" href="{% url 'architecture:solution_option_start_use_case' option.pk %}">Bevorzugte Option als Use Case prüfen</a>{% endif %}
       </section>
       {% empty %}<p class="text-muted mb-0">Noch keine Lösungsoptionen dokumentiert. Prüfen Sie organisatorische und regelbasierte Alternativen ebenso wie KI.</p>{% endfor %}
     </div>

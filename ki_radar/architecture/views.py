@@ -35,6 +35,9 @@ DISCOVERY_PREFILL_MESSAGE = (
 PREFERRED_ONLY_MESSAGE = (
     "Nur eine ausdrücklich bevorzugte Lösungsoption kann in den Use-Case-Intake überführt werden."
 )
+AI_USE_CASE_ONLY_MESSAGE = (
+    "Diese bevorzugte Option ist keine KI-Initiative; die Discovery endet ohne KI-Use-Case."
+)
 PREFERRED_PREFILL_MESSAGE = (
     "Der Intake wurde aus der bevorzugten Lösungsoption vorbefüllt. Die bestehende "
     "Bewertung und Governance bleiben verbindlich."
@@ -353,6 +356,9 @@ def solution_option_start_use_case(request, pk):
     )
     if option.recommendation != SolutionOption.Recommendation.PREFERRED:
         messages.warning(request, PREFERRED_ONLY_MESSAGE)
+        return redirect(option.process_analysis)
+    if not option.starts_ai_use_case:
+        messages.warning(request, AI_USE_CASE_ONLY_MESSAGE)
         return redirect(option.process_analysis)
     process_analysis = option.process_analysis
     stage = process_analysis.stage
