@@ -12,6 +12,8 @@ Die Navigation umfasst:
 
 Jeder Bereich zeigt vorhandene Informationen und führt ausschließlich zu einer bereits bestehenden, fachlich führenden Oberfläche. Es entsteht keine parallele Dateneingabe.
 
+Der Arbeitsraum verwendet weiterhin dieselbe `JourneyState`-/`JourneyStep`-Logik. Es gibt keine zweite Journey-Engine und keine unabhängige Lifecycle-Statuslogik.
+
 ## Systemgrenze
 
 ### Externes Delivery-System
