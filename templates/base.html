@@ -7,7 +7,7 @@
   <meta name="color-scheme" content="dark">
   <title>{% block title %}KI-Radar{% endblock %}</title>
   <link rel="icon" href="{% static 'favicon.svg' %}" type="image/svg+xml">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILvFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
   <link rel="stylesheet" href="{% static 'css/context-topbar.css' %}">
   <link rel="stylesheet" href="{% static 'css/sidebar-journey.css' %}">
@@ -82,33 +82,42 @@
       <div class="nav-caption nav-caption-workspace">
         <span>Wirkung &amp; Betrieb</span>
       </div>
-      <a class="sidebar-link {% if request.resolver_match.url_name == 'outcome_workspace' and active_stage == 'pilot' %}active{% endif %}" href="{% url 'reporting:outcome_workspace' %}?stage=pilot">
-        <span class="nav-icon">▶</span> Piloten
+      <a class="sidebar-link {% if request.resolver_match.url_name == 'outcome_workspace' and active_stage == 'handover' %}active{% endif %}" href="{% url 'reporting:outcome_workspace' %}?stage=handover{% if selected_use_case %}&amp;use_case={{ selected_use_case.pk }}{% endif %}">
+        <span class="nav-icon">⇥</span> Übergabe
       </a>
-      <a class="sidebar-link {% if request.resolver_match.url_name == 'outcome_workspace' and active_stage == 'effect' %}active{% endif %}" href="{% url 'reporting:outcome_workspace' %}?stage=effect">
+      <a class="sidebar-link {% if request.resolver_match.url_name == 'outcome_workspace' and active_stage == 'pilot' %}active{% endif %}" href="{% url 'reporting:outcome_workspace' %}?stage=pilot{% if selected_use_case %}&amp;use_case={{ selected_use_case.pk }}{% endif %}">
+        <span class="nav-icon">▶</span> Pilot
+      </a>
+      <a class="sidebar-link {% if request.resolver_match.url_name == 'outcome_workspace' and active_stage == 'effect' %}active{% endif %}" href="{% url 'reporting:outcome_workspace' %}?stage=effect{% if selected_use_case %}&amp;use_case={{ selected_use_case.pk }}{% endif %}">
         <span class="nav-icon">◎</span> Wirkung
       </a>
-      <a class="sidebar-link {% if request.resolver_match.url_name == 'outcome_workspace' and active_stage == 'decision' %}active{% endif %}" href="{% url 'reporting:outcome_workspace' %}?stage=decision">
+      <a class="sidebar-link {% if request.resolver_match.url_name == 'outcome_workspace' and active_stage == 'decision' %}active{% endif %}" href="{% url 'reporting:outcome_workspace' %}?stage=decision{% if selected_use_case %}&amp;use_case={{ selected_use_case.pk }}{% endif %}">
         <span class="nav-icon">◇</span> Ergebnisentscheidung
       </a>
-      <a class="sidebar-link {% if request.resolver_match.url_name == 'outcome_workspace' and active_stage == 'operation' %}active{% endif %}" href="{% url 'reporting:outcome_workspace' %}?stage=operation">
+      <a class="sidebar-link {% if request.resolver_match.url_name == 'outcome_workspace' and active_stage == 'operation' %}active{% endif %}" href="{% url 'reporting:outcome_workspace' %}?stage=operation{% if selected_use_case %}&amp;use_case={{ selected_use_case.pk }}{% endif %}">
         <span class="nav-icon">⚙</span> Betrieb
       </a>
-      <a class="sidebar-link {% if request.resolver_match.url_name == 'outcome_workspace' and active_stage == 'closure' %}active{% endif %}" href="{% url 'reporting:outcome_workspace' %}?stage=closure">
+      <a class="sidebar-link {% if request.resolver_match.url_name == 'outcome_workspace' and active_stage == 'closure' %}active{% endif %}" href="{% url 'reporting:outcome_workspace' %}?stage=closure{% if selected_use_case %}&amp;use_case={{ selected_use_case.pk }}{% endif %}">
         <span class="nav-icon">■</span> Abschluss
       </a>
-
-      {% if nav_is_technical_admin %}
-      <div class="nav-caption mt-4">System</div>
-      <a class="sidebar-link" href="/admin/"><span class="nav-icon">⚙</span> Administration</a>
-      {% endif %}
     </nav>
-    <div class="sidebar-footer">
-      <div class="user-card">
-        <div class="user-avatar">{{ user.get_display_name|slice:":1" }}</div>
-        <div class="min-w-0"><strong class="d-block text-truncate">{{ user.get_display_name }}</strong><small>Angemeldet</small></div>
+
+    <div class="sidebar-footer dropup">
+      <button class="sidebar-account-trigger" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Benutzermenü öffnen">
+        <span class="user-avatar">{{ user.get_display_name|slice:":1" }}</span>
+        <span class="sidebar-account-name text-truncate">{{ user.get_display_name }}</span>
+        <span class="sidebar-account-chevron" aria-hidden="true">⌃</span>
+      </button>
+      <div class="dropdown-menu sidebar-account-menu">
+        {% if nav_is_technical_admin %}
+        <a class="dropdown-item" href="/admin/"><span aria-hidden="true">⚙</span> Administration</a>
+        <div class="dropdown-divider"></div>
+        {% endif %}
+        <form method="post" action="{% url 'accounts:logout' %}">
+          {% csrf_token %}
+          <button class="dropdown-item" type="submit"><span aria-hidden="true">↪</span> Abmelden</button>
+        </form>
       </div>
-      <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button class="btn btn-ghost w-100">Abmelden</button></form>
     </div>
   </aside>
   <div class="app-main">

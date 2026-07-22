@@ -25,8 +25,9 @@ def review_create(request, use_case_id):
         ),
         pk=use_case_id,
     )
+    requested_action = request.GET.get("action")
     coordinator_access = is_coordinator(request.user)
-    pilot_start_only = request.GET.get("action") == "pilot_start" or (
+    pilot_start_only = requested_action == "pilot_start" or (
         request.method == "POST" and not coordinator_access
     )
     if pilot_start_only:
@@ -41,6 +42,7 @@ def review_create(request, use_case_id):
             use_case=use_case,
             actor=request.user,
             pilot_start_only=pilot_start_only,
+            requested_action=requested_action,
         )
         if form.is_valid():
             try:
@@ -58,6 +60,7 @@ def review_create(request, use_case_id):
             use_case=use_case,
             actor=request.user,
             pilot_start_only=pilot_start_only,
+            requested_action=requested_action,
         )
     return render(
         request,

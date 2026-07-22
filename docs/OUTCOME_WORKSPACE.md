@@ -1,21 +1,22 @@
 # Wirkung & Betrieb
 
-## Status dieses Inkrements
+## Zielbild
 
-Dieses Inkrement finalisiert die Navigation und Informationshierarchie für Wirkung und Betrieb. Es führt kein neues fachliches Datenmodell für Pilotfortschritt, Ergebnisreviews, Skalierungsentscheidungen oder Betrieb ein.
+`Wirkung & Betrieb` ist ein kompakter Review- und Entscheidungs-Snapshot. Der Arbeitsraum ersetzt weder das bestehende Use-Case-Formular noch Jira, Azure DevOps, GitHub oder ein anderes operatives Delivery-System.
 
-Ziele:
+Die Navigation umfasst:
 
-1. die Systemgrenze zu Jira, Azure DevOps, GitHub und ähnlichen Delivery-Systemen verbindlich festlegen,
-2. den zweiten Arbeitsraum in die bestehende `JourneyState`-/`JourneyStep`-Logik integrieren,
-3. eine fokussierte Hauptleiste für den zweiten Arbeitsraum bereitstellen,
-4. die nächsten fachlichen Inkremente auf einen kleinen, abnehmbaren Umfang begrenzen.
+```text
+Übergabe → Pilot → Wirkung → Ergebnisentscheidung → Betrieb → Abschluss
+```
+
+Jeder Bereich zeigt vorhandene Informationen und führt ausschließlich zu einer bereits bestehenden, fachlich führenden Oberfläche. Es entsteht keine parallele Dateneingabe.
+
+Der Arbeitsraum verwendet weiterhin dieselbe `JourneyState`-/`JourneyStep`-Logik. Es gibt keine zweite Journey-Engine und keine unabhängige Lifecycle-Statuslogik.
 
 ## Systemgrenze
 
-KI-Radar bleibt ein Portfolio-, Governance- und Entscheidungs-Cockpit. Es wird kein operatives Projektmanagementsystem.
-
-### Führendes externes Delivery-System
+### Externes Delivery-System
 
 Jira, Azure DevOps, GitHub oder ein vergleichbares Werkzeug bleiben führend für:
 
@@ -26,125 +27,85 @@ Jira, Azure DevOps, GitHub oder ein vergleichbares Werkzeug bleiben führend fü
 - Ressourcenplanung,
 - Incident-, Change- und Service-Management.
 
-### Führendes System für Portfolioentscheidungen
+### KI-Radar
 
 KI-Radar bleibt führend für:
 
 - Baseline, Ziel und gemessenen Ist-Wert,
 - Messzeitraum, Messmethode und Nachweislink,
-- wesentliche Probleme und offene Governance-Auflagen,
-- Empfehlung und Begründung für die Folgeentscheidung,
-- spätere Scale-, Continue-, Nachbesserungs- oder Stop-Entscheidung,
-- Business- und Technical-Ownership,
-- wiederkehrende Management-Reviews,
-- Abschlussbewertung und Lessons Learned.
+- Governance-Auflagen und Verantwortlichkeiten,
+- Lifecycle-Reviews mit Begründung und Statuswechsel,
+- Go-live- und Abschlussentscheidung,
+- Management-Reviews und Lessons Learned.
 
-## Rückfluss der Informationen
+Der Informationsrückfluss bleibt ein manueller Review-Snapshot. Es gibt keine Live-Synchronisation und keine doppelte Pflege operativer Maßnahmen.
 
-Der erste produktive Ausbaustand verwendet bewusst einen **manuellen Review-Snapshot**:
+## Führende Oberfläche je Bereich
 
-```text
-Jira / Azure DevOps / GitHub
-→ Pilotteam bereitet entscheidungsrelevante Ergebnisse vor
-→ Business Owner oder Koordinator bestätigt den Snapshot zum Review-Termin
-→ KI-Radar dokumentiert Evidenz und Entscheidung
-```
+| Bereich | Aktion und führende Oberfläche |
+|---|---|
+| Übergabe | Delivery Package prüfen, vervollständigen oder verbindlich übergeben |
+| Pilot | tatsächlich hinterlegten externen Delivery-Link öffnen |
+| Wirkung | direkt zum nächsten fehlenden Metrikfeld im bestehenden Use-Case-Formular springen |
+| Ergebnisentscheidung | bei vollständiger Messung das bestehende Review-Formular für `GO_LIVE` öffnen |
+| Betrieb | bei fälligem Termin das bestehende Review-Formular öffnen; sonst neutralen Status anzeigen |
+| Abschluss | das bestehende Review-Formular für `END` und die Abschlussangaben öffnen |
 
-Es gibt zunächst:
+Ein CTA wird nur angezeigt, wenn Zieloberfläche und Berechtigung tatsächlich vorhanden sind.
 
-- keine Live-Synchronisation,
-- keinen automatischen Import von Tasks oder Sprintdaten,
-- keine doppelte Pflege operativer Maßnahmen,
-- keine Annahme, dass täglicher Fortschritt in KI-Radar nachgeführt wird.
+## Pilot-Link und unveränderliche Übergaben
 
-Eine spätere Integration darf ausschließlich verdichtete, entscheidungsrelevante Informationen übernehmen. Das externe System bleibt für operative Daten führend.
+- Ein gestarteter Pilot mit externem Delivery-Link zeigt `Externen Pilot öffnen`.
+- Ein noch bearbeitbares Delivery Package ohne Link zeigt für berechtigte Benutzer `Delivery-Link ergänzen`.
+- Ein bereits übergebenes Package bleibt unveränderlich. Fehlt dort der Link, zeigt die Oberfläche bewusst einen neutralen Hinweis; sie verweist nicht auf eine unzulässige Bearbeitung.
+- Die frühere Selbstverlinkung `Pilotübersicht öffnen` ist entfernt. Es wird keine interne Pilotübersicht erfunden.
 
-## Eine Journey statt paralleler Statuslogik
+## Ergebnisentscheidung und Abschluss
 
-Der zweite Arbeitsraum verwendet weiterhin:
+Die Deep Links verwenden das bestehende Lifecycle-Review:
 
-- `JourneyState`,
-- `JourneyStep`,
-- dieselbe Next-Action-Auswahl,
-- dieselben Zustände `complete`, `current`, `blocked`, `upcoming` und `optional`.
+- `Go-live entscheiden` öffnet das Review-Formular mit `GO_LIVE` und Zielstatus `Betrieb` vorbelegt.
+- `Abschluss dokumentieren` öffnet dasselbe Formular mit `END` und Zielstatus `Beendet` vorbelegt.
 
-`build_outcome_workspace_journey()` erweitert die vorhandene Use-Case-Journey um:
+Formular-, Service- und Gate-Logik bleiben unverändert führend. Der Arbeitsraum speichert keine Entscheidung selbst.
 
-```text
-Übergabe
-→ Pilot
-→ Wirkungsmessung
-→ Ergebnisentscheidung
-→ Betrieb
-→ Abschluss
-```
+## Kompakter Snapshot
 
-Die bestehende Auswahl- und Freigabe-Journey bleibt Teil desselben Objekts. Es gibt keine zweite Journey-Engine und keine unabhängige Template-Statuslogik.
+Der gemeinsame Use-Case-Bereich zeigt weiterhin:
 
-## Navigationsentscheidung: getrennter Arbeitsraum
+- Lifecycle-Status,
+- Baseline, Ziel, Ist-Wert und Ergebnis,
+- Business und Technical Owner,
+- nächsten Review-Termin,
+- aktuelle Delivery-Package-Version und Status.
 
-Nach der lokalen Desktop- und Mobile-Abnahme wurde die fokussierte Variante A ausgewählt.
+Die Darstellung ist verdichtet, damit der phasenspezifische Handlungsstatus sichtbar bleibt.
 
-Beim Wechsel zu Wirkung & Betrieb zeigt die stabile Hauptleiste nur:
+## Sidebar und Benutzer-Menü
 
-```text
-Übergabe → Pilot → Wirkung → Ergebnisentscheidung → Betrieb → Abschluss
-```
-
-Die Trennung reduziert die Breite der stabilen Hauptleiste und hält den aktuellen Aufgabenraum
-auf Desktop und Mobile schneller erfassbar. Der Zusammenhang zur Auswahl und Freigabe bleibt
-über die deutlich getrennten Arbeitsräume in der Sidebar erhalten. Die zuvor angebotene
-durchgängige Vergleichsvariante ist nicht mehr Bestandteil der Oberfläche.
-
-## Bereits genutzte Daten
-
-Der Bereich verwendet ausschließlich bestehende Daten:
-
-- Use-Case-Lifecycle,
-- Pilotbeginn und geplantes Pilotende,
-- nächster Review-Termin,
-- Baseline, Ziel und Ist-Wert,
-- Messmethode und Messnachweis,
-- Delivery-Package-Status und Link zum Delivery-System,
-- Business Owner, Technical Owner und Support-Verantwortung,
-- Abschlussinformationen am Use Case.
-
-Das Inkrement erzeugt keine Migration.
+Die sechs Bereiche besitzen getrennte Sidebar-Einstiege. Der Footer zeigt dauerhaft nur Avatar und Benutzername. Administration und Abmelden liegen in einem aufklappbaren Account-Menü.
 
 ## Bewusste Nicht-Ziele
 
 Dieses Inkrement implementiert nicht:
 
-- ein neues Pilot-Datenmodell,
-- Fortschrittsprozente,
-- Maßnahmenlisten,
-- Jira- oder Azure-DevOps-Synchronisation,
-- eine persistierte Scale-/Stop-Entscheidung,
-- neue Hard Gates für Betrieb oder Abschluss,
-- Benachrichtigungen oder Eskalationen.
+- ein neues Pilot- oder Betriebsdatenmodell,
+- eine zweite Bearbeitungsoberfläche,
+- Fortschrittsprozente oder operative Maßnahmenlisten,
+- Jira-, Azure-DevOps- oder GitHub-Synchronisation,
+- versionierte Wirkungsmessungen,
+- eine neue persistierte Scale-/Continue-/Stop-Entscheidung,
+- neue Lifecycle-Status oder Berechtigungsmodelle.
 
-## Geplante kleine Folgeinkremente
-
-1. **Pilotübersicht aus bestehenden Daten**
-   - Pilotstatus, Zeitraum, Owner, Zielmetrik, Review-Termin und Delivery-Link.
-2. **Versioniertes Wirkungsreview**
-   - Mess-Snapshot, Nachweis, qualitative Ergebnisse, Probleme und Empfehlung.
-3. **Ergebnisentscheidung**
-   - skalieren, verlängern, nachbessern, in Betrieb überführen oder beenden.
-4. **Betriebsreview**
-   - Ownership, Nutzenstatus, Auflagen und nächster Review.
-5. **Abschluss**
-   - Stilllegung, Datenbehandlung, Ersatzlösung und Lessons Learned.
-
-Jedes Inkrement erhält einen eigenen Branch, eigenen PR, eigene Tests und eine getrennte fachliche Abnahme.
+Es entsteht keine Migration.
 
 ## Abnahmekriterien
 
-- Die Sidebar zeigt zwei klar getrennte Arbeitsräume.
-- Der zweite Arbeitsraum nutzt die gesamte verfügbare Inhaltsbreite.
-- Die Hauptleiste zeigt im zweiten Arbeitsraum nur Übergabe bis Abschluss.
-- Desktop und Mobile bleiben bedienbar.
-- Die Systemgrenze ist auf der Seite und in dieser Dokumentation sichtbar.
+- Die sechs Bereiche besitzen unterscheidbare Kontexte.
+- CTAs führen nur zu vorhandenen und zulässigen Zieloberflächen.
+- Pilot öffnet ausschließlich einen echten externen Link.
+- Fehlende oder unzulässige Aktionen werden als bewusster neutraler Zustand dargestellt.
+- Wirkung, Go-live und Abschluss verwenden die bestehenden Formulare.
+- Der Account-Footer blockiert keinen dauerhaften Platz für Administration und Abmelden.
+- Die bestehende Systemgrenze bleibt sichtbar.
 - Es entsteht kein neues Datenmodell und keine Migration.
-- Die Next Action stammt weiterhin aus derselben Journey-State-Logik.
-- Bestehende Auswahl-, Freigabe- und Delivery-Seiten bleiben unverändert nutzbar.

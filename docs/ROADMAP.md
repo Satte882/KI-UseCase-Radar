@@ -72,6 +72,10 @@ Der erste Rückfluss aus Jira, Azure DevOps, GitHub oder einem anderen Delivery-
 - [x] **22.07.2026:** Variante A als verbindliche Navigation: `Übergabe → Pilot → Wirkung → Ergebnisentscheidung → Betrieb → Abschluss`
 - [x] **22.07.2026:** sichtbare Verantwortungsgrenze zwischen KI-Radar und externem Delivery-System
 - [x] **22.07.2026:** responsive Desktop- und Mobile-Darstellung ohne horizontale Seitenüberläufe
+- [x] **22.07.2026:** kompakter Entscheidungs-Snapshot mit getrenntem Handlungsstatus je Bereich
+- [x] **22.07.2026:** Deep Links ausschließlich zu vorhandenen führenden Oberflächen für Übergabe, Wirkung, Go-live, Betriebsreview und Abschluss
+- [x] **22.07.2026:** Pilot öffnet nur einen tatsächlich hinterlegten externen Delivery-Link; fehlende oder unzulässige Aktionen erhalten einen neutralen Zustand
+- [x] **22.07.2026:** kompakter Sidebar-Footer mit aufklappbarem Account-Menü für Administration und Abmelden
 
 ### 1.5 Lifecycle und vollständiger Golden Path
 
