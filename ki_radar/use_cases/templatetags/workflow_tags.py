@@ -122,6 +122,7 @@ def _selection_route_states(request):
 def _outcome_route_states(request):
     current_stage = request.GET.get("stage", "pilot")
     stage_to_step = {
+        "handover": "handover",
         "pilot": "pilot",
         "effect": "measurement",
         "decision": "outcome_decision",
@@ -130,7 +131,6 @@ def _outcome_route_states(request):
     }
     current_step = stage_to_step.get(current_stage, "pilot")
     states = {key: "upcoming" for key, _label, _keys in OUTCOME_WORKFLOW}
-    states["handover"] = "context"
     states[current_step] = "current"
     return states
 
@@ -150,7 +150,7 @@ def _links(request):
         "assessment": reverse("reporting:portfolio"),
         "approval": reverse("reporting:dashboard"),
         "delivery": reverse("delivery:package_list"),
-        "handover": _outcome_link(request, "pilot"),
+        "handover": _outcome_link(request, "handover"),
         "pilot": _outcome_link(request, "pilot"),
         "measurement": _outcome_link(request, "effect"),
         "outcome_decision": _outcome_link(request, "decision"),
