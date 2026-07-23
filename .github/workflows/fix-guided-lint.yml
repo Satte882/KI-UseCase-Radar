@@ -1,20 +1,17 @@
-name: Fix Guided Lint
+name: Diagnose Guided Lint
 
 on:
   pull_request:
     branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  fix:
-    if: github.event.pull_request.head.repo.full_name == github.repository
+  diagnose:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
@@ -22,7 +19,7 @@ jobs:
         with:
           version: "0.10.0"
       - run: uv sync --frozen --dev
-      - name: Apply safe lint fixes
+      - name: Capture remaining lint
         shell: bash
         run: |
           python - <<'PY'
@@ -32,16 +29,8 @@ jobs:
           text = text.replace('details=tuple(action.message for action in []),', 'details=(),')
           path.write_text(text, encoding='utf-8')
           PY
-          uv run ruff check --fix .
-          uv run ruff format .
-      - name: Commit fixes
-        shell: bash
-        run: |
-          if git diff --quiet; then
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .
-          git commit -m "Fix guided workflow lint"
-          git push
+          uv run ruff check . > guided-lint.txt 2>&1 || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: guided-lint
+          path: guided-lint.txt
