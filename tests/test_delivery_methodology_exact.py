@@ -8,6 +8,7 @@ METHODOLOGY_TITLE = "# Vorgehensmodell für produktionsreife KI-Systeme".encode(
 
 
 def test_embedded_methodology_matches_the_agreed_version_2_exactly():
+    # Raw bytes keep the original CRLF line endings inside the versioned contract.
     document = (Path(settings.BASE_DIR) / "docs" / "DELIVERY_METHODOLOGY.md").read_bytes()
     embedded_methodology = document[document.index(METHODOLOGY_TITLE) :]
 
