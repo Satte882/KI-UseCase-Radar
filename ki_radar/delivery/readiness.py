@@ -335,3 +335,11 @@ def blocking_findings(package: DeliveryPackage) -> list[ReadinessFinding]:
 
 def missing_ready_fields(package: DeliveryPackage) -> list[str]:
     return [finding.message for finding in blocking_findings(package)]
+
+
+def render_delivery_markdown(package: DeliveryPackage) -> str:
+    """Compatibility wrapper for callers of the former readiness export."""
+
+    from .exports import render_delivery_markdown as render
+
+    return render(package)
