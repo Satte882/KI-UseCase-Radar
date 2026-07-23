@@ -65,7 +65,7 @@ a { color: #a99aff; }
 .form-text, .text-muted { color: var(--muted) !important; }
 .btn-primary { --bs-btn-bg: #7155ea; --bs-btn-border-color: #7155ea; --bs-btn-hover-bg: #8066f0; --bs-btn-hover-border-color: #8066f0; box-shadow: 0 8px 24px rgba(113,85,234,.22); }
 .btn-outline-secondary { --bs-btn-color: #aebcd0; --bs-btn-border-color: rgba(148,163,184,.25); --bs-btn-hover-bg: #1a263a; --bs-btn-hover-border-color: rgba(148,163,184,.4); }
-.decision-panel { border-left: 3px solid var(--accent); }
+.decision-panel { border-color: var(--border); }
 .decision-list { margin: 0; padding-left: 18px; }
 .decision-list li { margin: 7px 0; color: #c4cfdf; }
 .kpi-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 13px; overflow: hidden; }
@@ -94,13 +94,13 @@ a { color: #a99aff; }
 .wizard-step-complete { color: var(--success); }
 .wizard-step-error { color: var(--danger); border-color: rgba(255,107,130,.35); }
 .wizard-step-current { outline: 2px solid rgba(124,92,255,.5); outline-offset: 1px; color: var(--text); }
-.field-attention { border-left: 3px solid var(--danger); border-radius: 10px; padding-top: 10px; padding-bottom: 10px; background: rgba(255,107,130,.055); }
+.field-attention { border: 1px solid var(--danger); border-radius: 10px; padding-top: 10px; padding-bottom: 10px; background: rgba(255,107,130,.055); }
 .field-attention .form-control, .field-attention .form-select { border-color: rgba(255,107,130,.7); }
 .field-attention-message { color: #ff9aaa; font-size: .82rem; margin-top: 7px; }
 .blocker-actions { display: grid; gap: 10px; }
 .blocker-action { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; background: rgba(9,15,27,.48); }
-.blocker-data { border-left: 3px solid var(--danger); }
-.blocker-process { border-left: 3px solid var(--warning); }
+.blocker-data { border-color: var(--danger); }
+.blocker-process { border-color: var(--warning); }
 .blocker-icon { color: var(--danger); margin-right: 8px; }
 .portfolio-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .portfolio-legend, .portfolio-status-legend, .portfolio-group-tabs, .landscape-badges { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }

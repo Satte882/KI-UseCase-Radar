@@ -1,12 +1,19 @@
 {% extends "base.html" %}
 {% block title %}Monatsreview – KI-Radar{% endblock %}
-{% block content %}<h1>Monatsreview</h1><p class="text-muted">Entscheidungs- und Pflegebedarf zum {{ today|date:"d.m.Y" }}</p>
-{% for heading,items,style in sections %}{% endfor %}
-<div class="row g-4">
-{% include "reviews/section.html" with title="Überfällige Reviews" items=overdue style="danger" %}
-{% include "reviews/section.html" with title="In den nächsten 30 Tagen" items=due_soon style="warning" %}
-{% include "reviews/section.html" with title="Ohne Review-Termin" items=missing_review_date style="secondary" %}
-{% include "reviews/section.html" with title="Seit 60 Tagen unverändert" items=stale style="secondary" %}
-{% include "reviews/section.html" with title="Piloten ohne Ergebnis" items=pilots_without_result style="warning" %}
-{% include "reviews/section.html" with title="Ohne Governance-Screening" items=missing_governance style="warning" %}
-</div>{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="eyebrow mb-2">Entscheidungs- und Pflegebedarf</div>
+    <h1 class="page-title">Monatsreview</h1>
+    <p class="page-subtitle">Priorisierte Arbeitsliste zum {{ today|date:"d.m.Y" }} – von überfälligen Entscheidungen bis zu fehlenden Nachweisen.</p>
+  </div>
+</div>
+<div class="row g-4 review-grid">
+  {% include "reviews/section.html" with title="Überfällige Reviews" items=overdue style="danger" %}
+  {% include "reviews/section.html" with title="In den nächsten 30 Tagen" items=due_soon style="warning" %}
+  {% include "reviews/section.html" with title="Ohne Review-Termin" items=missing_review_date style="secondary" %}
+  {% include "reviews/section.html" with title="Seit 60 Tagen unverändert" items=stale style="secondary" %}
+  {% include "reviews/section.html" with title="Piloten ohne Ergebnis" items=pilots_without_result style="warning" %}
+  {% include "reviews/section.html" with title="Ohne Governance-Screening" items=missing_governance style="warning" %}
+</div>
+{% endblock %}

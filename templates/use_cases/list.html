@@ -1,38 +1,114 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Use Cases – KI-Radar{% endblock %}
+{% block content_class %}use-case-register-page{% endblock %}
 {% block content %}
-<div class="page-header">
-  <div><div class="eyebrow mb-2">Register</div><h1 class="page-title">KI-Use-Cases</h1><p class="page-subtitle">Nach Fachdomäne, Capability, Entscheidungsreife und Erfolgsmetrik eingeordneter Bestand.</p></div>
-  <div class="d-flex gap-2"><a class="btn btn-outline-secondary" href="{% url 'use_cases:export_csv' %}">CSV exportieren</a>{% if can_create %}<a class="btn btn-primary" href="{% url 'use_cases:create' %}">Use Case anlegen</a>{% endif %}</div>
-</div>
-
-<div class="app-card mb-4">
-  <div class="card-body">
-    <form method="get" class="row g-3 align-items-end">
-      <div class="col-lg-4"><label class="form-label">Suche</label><input class="form-control" name="q" value="{{ request.GET.q }}" placeholder="Titel, ID, Problem, Capability oder Prozessbereich"></div>
-      <div class="col-md-4 col-lg-2"><label class="form-label">Fachdomäne</label><select class="form-select" name="business_domain"><option value="">Alle</option>{% for value,label in business_domain_choices %}<option value="{{ value }}" {% if request.GET.business_domain == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
-      <div class="col-md-4 col-lg-2"><label class="form-label">Status</label><select class="form-select" name="status"><option value="">Alle</option>{% for value,label in status_choices %}<option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
-      <div class="col-md-4 col-lg-2"><label class="form-label">Review</label><select class="form-select" name="review_state"><option value="">Alle</option><option value="overdue" {% if request.GET.review_state == 'overdue' %}selected{% endif %}>Überfällig</option><option value="due_30" {% if request.GET.review_state == 'due_30' %}selected{% endif %}>In 30 Tagen</option><option value="missing" {% if request.GET.review_state == 'missing' %}selected{% endif %}>Ohne Termin</option></select></div>
-      <div class="col-md-4 col-lg-2"><label class="form-label">Geschäftswert</label><select class="form-select" name="business_value"><option value="">Alle</option>{% for value,label in level_choices %}<option value="{{ value }}" {% if request.GET.business_value == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
-      <div class="col-md-4 col-lg-2 d-flex gap-2"><button class="btn btn-primary flex-grow-1">Filtern</button><a class="btn btn-outline-secondary" href="{% url 'use_cases:list' %}">×</a></div>
-    </form>
+<section class="register-hero" aria-labelledby="register-title">
+  <div class="register-heading">
+    <div class="register-kicker"><span aria-hidden="true"></span> Entscheidungsregister</div>
+    <h1 class="page-title" id="register-title">KI-Use-Cases</h1>
+    <p class="page-subtitle">Initiativen nach Domäne und Entscheidungsstand einordnen, überfliegen und direkt öffnen.</p>
   </div>
-</div>
+  <div class="register-actions">
+    <a class="btn btn-outline-secondary register-export" href="{% url 'use_cases:export_csv' %}">CSV exportieren</a>
+    {% if can_create %}<a class="btn btn-primary" href="{% url 'use_cases:create' %}">Use Case anlegen <span aria-hidden="true">＋</span></a>{% endif %}
+  </div>
+</section>
 
-<div class="app-card table-card">
-  <div class="table-responsive"><table class="table table-hover align-middle">
-    <thead><tr><th>Use Case</th><th>Einordnung</th><th>Phase</th><th>Nächste Entscheidung</th><th>Reife</th><th>Erfolgsmetrik</th><th>Zielerreichung</th><th>Owner</th><th>Fällig</th></tr></thead>
-    <tbody>{% for item in use_cases %}<tr>
-      <td><a href="{{ item.get_absolute_url }}">{{ item.short_id }} · {{ item.title }}</a><div class="small text-muted">{{ item.business_unit }}</div></td>
-      <td><span class="badge badge-soft">{{ item.classification.get_business_domain_display }}</span>{% if item.classification.capability %}<div class="small text-muted mt-1">{{ item.classification.capability }}</div>{% endif %}</td>
-      <td><span class="badge badge-soft">{{ item.get_status_display }}</span></td>
-      <td>{{ item.decision_check.title }}</td>
-      <td><span class="badge state-{{ item.decision_check.state }}">{{ item.decision_check.state_label }}</span></td>
-      <td>{% if item.metric_name %}{{ item.metric_name }}<div class="small text-muted">{{ item.metric_unit }}</div>{% else %}<span class="text-muted">Nicht definiert</span>{% endif %}</td>
-      <td>{{ item.metric_result_label }}</td>
-      <td>{{ item.business_owner.get_display_name }}</td>
-      <td>{{ item.decision_due|date:"d.m.Y"|default:"–" }}</td>
-    </tr>{% empty %}<tr><td colspan="9" class="text-muted text-center py-5">Keine Use Cases gefunden.</td></tr>{% endfor %}</tbody>
-  </table></div>
-</div>
+<section class="filter-deck" aria-label="Use Cases filtern">
+  <form method="get" class="register-filters">
+    <div class="filter-field filter-search">
+      <label class="form-label" for="filter-query">Suche</label>
+      <div class="search-control">
+        <span aria-hidden="true">⌕</span>
+        <input class="form-control" id="filter-query" name="q" value="{{ request.GET.q }}" placeholder="Titel, ID, Problem oder Capability">
+      </div>
+    </div>
+    <div class="filter-field filter-primary">
+      <label class="form-label" for="filter-domain">Fachdomäne</label>
+      <select class="form-select" id="filter-domain" name="business_domain">
+        <option value="">Alle Domänen</option>
+        {% for value,label in business_domain_choices %}<option value="{{ value }}" {% if request.GET.business_domain == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="filter-field filter-primary">
+      <label class="form-label" for="filter-status">Status</label>
+      <select class="form-select" id="filter-status" name="status">
+        <option value="">Alle Status</option>
+        {% for value,label in status_choices %}<option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="filter-field">
+      <label class="form-label" for="filter-review">Review</label>
+      <select class="form-select" id="filter-review" name="review_state">
+        <option value="">Alle Termine</option>
+        <option value="overdue" {% if request.GET.review_state == 'overdue' %}selected{% endif %}>Überfällig</option>
+        <option value="due_30" {% if request.GET.review_state == 'due_30' %}selected{% endif %}>In 30 Tagen</option>
+        <option value="missing" {% if request.GET.review_state == 'missing' %}selected{% endif %}>Ohne Termin</option>
+      </select>
+    </div>
+    <div class="filter-field">
+      <label class="form-label" for="filter-value">Geschäftswert</label>
+      <select class="form-select" id="filter-value" name="business_value">
+        <option value="">Alle Werte</option>
+        {% for value,label in level_choices %}<option value="{{ value }}" {% if request.GET.business_value == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="filter-actions">
+      <button class="btn btn-primary" type="submit">Filtern</button>
+      <a class="filter-reset" href="{% url 'use_cases:list' %}">Zurücksetzen</a>
+    </div>
+  </form>
+</section>
+
+<section class="register-results" aria-labelledby="results-title">
+  <div class="results-heading">
+    <div>
+      <div class="register-kicker">Aktueller Bestand</div>
+      <h2 id="results-title">{{ use_cases|length }} Use Case{{ use_cases|length|pluralize:"s" }}</h2>
+    </div>
+    <span class="results-hint"><span aria-hidden="true">↗</span> Zeile zum Öffnen auswählen</span>
+  </div>
+  <div class="register-table-wrap" tabindex="0" aria-label="Use-Case-Tabelle, horizontal scrollbar">
+    <table class="table register-table align-middle">
+      <colgroup>
+        <col class="col-use-case"><col class="col-classification"><col class="col-phase">
+        <col class="col-decision"><col class="col-maturity"><col class="col-owner"><col class="col-due">
+      </colgroup>
+      <thead>
+        <tr>
+          <th scope="col">Use Case</th>
+          <th scope="col">Einordnung</th>
+          <th scope="col">Phase</th>
+          <th scope="col">Nächste Entscheidung</th>
+          <th scope="col">Reife</th>
+          <th scope="col">Owner</th>
+          <th scope="col">Fällig</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in use_cases %}
+        <tr class="use-case-row" tabindex="0" data-row-link="{{ item.get_absolute_url }}" aria-label="{{ item.short_id }} · {{ item.title }} öffnen">
+          <td>
+            <a class="use-case-row-link" href="{{ item.get_absolute_url }}"><span>{{ item.short_id }}</span>{{ item.title }}</a>
+            <div class="row-meta">{{ item.business_unit }}</div>
+          </td>
+          <td>
+            <span class="badge domain-badge">{{ item.classification.get_business_domain_display }}</span>
+            {% if item.classification.capability %}<div class="row-meta mt-1">{{ item.classification.capability }}</div>{% endif %}
+          </td>
+          <td><span class="badge phase-badge">{{ item.get_status_display }}</span></td>
+          <td class="decision-cell">{{ item.decision_check.title }}</td>
+          <td><span class="badge state-{{ item.decision_check.state }}">{{ item.decision_check.state_label }}</span></td>
+          <td class="owner-cell">{{ item.business_owner.get_display_name }}</td>
+          <td class="due-cell">{% if item.decision_due %}<time datetime="{{ item.decision_due|date:'Y-m-d' }}">{{ item.decision_due|date:"d.m.Y" }}</time>{% else %}–{% endif %}</td>
+        </tr>
+        {% empty %}
+        <tr class="empty-row"><td colspan="7">Keine Use Cases gefunden.<span>Filter zurücksetzen oder Suchbegriff anpassen.</span></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
 {% endblock %}
+{% block extra_js %}<script src="{% static 'js/ui-vnext.js' %}" defer></script>{% endblock %}
