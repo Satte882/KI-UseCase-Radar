@@ -82,7 +82,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="deliverypackage",
             name="readiness_schema_version",
-            field=models.PositiveSmallIntegerField(default=2),
+            field=models.PositiveSmallIntegerField(default=1),
         ),
         migrations.AddField(
             model_name="deliveryarchitectureartifacts",
