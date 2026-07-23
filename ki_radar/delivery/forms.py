@@ -1,41 +1,74 @@
 from django import forms
 
 from .architecture_artifacts import get_delivery_architecture_artifacts
-from .models import DeliveryPackage
+from .models import DELIVERY_SECTION_DEFINITIONS, DeliveryPackage
+from .permissions import allowed_edit_sections
+from .services import reset_section_reviews
 
 FORM_CONTROL = "form-control"
+SECTION_FIELDS = {
+    "problem_and_target": [
+        "problem_context",
+        "target_outcome",
+    ],
+    "scope_and_users": [
+        "in_scope",
+        "out_of_scope",
+        "users_and_scenarios",
+        "mvp_scope",
+    ],
+    "solution_direction": [
+        "solution_outline",
+        "architecture_decisions",
+    ],
+    "architecture_and_data": [
+        "system_context",
+        "system_landscape",
+        "system_responsibilities",
+        "data_context",
+        "data_quality_and_access",
+        "data_flows",
+        "integrations",
+        "integration_contracts",
+        "integration_operations",
+        "architecture_artifacts_url",
+    ],
+    "requirements_and_governance": [
+        "functional_requirements",
+        "non_functional_requirements",
+        "security_privacy_requirements",
+        "human_oversight",
+        "logging_and_audit",
+        "operations_and_support",
+    ],
+    "acceptance_and_measurement": [
+        "acceptance_criteria",
+        "test_scenarios",
+        "measurement_plan",
+    ],
+    "delivery_control": [
+        "dependencies",
+        "risks",
+        "assumptions",
+        "initial_backlog",
+        "external_delivery_url",
+        "handover_notes",
+    ],
+}
 DELIVERY_PACKAGE_FIELDS = [
-    "problem_context",
-    "target_outcome",
-    "in_scope",
-    "out_of_scope",
-    "users_and_scenarios",
-    "solution_outline",
-    "system_context",
-    "system_landscape",
-    "data_context",
-    "data_flows",
-    "integrations",
-    "integration_contracts",
-    "architecture_artifacts_url",
-    "functional_requirements",
-    "non_functional_requirements",
-    "security_privacy_requirements",
-    "human_oversight",
-    "logging_and_audit",
-    "operations_and_support",
-    "mvp_scope",
-    "acceptance_criteria",
-    "test_scenarios",
-    "measurement_plan",
-    "dependencies",
-    "risks",
-    "assumptions",
-    "architecture_decisions",
-    "initial_backlog",
-    "external_delivery_url",
-    "handover_notes",
+    field_name
+    for section_key, _ in DELIVERY_SECTION_DEFINITIONS
+    for field_name in SECTION_FIELDS[section_key]
 ]
+ARTIFACT_FIELDS = {
+    "system_landscape",
+    "system_responsibilities",
+    "data_flows",
+    "data_quality_and_access",
+    "integration_contracts",
+    "integration_operations",
+    "architecture_artifacts_url",
+}
 
 
 class DeliveryPackageForm(forms.ModelForm):
@@ -43,13 +76,25 @@ class DeliveryPackageForm(forms.ModelForm):
         widget=forms.Textarea(attrs={"rows": 6}),
         label="Ist-/Ziel-Systemlandschaft",
     )
+    system_responsibilities = forms.CharField(
+        widget=forms.Textarea(attrs={"rows": 6}),
+        label="Systemverantwortung und Zielkomponenten",
+    )
     data_flows = forms.CharField(
         widget=forms.Textarea(attrs={"rows": 6}),
         label="Daten- und Informationsflüsse",
     )
+    data_quality_and_access = forms.CharField(
+        widget=forms.Textarea(attrs={"rows": 6}),
+        label="Datenqualität, Zugriff und Schutzbedarf",
+    )
     integration_contracts = forms.CharField(
         widget=forms.Textarea(attrs={"rows": 5}),
         label="Integrationsverträge und Verantwortlichkeiten",
+    )
+    integration_operations = forms.CharField(
+        widget=forms.Textarea(attrs={"rows": 5}),
+        label="Integrationsbetrieb und Fehlerbehandlung",
     )
     architecture_artifacts_url = forms.URLField(
         required=False,
@@ -62,25 +107,22 @@ class DeliveryPackageForm(forms.ModelForm):
         widgets = {
             name: forms.Textarea(attrs={"rows": 4})
             for name in DELIVERY_PACKAGE_FIELDS
-            if name
-            not in {
-                "external_delivery_url",
-                "architecture_artifacts_url",
-                "system_landscape",
-                "data_flows",
-                "integration_contracts",
-            }
+            if name not in ARTIFACT_FIELDS | {"external_delivery_url"}
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, actor=None, **kwargs):
+        self.actor = actor
         super().__init__(*args, **kwargs)
         artifacts = get_delivery_architecture_artifacts(self.instance) if self.instance.pk else None
         if artifacts is not None and not self.is_bound:
             self.initial.update(
                 {
                     "system_landscape": artifacts.system_landscape,
+                    "system_responsibilities": artifacts.system_responsibilities,
                     "data_flows": artifacts.data_flows,
+                    "data_quality_and_access": artifacts.data_quality_and_access,
                     "integration_contracts": artifacts.integration_contracts,
+                    "integration_operations": artifacts.integration_operations,
                     "architecture_artifacts_url": artifacts.artifacts_url,
                 }
             )
@@ -90,15 +132,50 @@ class DeliveryPackageForm(forms.ModelForm):
         self.fields["acceptance_criteria"].widget.attrs["rows"] = 7
         self.fields["initial_backlog"].widget.attrs["rows"] = 7
 
+        if actor is not None and self.instance.pk:
+            editable_sections = allowed_edit_sections(actor, self.instance)
+            for section_key, field_names in SECTION_FIELDS.items():
+                if section_key in editable_sections:
+                    continue
+                for field_name in field_names:
+                    if field_name in self.fields:
+                        self.fields[field_name].disabled = True
+
+    @property
+    def section_groups(self):
+        labels = dict(DELIVERY_SECTION_DEFINITIONS)
+        return [
+            {
+                "key": section_key,
+                "label": labels[section_key],
+                "fields": [self[field_name] for field_name in SECTION_FIELDS[section_key]],
+            }
+            for section_key, _ in DELIVERY_SECTION_DEFINITIONS
+        ]
+
+    def _changed_sections(self) -> set[str]:
+        changed = set(self.changed_data)
+        return {
+            section_key
+            for section_key, field_names in SECTION_FIELDS.items()
+            if changed.intersection(field_names)
+        }
+
     def save(self, commit=True):
         package = super().save(commit=False)
         package._architecture_artifacts_payload = {
             "system_landscape": self.cleaned_data["system_landscape"],
+            "system_responsibilities": self.cleaned_data["system_responsibilities"],
             "data_flows": self.cleaned_data["data_flows"],
+            "data_quality_and_access": self.cleaned_data["data_quality_and_access"],
             "integration_contracts": self.cleaned_data["integration_contracts"],
+            "integration_operations": self.cleaned_data["integration_operations"],
             "artifacts_url": self.cleaned_data.get("architecture_artifacts_url", ""),
         }
+        changed_sections = self._changed_sections()
         if commit:
             package.save()
             self.save_m2m()
+            if changed_sections:
+                reset_section_reviews(package, changed_sections)
         return package
