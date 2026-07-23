@@ -107,7 +107,10 @@ def _parse_manifest_time(value: str | None) -> datetime | None:
         return None
 
 
-def _source_staleness_findings(package: DeliveryPackage, reviews_by_key) -> list[ReadinessFinding]:
+def _source_staleness_findings(
+    package: DeliveryPackage,
+    reviews_by_key,
+) -> list[ReadinessFinding]:
     review = reviews_by_key.get("problem_and_target")
     if review is None or not review.source_manifest:
         return []
@@ -329,7 +332,9 @@ def evaluate_delivery_readiness(package: DeliveryPackage) -> list[ReadinessFindi
 
 def blocking_findings(package: DeliveryPackage) -> list[ReadinessFinding]:
     return [
-        finding for finding in evaluate_delivery_readiness(package) if finding.severity == "blocker"
+        finding
+        for finding in evaluate_delivery_readiness(package)
+        if finding.severity == "blocker"
     ]
 
 
@@ -369,9 +374,9 @@ def _legacy_missing_ready_fields(package: DeliveryPackage) -> list[str]:
     if artifacts is None:
         missing.extend(
             [
-  "Ist-/Ziel-Systemlandschaft",
-  "Daten- und Informationsflüsse",
-  "Integrationsverträge und Verantwortlichkeiten",
+                "Ist-/Ziel-Systemlandschaft",
+                "Daten- und Informationsflüsse",
+                "Integrationsverträge und Verantwortlichkeiten",
             ]
         )
     else:
@@ -382,7 +387,7 @@ def _legacy_missing_ready_fields(package: DeliveryPackage) -> list[str]:
         }
         for field_name, label in legacy_artifact_fields.items():
             if not _text(getattr(artifacts, field_name, "")):
-  missing.append(label)
+                missing.append(label)
     return list(dict.fromkeys(missing))
 
 
