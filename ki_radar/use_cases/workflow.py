@@ -241,7 +241,7 @@ def _normalize_concrete_links(journey: JourneyState, use_case) -> JourneyState:
     for step in journey.steps:
         url = step.url
         action_label = step.action_label
-        if step.key == "use_case":
+        if step.key == "use_case" and step.state == "complete":
             url = use_case.get_absolute_url()
             action_label = action_label or "Use Case öffnen"
         elif step.key == "assessment" and step.state == "complete":
