@@ -19,6 +19,7 @@ from ki_radar.delivery.services import (
     hand_over_package,
     mark_package_ready,
     render_delivery_markdown,
+    review_delivery_section,
 )
 from ki_radar.use_cases.models import ApprovalDecision, DecisionAssessment, UseCase
 
@@ -33,6 +34,7 @@ def make_use_case(owner, business_unit, **overrides):
         "target_users": "Einkauf und Fachbereich",
         "submitter": owner,
         "business_owner": owner,
+        "technical_owner": owner,
         "source_systems": "ERP, Shared Inbox und Dateiablage",
         "data_sources": "Angebote, Kriterienkatalog und Lieferantenstammdaten",
         "interface_description": "Dateiablage; ERP zunächst per Export",
@@ -46,6 +48,7 @@ def make_use_case(owner, business_unit, **overrides):
         "metric_baseline": Decimal("5"),
         "metric_target": Decimal("3"),
         "metric_measurement_method": "Median über zehn Beschaffungsvorgänge.",
+        "metric_measurement_period": "Vier Wochen Pilotbetrieb.",
         "human_oversight": "Einkauf prüft Vergleich und trifft die Entscheidung.",
         "support_responsibility": "IT Application Management",
         "decision_status": UseCase.DecisionStatus.CLARIFICATION,
@@ -89,21 +92,64 @@ def approve_use_case(use_case, coordinator):
 
 
 def complete_delivery_readiness(package):
-    package.integrations = "Keine technischen Integrationen vorgesehen."
-    package.dependencies = "Keine externen Abhängigkeiten für das MVP."
-    package.risks = "Keine zusätzlichen Risiken über die Bewertung hinaus."
-    package.assumptions = "Fachliche Annahmen wurden in der Freigabe bestätigt."
-    package.architecture_decisions = "Bestehende Systemlandschaft bleibt unverändert."
-    package.save(
-        update_fields=[
-            "integrations",
-            "dependencies",
-            "risks",
-            "assumptions",
-            "architecture_decisions",
-            "updated_at",
-        ]
+    package.out_of_scope = "Automatische Bestellung und Vertragsabschluss sind nicht enthalten."
+    package.integrations = "Dateiimport aus der Ablage und lesender ERP-Export."
+    package.functional_requirements = (
+        "Angebote extrahieren, validieren und vergleichbar darstellen."
     )
+    package.non_functional_requirements = "Antwortzeit unter 15 Sekunden; WCAG-AA-Bedienung."
+    package.security_privacy_requirements = (
+        "Rollenbasierter Zugriff und verschlüsselte Übertragung."
+    )
+    package.logging_and_audit = (
+        "Extraktionen, Korrekturen und Freigaben revisionsfähig protokollieren."
+    )
+    package.operations_and_support = "IT Application Management übernimmt Betrieb und Support."
+    package.mvp_scope = "PDF- und Word-Angebote einer Warengruppe bis zur menschlichen Auswahl."
+    package.acceptance_criteria = (
+        "Mindestens 90 Prozent Pflichtfelder korrekt; Einkauf entscheidet final."
+    )
+    package.test_scenarios = (
+        "Happy Path, fehlende Preise, unbekannte Einheit und manueller Eingriff."
+    )
+    package.measurement_plan = "Median der Durchlaufzeit über zehn Vorgänge während vier Wochen."
+    package.dependencies = "Freigegebener ERP-Export und Zugriff auf die Shared Inbox."
+    package.risks = "Ungewöhnliche Tabellen können eine manuelle Korrektur erfordern."
+    package.assumptions = "Die Angebotsvorlagen enthalten mindestens Lieferant und Gesamtpreis."
+    package.architecture_decisions = "ERP bleibt führend; keine automatische Bestellung im MVP."
+    package.initial_backlog = "1. Import 2. Extraktion 3. Vergleich 4. Freigabe 5. Monitoring"
+    package.external_delivery_url = "https://example.com/delivery/ki-0001"
+    package.save()
+
+    artifacts = package.architecture_artifacts
+    artifacts.system_landscape = (
+        "Ist: ERP, Shared Inbox, Dateiablage. Ziel: Extraktionsservice und Vergleichs-UI."
+    )
+    artifacts.system_responsibilities = (
+        "ERP ist System of Record; IT Application Management ist Technical Owner."
+    )
+    artifacts.data_flows = (
+        "Dateiablage → Extraktion → Validierung → Vergleichs-UI; Ergebnis lesend im ERP."
+    )
+    artifacts.data_quality_and_access = (
+        "Einkauf hat Leserechte; Pflichtfelder werden validiert; Daten intern."
+    )
+    artifacts.integration_contracts = (
+        "Dateiimport und versionierter ERP-CSV-Export; Einkauf liefert Daten."
+    )
+    artifacts.integration_operations = (
+        "Täglicher Import; Fehlerqueue; ein Retry; Alarm an Application Management."
+    )
+    artifacts.save()
+
+    for review in package.section_reviews.all():
+        review_delivery_section(
+            package=package,
+            section_key=review.section_key,
+            action="confirm",
+            actor=package.created_by,
+            note="Inhalt für Delivery geprüft.",
+        )
 
 
 @pytest.mark.django_db
@@ -136,6 +182,7 @@ def test_delivery_package_is_prefilled_and_versioned(
     assert use_case.problem_statement in first.problem_context
     assert first.measurement_plan.startswith("Durchlaufzeit: Baseline 5")
     assert "Pilot und Delivery" in first.handover_notes
+    assert first.section_reviews.count() == 7
 
 
 @pytest.mark.django_db
@@ -211,6 +258,8 @@ def test_delivery_package_uses_optional_architecture_origin(
     assert package.system_context == process.systems
     assert package.integrations == option.integration_impact
     assert package.architecture_decisions == option.architecture_fit
+    assert process.exceptions in package.test_scenarios
+    assert process.exceptions not in package.assumptions
 
 
 @pytest.mark.django_db
