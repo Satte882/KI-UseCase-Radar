@@ -3,5 +3,12 @@
 .delivery-form-field textarea { min-height: 150px; }
 .delivery-artifact-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
 .delivery-artifact-grid > section { min-height: 170px; }
+.delivery-edit-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; }
+.delivery-edit-heading { min-width: 0; }
+.delivery-edit-actions { align-self: start; margin-top: 1.75rem; white-space: nowrap; }
 @media (max-width: 1100px) { .delivery-form-grid, .delivery-artifact-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 720px) { .delivery-form-grid, .delivery-artifact-grid { grid-template-columns: 1fr; } }
+@media (max-width: 720px) {
+  .delivery-form-grid, .delivery-artifact-grid { grid-template-columns: 1fr; }
+  .delivery-edit-header { grid-template-columns: 1fr; }
+  .delivery-edit-actions { margin-top: 0; justify-self: start; }
+}
