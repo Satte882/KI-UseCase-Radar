@@ -16,6 +16,7 @@ from django.views.decorators.http import require_POST
 
 from ki_radar.accounts.models import BusinessUnit
 from ki_radar.accounts.permissions import is_coordinator
+from ki_radar.core.navigation import requested_return_to
 from ki_radar.core.taxonomy import BusinessDomain
 
 from .blockers import build_blocker_details
@@ -215,15 +216,17 @@ def use_case_edit(request, pk):
     use_case = get_object_or_404(UseCase, pk=pk)
     if not can_edit_use_case(request.user, use_case):
         raise PermissionDenied
+
+    return_to = requested_return_to(request, use_case.get_absolute_url())
     if request.method == "POST":
         form = UseCaseForm(request.POST, instance=use_case, current_user=request.user)
         if form.is_valid():
             form.save()
             messages.success(request, "Use Case wurde aktualisiert.")
-            return redirect(use_case)
+            return redirect(return_to)
     else:
         form = UseCaseForm(instance=use_case, current_user=request.user)
-    requested_highlight = request.GET.get("highlight", "")
+    requested_highlight = request.POST.get("highlight") or request.GET.get("highlight", "")
     highlight_field = requested_highlight if requested_highlight in form.fields else ""
     return render(
         request,
@@ -233,6 +236,7 @@ def use_case_edit(request, pk):
             "title": f"{use_case.short_id} bearbeiten",
             "use_case": use_case,
             "highlight_field": highlight_field,
+            "return_to": return_to,
         },
     )
 
