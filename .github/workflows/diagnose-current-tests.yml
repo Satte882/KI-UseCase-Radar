@@ -1,0 +1,51 @@
+name: Diagnose Current Tests
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17.5-bookworm
+        env:
+          POSTGRES_DB: ki_radar_test
+          POSTGRES_USER: ki_radar
+          POSTGRES_PASSWORD: ki_radar_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ki_radar -d ki_radar_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings.test
+      DJANGO_SECRET_KEY: ci-only-secret-key-not-for-production
+      POSTGRES_DB: ki_radar_test
+      POSTGRES_USER: ki_radar
+      POSTGRES_PASSWORD: ki_radar_test_password
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "5432"
+      DATABASE_URL: postgresql://ki_radar:ki_radar_test_password@localhost:5432/ki_radar_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.10.0"
+      - run: uv sync --frozen --dev
+      - name: Capture pytest output
+        shell: bash
+        run: uv run pytest -q > pytest.txt 2>&1 || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: current-pytest-diagnostics
+          path: pytest.txt
