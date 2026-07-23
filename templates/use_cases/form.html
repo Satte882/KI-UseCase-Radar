@@ -6,6 +6,8 @@
 </div>
 {% if highlight_field %}<div class="alert alert-warning" role="status"><strong>Offene Voraussetzung bearbeiten:</strong> Das relevante Feld ist nachfolgend mit einem Warnsymbol markiert.</div>{% endif %}
 <form method="post">{% csrf_token %}{{ form.non_field_errors }}
+  {% if return_to %}<input type="hidden" name="return_to" value="{{ return_to }}">{% endif %}
+  <input type="hidden" name="highlight" value="{{ highlight_field }}">
   {% for field in form %}
     {% if field.name == 'title' %}<div class="form-section"><div class="section-title">Fachlicher Kontext</div><div class="row g-3">
     {% elif field.name == 'solution_type' %}</div></div><div class="form-section"><div class="section-title">Lösung und Daten</div><div class="row g-3">
@@ -25,6 +27,19 @@
     </div>
   {% endfor %}
   </div></div>
-  <div class="d-flex gap-2 justify-content-end"><a class="btn btn-outline-secondary" href="{% if use_case %}{{ use_case.get_absolute_url }}{% else %}{% url 'use_cases:list' %}{% endif %}">Abbrechen</a><button class="btn btn-primary px-4">Speichern</button></div>
+  <div class="d-flex gap-2 justify-content-end"><a class="btn btn-outline-secondary" href="{% if return_to %}{{ return_to }}{% elif use_case %}{{ use_case.get_absolute_url }}{% else %}{% url 'use_cases:list' %}{% endif %}">Abbrechen</a><button class="btn btn-primary px-4">Speichern{% if return_to %} und zurückkehren{% endif %}</button></div>
 </form>
+{% endblock %}
+{% block extra_js %}
+{% if highlight_field %}
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+  const target = document.getElementById('field-{{ highlight_field|escapejs }}');
+  if (!target) return;
+  target.scrollIntoView({behavior: 'smooth', block: 'center'});
+  const input = target.querySelector('input, textarea, select');
+  if (input && !input.disabled) input.focus({preventScroll: true});
+});
+</script>
+{% endif %}
 {% endblock %}

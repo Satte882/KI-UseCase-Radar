@@ -192,4 +192,4 @@ def test_guided_components_are_visible_on_detail_pages(client, seeded_demo):
     assert "End-to-End-Arbeitsmodell" in use_case_response.content.decode()
     assert "Fokus &amp; Priorisierung" in use_case_response.content.decode()
     assert "Nächster Schritt" in process_response.content.decode()
-    assert "Meine nächsten Schritte" in dashboard_response.content.decode()
+    assert "Meine Aufgaben" in dashboard_response.content.decode()

@@ -12,7 +12,7 @@
     <a class="btn btn-outline-secondary" href="{% url 'delivery:methodology_reference' %}">Vorgehensmodell</a>
     <a class="btn btn-outline-secondary" href="{% url 'delivery:methodology_download' %}">Vorgehensmodell herunterladen</a>
     <a class="btn btn-outline-secondary" href="{% url 'delivery:package_export_markdown' package.pk %}">Package exportieren</a>
-    {% if can_edit %}<a class="btn btn-primary" href="{% url 'delivery:package_update' package.pk %}">Bearbeiten</a>{% endif %}
+    {% if can_edit %}<a class="btn btn-outline-primary" href="{% url 'delivery:package_update' package.pk %}">Weitere Felder bearbeiten</a>{% endif %}
   </div>
 </div>
 
@@ -22,8 +22,14 @@
 <div class="kpi-strip mb-4">
   <div class="kpi-cell"><small>Status</small><strong>{{ package.get_status_display }}</strong></div>
   <div class="kpi-cell"><small>Version</small><strong>{{ package.version }}</strong></div>
-  <div class="kpi-cell"><small>Technical Owner</small><strong>{{ package.use_case.technical_owner|default:"Nicht benannt" }}</strong></div>
+  <div class="kpi-cell"><small>Technical Owner · Technik, Daten und KI</small><strong>{{ package.use_case.technical_owner|default:"Nicht benannt" }}</strong></div>
 </div>
+
+{% if owner_role_collapse %}
+<div class="alert alert-secondary mb-4">
+  <strong>Zusammengeführte Verantwortung:</strong> {{ package.use_case.business_owner }} ist Business Owner sowie Technical Owner. Die fachliche und technische Bestätigung bleiben getrennt nachvollziehbar. Bei kritischer Priorität oder hohem Risiko wird zusätzlich eine unabhängige Zweitprüfung empfohlen.
+</div>
+{% endif %}
 
 {% if package.readiness_schema_version == 1 %}
 <div class="alert alert-secondary mb-4"><strong>Legacy Handover:</strong> Diese unveränderliche Version wurde nach Readiness-Schema 1 übergeben und wird nicht rückwirkend neu bewertet.</div>
@@ -34,12 +40,39 @@
     <div class="small text-muted mt-1">Delivery kann nach erfolgreicher Bestätigung ohne erneute fachliche Discovery mit Solution Design, Refinement und Umsetzungsvorbereitung beginnen.</div>
   </div>
   <div class="card-body">
+    {% if primary_readiness_finding %}
+    <section class="app-card decision-panel mb-4" data-testid="primary-readiness-action">
+      <div class="card-body d-flex flex-wrap justify-content-between align-items-start gap-3">
+        <div>
+          <div class="eyebrow mb-2">Nächster Schritt · Priorität {{ primary_readiness_finding.priority_class }}</div>
+          <h2 class="h5 mb-2">{{ primary_readiness_finding.title }}</h2>
+          <p class="mb-2">{{ primary_readiness_finding.message }}</p>
+          <div class="small text-muted">Zuständig: {{ primary_readiness_finding.responsible_role }} · {{ primary_readiness_finding.responsible_person }}</div>
+        </div>
+        {% if primary_readiness_finding.url %}
+        <a class="btn btn-primary" href="{{ primary_readiness_finding.url }}">{{ primary_readiness_finding.action_label }} →</a>
+        {% else %}
+        <span class="badge badge-soft">Mit deiner Rolle nicht bearbeitbar</span>
+        {% endif %}
+      </div>
+    </section>
+    {% endif %}
+
     {% if readiness_findings %}
+    <div class="section-title mb-2">Alle offenen Punkte</div>
     <div class="blocker-actions mb-4">
       {% for finding in readiness_findings %}
       <div class="blocker-action {% if finding.severity == 'blocker' %}blocker-data{% else %}blocker-process{% endif %}">
-        <div><strong>{{ finding.code }}</strong><div class="small text-muted">{{ finding.message }}</div></div>
-        <span class="status-badge">{{ finding.severity }}</span>
+        <div>
+          <strong>{{ finding.title }}</strong>
+          <div class="small text-muted">{{ finding.message }}</div>
+          <div class="small mt-1">Zuständig: {{ finding.responsible_role }} · {{ finding.responsible_person }}</div>
+          <details class="small text-muted mt-1"><summary>Technische Information</summary>{{ finding.code }}</details>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
+          <span class="status-badge">{{ finding.severity }}</span>
+          {% if finding.url %}<a class="btn btn-sm btn-outline-secondary" href="{{ finding.url }}">{{ finding.action_label }}</a>{% endif %}
+        </div>
       </div>
       {% endfor %}
     </div>
@@ -49,7 +82,7 @@
 
     <div class="architecture-artifact-grid">
       {% for row in section_rows %}
-      <section class="app-card card-body">
+      <section class="app-card card-body" id="section-{{ row.key }}">
         <div class="d-flex justify-content-between gap-3 align-items-start mb-2">
           <div>
             <div class="section-title">{{ forloop.counter }}. {{ row.label }}</div>
@@ -57,6 +90,7 @@
           </div>
           {% if row.review and row.review.review_status == 'confirmed' %}<span class="badge text-bg-success">Bestätigt</span>{% elif row.review and row.review.review_status == 'blocked' %}<span class="badge text-bg-danger">Blockiert</span>{% else %}<span class="badge text-bg-warning">Offen</span>{% endif %}
         </div>
+        <div class="small mb-2"><strong>Zuständig:</strong> {{ row.responsible_role }} · {{ row.responsible_person }}</div>
         {% if row.review %}
         <div class="small mb-2">
           Fachlich: {{ row.review.business_confirmed_by|default:"offen" }}<br>
@@ -65,16 +99,18 @@
         {% if row.review.review_note %}<div class="text-preline small mb-3">{{ row.review.review_note }}</div>{% endif %}
         {% endif %}
         {% if row.can_review and package.status != 'handed_over' %}
-        <form method="post" action="{% url 'delivery:package_section_review' package.pk row.key %}">
+        <form method="post" action="{% url 'delivery:package_section_review' package.pk row.key %}" class="section-review-form">
           {% csrf_token %}
-          <label class="form-label" for="review-note-{{ row.key }}">Prüfhinweis oder Begründung</label>
+          <label class="form-label" for="review-note-{{ row.key }}">Prüfhinweis oder Begründung <span class="text-muted">(bei „Nicht relevant“ verpflichtend)</span></label>
           <textarea class="form-control mb-2" id="review-note-{{ row.key }}" name="review_note" rows="2">{% if row.review %}{{ row.review.review_note }}{% endif %}</textarea>
           <div class="d-flex gap-2 flex-wrap">
             <button class="btn btn-sm btn-primary" name="action" value="confirm">Bestätigen</button>
             <button class="btn btn-sm btn-outline-secondary" name="action" value="block">Blockieren</button>
-            <button class="btn btn-sm btn-outline-secondary" name="action" value="not_applicable">Nicht relevant</button>
+            <button class="btn btn-sm btn-outline-secondary" name="action" value="not_applicable" data-requires-review-note>Nicht relevant</button>
           </div>
         </form>
+        {% elif package.status != 'handed_over' %}
+        <div class="small text-muted">Mit deiner aktuellen Rolle kann diese Sektion nicht bestätigt werden.</div>
         {% endif %}
       </section>
       {% endfor %}
@@ -156,9 +192,28 @@
     <div class="small text-muted">Readiness wird unmittelbar vor Statuswechsel und Übergabe erneut serverseitig geprüft.</div>
   </div>
   <div class="d-flex gap-2">
-    {% if package.status == 'draft' %}<form method="post" action="{% url 'delivery:package_mark_ready' package.pk %}">{% csrf_token %}<button class="btn btn-outline-secondary">Als bereit markieren</button></form>{% endif %}
+    {% if package.status == 'draft' and not primary_readiness_finding %}<form method="post" action="{% url 'delivery:package_mark_ready' package.pk %}">{% csrf_token %}<button class="btn btn-primary">Als bereit markieren</button></form>{% endif %}
     {% if package.status == 'ready' %}<form method="post" action="{% url 'delivery:package_handover' package.pk %}">{% csrf_token %}<button class="btn btn-primary">An Delivery übergeben</button></form>{% endif %}
   </div>
 </div>
 {% endif %}
+{% endblock %}
+{% block extra_js %}
+<script>
+document.querySelectorAll('[data-requires-review-note]').forEach((button) => {
+  button.addEventListener('click', (event) => {
+    const form = event.currentTarget.closest('form');
+    const note = form.querySelector('textarea[name="review_note"]');
+    note.required = true;
+    if (!note.value.trim()) {
+      event.preventDefault();
+      note.setCustomValidity('Bitte begründen Sie, warum diese Sektion nicht relevant ist.');
+      note.reportValidity();
+      note.focus();
+    } else {
+      note.setCustomValidity('');
+    }
+  });
+});
+</script>
 {% endblock %}

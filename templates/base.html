@@ -49,7 +49,7 @@
         <span class="nav-icon">◈</span> Portfolio <small>Querschnitt</small>
       </a>
       <a class="sidebar-link {% if request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'reporting:dashboard' %}">
-        <span class="nav-icon">⌁</span> Entscheidungen
+        <span class="nav-icon">⌁</span> Arbeitsvorrat
       </a>
       <a class="sidebar-link {% if request.resolver_match.namespace == 'use_cases' %}active{% endif %}" href="{% url 'use_cases:list' %}">
         <span class="nav-icon">◫</span> Use Cases

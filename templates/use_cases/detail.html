@@ -2,7 +2,7 @@
 {% block title %}{{ use_case.short_id }} – KI-Radar{% endblock %}
 {% block content %}
 {% with latest_assessment=use_case.decision_assessments.first %}
-<div class="page-header">
+<div class="page-header" id="use-case-overview">
   <div>
     <div class="eyebrow mb-2">{{ use_case.short_id }} · {{ use_case.business_unit }}</div>
     <h1 class="page-title">{{ use_case.title }}</h1>
@@ -13,20 +13,25 @@
       <span class="badge badge-soft">Priorität {{ use_case.get_priority_display }}</span>
       <span class="badge state-{{ decision_check.state }}">{{ decision_check.state_label }}</span>
       <span class="badge badge-soft">{{ use_case.metric_result_label }}</span>
+      {% if use_case.technical_owner_id and use_case.technical_owner_id == use_case.business_owner_id %}<span class="badge badge-soft">Business und Technik/Daten/KI in einer Rolle</span>{% endif %}
     </div>
   </div>
-  <div class="d-flex flex-wrap gap-2">
-    {% if can_edit %}<a class="btn btn-outline-secondary" href="{% url 'use_cases:edit' use_case.pk %}">Stammdaten bearbeiten</a>{% endif %}
-    {% if nav_is_coordinator %}<a class="btn btn-outline-secondary" href="{% url 'reviews:create' use_case.pk %}">Lifecycle-Review</a>{% endif %}
-    {% if nav_is_coordinator %}<a class="btn btn-outline-primary" href="{% url 'use_cases:assessment_create' use_case.pk %}">{% if latest_assessment %}Neue Bewertungsversion{% else %}Bewertung anlegen{% endif %}</a>{% endif %}
-    {% if nav_is_coordinator and latest_assessment %}<a class="btn btn-primary" href="{% url 'use_cases:approval_decision_create' use_case.pk %}">Freigabeentscheidung</a>{% endif %}
+  <div class="dropdown">
+    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Weitere Aktionen</button>
+    <ul class="dropdown-menu dropdown-menu-end">
+      {% if can_edit %}<li><a class="dropdown-item" href="{% url 'use_cases:edit' use_case.pk %}">Stammdaten bearbeiten</a></li>{% endif %}
+      {% if nav_is_coordinator %}<li><a class="dropdown-item" href="{% url 'reviews:create' use_case.pk %}">Lifecycle-Review</a></li>{% endif %}
+      {% if nav_is_coordinator %}<li><a class="dropdown-item" href="{% url 'use_cases:assessment_create' use_case.pk %}">{% if latest_assessment %}Neue Bewertungsversion{% else %}Bewertung anlegen{% endif %}</a></li>{% endif %}
+      {% if nav_is_coordinator and latest_assessment %}<li><a class="dropdown-item" href="{% url 'use_cases:approval_decision_create' use_case.pk %}">Freigabeentscheidung</a></li>{% endif %}
+      {% if not can_edit and not nav_is_coordinator %}<li><span class="dropdown-item-text text-muted">Keine zusätzlichen Aktionen für deine Rolle.</span></li>{% endif %}
+    </ul>
   </div>
 </div>
 
 {% include "includes/next_action.html" %}
 {% include "includes/journey_stepper.html" %}
 
-<div class="app-card decision-panel mb-4">
+<div class="app-card decision-panel mb-4" id="assessment">
   <div class="card-header d-flex justify-content-between align-items-center gap-3">
     <div><strong>Belastbare Freigabeentscheidung</strong><div class="small text-muted mt-1">Bewertung, Evidenz und Entscheidung sind getrennt. Positive Entscheidungen und spätere Lifecycle-Übergänge werden serverseitig geprüft.</div></div>
     <span class="badge {% if use_case.decision_status == 'approved' or use_case.decision_status == 'approved_with_conditions' %}state-ready{% elif use_case.decision_status == 'deferred' or use_case.decision_status == 'not_pursued' %}state-blocked{% else %}state-review{% endif %}">{{ use_case.get_decision_status_display }}</span>
@@ -61,7 +66,7 @@
 
 {% for approval in use_case.approval_decisions.all %}
 {% if approval.is_pending_second_approval %}
-<div class="alert alert-warning d-flex flex-wrap justify-content-between align-items-center gap-3">
+<div class="alert alert-warning d-flex flex-wrap justify-content-between align-items-center gap-3" id="approval-pending">
   <div><strong>Zweite Freigabe ausstehend</strong><div class="small">{{ approval.get_decision_status_display }} wurde von {% if approval.decided_by %}{{ approval.decided_by.get_display_name }}{% else %}einer berechtigten Person{% endif %} vorgeschlagen. Der Entscheidungsstatus wurde noch nicht verändert.</div></div>
   {% if nav_is_coordinator %}<form method="post" action="{% url 'use_cases:conditional_decision_confirm' approval.pk %}">{% csrf_token %}<button class="btn btn-warning">Als zweite Person bestätigen</button></form>{% endif %}
 </div>
@@ -162,7 +167,7 @@
     </div>
     {% endif %}
 
-    <div class="app-card mb-4">
+    <div class="app-card mb-4" id="approval">
       <div class="card-header"><strong>Freigabeentscheidungen</strong></div>
       <div class="list-group list-group-flush">
         {% for approval in use_case.approval_decisions.all %}
@@ -207,7 +212,7 @@
         <dt class="text-muted small">Nächste Lifecycle-Entscheidung</dt><dd>{{ decision_due|date:"d.m.Y"|default:"Nicht gesetzt" }}</dd>
         <dt class="text-muted small">Fachlich verantwortlich</dt><dd>{{ use_case.business_owner.get_display_name }}</dd>
         <dt class="text-muted small">KI-Koordinator</dt><dd>{% if use_case.coordinator %}{{ use_case.coordinator.get_display_name }}{% else %}–{% endif %}</dd>
-        <dt class="text-muted small">Technischer Owner</dt><dd>{% if use_case.technical_owner %}{{ use_case.technical_owner.get_display_name }}{% else %}–{% endif %}</dd>
+        <dt class="text-muted small">Technical Owner · Technik, Daten und KI</dt><dd>{% if use_case.technical_owner %}{{ use_case.technical_owner.get_display_name }}{% else %}–{% endif %}</dd>
         <dt class="text-muted small">Einmalkosten</dt><dd>{{ use_case.one_time_cost|default_if_none:"–" }} €</dd>
         <dt class="text-muted small">Laufende Kosten</dt><dd>{{ use_case.recurring_cost|default_if_none:"–" }} €</dd>
       </dl></div>

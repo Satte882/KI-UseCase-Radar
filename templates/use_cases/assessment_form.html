@@ -4,7 +4,7 @@
 <div class="page-header">
   <div><div class="eyebrow mb-2">{{ use_case.short_id }} · Strukturierte Bewertung</div><h1 class="page-title">{{ use_case.title }}</h1><p class="page-subtitle">Confidence wird aus Evidenzqualität, Aktualität, Abdeckung, unabhängiger Prüfung und geklärten Annahmen hergeleitet.</p></div>
 </div>
-<form method="post">{% csrf_token %}
+<form method="post">{% csrf_token %}<input type="hidden" name="return_to" value="{{ return_to }}">
   <div class="app-card mb-4">
     <div class="card-header"><strong>Fachliche Bewertung</strong></div>
     <div class="card-body"><div class="row g-3">
@@ -18,6 +18,6 @@
       </div>
       {% endfor %}
     </div></div></div>
-  <div class="d-flex justify-content-end gap-2"><a class="btn btn-outline-secondary" href="{{ use_case.get_absolute_url }}">Abbrechen</a><button class="btn btn-primary">Bewertung speichern</button></div>
+  <div class="d-flex justify-content-end gap-2"><a class="btn btn-outline-secondary" href="{{ return_to }}">Abbrechen</a><button class="btn btn-primary">Bewertung speichern und zurückkehren</button></div>
 </form>
 {% endblock %}
