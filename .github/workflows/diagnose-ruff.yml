@@ -1,32 +1,59 @@
-name: Diagnose Ruff
+name: Apply Ruff Syntax Fix
 
 on:
   pull_request:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  diagnose:
+  patch:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
-      - uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.10.0"
-      - run: uv sync --frozen --dev
-      - name: Capture Ruff output
+          ref: ${{ github.head_ref }}
+      - name: Correct legacy readiness indentation
         shell: bash
         run: |
-          uv run ruff check . --output-format=json > ruff.json || true
-          uv run ruff format --check --diff . > ruff-format.diff || true
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ruff-diagnostics
-          path: |
-            ruff.json
-            ruff-format.diff
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("ki_radar/delivery/readiness.py")
+          content = path.read_text(encoding="utf-8")
+          content = content.replace(
+              '''        missing.extend(
+              [
+  "Ist-/Ziel-Systemlandschaft",
+  "Daten- und Informationsflüsse",
+  "Integrationsverträge und Verantwortlichkeiten",
+              ]
+          )''',
+              '''        missing.extend(
+              [
+                  "Ist-/Ziel-Systemlandschaft",
+                  "Daten- und Informationsflüsse",
+                  "Integrationsverträge und Verantwortlichkeiten",
+              ]
+          )''',
+          )
+          content = content.replace(
+              '''            if not _text(getattr(artifacts, field_name, "")):
+  missing.append(label)''',
+              '''            if not _text(getattr(artifacts, field_name, "")):
+                  missing.append(label)''',
+          )
+          path.write_text(content, encoding="utf-8")
+          PY
+      - name: Format and commit
+        shell: bash
+        run: |
+          pip install ruff==0.14.13
+          ruff format ki_radar/delivery/readiness.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ki_radar/delivery/readiness.py
+          git commit -m "fix(delivery): correct legacy readiness syntax"
+          git push origin HEAD:${{ github.head_ref }}
