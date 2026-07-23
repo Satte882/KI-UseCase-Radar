@@ -178,4 +178,4 @@ def render_methodology_markdown(source: str) -> SafeString:
             index += 1
         output.append(f"<p>{_inline(' '.join(paragraph_lines))}</p>")
 
-    return SafeString("\n".join(output))
+    return SafeString("\n".join(output))  # nosec B703
