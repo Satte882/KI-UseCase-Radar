@@ -204,9 +204,10 @@ def test_methodology_page_and_download_use_same_complete_file(client, owner):
     assert download.status_code == 200
     assert download["Content-Type"].startswith("text/markdown")
     assert "attachment;" in download["Content-Disposition"]
-    assert "KI-Radar_Vorgehensmodell_CRISP-MLQ_ML-Test-Score_v2.0.md" in download[
-        "Content-Disposition"
-    ]
+    assert (
+        "KI-Radar_Vorgehensmodell_CRISP-MLQ_ML-Test-Score_v2.0.md"
+        in download["Content-Disposition"]
+    )
     assert download.content.decode() == source
 
 

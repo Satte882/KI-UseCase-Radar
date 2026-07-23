@@ -329,9 +329,7 @@ def evaluate_delivery_readiness(package: DeliveryPackage) -> list[ReadinessFindi
 
 def blocking_findings(package: DeliveryPackage) -> list[ReadinessFinding]:
     return [
-        finding
-        for finding in evaluate_delivery_readiness(package)
-        if finding.severity == "blocker"
+        finding for finding in evaluate_delivery_readiness(package) if finding.severity == "blocker"
     ]
 
 

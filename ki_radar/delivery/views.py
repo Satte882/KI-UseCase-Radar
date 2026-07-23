@@ -271,7 +271,5 @@ def methodology_reference(request):
 def methodology_download(request):
     methodology = METHODOLOGY_PATH.read_text(encoding="utf-8")
     response = HttpResponse(methodology, content_type="text/markdown; charset=utf-8")
-    response["Content-Disposition"] = (
-        f'attachment; filename="{METHODOLOGY_DOWNLOAD_NAME}"'
-    )
+    response["Content-Disposition"] = f'attachment; filename="{METHODOLOGY_DOWNLOAD_NAME}"'
     return response

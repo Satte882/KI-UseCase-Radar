@@ -238,9 +238,7 @@ def build_initial_delivery_data(
     if option and option.expected_value:
         target_lines.append(f"Beitrag der bevorzugten Lösung: {option.expected_value}")
 
-    test_lines = [
-        "Happy Path, Datenfehler, fachliche Ausnahme und manuellen Eingriff testen."
-    ]
+    test_lines = ["Happy Path, Datenfehler, fachliche Ausnahme und manuellen Eingriff testen."]
     if process and process.exceptions:
         test_lines.append(f"Bekannte Prozessausnahmen: {process.exceptions}")
 
