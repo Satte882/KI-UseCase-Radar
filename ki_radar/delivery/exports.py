@@ -13,7 +13,7 @@ def _review_summary(package: DeliveryPackage) -> str:
     for key, label in DELIVERY_SECTION_DEFINITIONS:
         review = reviews.get(key)
         if review is None:
-            rows.append(f"| {label} | – | Fehlt | – |")
+            rows.append(f"| {label} | - | Fehlt | - |")
             continue
         confirmed = []
         if review.business_confirmed_by:
@@ -22,7 +22,7 @@ def _review_summary(package: DeliveryPackage) -> str:
             confirmed.append(f"technisch: {review.technical_confirmed_by}")
         rows.append(
             f"| {label} | {review.get_content_origin_display()} | "
-            f"{review.get_review_status_display()} | {', '.join(confirmed) or '–'} |"
+            f"{review.get_review_status_display()} | {', '.join(confirmed) or '-'} |"
         )
     return "\n".join(rows)
 
