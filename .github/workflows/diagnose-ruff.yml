@@ -21,8 +21,12 @@ jobs:
       - run: uv sync --frozen --dev
       - name: Capture Ruff output
         shell: bash
-        run: uv run ruff check . --output-format=json > ruff.json || true
+        run: |
+          uv run ruff check . --output-format=json > ruff.json || true
+          uv run ruff format --check --diff . > ruff-format.diff || true
       - uses: actions/upload-artifact@v4
         with:
           name: ruff-diagnostics
-          path: ruff.json
+          path: |
+            ruff.json
+            ruff-format.diff
