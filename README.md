@@ -155,6 +155,10 @@ Es bündelt:
 
 Für den Status **Bereit zur Übergabe** müssen Architektur- und Übergabepunkte konkret beschrieben oder ausdrücklich als nicht relevant dokumentiert sein. Leere Integrationen, Abhängigkeiten, Risiken, Annahmen oder Architekturentscheidungen gelten nicht automatisch als ausreichend.
 
+Delivery Readiness 2.0 gliedert das Package in sieben prüfbare Sektionen. Automatisch übernommene Inhalte bleiben als Herkunft sichtbar und müssen fachlich beziehungsweise technisch bestätigt werden. Strukturierte Readiness-Findings benennen konkrete Blocker; die Prüfung wird vor der verbindlichen Übergabe erneut serverseitig ausgeführt.
+
+Die vollständige methodische Grundlage ist in [Delivery Methodology](docs/DELIVERY_METHODOLOGY.md) hinterlegt. In-App-Ansicht und Markdown-Download verwenden dieselbe versionierte Datei; KI-Radar führt dadurch keinen zusätzlichen CRISP-ML(Q)-Workflow und keine automatische ML-Test-Score-Berechnung ein.
+
 Der Status verläuft über:
 
 ```text
