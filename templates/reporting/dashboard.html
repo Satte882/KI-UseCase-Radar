@@ -1,11 +1,13 @@
 {% extends "base.html" %}
-{% block title %}Entscheidungen – KI-Radar{% endblock %}
+{% load worklist_tags %}
+{% block title %}Arbeitsvorrat – KI-Radar{% endblock %}
 {% block content %}
+{% worklist_rows next_steps as task_rows %}
 <div class="page-header">
   <div>
     <div class="eyebrow mb-2">Portfolio-Steuerung</div>
-    <h1 class="page-title">Entscheidungswarteschlange</h1>
-    <p class="page-subtitle">Wo muss heute eingegriffen werden – und ist die Entscheidungsgrundlage belastbar?</p>
+    <h1 class="page-title">Arbeitsvorrat</h1>
+    <p class="page-subtitle">Ausführbare Aufgaben und anstehende Entscheidungen sind getrennt, aber aus derselben Journey-Logik abgeleitet.</p>
   </div>
   <div class="d-flex gap-2">
     <a class="btn btn-outline-secondary" href="{% url 'use_cases:list' %}">Alle Use Cases</a>
@@ -21,55 +23,58 @@
   <div class="app-card metric-card"><div class="metric-label">Ziel erreicht</div><div class="metric-value">{{ achieved_total }}</div><div class="metric-note">Primäre Erfolgsmetrik erfüllt</div></div>
 </div>
 
-<div class="app-card table-card mb-4">
-  <div class="card-header d-flex justify-content-between align-items-center">
-    <div><strong>Meine nächsten Schritte</strong><div class="small text-muted mt-1">Konkrete Folgeaktionen aus derselben Journey-Logik wie auf den Detailseiten</div></div>
-    <span class="badge badge-soft">{{ next_steps|length }} priorisiert</span>
-  </div>
-  <div class="table-responsive">
-    <table class="table table-hover align-middle mb-0">
-      <thead><tr><th>Vorhaben</th><th>Erfassungsweg</th><th>Nächste Aktion</th><th>Begründung</th><th></th></tr></thead>
-      <tbody>
-      {% for item in next_steps %}
-      {% with action=item.journey.next_action %}
-      <tr>
-        <td><a href="{{ item.get_absolute_url }}">{{ item.short_id }} · {{ item.title }}</a><div class="small text-muted">{{ item.business_unit }}</div></td>
-        <td><span class="badge badge-soft">{{ item.journey.path_label }}</span></td>
-        <td><strong>{{ action.label }}</strong>{% if action.details %}<div class="small text-muted mt-1">{{ action.details|length }} Voraussetzungen offen</div>{% endif %}</td>
-        <td class="small text-muted">{{ action.reason }}</td>
-        <td>{% if action.url %}<a class="btn btn-sm {% if action.state == 'blocked' %}btn-outline-danger{% else %}btn-primary{% endif %}" href="{{ action.url }}">{{ action.action_label|default:"Öffnen" }}</a>{% else %}<span class="badge badge-soft">Berechtigte Rolle erforderlich</span>{% endif %}</td>
-      </tr>
-      {% endwith %}
-      {% empty %}<tr><td colspan="5" class="text-muted py-4 text-center">Keine offenen Journey-Aktionen vorhanden.</td></tr>{% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-
 <div class="app-card table-card">
-  <div class="card-header d-flex justify-content-between align-items-center">
-    <div><strong>Nächste Entscheidungen</strong><div class="small text-muted mt-1">Sortiert nach Überfälligkeit, Blockern und Fälligkeit</div></div>
-    <span class="badge badge-soft">Stand {{ today|date:"d.m.Y" }}</span>
+  <div class="card-header">
+    <ul class="nav nav-tabs card-header-tabs" id="worklist-tabs" role="tablist">
+      <li class="nav-item" role="presentation"><button class="nav-link active" id="tasks-tab" data-bs-toggle="tab" data-bs-target="#tasks-pane" type="button" role="tab" aria-controls="tasks-pane" aria-selected="true">Meine Aufgaben <span class="badge badge-soft ms-1">{{ task_rows|length }}</span></button></li>
+      <li class="nav-item" role="presentation"><button class="nav-link" id="decisions-tab" data-bs-toggle="tab" data-bs-target="#decisions-pane" type="button" role="tab" aria-controls="decisions-pane" aria-selected="false">Anstehende Entscheidungen <span class="badge badge-soft ms-1">{{ decision_queue|length }}</span></button></li>
+    </ul>
   </div>
-  <div class="table-responsive">
-    <table class="table table-hover align-middle">
-      <thead><tr><th>Use Case</th><th>Phase</th><th>Anstehende Entscheidung</th><th>Reife</th><th>Offene Voraussetzungen</th><th>Fällig</th><th>Owner</th></tr></thead>
-      <tbody>
-      {% for item in decision_queue %}
-      <tr>
-        <td><a href="{{ item.get_absolute_url }}">{{ item.short_id }} · {{ item.title }}</a><div class="small text-muted">{{ item.business_unit }}</div></td>
-        <td><span class="badge badge-soft">{{ item.get_status_display }}</span></td>
-        <td><strong>{{ item.decision_check.title }}</strong></td>
-        <td><span class="badge state-{{ item.decision_check.state }}">{{ item.decision_check.state_label }}</span></td>
-        <td class="small">
-          {% if item.blocker_details %}<strong>{{ item.blocker_details|length }} offen</strong><div class="text-muted mt-1"><span aria-hidden="true">⚠</span> {{ item.blocker_details.0.label }}</div><a href="{{ item.blocker_details.0.target_href }}">Ersten Punkt bearbeiten</a>{% elif item.decision_check.warnings %}{{ item.decision_check.warnings.0 }}{% else %}<span class="text-muted">Keine offenen Blocker</span>{% endif %}
-        </td>
-        <td>{% if item.decision_due %}{{ item.decision_due|date:"d.m.Y" }}{% else %}<span class="text-muted">–</span>{% endif %}</td>
-        <td>{{ item.business_owner.get_display_name }}</td>
-      </tr>
-      {% empty %}<tr><td colspan="7" class="text-muted py-5 text-center">Keine aktiven Entscheidungen vorhanden.</td></tr>{% endfor %}
-      </tbody>
-    </table>
+  <div class="tab-content">
+    <div class="tab-pane fade show active" id="tasks-pane" role="tabpanel" aria-labelledby="tasks-tab" tabindex="0">
+      <div class="px-3 pt-3 small text-muted">Sortierung: Blocker-Priorität, danach Überfälligkeit/Fälligkeit und stabile Use-Case-ID. Die Reihenfolge kann nicht manuell übersteuert werden.</div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead><tr><th>Vorhaben</th><th>Phase</th><th>Aufgabe</th><th>Grund</th><th>Fällig</th><th></th></tr></thead>
+          <tbody>
+          {% for row in task_rows %}
+          <tr>
+            <td><a href="{{ row.use_case.get_absolute_url }}">{{ row.use_case.short_id }} · {{ row.use_case.title }}</a><div class="small text-muted"><a href="{{ row.use_case.get_absolute_url }}">Details öffnen</a> · {{ row.use_case.business_unit }}</div></td>
+            <td><span class="badge badge-soft">{{ row.action.label }}</span><div class="small text-muted mt-1">Priorität {{ row.priority_class }}</div></td>
+            <td><strong>{{ row.action.action_label|default:row.action.label }}</strong></td>
+            <td class="small text-muted">{{ row.action.reason }}</td>
+            <td>{% if row.due %}<span class="{% if row.overdue %}text-danger fw-semibold{% endif %}">{{ row.due|date:"d.m.Y" }}</span>{% else %}<span class="text-muted">–</span>{% endif %}</td>
+            <td><a class="btn btn-sm {% if row.action.state == 'blocked' %}btn-outline-danger{% else %}btn-primary{% endif %}" href="{{ row.action_url }}">{{ row.action.action_label|default:"Öffnen" }}</a></td>
+          </tr>
+          {% empty %}<tr><td colspan="6" class="text-muted py-5 text-center">Für deine Rolle sind aktuell keine ausführbaren Aufgaben offen.</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tab-pane fade" id="decisions-pane" role="tabpanel" aria-labelledby="decisions-tab" tabindex="0">
+      <div class="px-3 pt-3 small text-muted">Entscheidungsübersicht, sortiert nach Überfälligkeit, Blockern und Fälligkeit. Stand {{ today|date:"d.m.Y" }}.</div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead><tr><th>Use Case</th><th>Phase</th><th>Anstehende Entscheidung</th><th>Reife</th><th>Offene Voraussetzungen</th><th>Fällig</th><th>Owner</th></tr></thead>
+          <tbody>
+          {% for item in decision_queue %}
+          <tr>
+            <td><a href="{{ item.get_absolute_url }}">{{ item.short_id }} · {{ item.title }}</a><div class="small text-muted"><a href="{{ item.get_absolute_url }}">Details öffnen</a> · {{ item.business_unit }}</div></td>
+            <td><span class="badge badge-soft">{{ item.get_status_display }}</span></td>
+            <td><strong>{{ item.decision_check.title }}</strong></td>
+            <td><span class="badge state-{{ item.decision_check.state }}">{{ item.decision_check.state_label }}</span></td>
+            <td class="small">
+              {% if item.blocker_details %}<strong>{{ item.blocker_details|length }} offen</strong><div class="text-muted mt-1"><span aria-hidden="true">⚠</span> {{ item.blocker_details.0.label }}</div><a href="{{ item.blocker_details.0.target_href }}">Ersten Punkt bearbeiten</a>{% elif item.decision_check.warnings %}{{ item.decision_check.warnings.0 }}{% else %}<span class="text-muted">Keine offenen Blocker</span>{% endif %}
+            </td>
+            <td>{% if item.decision_due %}{{ item.decision_due|date:"d.m.Y" }}{% else %}<span class="text-muted">–</span>{% endif %}</td>
+            <td>{{ item.business_owner.get_display_name }}</td>
+          </tr>
+          {% empty %}<tr><td colspan="7" class="text-muted py-5 text-center">Keine aktiven Entscheidungen vorhanden.</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}
