@@ -34,7 +34,7 @@
     </div>
   </div>
   <div class="col-xl-7">
-    <form method="post">{% csrf_token %}
+    <form method="post">{% csrf_token %}<input type="hidden" name="return_to" value="{{ return_to }}">
       <div class="app-card">
         <div class="card-header"><strong>Entscheidung dokumentieren</strong></div>
         <div class="card-body"><div class="row g-3">
@@ -47,7 +47,7 @@
           </div>
           {% endfor %}
         </div></div>
-        <div class="card-footer d-flex justify-content-end gap-2"><a class="btn btn-outline-secondary" href="{{ use_case.get_absolute_url }}">Abbrechen</a><button class="btn btn-primary">Entscheidung prüfen und speichern</button></div>
+        <div class="card-footer d-flex justify-content-end gap-2"><a class="btn btn-outline-secondary" href="{{ return_to }}">Abbrechen</a><button class="btn btn-primary">Entscheidung prüfen, speichern und zurückkehren</button></div>
       </div>
     </form>
   </div>
