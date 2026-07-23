@@ -8,9 +8,11 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
+from ki_radar.core.navigation import requested_return_to
 from ki_radar.use_cases.models import UseCase
 from ki_radar.use_cases.workflow import build_delivery_package_journey
 
+from .actions import build_actionable_findings, primary_delivery_action, section_responsibility
 from .forms import DeliveryPackageForm
 from .models import DELIVERY_SECTION_DEFINITIONS, DeliveryPackage
 from .permissions import (
@@ -20,7 +22,7 @@ from .permissions import (
     can_transition_package,
     can_view_package,
 )
-from .readiness import evaluate_delivery_readiness, missing_ready_fields
+from .readiness import missing_ready_fields
 from .services import (
     APPROVED_STATUSES,
     create_delivery_package,
@@ -32,6 +34,10 @@ from .services import (
 
 METHODOLOGY_PATH = Path(settings.BASE_DIR) / "docs" / "DELIVERY_METHODOLOGY.md"
 METHODOLOGY_DOWNLOAD_NAME = "KI-Radar_Vorgehensmodell_CRISP-MLQ_ML-Test-Score_v2.0.md"
+
+
+def _validation_message(exc: ValidationError) -> str:
+    return "; ".join(exc.messages) if exc.messages else str(exc)
 
 
 def _package_queryset():
@@ -125,7 +131,7 @@ def package_create(request, use_case_id):
     try:
         package = create_delivery_package(use_case=use_case, actor=request.user)
     except ValidationError as exc:
-        messages.error(request, str(exc))
+        messages.error(request, _validation_message(exc))
         return redirect("delivery:package_list")
     messages.success(
         request,
@@ -141,16 +147,26 @@ def package_detail(request, pk):
         raise PermissionDenied
 
     reviews = {review.section_key: review for review in package.section_reviews.all()}
-    section_rows = [
-        {
-            "key": section_key,
-            "label": section_label,
-            "review": reviews.get(section_key),
-            "can_review": can_review_section(request.user, package, section_key),
-        }
-        for section_key, section_label in DELIVERY_SECTION_DEFINITIONS
-    ]
-    findings = evaluate_delivery_readiness(package)
+    section_rows = []
+    for section_key, section_label in DELIVERY_SECTION_DEFINITIONS:
+        responsible_role, responsible_person = section_responsibility(package, section_key)
+        section_rows.append(
+            {
+                "key": section_key,
+                "label": section_label,
+                "review": reviews.get(section_key),
+                "can_review": can_review_section(request.user, package, section_key),
+                "responsible_role": responsible_role,
+                "responsible_person": responsible_person,
+            }
+        )
+
+    finding_actions = build_actionable_findings(package, request.user)
+    primary_finding = primary_delivery_action(package, request.user)
+    role_collapse = bool(
+        package.use_case.technical_owner_id
+        and package.use_case.technical_owner_id == package.use_case.business_owner_id
+    )
     return render(
         request,
         "delivery/package_detail.html",
@@ -160,8 +176,10 @@ def package_detail(request, pk):
             "can_edit": can_edit_package(request.user, package),
             "can_transition": can_transition_package(request.user),
             "missing_ready_fields": missing_ready_fields(package),
-            "readiness_findings": findings,
+            "readiness_findings": finding_actions,
+            "primary_readiness_finding": primary_finding,
             "section_rows": section_rows,
+            "owner_role_collapse": role_collapse,
         },
     )
 
@@ -171,7 +189,13 @@ def package_update(request, pk):
     package = get_object_or_404(_package_queryset(), pk=pk)
     if not can_edit_package(request.user, package):
         raise PermissionDenied
+
+    return_to = requested_return_to(request, package.get_absolute_url())
+    requested_highlight = request.POST.get("highlight") or request.GET.get("highlight", "")
     form = DeliveryPackageForm(request.POST or None, instance=package, actor=request.user)
+    highlight_field = requested_highlight if requested_highlight in form.fields else ""
+    highlight_section = form.section_for_field(highlight_field)
+
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(
@@ -181,11 +205,17 @@ def package_update(request, pk):
                 "eine neue Bestätigung."
             ),
         )
-        return redirect(package)
+        return redirect(return_to)
     return render(
         request,
         "delivery/package_form.html",
-        {"form": form, "package": package},
+        {
+            "form": form,
+            "package": package,
+            "return_to": return_to,
+            "highlight_field": highlight_field,
+            "highlight_section": highlight_section,
+        },
     )
 
 
@@ -206,10 +236,10 @@ def package_section_review(request, pk, section_key):
             note=request.POST.get("review_note", ""),
         )
     except ValidationError as exc:
-        messages.error(request, str(exc))
+        messages.error(request, _validation_message(exc))
     else:
         messages.success(request, "Sektionsprüfung wurde gespeichert.")
-    return redirect(package)
+    return redirect(f"{package.get_absolute_url()}#section-{section_key}")
 
 
 @login_required
@@ -221,7 +251,7 @@ def package_mark_ready(request, pk):
     try:
         mark_package_ready(package)
     except ValidationError as exc:
-        messages.error(request, str(exc))
+        messages.error(request, _validation_message(exc))
     else:
         messages.success(request, "Delivery Package ist bereit zur Übergabe.")
     return redirect(package)
@@ -236,7 +266,7 @@ def package_handover(request, pk):
     try:
         hand_over_package(package, request.user)
     except ValidationError as exc:
-        messages.error(request, str(exc))
+        messages.error(request, _validation_message(exc))
     else:
         messages.success(request, "Delivery Package wurde verbindlich übergeben.")
     return redirect(package)
