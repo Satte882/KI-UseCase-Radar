@@ -23,11 +23,11 @@ jobs:
 
           path = Path("ki_radar/delivery/readiness.py")
           content = path.read_text(encoding="utf-8")
-          old = '''def missing_ready_fields(package: DeliveryPackage) -> list[str]:
+          old = """def missing_ready_fields(package: DeliveryPackage) -> list[str]:
               return [finding.message for finding in blocking_findings(package)]
-          '''
+          """
           old = "\n".join(line[14:] if line.startswith("              ") else line for line in old.splitlines()) + "\n"
-          new = '''def _legacy_missing_ready_fields(package: DeliveryPackage) -> list[str]:
+          new = """def _legacy_missing_ready_fields(package: DeliveryPackage) -> list[str]:
               legacy_fields = (
                   "problem_context",
                   "target_outcome",
@@ -69,11 +69,12 @@ jobs:
                       ]
                   )
               else:
-                  for field_name, label in {
+                  legacy_artifact_fields = {
                       "system_landscape": "Ist-/Ziel-Systemlandschaft",
                       "data_flows": "Daten- und Informationsflüsse",
                       "integration_contracts": "Integrationsverträge und Verantwortlichkeiten",
-                  }.items():
+                  }
+                  for field_name, label in legacy_artifact_fields.items():
                       if not _text(getattr(artifacts, field_name, "")):
                           missing.append(label)
               return list(dict.fromkeys(missing))
@@ -83,17 +84,15 @@ jobs:
               if package.readiness_schema_version < 2:
                   return _legacy_missing_ready_fields(package)
               return [finding.message for finding in blocking_findings(package)]
-          '''
+          """
           new = "\n".join(line[14:] if line.startswith("              ") else line for line in new.splitlines()) + "\n"
           if old not in content:
               raise SystemExit("Expected missing_ready_fields block not found")
           path.write_text(content.replace(old, new), encoding="utf-8")
           PY
-      - name: Format and commit
+      - name: Commit patch
         shell: bash
         run: |
-          pip install ruff==0.14.13
-          ruff format ki_radar/delivery/readiness.py
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add ki_radar/delivery/readiness.py
