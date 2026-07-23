@@ -211,7 +211,7 @@ class DeliverySectionReview(TimeStampedModel):
         ]
 
     def __str__(self) -> str:
-        return f"{self.delivery_package} – {self.get_section_key_display()}"
+        return f"{self.delivery_package} - {self.get_section_key_display()}"
 
     @property
     def required_confirmations(self) -> frozenset[str]:
@@ -220,8 +220,7 @@ class DeliverySectionReview(TimeStampedModel):
     @property
     def confirmations_complete(self) -> bool:
         required = self.required_confirmations
-        if "business" in required and self.business_confirmed_at is None:
-            return False
-        if "technical" in required and self.technical_confirmed_at is None:
-            return False
-        return True
+        return not (
+            ("business" in required and self.business_confirmed_at is None)
+            or ("technical" in required and self.technical_confirmed_at is None)
+        )
