@@ -8,35 +8,66 @@
     <p class="page-subtitle">Übernommene Informationen prüfen und nur die Delivery-spezifischen Lücken konkretisieren.</p>
   </div>
   <div class="delivery-edit-actions">
-    <a class="btn btn-outline-secondary" href="{{ package.get_absolute_url }}">Abbrechen</a>
+    <a class="btn btn-outline-secondary" href="{{ return_to }}">Abbrechen</a>
   </div>
 </div>
 
 <div class="alert alert-secondary mb-4">
-  Änderungen setzen die betroffene Sektion wieder auf <strong>Prüfung erforderlich</strong>. Die verbindliche Übergabe bleibt unverändert gesperrt, bis alle erforderlichen Bestätigungen vorliegen.
+  Änderungen setzen die betroffene Sektion wieder auf <strong>Prüfung erforderlich</strong>. Nicht bearbeitbare Bereiche bleiben sichtbar, werden aber nicht als deaktivierte Formularfelder dargestellt.
 </div>
+{% if highlight_field %}<div class="alert alert-warning"><strong>Offenen Readiness-Punkt bearbeiten:</strong> Das relevante Feld ist geöffnet und markiert.</div>{% endif %}
 
 <form method="post">
   {% csrf_token %}
+  <input type="hidden" name="return_to" value="{{ return_to }}">
+  <input type="hidden" name="highlight" value="{{ highlight_field }}">
   {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
   {% for group in form.section_groups %}
-  <section class="app-card mb-4">
-    <div class="card-header">
-      <strong>{{ forloop.counter }}. {{ group.label }}</strong>
-      <div class="small text-muted mt-1">Felder ohne Berechtigung sind schreibgeschützt.</div>
-    </div>
-    <div class="card-body delivery-form-grid">
-      {% for field in group.fields %}
-      <div class="delivery-form-field">
-        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-        {{ field }}
-        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-        {{ field.errors }}
+    {% if group.editable %}
+    <section class="app-card mb-4{% if group.key == highlight_section %} field-attention{% endif %}" id="section-{{ group.key }}" data-editable-section>
+      <div class="card-header">
+        <strong>{{ forloop.counter }}. {{ group.label }}</strong>
+        <div class="small text-muted mt-1">Zuständig: {{ group.responsible_role }} · {{ group.responsible_person }}</div>
       </div>
-      {% endfor %}
-    </div>
-  </section>
+      <div class="card-body delivery-form-grid">
+        {% for field in group.fields %}
+        <div id="field-{{ field.name }}" class="delivery-form-field{% if field.name == highlight_field or field.errors %} field-attention{% endif %}">
+          <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+          {{ field }}
+          {% if field.name == highlight_field %}<div class="field-attention-message"><span aria-hidden="true">⚠</span> Dieses Feld blockiert aktuell die Delivery Readiness.</div>{% endif %}
+          {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+          {% if field.errors %}<div class="field-attention-message">{{ field.errors }}</div>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% else %}
+    <details class="app-card mb-4 delivery-readonly-section" id="section-{{ group.key }}">
+      <summary class="card-header">
+        <span><strong>{{ forloop.counter }}. {{ group.label }}</strong><span class="small text-muted d-block mt-1">Nur {{ group.responsible_role }} · {{ group.responsible_person }}</span></span>
+        <span class="badge badge-soft">Nur lesen</span>
+      </summary>
+      <div class="card-body architecture-artifact-grid">
+        {% for field in group.fields %}
+        <section><div class="section-title">{{ field.label }}</div><div class="text-preline">{{ field.value|default:"–" }}</div></section>
+        {% endfor %}
+      </div>
+    </details>
+    {% endif %}
   {% endfor %}
-  <div class="app-card card-body d-flex justify-content-end"><button class="btn btn-primary">Speichern</button></div>
+  <div class="app-card card-body d-flex justify-content-end gap-2"><a class="btn btn-outline-secondary" href="{{ return_to }}">Abbrechen</a><button class="btn btn-primary">Speichern und zur Readiness zurückkehren</button></div>
 </form>
+{% endblock %}
+{% block extra_js %}
+{% if highlight_field %}
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+  const target = document.getElementById('field-{{ highlight_field|escapejs }}');
+  if (!target) return;
+  target.scrollIntoView({behavior: 'smooth', block: 'center'});
+  const input = target.querySelector('input, textarea, select');
+  if (input && !input.disabled) input.focus({preventScroll: true});
+});
+</script>
+{% endif %}
 {% endblock %}
