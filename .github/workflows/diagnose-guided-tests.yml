@@ -14,25 +14,25 @@ jobs:
       postgres:
         image: postgres:17.5-bookworm
         env:
-          POSTGRES_DB: ki_radar
+          POSTGRES_DB: ki_radar_test
           POSTGRES_USER: ki_radar
-          POSTGRES_PASSWORD: ki_radar
+          POSTGRES_PASSWORD: ki_radar_test_password
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U ki_radar -d ki_radar"
+          --health-cmd "pg_isready -U ki_radar -d ki_radar_test"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
     env:
-      DATABASE_URL: postgresql://ki_radar:ki_radar@localhost:5432/ki_radar
-      DJANGO_SETTINGS_MODULE: config.settings
-      DJANGO_DEBUG: "0"
-      DJANGO_SECRET_KEY: test-secret-key-for-ci-only
-      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,testserver
-      CSRF_TRUSTED_ORIGINS: http://localhost,http://127.0.0.1
-      OPENROUTER_API_KEY: ""
-      EMAIL_BACKEND: django.core.mail.backends.locmem.EmailBackend
+      DJANGO_SETTINGS_MODULE: config.settings.test
+      DJANGO_SECRET_KEY: ci-only-secret-key-not-for-production
+      POSTGRES_DB: ki_radar_test
+      POSTGRES_USER: ki_radar
+      POSTGRES_PASSWORD: ki_radar_test_password
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "5432"
+      DATABASE_URL: postgresql://ki_radar:ki_radar_test_password@localhost:5432/ki_radar_test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -42,6 +42,7 @@ jobs:
         with:
           version: "0.10.0"
       - run: uv sync --frozen --dev
+      - run: uv run python manage.py migrate --noinput
       - name: Capture pytest failures
         shell: bash
         run: uv run pytest -q > guided-tests.txt 2>&1 || true
