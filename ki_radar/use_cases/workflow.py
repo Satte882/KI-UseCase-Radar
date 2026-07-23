@@ -299,7 +299,7 @@ def _apply_delivery_action(journey: JourneyState, use_case, user) -> JourneyStat
                     url=url,
                     action_label=action_label,
                     reason=reason,
-                    details=tuple(action.message for action in []),
+                    details=(),
                 )
             )
             continue
@@ -312,9 +312,15 @@ def _apply_delivery_action(journey: JourneyState, use_case, user) -> JourneyStat
                 url=package.get_absolute_url(),
                 action_label="Als bereit markieren" if transition_allowed else "Readiness öffnen",
                 reason=(
-                    "Alle Pflichtinhalte und Bestätigungen liegen vor. Das Package kann als bereit markiert werden."
+                    (
+                        "Alle Pflichtinhalte und Bestätigungen liegen vor. "
+                        "Das Package kann als bereit markiert werden."
+                    )
                     if transition_allowed
-                    else "Alle Pflichtinhalte und Bestätigungen liegen vor; ein KI-Koordinator kann das Package als bereit markieren."
+                    else (
+                        "Alle Pflichtinhalte und Bestätigungen liegen vor; "
+                        "ein KI-Koordinator kann das Package als bereit markieren."
+                    )
                 ),
             )
         )

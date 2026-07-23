@@ -160,7 +160,10 @@ def _synthetic_findings(package: DeliveryPackage) -> list[ReadinessFinding]:
                 "architecture_and_data",
                 "TECHNICAL_OWNER_INACTIVE",
                 "blocker",
-                "Der zugeordnete Technical Owner ist nicht aktiv und kann die technische Verantwortung nicht wahrnehmen.",
+                (
+                    "Der zugeordnete Technical Owner ist nicht aktiv und kann die "
+                    "technische Verantwortung nicht wahrnehmen."
+                ),
             )
         )
 
@@ -178,7 +181,10 @@ def _synthetic_findings(package: DeliveryPackage) -> list[ReadinessFinding]:
                 "delivery_control",
                 "OWNER_ROLE_COLLAPSE_REVIEW_RECOMMENDED",
                 "warning",
-                "Business- und technische Verantwortung liegen bei derselben Person. Für dieses kritische Vorhaben wird eine unabhängige Zweitprüfung empfohlen.",
+                (
+                    "Business- und technische Verantwortung liegen bei derselben Person. "
+                    "Für dieses kritische Vorhaben wird eine unabhängige Zweitprüfung empfohlen."
+                ),
             )
         )
     return findings
