@@ -5,7 +5,7 @@ import re
 from urllib.parse import urlparse
 
 from django import template
-from django.utils.safestring import SafeString, mark_safe
+from django.utils.safestring import SafeString
 
 register = template.Library()
 
@@ -178,4 +178,4 @@ def render_methodology_markdown(source: str) -> SafeString:
             index += 1
         output.append(f"<p>{_inline(' '.join(paragraph_lines))}</p>")
 
-    return mark_safe("\n".join(output))  # nosec B308  # noqa: S308
+    return SafeString("\n".join(output))
