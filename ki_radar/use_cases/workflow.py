@@ -7,7 +7,9 @@ from django.urls import reverse
 
 from ki_radar.architecture.focus import ValueStreamFocus, get_value_stream_focus
 from ki_radar.architecture.models import ProcessAnalysis, ValueStream
+from ki_radar.delivery.actions import primary_delivery_action
 from ki_radar.delivery.models import DeliveryPackage
+from ki_radar.delivery.permissions import can_transition_package
 
 from . import journey as legacy
 from .permissions import can_start_pilot
@@ -234,6 +236,98 @@ def build_process_analysis_journey(process_analysis: ProcessAnalysis, user) -> J
     return _insert_focus(legacy_journey, focus_step)
 
 
+def _normalize_concrete_links(journey: JourneyState, use_case) -> JourneyState:
+    steps: list[JourneyStep] = []
+    for step in journey.steps:
+        url = step.url
+        action_label = step.action_label
+        if step.key == "use_case":
+            url = use_case.get_absolute_url()
+            action_label = action_label or "Use Case öffnen"
+        elif step.key == "assessment" and step.state == "complete":
+            url = f"{use_case.get_absolute_url()}#assessment"
+            action_label = "Bewertung ansehen"
+        elif step.key == "approval" and step.state == "complete":
+            url = f"{use_case.get_absolute_url()}#approval"
+            action_label = "Freigabe ansehen"
+        steps.append(
+            JourneyStep(
+                key=step.key,
+                label=step.label,
+                state=step.state,
+                url=url,
+                action_label=action_label,
+                reason=step.reason,
+                details=step.details,
+            )
+        )
+    return _state(
+        path_label=journey.path_label,
+        steps=steps,
+        completion_message=journey.completion_message,
+    )
+
+
+def _apply_delivery_action(journey: JourneyState, use_case, user) -> JourneyState:
+    package = use_case.delivery_packages.first()
+    if package is None or package.status != DeliveryPackage.Status.DRAFT:
+        return journey
+
+    primary = primary_delivery_action(package, user)
+    steps: list[JourneyStep] = []
+    for step in journey.steps:
+        if step.key != "delivery":
+            steps.append(step)
+            continue
+        if primary is not None:
+            if primary.url:
+                url = primary.url
+                action_label = primary.action_label
+                reason = primary.message
+            else:
+                url = package.get_absolute_url()
+                action_label = "Readiness öffnen"
+                reason = (
+                    f"{primary.message} Zuständig: {primary.responsible_role} – "
+                    f"{primary.responsible_person}."
+                )
+            steps.append(
+                JourneyStep(
+                    key="delivery",
+                    label="Delivery",
+                    state="blocked",
+                    url=url,
+                    action_label=action_label,
+                    reason=reason,
+                    details=tuple(
+                        action.message
+                        for action in []
+                    ),
+                )
+            )
+            continue
+        transition_allowed = can_transition_package(user)
+        steps.append(
+            JourneyStep(
+                key="delivery",
+                label="Delivery",
+                state="current",
+                url=package.get_absolute_url(),
+                action_label="Als bereit markieren" if transition_allowed else "Readiness öffnen",
+                reason=(
+                    "Alle Pflichtinhalte und Bestätigungen liegen vor. Das Package kann als bereit markiert werden."
+                    if transition_allowed
+                    else "Alle Pflichtinhalte und Bestätigungen liegen vor; ein KI-Koordinator kann das Package als bereit markieren."
+                ),
+            )
+        )
+    return _state(
+        path_label=journey.path_label,
+        steps=steps,
+        completion_message=journey.completion_message,
+    )
+
+
 def build_use_case_journey(use_case, user) -> JourneyState:
     legacy_journey = LEGACY_BUILD_USE_CASE(use_case, user)
     try:
@@ -266,6 +360,8 @@ def build_use_case_journey(use_case, user) -> JourneyState:
             legacy_journey,
             _focus_step(origin.stage.value_stream),
         )
+    journey = _normalize_concrete_links(journey, use_case)
+    journey = _apply_delivery_action(journey, use_case, user)
     return _append_pilot_start(journey, use_case, user)
 
 
