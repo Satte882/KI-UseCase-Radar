@@ -157,7 +157,7 @@ Für den Status **Bereit zur Übergabe** müssen Architektur- und Übergabepunkt
 
 Delivery Readiness 2.0 gliedert das Package in sieben prüfbare Sektionen. Automatisch übernommene Inhalte bleiben als Herkunft sichtbar und müssen fachlich beziehungsweise technisch bestätigt werden. Strukturierte Readiness-Findings benennen konkrete Blocker; die Prüfung wird vor der verbindlichen Übergabe erneut serverseitig ausgeführt.
 
-Die vollständige methodische Grundlage ist in [Delivery Methodology](docs/DELIVERY_METHODOLOGY.md) hinterlegt. In-App-Ansicht und Markdown-Download verwenden dieselbe versionierte Datei; KI-Radar führt dadurch keinen zusätzlichen CRISP-ML(Q)-Workflow und keine automatische ML-Test-Score-Berechnung ein.
+Die vollständige methodische Grundlage ist im [Vorgehensmodell für produktionsreife KI-Systeme](docs/DELIVERY_METHODOLOGY.md) hinterlegt. In-App-Ansicht und Markdown-Download verwenden dieselbe versionierte Datei; KI-Radar führt dadurch keinen zusätzlichen CRISP-ML(Q)-Workflow und keine automatische ML-Test-Score-Berechnung ein.
 
 Der Status verläuft über:
 
@@ -263,10 +263,12 @@ Architekturentscheidungen werden als Architecture Decision Records dokumentiert.
 | ADR                                           | Entscheidung                                                                  | Begründung                                                               |
 | --------------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
 | [0001](docs/adr/0001-django-monolith.md)      | Modularer Django-Monolith                                                     | geringe Deployment-, Authentifizierungs- und Berechtigungskomplexität    |
-| [0002](docs/adr/0002-history.md)              | Technische Historie und fachliche Entscheidungen werden getrennt dokumentiert | Auditierbarkeit ohne Vermischung von Datenänderung und Freigabe          |
-| [0003](docs/adr/0003-staging-same-host.md)    | Staging als separater Stack auf demselben Host                                | wirtschaftlicher Einzelbetrieb bei logischer Trennung                    |
-| [0004](docs/adr/0004-no-email-reminders.md)   | Noch kein produktiver E-Mail-Versand                                          | keine Anbieter- und Eskalationslogik ohne konkreten Betrieb vorwegnehmen |
-| [0005](docs/adr/0005-anonymization-ledger.md) | Restore-feste Anonymisierung über ein externes Ledger                         | spätere Backups dürfen Anonymisierungen nicht rückgängig machen          |
+| [0002](docs/adr/0002-history.md)              | Technische Historie und fachliche Entscheidungen werden getrennt dokumentiert | klare Trennung von Zustandsänderung und Entscheidungsbegründung           |
+| [0003](docs/adr/0003-server-side-gates.md)    | Verbindliche Gates werden serverseitig geprüft                                | Schutz vor UI-Manipulation und inkonsistenten Statuswechseln              |
+| [0004](docs/adr/0004-optional-llm.md)          | LLM-Funktionen bleiben optional und nicht entscheidungsbefugt                 | Kernworkflow muss deterministisch und unabhängig von externen APIs laufen |
+| [0005](docs/adr/0005-encryption.md)            | Transportverschlüsselung verpflichtend; Feldverschlüsselung optional          | pragmatischer Schutz mit klarer Betriebsverantwortung                      |
+| [0006](docs/adr/0006-portability.md)           | Containerisierte, cloud-neutrale Bereitstellung                               | geringe Anbieterbindung und lokale Entwicklungsfähigkeit                  |
+| [0007](docs/adr/0007-delivery-system-boundary.md) | KI-Radar definiert und übergibt; Delivery-Systeme setzen um                  | klare Systemgrenze und Vermeidung eines zweiten Projektmanagement-Tools   |
 
 ### Weitere prägende Produktentscheidungen
 
@@ -289,149 +291,51 @@ Architekturentscheidungen werden als Architecture Decision Records dokumentiert.
 | ------------------------- | ------------------------------------------------------------------------------ |
 | Technischer Administrator | Betrieb, Benutzer und Stammdaten                                               |
 | KI-Koordinator            | Fokus, Analyse, Bewertung, Governance, Freigaben und Delivery-Handover         |
-| Business Owner            | fachliche Verantwortung für Value Streams, Prozesse, Use Cases und Packages    |
+| Business Owner            | fachliche Verantwortung für Prozesse, Use Cases und Package-Entwürfe           |
+| Technical Owner           | technische Lösung, Architektur, Integration, Sicherheit und Betrieb            |
 | Leser                     | lesender Zugriff auf nicht archivierte Inhalte                                 |
 
-Berechtigungen und fachliche Gates werden serverseitig geprüft.
-
 ---
 
-## Bewusste Nicht-Ziele
-
-KI-Radar ist kein:
-
-* Projektmanagement- oder Ressourcenplanungssystem
-* BPMN-Modellierer
-* vollständiges Enterprise-Architecture-Repository
-* automatisches Priorisierungs- oder Budgetoptimierungssystem
-* automatisches AI-Act-Klassifizierungssystem
-* Ersatz für Datenschutz-, Rechts- oder Sicherheitsprüfungen
-* autonomes LLM-Entscheidungssystem
-* Multi-Tenant-SaaS
-
-Der Schwerpunkt liegt auf der fachlich begründeten Auswahl, belastbaren Entscheidung und strukturierten Übergabe von KI-Vorhaben.
-
----
-
-## Technischer Aufbau
-
-* Python 3.13
-* Django 5.2 LTS
-* PostgreSQL
-* serverseitige Django-Templates
-* Bootstrap
-* modularer Monolith
-* Gunicorn und Nginx
-* Docker Compose für lokale Entwicklung, Staging und Produktion
-* `django-simple-history`
-* optional OpenRouter
-* optional Sentry
-
----
-
-## Qualitätssicherung
-
-Die CI prüft unter anderem:
-
-* Lockfile-Konsistenz
-* Ruff Lint und Format
-* Django System Check
-* fehlende Migrationen
-* Unit- und Integrationstests mit PostgreSQL
-* Berechtigungen und serverseitige Hard Gates
-* Security-Prüfung mit Bandit
-* Dependency Audit
-* lokale, Staging- und Produktionskonfiguration
-* Produktions- und Entwicklungs-Docker-Images
-
-Die automatisierten Tests decken insbesondere ab:
-
-* Value Streams, Fokus-Screening und Prozessanalysen
-* serverseitige Deep-Dive-Gates
-* Lösungsoptionen und Herkunftsketten
-* strukturierte Fachdomänen und Capabilities
-* Use-Case-Intake
-* Bewertungen und Freigaben
-* Governance
-* Lifecycle-Übergänge
-* Portfolio
-* Delivery Packages und Architekturartefakte
-* Rollen und Berechtigungen
-* Anonymisierung
-* Demo-Daten und Betriebsfunktionen
-
----
-
-## Schnellstart
+## Lokale Entwicklung
 
 ### Voraussetzungen
 
-* Git
-* Docker Desktop beziehungsweise Docker Engine
+* Docker Desktop oder Docker Engine
 * Docker Compose
+* Git
 
-### Anwendung starten
+### Start
 
-```powershell
+```bash
 git clone https://github.com/Satte882/KI-UseCase-Radar.git
 cd KI-UseCase-Radar
-
-Copy-Item .env.example .env
+cp .env.example .env
 docker compose -f compose.local.yml up --build
 ```
 
-Anwendung:
+Anwendung: `http://localhost:8000`
 
-```text
-http://127.0.0.1:8000
+### Demo-Daten
+
+```bash
+docker compose -f compose.local.yml exec web python manage.py seed_demo_data
 ```
 
-### Demo-Daten anlegen
+### Tests
 
-```powershell
-docker compose -f compose.local.yml exec app `
-  python manage.py seed_demo_data --password "<lokales-demo-passwort>"
+```bash
+docker compose -f compose.local.yml exec web pytest
 ```
-
-Der Demo-Datensatz enthält einen vollständigen Ablauf von Discovery und Fokusentscheidung bis zum Delivery Package sowie bewusst unvollständige, nicht weiterverfolgte und bereits übergebene Szenarien.
-
-Weitere Informationen: [Lokales Setup](SETUP.md)
 
 ---
 
-## Reifegrad und Einsatzgrenzen
-
-KI-Radar ist eine funktionsfähige Single-Tenant-Referenzimplementierung für den internen Einsatz in einer Organisation.
-
-Vor einer extern erreichbaren Produktivinstallation müssen abhängig vom konkreten Unternehmen insbesondere geklärt werden:
-
-* Unternehmens-SSO und MFA
-* Domain, DNS und TLS
-* E-Mail- und Eskalationskanäle
-* externes Monitoring und Alarmierung
-* Offsite-Backups
-* Datenschutz- und Aufbewahrungsvorgaben
-* Lizenz- und Betriebsmodell
-
-Ohne SSO sollte der Zugriff auf ein internes Netz oder VPN beschränkt bleiben.
-
----
-
-## Dokumentation
+## Weitere Dokumentation
 
 * [Discovery & Architecture](docs/DISCOVERY_ARCHITECTURE.md)
-* [Lokales Setup](SETUP.md)
+* [Delivery Methodology](docs/DELIVERY_METHODOLOGY.md)
 * [Datenspeicherung und Datenfluss](docs/DATA_STORAGE.md)
-* [Security](docs/SECURITY.md)
-* [Betrieb](docs/OPERATIONS.md)
+* [Betriebsdokumentation](docs/OPERATIONS.md)
 * [Backup und Restore](docs/BACKUP_RESTORE.md)
-* [Monitoring](docs/MONITORING.md)
-* [Architecture Decision Records](docs/adr/)
-* [Offene Betriebs- und Konfigurationsentscheidungen](OPEN_QUESTIONS.md)
-
----
-
-## Grundprinzip
-
-> KI-Radar bewertet nicht, ob eine Idee modern klingt.
-> Es macht sichtbar, ob ein Vorhaben aus einem relevanten Geschäftsproblem entsteht, priorisiert vertieft werden sollte, messbar, technisch realistisch, ausreichend belegt, verantwortbar entscheidbar und für Delivery einschließlich Architekturkontext konkret genug ist.
+* [Security](SECURITY.md)
+* [Roadmap](docs/ROADMAP.md)
