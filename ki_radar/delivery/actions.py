@@ -202,7 +202,9 @@ def _build_action(
     field_name = FIELD_CODES.get(code, "")
 
     if code in {"TECHNICAL_OWNER_MISSING", "TECHNICAL_OWNER_INACTIVE"}:
-        title = "Technical Owner benennen" if code.endswith("MISSING") else "Technical Owner ersetzen"
+        title = (
+            "Technical Owner benennen" if code.endswith("MISSING") else "Technical Owner ersetzen"
+        )
         action_label = "Technical Owner zuordnen"
         responsible_role = "Business Owner oder KI-Koordinator"
         responsible_person = _display_name(package.use_case.business_owner)
@@ -296,9 +298,7 @@ def build_actionable_findings(
 ) -> list[ActionableFinding]:
     target = return_to or package.get_absolute_url()
     raw_findings = [*evaluate_delivery_readiness(package), *_synthetic_findings(package)]
-    actions = [
-        _build_action(package, finding, user, return_to=target) for finding in raw_findings
-    ]
+    actions = [_build_action(package, finding, user, return_to=target) for finding in raw_findings]
     return sorted(actions, key=lambda item: item.sort_key)
 
 

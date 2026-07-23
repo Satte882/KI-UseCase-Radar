@@ -288,7 +288,7 @@ def _apply_delivery_action(journey: JourneyState, use_case, user) -> JourneyStat
                 url = package.get_absolute_url()
                 action_label = "Readiness öffnen"
                 reason = (
-                    f"{primary.message} Zuständig: {primary.responsible_role} – "
+                    f"{primary.message} Zuständig: {primary.responsible_role} - "
                     f"{primary.responsible_person}."
                 )
             steps.append(
@@ -299,10 +299,7 @@ def _apply_delivery_action(journey: JourneyState, use_case, user) -> JourneyStat
                     url=url,
                     action_label=action_label,
                     reason=reason,
-                    details=tuple(
-                        action.message
-                        for action in []
-                    ),
+                    details=tuple(action.message for action in []),
                 )
             )
             continue

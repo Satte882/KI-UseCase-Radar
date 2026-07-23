@@ -289,7 +289,9 @@ def test_return_navigation_rejects_external_targets_and_preserves_internal_fragm
     assert safe_internal_url(request, "https://evil.example/path", "/fallback/") == "/fallback/"
     assert safe_internal_url(request, "/delivery/123/", "/fallback/") == "/delivery/123/"
 
-    target = with_return_to("/use-cases/1/edit/?highlight=technical_owner#field-technical_owner", "/delivery/123/")
+    target = with_return_to(
+        "/use-cases/1/edit/?highlight=technical_owner#field-technical_owner", "/delivery/123/"
+    )
     assert "highlight=technical_owner" in target
     assert "return_to=%2Fdelivery%2F123%2F" in target
     assert target.endswith("#field-technical_owner")
