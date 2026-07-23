@@ -71,7 +71,9 @@ def get_delivery_architecture_artifacts(package) -> DeliveryArchitectureArtifact
 @receiver(post_save, sender="delivery.DeliveryPackage")
 def ensure_delivery_architecture_artifacts(sender, instance, created, **kwargs):
     payload = getattr(instance, "_architecture_artifacts_payload", None)
-    if payload is None and created:
+    if payload is not None:
+        delattr(instance, "_architecture_artifacts_payload")
+    elif created:
         payload = {
             "system_landscape": (
                 f"Ist-Systeme und Arbeitsmittel:\n{instance.system_context}\n\n"
