@@ -1,5 +1,6 @@
 from django import forms
 
+from .actions import section_responsibility
 from .architecture_artifacts import get_delivery_architecture_artifacts
 from .models import DELIVERY_SECTION_DEFINITIONS, DeliveryPackage
 from .permissions import allowed_edit_sections
@@ -69,6 +70,11 @@ ARTIFACT_FIELDS = {
     "integration_operations",
     "architecture_artifacts_url",
 }
+FIELD_TO_SECTION = {
+    field_name: section_key
+    for section_key, field_names in SECTION_FIELDS.items()
+    for field_name in field_names
+}
 
 
 class DeliveryPackageForm(forms.ModelForm):
@@ -112,6 +118,7 @@ class DeliveryPackageForm(forms.ModelForm):
 
     def __init__(self, *args, actor=None, **kwargs):
         self.actor = actor
+        self.editable_sections: set[str] = set()
         super().__init__(*args, **kwargs)
         artifacts = get_delivery_architecture_artifacts(self.instance) if self.instance.pk else None
         if artifacts is not None and not self.is_bound:
@@ -133,9 +140,9 @@ class DeliveryPackageForm(forms.ModelForm):
         self.fields["initial_backlog"].widget.attrs["rows"] = 7
 
         if actor is not None and self.instance.pk:
-            editable_sections = allowed_edit_sections(actor, self.instance)
+            self.editable_sections = allowed_edit_sections(actor, self.instance)
             for section_key, field_names in SECTION_FIELDS.items():
-                if section_key in editable_sections:
+                if section_key in self.editable_sections:
                     continue
                 for field_name in field_names:
                     if field_name in self.fields:
@@ -144,14 +151,24 @@ class DeliveryPackageForm(forms.ModelForm):
     @property
     def section_groups(self):
         labels = dict(DELIVERY_SECTION_DEFINITIONS)
-        return [
-            {
-                "key": section_key,
-                "label": labels[section_key],
-                "fields": [self[field_name] for field_name in SECTION_FIELDS[section_key]],
-            }
-            for section_key, _ in DELIVERY_SECTION_DEFINITIONS
-        ]
+        groups = []
+        for section_key, _ in DELIVERY_SECTION_DEFINITIONS:
+            role, person = section_responsibility(self.instance, section_key)
+            groups.append(
+                {
+                    "key": section_key,
+                    "label": labels[section_key],
+                    "fields": [self[field_name] for field_name in SECTION_FIELDS[section_key]],
+                    "editable": section_key in self.editable_sections,
+                    "responsible_role": role,
+                    "responsible_person": person,
+                }
+            )
+        return groups
+
+    @staticmethod
+    def section_for_field(field_name: str) -> str:
+        return FIELD_TO_SECTION.get(field_name, "")
 
     def _changed_sections(self) -> set[str]:
         changed = set(self.changed_data)
