@@ -5,11 +5,13 @@
   <div>
     <div class="eyebrow mb-2">{{ package.use_case.short_id }} · Delivery v{{ package.version }}</div>
     <h1 class="page-title">{{ package.use_case.title }}</h1>
-    <p class="page-subtitle">{{ package.get_status_display }} · erzeugt aus {{ package.generated_from_decision.get_decision_status_display }}</p>
+    <p class="page-subtitle">{{ package.get_status_display }} · Readiness-Schema {{ package.readiness_schema_version }} · erzeugt aus {{ package.generated_from_decision.get_decision_status_display }}</p>
   </div>
   <div class="d-flex gap-2 flex-wrap">
     <a class="btn btn-outline-secondary" href="{% url 'delivery:package_list' %}">Zur Übersicht</a>
-    <a class="btn btn-outline-secondary" href="{% url 'delivery:package_export_markdown' package.pk %}">Markdown exportieren</a>
+    <a class="btn btn-outline-secondary" href="{% url 'delivery:methodology_reference' %}">Vorgehensmodell</a>
+    <a class="btn btn-outline-secondary" href="{% url 'delivery:methodology_download' %}">Vorgehensmodell herunterladen</a>
+    <a class="btn btn-outline-secondary" href="{% url 'delivery:package_export_markdown' package.pk %}">Package exportieren</a>
     {% if can_edit %}<a class="btn btn-primary" href="{% url 'delivery:package_update' package.pk %}">Bearbeiten</a>{% endif %}
   </div>
 </div>
@@ -20,11 +22,65 @@
 <div class="kpi-strip mb-4">
   <div class="kpi-cell"><small>Status</small><strong>{{ package.get_status_display }}</strong></div>
   <div class="kpi-cell"><small>Version</small><strong>{{ package.version }}</strong></div>
-  <div class="kpi-cell"><small>Freigabe</small><strong>{{ package.generated_from_decision.get_decision_status_display }}</strong></div>
+  <div class="kpi-cell"><small>Technical Owner</small><strong>{{ package.use_case.technical_owner|default:"Nicht benannt" }}</strong></div>
 </div>
 
-{% if missing_ready_fields and package.status != 'handed_over' %}
-<div class="alert alert-warning"><strong>{{ missing_ready_fields|length }} Pflichtbereiche sind leer.</strong> {{ missing_ready_fields|join:", " }}</div>
+{% if package.readiness_schema_version == 1 %}
+<div class="alert alert-secondary mb-4"><strong>Legacy Handover:</strong> Diese unveränderliche Version wurde nach Readiness-Schema 1 übergeben und wird nicht rückwirkend neu bewertet.</div>
+{% else %}
+<div class="app-card mb-4">
+  <div class="card-header">
+    <strong>Delivery Readiness</strong>
+    <div class="small text-muted mt-1">Delivery kann nach erfolgreicher Bestätigung ohne erneute fachliche Discovery mit Solution Design, Refinement und Umsetzungsvorbereitung beginnen.</div>
+  </div>
+  <div class="card-body">
+    {% if readiness_findings %}
+    <div class="blocker-actions mb-4">
+      {% for finding in readiness_findings %}
+      <div class="blocker-action {% if finding.severity == 'blocker' %}blocker-data{% else %}blocker-process{% endif %}">
+        <div><strong>{{ finding.code }}</strong><div class="small text-muted">{{ finding.message }}</div></div>
+        <span class="status-badge">{{ finding.severity }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-success">Keine offenen Readiness-Findings.</div>
+    {% endif %}
+
+    <div class="architecture-artifact-grid">
+      {% for row in section_rows %}
+      <section class="app-card card-body">
+        <div class="d-flex justify-content-between gap-3 align-items-start mb-2">
+          <div>
+            <div class="section-title">{{ forloop.counter }}. {{ row.label }}</div>
+            {% if row.review %}<div class="small text-muted">{{ row.review.get_content_origin_display }} · {{ row.review.get_review_status_display }}</div>{% endif %}
+          </div>
+          {% if row.review and row.review.review_status == 'confirmed' %}<span class="badge text-bg-success">Bestätigt</span>{% elif row.review and row.review.review_status == 'blocked' %}<span class="badge text-bg-danger">Blockiert</span>{% else %}<span class="badge text-bg-warning">Offen</span>{% endif %}
+        </div>
+        {% if row.review %}
+        <div class="small mb-2">
+          Fachlich: {{ row.review.business_confirmed_by|default:"offen" }}<br>
+          Technisch: {{ row.review.technical_confirmed_by|default:"offen" }}
+        </div>
+        {% if row.review.review_note %}<div class="text-preline small mb-3">{{ row.review.review_note }}</div>{% endif %}
+        {% endif %}
+        {% if row.can_review and package.status != 'handed_over' %}
+        <form method="post" action="{% url 'delivery:package_section_review' package.pk row.key %}">
+          {% csrf_token %}
+          <label class="form-label" for="review-note-{{ row.key }}">Prüfhinweis oder Begründung</label>
+          <textarea class="form-control mb-2" id="review-note-{{ row.key }}" name="review_note" rows="2">{% if row.review %}{{ row.review.review_note }}{% endif %}</textarea>
+          <div class="d-flex gap-2 flex-wrap">
+            <button class="btn btn-sm btn-primary" name="action" value="confirm">Bestätigen</button>
+            <button class="btn btn-sm btn-outline-secondary" name="action" value="block">Blockieren</button>
+            <button class="btn btn-sm btn-outline-secondary" name="action" value="not_applicable">Nicht relevant</button>
+          </div>
+        </form>
+        {% endif %}
+      </section>
+      {% endfor %}
+    </div>
+  </div>
+</div>
 {% endif %}
 
 <div class="delivery-artifact-grid mb-4">
@@ -47,11 +103,14 @@
 </div>
 
 <div class="app-card decision-panel mb-4">
-  <div class="card-header"><strong>Systemlandschaft und Architekturartefakte</strong><div class="small text-muted mt-1">Umsetzungsrelevante Ist-/Ziel-Sicht, Datenflüsse und technische Verantwortlichkeiten.</div></div>
+  <div class="card-header"><strong>Systemlandschaft und Architekturartefakte</strong><div class="small text-muted mt-1">Umsetzungsrelevante Ist-/Ziel-Sicht, Datenflüsse, Zugriff, Betrieb und technische Verantwortlichkeiten.</div></div>
   <div class="card-body architecture-artifact-grid">
     <section><div class="section-title">Ist-/Ziel-Systemlandschaft</div><div class="text-preline">{{ package.architecture_artifacts.system_landscape|default:"Noch nicht dokumentiert" }}</div></section>
+    <section><div class="section-title">Systemverantwortung und Zielkomponenten</div><div class="text-preline">{{ package.architecture_artifacts.system_responsibilities|default:"Noch nicht dokumentiert" }}</div></section>
     <section><div class="section-title">Daten- und Informationsflüsse</div><div class="text-preline">{{ package.architecture_artifacts.data_flows|default:"Noch nicht dokumentiert" }}</div></section>
+    <section><div class="section-title">Datenqualität, Zugriff und Schutzbedarf</div><div class="text-preline">{{ package.architecture_artifacts.data_quality_and_access|default:"Noch nicht dokumentiert" }}</div></section>
     <section><div class="section-title">Integrationsverträge und Verantwortlichkeiten</div><div class="text-preline">{{ package.architecture_artifacts.integration_contracts|default:"Noch nicht dokumentiert" }}</div></section>
+    <section><div class="section-title">Integrationsbetrieb und Fehlerbehandlung</div><div class="text-preline">{{ package.architecture_artifacts.integration_operations|default:"Noch nicht dokumentiert" }}</div></section>
     <section><div class="section-title">Architekturdiagramme und Nachweise</div>{% if package.architecture_artifacts.artifacts_url %}<a href="{{ package.architecture_artifacts.artifacts_url }}" target="_blank" rel="noopener noreferrer">Architekturartefakte öffnen</a>{% else %}<span class="text-muted">Noch nicht verknüpft</span>{% endif %}</section>
   </div>
 </div>
@@ -90,11 +149,11 @@
   </div>
 </div>
 
-{% if can_transition %}
+{% if can_transition and package.readiness_schema_version == 2 %}
 <div class="app-card card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
   <div>
     <strong>Verbindlicher Handover</strong>
-    <div class="small text-muted">Nach der Übergabe ist diese Version unveränderlich. Änderungen erfolgen als neue Version.</div>
+    <div class="small text-muted">Readiness wird unmittelbar vor Statuswechsel und Übergabe erneut serverseitig geprüft.</div>
   </div>
   <div class="d-flex gap-2">
     {% if package.status == 'draft' %}<form method="post" action="{% url 'delivery:package_mark_ready' package.pk %}">{% csrf_token %}<button class="btn btn-outline-secondary">Als bereit markieren</button></form>{% endif %}

@@ -9,6 +9,26 @@ from django.urls import reverse
 
 from ki_radar.core.models import TimeStampedModel
 
+DELIVERY_SECTION_DEFINITIONS = (
+    ("problem_and_target", "Problem und Ziel"),
+    ("scope_and_users", "Scope, Nutzer und MVP"),
+    ("solution_direction", "Gewählte Lösungsrichtung"),
+    ("architecture_and_data", "System-, Daten- und Integrationskontext"),
+    ("requirements_and_governance", "Anforderungen und Governance"),
+    ("acceptance_and_measurement", "Akzeptanz und Erfolgsmessung"),
+    ("delivery_control", "Risiken, Abhängigkeiten und Umsetzungsstart"),
+)
+
+SECTION_REVIEW_REQUIREMENTS = {
+    "problem_and_target": frozenset({"business"}),
+    "scope_and_users": frozenset({"business"}),
+    "solution_direction": frozenset({"business", "technical"}),
+    "architecture_and_data": frozenset({"technical"}),
+    "requirements_and_governance": frozenset({"technical"}),
+    "acceptance_and_measurement": frozenset({"business"}),
+    "delivery_control": frozenset({"business", "technical"}),
+}
+
 
 class DeliveryPackage(TimeStampedModel):
     class Status(models.TextChoices):
@@ -24,6 +44,7 @@ class DeliveryPackage(TimeStampedModel):
     )
     version = models.PositiveIntegerField()
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
+    readiness_schema_version = models.PositiveSmallIntegerField(default=1)
     generated_from_decision = models.ForeignKey(
         "use_cases.ApprovalDecision",
         on_delete=models.PROTECT,
@@ -100,3 +121,105 @@ class DeliveryPackage(TimeStampedModel):
 
     def get_absolute_url(self):
         return reverse("delivery:package_detail", kwargs={"pk": self.pk})
+
+
+class DeliverySectionReview(TimeStampedModel):
+    class Section(models.TextChoices):
+        PROBLEM_AND_TARGET = "problem_and_target", "Problem und Ziel"
+        SCOPE_AND_USERS = "scope_and_users", "Scope, Nutzer und MVP"
+        SOLUTION_DIRECTION = "solution_direction", "Gewählte Lösungsrichtung"
+        ARCHITECTURE_AND_DATA = (
+            "architecture_and_data",
+            "System-, Daten- und Integrationskontext",
+        )
+        REQUIREMENTS_AND_GOVERNANCE = (
+            "requirements_and_governance",
+            "Anforderungen und Governance",
+        )
+        ACCEPTANCE_AND_MEASUREMENT = (
+            "acceptance_and_measurement",
+            "Akzeptanz und Erfolgsmessung",
+        )
+        DELIVERY_CONTROL = (
+            "delivery_control",
+            "Risiken, Abhängigkeiten und Umsetzungsstart",
+        )
+
+    class ContentOrigin(models.TextChoices):
+        INHERITED = "inherited", "Übernommen"
+        MIXED = "mixed", "Übernommen und ergänzt"
+        NEW = "new", "Neu für Delivery"
+        NOT_APPLICABLE = "not_applicable", "Nicht relevant"
+
+    class ReviewStatus(models.TextChoices):
+        NEEDS_REVIEW = "needs_review", "Prüfung erforderlich"
+        CONFIRMED = "confirmed", "Bestätigt"
+        BLOCKED = "blocked", "Blockiert"
+        NOT_APPLICABLE = "not_applicable", "Nicht relevant"
+
+    delivery_package = models.ForeignKey(
+        DeliveryPackage,
+        on_delete=models.CASCADE,
+        related_name="section_reviews",
+    )
+    section_key = models.CharField(max_length=50, choices=Section.choices)
+    content_origin = models.CharField(
+        max_length=30,
+        choices=ContentOrigin.choices,
+        default=ContentOrigin.NEW,
+    )
+    review_status = models.CharField(
+        max_length=30,
+        choices=ReviewStatus.choices,
+        default=ReviewStatus.NEEDS_REVIEW,
+    )
+    source_manifest = models.JSONField(default=dict, blank=True)
+    review_note = models.TextField(blank=True)
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="reviewed_delivery_sections",
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    business_confirmed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="business_confirmed_delivery_sections",
+    )
+    business_confirmed_at = models.DateTimeField(null=True, blank=True)
+    technical_confirmed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="technical_confirmed_delivery_sections",
+    )
+    technical_confirmed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["delivery_package", "section_key"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["delivery_package", "section_key"],
+                name="unique_delivery_section_review",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.delivery_package} - {self.get_section_key_display()}"
+
+    @property
+    def required_confirmations(self) -> frozenset[str]:
+        return SECTION_REVIEW_REQUIREMENTS[self.section_key]
+
+    @property
+    def confirmations_complete(self) -> bool:
+        required = self.required_confirmations
+        return not (
+            ("business" in required and self.business_confirmed_at is None)
+            or ("technical" in required and self.technical_confirmed_at is None)
+        )

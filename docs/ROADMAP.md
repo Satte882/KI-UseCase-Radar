@@ -1,6 +1,6 @@
 # KI-Radar Produkt-Roadmap
 
-**Stand:** 22.07.2026  
+**Stand:** 23.07.2026  
 **Status:** verbindliche fachliche Reihenfolge, kein Terminversprechen  
 **Pflege:** Nach jedem relevanten Merge werden Status, Datum und nächster verbindlicher Umfang aktualisiert.
 
@@ -63,6 +63,12 @@ Der erste Rückfluss aus Jira, Azure DevOps, GitHub oder einem anderen Delivery-
 - [x] **22.07.2026:** Statusfolge `Entwurf → Bereit zur Übergabe → Übergeben`
 - [x] **22.07.2026:** übergebene Package-Versionen sind unveränderlich
 - [x] **22.07.2026:** Link zum externen Delivery-System
+- [x] **23.07.2026:** sieben strukturierte Delivery-Sektionen mit Herkunft, Prüfstatus und fachlicher beziehungsweise technischer Bestätigung
+- [x] **23.07.2026:** Quellenmanifest aus Use Case, Discovery, Bewertung und Freigabe
+- [x] **23.07.2026:** vertiefter System-, Daten- und Integrationskontext einschließlich Systemverantwortung, Datenzugriff und Fehlerbehandlung
+- [x] **23.07.2026:** strukturierte Readiness-Findings und erneute serverseitige Prüfung vor der Übergabe
+- [x] **23.07.2026:** Legacy-Bestandsschutz über Readiness-Schemaversionen
+- [x] **23.07.2026:** vollständige methodische Referenz CRISP-ML(Q) mit integriertem ML Test Score, In-App-Ansicht und identischem Markdown-Download
 
 ### 1.4 Geführte Journey und Arbeitsräume
 

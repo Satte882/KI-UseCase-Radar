@@ -8,6 +8,3 @@ class DeliveryConfig(AppConfig):
 
     def ready(self):
         from . import architecture_artifacts  # noqa: F401
-        from .readiness import install
-
-        install()

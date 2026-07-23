@@ -183,7 +183,11 @@ Enthalten sind insbesondere:
 - initiales Backlog
 - Link zum externen Delivery-System
 
-Für den Status **Bereit zur Übergabe** müssen Architektur- und Übergabepunkte entweder konkret beschrieben oder ausdrücklich als nicht relevant dokumentiert sein. Leere Integrationen, Abhängigkeiten, Risiken, Annahmen oder Architekturentscheidungen gelten nicht mehr automatisch als ausreichend.
+Delivery Readiness 2.0 ordnet diese Inhalte sieben prüfbaren Sektionen zu. Jede Sektion besitzt eine sichtbare Herkunft, einen Prüfstatus und die erforderliche fachliche beziehungsweise technische Bestätigung. Automatisch übernommene Inhalte gelten als Entwurf und müssen bestätigt werden. Änderungen setzen die betroffene Sektion erneut auf **Prüfung erforderlich**.
+
+Der System-, Daten- und Integrationskontext umfasst zusätzlich System of Record, Systemverantwortung und Zielkomponenten, Datenqualität und Zugriffsweg sowie Integrationsbetrieb und Fehlerbehandlung. Die Readiness-Prüfung liefert konkrete Blocker statt einer reinen Leerfeldliste und wird unmittelbar vor der Übergabe erneut serverseitig ausgeführt.
+
+Für den Status **Bereit zur Übergabe** müssen Architektur- und Übergabepunkte entweder konkret beschrieben oder ausdrücklich als nicht relevant dokumentiert sein. Nichtanwendbarkeit benötigt eine Begründung. Leere, generische oder unbestätigte Angaben gelten nicht als ausreichend.
 
 Packages sind versioniert. Der Status verläuft über:
 
@@ -192,6 +196,8 @@ Entwurf → Bereit zur Übergabe → Übergeben
 ```
 
 Übergebene Versionen sind unveränderlich. Änderungen werden in einer neuen Version dokumentiert. Der Inhalt kann als Markdown exportiert und in Jira, Azure DevOps, GitHub, Confluence oder vergleichbare Systeme übernommen werden.
+
+Die methodische Herkunft der Struktur ist vollständig in [Delivery Methodology](DELIVERY_METHODOLOGY.md) dokumentiert. Die In-App-Ansicht und der Download verwenden dieselbe versionierte Markdown-Datei; daraus entsteht kein zusätzlicher Workflow und keine automatische Score-Berechnung.
 
 ## Bewusste Systemgrenze
 
@@ -213,5 +219,7 @@ Die Systemlandschaft im Delivery Package ist eine umsetzungsbezogene Ist-/Ziel-S
 3. Prozessanalyse und explizite Lösungsoptionen
 4. Strukturierte Fachdomäne, Capability und Prozessbereich
 5. Versioniertes Delivery Package mit Systemlandschaft und exportierbarem Handover
+6. Delivery Readiness 2.0 mit Quellenmanifest, Sektionsbestätigungen und strukturierten Blockern
+7. Vollständige methodische Referenz mit In-App-Ansicht und identischem Markdown-Download
 
 Der direkte Intake und der systematische Architecture-Pfad bleiben unabhängig nutzbar. Der Architecture-Pfad verlangt jedoch eine nachvollziehbare Auswahlentscheidung, bevor vertiefende Artefakte erzeugt werden.

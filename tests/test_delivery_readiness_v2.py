@@ -1,0 +1,273 @@
+import re
+from decimal import Decimal
+from pathlib import Path
+
+import pytest
+from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.urls import reverse
+from django.utils import timezone
+
+from ki_radar.delivery.models import DeliverySectionReview
+from ki_radar.delivery.readiness import evaluate_delivery_readiness
+from ki_radar.delivery.services import (
+    create_delivery_package,
+    review_delivery_section,
+)
+from ki_radar.use_cases.models import ApprovalDecision, DecisionAssessment, UseCase
+
+
+def make_approved_use_case(*, owner, technical_owner, coordinator, business_unit):
+    use_case = UseCase.objects.create(
+        title="Automatische Lieferantenauswahl",
+        summary="Angebote strukturiert vergleichen.",
+        problem_statement="Uneinheitliche Angebote erzeugen Rückfragen.",
+        business_unit=business_unit,
+        affected_process="Lieferantenauswahl",
+        target_users="Einkauf",
+        submitter=owner,
+        business_owner=owner,
+        technical_owner=technical_owner,
+        source_systems="ERP, Shared Inbox, Dateiablage",
+        data_sources="Angebote und Kriterienkatalog",
+        interface_description="Dateiimport und ERP-Export",
+        intended_users="Strategischer Einkauf",
+        intended_purpose="Angebote extrahieren und vergleichbar darstellen.",
+        expected_benefit="Durchlaufzeit reduzieren.",
+        metric_name="Durchlaufzeit",
+        metric_type=UseCase.MetricType.DURATION,
+        metric_direction=UseCase.MetricDirection.LOWER,
+        metric_unit="Tage",
+        metric_baseline=Decimal("5"),
+        metric_target=Decimal("3"),
+        metric_measurement_method="Median über zehn Vorgänge.",
+        metric_measurement_period="Vier Wochen.",
+        human_oversight="Einkauf prüft und entscheidet.",
+        support_responsibility="Application Management",
+        decision_status=UseCase.DecisionStatus.APPROVED,
+    )
+    assessment = DecisionAssessment.objects.create(
+        use_case=use_case,
+        version=1,
+        assessed_by=coordinator,
+        business_value=UseCase.Level.HIGH,
+        strategic_fit=UseCase.Level.HIGH,
+        technical_feasibility=UseCase.Level.HIGH,
+        data_readiness=UseCase.Level.MEDIUM,
+        risk_complexity=UseCase.Level.MEDIUM,
+        evidence_quality=DecisionAssessment.EvidenceQuality.REPRESENTATIVE,
+        evidence_recency=DecisionAssessment.ConfidenceFactor.SOLID,
+        evidence_coverage=DecisionAssessment.ConfidenceFactor.SOLID,
+        independent_review=DecisionAssessment.ConfidenceFactor.SOLID,
+        assumptions_resolved=DecisionAssessment.ConfidenceFactor.SOLID,
+        evidence_url="https://example.com/evidence",
+        rationale="Repräsentative Messung und technische Vorprüfung liegen vor.",
+        governance_precheck_completed=True,
+        recommendation=UseCase.DecisionStatus.APPROVED,
+    )
+    ApprovalDecision.objects.create(
+        use_case=use_case,
+        assessment=assessment,
+        decision_status=UseCase.DecisionStatus.APPROVED,
+        rationale="Freigabe für Delivery.",
+        decided_by=coordinator,
+        governance_confirmed=True,
+        finalized_at=timezone.now(),
+    )
+    return use_case
+
+
+@pytest.mark.django_db
+def test_package_creates_seven_reviews_with_source_manifest(
+    owner,
+    other_owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+
+    assert package.readiness_schema_version == 2
+    assert package.section_reviews.count() == 7
+    assert all(review.source_manifest for review in package.section_reviews.all())
+    assert all(
+        review.review_status == DeliverySectionReview.ReviewStatus.NEEDS_REVIEW
+        for review in package.section_reviews.all()
+    )
+
+
+@pytest.mark.django_db
+def test_solution_section_requires_business_and_technical_confirmation(
+    owner,
+    other_owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+
+    review_delivery_section(
+        package=package,
+        section_key="solution_direction",
+        action="confirm",
+        actor=owner,
+        note="Fachlich bestätigt.",
+    )
+    review = package.section_reviews.get(section_key="solution_direction")
+    assert review.business_confirmed_by == owner
+    assert review.technical_confirmed_by is None
+    assert review.review_status == DeliverySectionReview.ReviewStatus.NEEDS_REVIEW
+
+    review_delivery_section(
+        package=package,
+        section_key="solution_direction",
+        action="confirm",
+        actor=other_owner,
+        note="Technisch bestätigt.",
+    )
+    review.refresh_from_db()
+    assert review.technical_confirmed_by == other_owner
+    assert review.review_status == DeliverySectionReview.ReviewStatus.CONFIRMED
+
+
+@pytest.mark.django_db
+def test_generic_prefill_and_open_reviews_are_readiness_blockers(
+    owner,
+    other_owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+
+    findings = evaluate_delivery_readiness(package)
+    codes = {finding.code for finding in findings}
+
+    assert "SECTION_NEEDS_REVIEW" in codes
+    assert "OUT_OF_SCOPE_GENERIC" in codes
+    assert "SYSTEM_RESPONSIBILITIES_GENERIC" in codes
+
+
+@pytest.mark.django_db
+def test_not_applicable_requires_reason(
+    owner,
+    other_owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+
+    with pytest.raises(ValidationError, match="begründet"):
+        review_delivery_section(
+            package=package,
+            section_key="architecture_and_data",
+            action="not_applicable",
+            actor=coordinator,
+            note="",
+        )
+
+
+@pytest.mark.django_db
+def test_methodology_page_and_download_use_same_complete_file(client, owner):
+    client.force_login(owner)
+    source_path = Path(settings.BASE_DIR) / "docs" / "DELIVERY_METHODOLOGY.md"
+    source = source_path.read_text(encoding="utf-8")
+
+    page = client.get(reverse("delivery:methodology_reference"))
+    download = client.get(reverse("delivery:methodology_download"))
+
+    assert page.status_code == 200
+    assert "Vorgehensmodell für produktionsreife KI-Systeme" in page.content.decode()
+    assert "Vorgehensmodell herunterladen" in page.content.decode()
+    assert download.status_code == 200
+    assert download["Content-Type"].startswith("text/markdown")
+    assert "attachment;" in download["Content-Disposition"]
+    assert (
+        "KI-Radar_Vorgehensmodell_CRISP-MLQ_ML-Test-Score_v2.0.md"
+        in download["Content-Disposition"]
+    )
+    assert download.content.decode() == source
+
+
+@pytest.mark.parametrize(
+    ("start", "end"),
+    [
+        ("### A. Daten", "### B. Modell"),
+        ("### B. Modell", "### C. Infrastruktur"),
+        ("### C. Infrastruktur", "### D. Monitoring"),
+        ("### D. Monitoring", "Die Liste ist eine deutschsprachige"),
+    ],
+)
+def test_methodology_contains_all_28_ml_test_score_checks(start, end):
+    source = (Path(settings.BASE_DIR) / "docs" / "DELIVERY_METHODOLOGY.md").read_text(
+        encoding="utf-8"
+    )
+    block = source.split(start, 1)[1].split(end, 1)[0]
+    assert len(re.findall(r"^\d+\.", block, flags=re.MULTILINE)) == 7
+
+
+def test_methodology_contains_all_24_sections_and_required_components():
+    source = (Path(settings.BASE_DIR) / "docs" / "DELIVERY_METHODOLOGY.md").read_text(
+        encoding="utf-8"
+    )
+    for section_number in range(1, 25):
+        assert re.search(rf"^# {section_number}\. ", source, flags=re.MULTILINE)
+    for marker in [
+        "Konflikt- und Eskalationsverfahren",
+        "Stufe A: Kompaktes Vorhaben",
+        "Stufe B: Standardvorhaben",
+        "Stufe C: Erweitertes Vorhaben",
+        "Berechnung des ML Test Score",
+        "Übertragung auf generative KI",
+        "Quality-Gate-Protokoll",
+    ]:
+        assert marker in source
+
+
+@pytest.mark.django_db
+def test_package_detail_shows_methodology_actions(
+    client,
+    owner,
+    other_owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    client.force_login(coordinator)
+
+    response = client.get(reverse("delivery:package_detail", kwargs={"pk": package.pk}))
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "Vorgehensmodell" in content
+    assert "Vorgehensmodell herunterladen" in content
+    assert reverse("delivery:methodology_reference") in content
+    assert reverse("delivery:methodology_download") in content

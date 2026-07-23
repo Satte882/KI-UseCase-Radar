@@ -1,28 +1,42 @@
 {% extends "base.html" %}
 {% block title %}Delivery Package bearbeiten – KI-Radar{% endblock %}
 {% block content %}
-<div class="page-header">
-  <div>
+<div class="page-header delivery-edit-header">
+  <div class="delivery-edit-heading">
     <div class="eyebrow mb-2">{{ package.use_case.short_id }} · Version {{ package.version }}</div>
     <h1 class="page-title">Delivery Package bearbeiten</h1>
-    <p class="page-subtitle">Aus dem freigegebenen Zielbild einen eindeutigen MVP- und Umsetzungsrahmen machen.</p>
+    <p class="page-subtitle">Übernommene Informationen prüfen und nur die Delivery-spezifischen Lücken konkretisieren.</p>
   </div>
-  <a class="btn btn-outline-secondary" href="{{ package.get_absolute_url }}">Abbrechen</a>
+  <div class="delivery-edit-actions">
+    <a class="btn btn-outline-secondary" href="{{ package.get_absolute_url }}">Abbrechen</a>
+  </div>
+</div>
+
+<div class="alert alert-secondary mb-4">
+  Änderungen setzen die betroffene Sektion wieder auf <strong>Prüfung erforderlich</strong>. Die verbindliche Übergabe bleibt unverändert gesperrt, bis alle erforderlichen Bestätigungen vorliegen.
 </div>
 
 <form method="post">
   {% csrf_token %}
   {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
-  <div class="delivery-form-grid">
-    {% for field in form %}
-    <section class="app-card card-body delivery-form-field">
-      <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-      {{ field }}
-      {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-      {{ field.errors }}
-    </section>
-    {% endfor %}
-  </div>
-  <div class="app-card card-body mt-4 d-flex justify-content-end"><button class="btn btn-primary">Speichern</button></div>
+  {% for group in form.section_groups %}
+  <section class="app-card mb-4">
+    <div class="card-header">
+      <strong>{{ forloop.counter }}. {{ group.label }}</strong>
+      <div class="small text-muted mt-1">Felder ohne Berechtigung sind schreibgeschützt.</div>
+    </div>
+    <div class="card-body delivery-form-grid">
+      {% for field in group.fields %}
+      <div class="delivery-form-field">
+        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+        {{ field.errors }}
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+  <div class="app-card card-body d-flex justify-content-end"><button class="btn btn-primary">Speichern</button></div>
 </form>
 {% endblock %}
