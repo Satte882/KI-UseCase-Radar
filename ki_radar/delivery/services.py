@@ -161,7 +161,7 @@ def _architecture_artifacts_payload(
     use_case: UseCase,
     decision: ApprovalDecision,
 ) -> dict[str, str]:
-    origin, process, option = _origin_context(use_case)
+    _origin, process, option = _origin_context(use_case)
     systems = process.systems if process else use_case.source_systems
     data_objects = process.data_objects if process else use_case.data_sources
     handoffs = process.handoffs if process else ""
@@ -207,7 +207,7 @@ def build_initial_delivery_data(
     use_case: UseCase,
     decision: ApprovalDecision,
 ) -> dict[str, str]:
-    origin, process, option = _origin_context(use_case)
+    _origin, process, option = _origin_context(use_case)
     metric = (
         f"{use_case.metric_name}: Baseline {use_case.metric_baseline} "
         f"→ Ziel {use_case.metric_target} {use_case.metric_unit}.\n"
