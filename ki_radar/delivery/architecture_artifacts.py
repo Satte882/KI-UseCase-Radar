@@ -18,13 +18,25 @@ class DeliveryArchitectureArtifacts(TimeStampedModel):
         blank=True,
         verbose_name="Ist-/Ziel-Systemlandschaft",
     )
+    system_responsibilities = models.TextField(
+        blank=True,
+        verbose_name="Systemverantwortung und Zielkomponenten",
+    )
     data_flows = models.TextField(
         blank=True,
         verbose_name="Daten- und Informationsflüsse",
     )
+    data_quality_and_access = models.TextField(
+        blank=True,
+        verbose_name="Datenqualität, Zugriff und Schutzbedarf",
+    )
     integration_contracts = models.TextField(
         blank=True,
         verbose_name="Integrationsverträge und Verantwortlichkeiten",
+    )
+    integration_operations = models.TextField(
+        blank=True,
+        verbose_name="Integrationsbetrieb und Fehlerbehandlung",
     )
     artifacts_url = models.URLField(
         blank=True,
@@ -38,8 +50,11 @@ class DeliveryArchitectureArtifacts(TimeStampedModel):
     def missing_ready_fields(self) -> tuple[str, ...]:
         required = {
             "system_landscape": "Ist-/Ziel-Systemlandschaft",
+            "system_responsibilities": "Systemverantwortung und Zielkomponenten",
             "data_flows": "Daten- und Informationsflüsse",
+            "data_quality_and_access": "Datenqualität, Zugriff und Schutzbedarf",
             "integration_contracts": "Integrationsverträge und Verantwortlichkeiten",
+            "integration_operations": "Integrationsbetrieb und Fehlerbehandlung",
         }
         return tuple(
             label for name, label in required.items() if not str(getattr(self, name, "")).strip()
@@ -62,17 +77,29 @@ def ensure_delivery_architecture_artifacts(sender, instance, created, **kwargs):
                 f"Ist-Systeme und Arbeitsmittel:\n{instance.system_context}\n\n"
                 "Ziel-Systemlandschaft und Systemverantwortung im Package konkretisieren."
             ),
+            "system_responsibilities": (
+                "Führendes System, fachlichen Owner, technischen Owner und Zielkomponenten "
+                "konkretisieren."
+            ),
             "data_flows": (
                 f"Datenobjekte und Quellen:\n{instance.data_context}\n\n"
                 "Schnittstellen und Integrationen:\n"
                 f"{instance.integrations or 'Keine Integrationen dokumentiert.'}"
             ),
+            "data_quality_and_access": (
+                "Datenqualität, Zugriffsweg, Datenverantwortung, Schutzbedarf und "
+                "Aktualisierung konkretisieren."
+            ),
             "integration_contracts": (
                 instance.integrations
                 or (
                     "Keine technischen Integrationen vorgesehen; fachliche Verantwortlichkeiten "
-                    "bestätigen."
+                    "und Begründung bestätigen."
                 )
+            ),
+            "integration_operations": (
+                "Authentifizierung, Auslöser, Fehlerbehandlung, Retry/Fallback, Monitoring und "
+                "technische Verantwortung konkretisieren."
             ),
         }
     if payload is None:
