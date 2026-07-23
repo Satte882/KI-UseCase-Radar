@@ -12,9 +12,7 @@ register = template.Library()
 FENCE_RE = re.compile(r"^```(?P<language>[\w+-]*)\s*$")
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.+)$")
 LIST_RE = re.compile(r"^(?P<indent>\s*)(?P<marker>[*+-]|\d+\.)\s+(?P<text>.+)$")
-TABLE_SEPARATOR_RE = re.compile(
-    r"^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?\s*$"
-)
+TABLE_SEPARATOR_RE = re.compile(r"^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?\s*$")
 LINK_RE = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
 CODE_RE = re.compile(r"`([^`]+)`")
 BOLD_RE = re.compile(r"\*\*([^*]+)\*\*")
@@ -80,8 +78,7 @@ def _render_table(lines: list[str], index: int) -> tuple[str, int]:
         index += 1
     head = "".join(f'<th scope="col">{_inline(cell)}</th>' for cell in headers)
     body = "".join(
-        "<tr>" + "".join(f"<td>{_inline(cell)}</td>" for cell in row) + "</tr>"
-        for row in rows
+        "<tr>" + "".join(f"<td>{_inline(cell)}</td>" for cell in row) + "</tr>" for row in rows
     )
     table_html = (
         '<div class="methodology-table-wrap"><table class="table methodology-table">'
@@ -113,9 +110,7 @@ def _render_list(lines: list[str], index: int) -> tuple[str, int]:
 def render_methodology_markdown(source: str) -> SafeString:
     """Render the trusted repository methodology with readable Markdown structure."""
 
-    lines = (
-        str(source or "").replace("\r\n", "\n").replace("\r", "\n").split("\n")
-    )
+    lines = str(source or "").replace("\r\n", "\n").replace("\r", "\n").split("\n")
     output: list[str] = []
     index = 0
 
@@ -136,9 +131,7 @@ def render_methodology_markdown(source: str) -> SafeString:
                 index += 1
             if index < len(lines):
                 index += 1
-            language_class = (
-                f' class="language-{html.escape(language)}"' if language else ""
-            )
+            language_class = f' class="language-{html.escape(language)}"' if language else ""
             code = html.escape("\n".join(code_lines))
             output.append(f"<pre><code{language_class}>{code}</code></pre>")
             continue
@@ -180,11 +173,7 @@ def render_methodology_markdown(source: str) -> SafeString:
 
         paragraph_lines = [stripped]
         index += 1
-        while (
-            index < len(lines)
-            and lines[index].strip()
-            and not _starts_block(lines, index)
-        ):
+        while index < len(lines) and lines[index].strip() and not _starts_block(lines, index):
             paragraph_lines.append(lines[index].strip())
             index += 1
         output.append(f"<p>{_inline(' '.join(paragraph_lines))}</p>")
