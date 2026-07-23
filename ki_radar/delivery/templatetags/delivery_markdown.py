@@ -178,4 +178,4 @@ def render_methodology_markdown(source: str) -> SafeString:
             index += 1
         output.append(f"<p>{_inline(' '.join(paragraph_lines))}</p>")
 
-    return mark_safe("\n".join(output))  # noqa: S308 - source is escaped above
+    return mark_safe("\n".join(output))  # nosec B308  # noqa: S308
