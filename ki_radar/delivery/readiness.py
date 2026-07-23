@@ -333,7 +333,62 @@ def blocking_findings(package: DeliveryPackage) -> list[ReadinessFinding]:
     ]
 
 
+def _legacy_missing_ready_fields(package: DeliveryPackage) -> list[str]:
+    legacy_fields = (
+        "problem_context",
+        "target_outcome",
+        "in_scope",
+        "out_of_scope",
+        "users_and_scenarios",
+        "solution_outline",
+        "system_context",
+        "data_context",
+        "functional_requirements",
+        "non_functional_requirements",
+        "security_privacy_requirements",
+        "human_oversight",
+        "logging_and_audit",
+        "operations_and_support",
+        "mvp_scope",
+        "acceptance_criteria",
+        "test_scenarios",
+        "measurement_plan",
+        "initial_backlog",
+        "integrations",
+        "dependencies",
+        "risks",
+        "assumptions",
+        "architecture_decisions",
+    )
+    missing = [
+        _field_label(package, field_name)
+        for field_name in legacy_fields
+        if not _text(getattr(package, field_name, ""))
+    ]
+    artifacts = get_delivery_architecture_artifacts(package)
+    if artifacts is None:
+        missing.extend(
+            [
+  "Ist-/Ziel-Systemlandschaft",
+  "Daten- und Informationsflüsse",
+  "Integrationsverträge und Verantwortlichkeiten",
+            ]
+        )
+    else:
+        legacy_artifact_fields = {
+            "system_landscape": "Ist-/Ziel-Systemlandschaft",
+            "data_flows": "Daten- und Informationsflüsse",
+            "integration_contracts": "Integrationsverträge und Verantwortlichkeiten",
+        }
+        for field_name, label in legacy_artifact_fields.items():
+            if not _text(getattr(artifacts, field_name, "")):
+  missing.append(label)
+    return list(dict.fromkeys(missing))
+
+
 def missing_ready_fields(package: DeliveryPackage) -> list[str]:
+    if package.readiness_schema_version < 2:
+        return _legacy_missing_ready_fields(package)
     return [finding.message for finding in blocking_findings(package)]
 
 
