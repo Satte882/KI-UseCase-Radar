@@ -103,9 +103,8 @@ def _render_list(lines: list[str], index: int) -> tuple[str, int]:
             break
         indent_width = len(item.group("indent").replace("\t", "    "))
         indent_level = min(indent_width // 2, 4)
-        items.append(
-            f'<li class="methodology-indent-{indent_level}">{_inline(item.group("text"))}</li>'
-        )
+        item_text = _inline(item.group("text"))
+        items.append(f'<li class="methodology-indent-{indent_level}">{item_text}</li>')
         index += 1
     return f"<{tag}>" + "".join(items) + f"</{tag}>", index
 
@@ -114,7 +113,9 @@ def _render_list(lines: list[str], index: int) -> tuple[str, int]:
 def render_methodology_markdown(source: str) -> SafeString:
     """Render the trusted repository methodology with readable Markdown structure."""
 
-    lines = str(source or "").replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    lines = (
+        str(source or "").replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    )
     output: list[str] = []
     index = 0
 
@@ -135,7 +136,9 @@ def render_methodology_markdown(source: str) -> SafeString:
                 index += 1
             if index < len(lines):
                 index += 1
-            language_class = f' class="language-{html.escape(language)}"' if language else ""
+            language_class = (
+                f' class="language-{html.escape(language)}"' if language else ""
+            )
             code = html.escape("\n".join(code_lines))
             output.append(f"<pre><code{language_class}>{code}</code></pre>")
             continue
@@ -166,7 +169,8 @@ def render_methodology_markdown(source: str) -> SafeString:
             while index < len(lines) and lines[index].lstrip().startswith(">"):
                 quote_lines.append(lines[index].lstrip()[1:].strip())
                 index += 1
-            output.append(f"<blockquote>{_inline(' '.join(quote_lines))}</blockquote>")
+            quote = _inline(" ".join(quote_lines))
+            output.append(f"<blockquote>{quote}</blockquote>")
             continue
 
         if LIST_RE.match(line):
@@ -176,7 +180,11 @@ def render_methodology_markdown(source: str) -> SafeString:
 
         paragraph_lines = [stripped]
         index += 1
-        while index < len(lines) and lines[index].strip() and not _starts_block(lines, index):
+        while (
+            index < len(lines)
+            and lines[index].strip()
+            and not _starts_block(lines, index)
+        ):
             paragraph_lines.append(lines[index].strip())
             index += 1
         output.append(f"<p>{_inline(' '.join(paragraph_lines))}</p>")
