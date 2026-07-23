@@ -9,7 +9,6 @@ from django.urls import reverse
 
 from ki_radar.core.models import TimeStampedModel
 
-
 DELIVERY_SECTION_DEFINITIONS = (
     ("problem_and_target", "Problem und Ziel"),
     ("scope_and_users", "Scope, Nutzer und MVP"),
