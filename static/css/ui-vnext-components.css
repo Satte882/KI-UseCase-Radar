@@ -271,6 +271,30 @@
   color: var(--ice-strong);
 }
 
+.ui-vnext .table a.btn-primary,
+.ui-vnext .table a.btn-primary:hover,
+.ui-vnext .table a.btn-primary:focus {
+  color: var(--on-accent);
+}
+
+.ui-vnext .table a.btn-outline-secondary {
+  color: var(--muted-strong);
+}
+
+.ui-vnext .table a.btn-outline-secondary:hover,
+.ui-vnext .table a.btn-outline-secondary:focus {
+  color: var(--ink);
+}
+
+.ui-vnext .table a.btn-outline-danger {
+  color: var(--danger);
+}
+
+.ui-vnext .table a.btn-outline-danger:hover,
+.ui-vnext .table a.btn-outline-danger:focus {
+  color: var(--ink);
+}
+
 .ui-vnext .badge,
 .ui-vnext .badge-soft,
 .ui-vnext .portfolio-status-key {
