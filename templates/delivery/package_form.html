@@ -1,13 +1,15 @@
 {% extends "base.html" %}
 {% block title %}Delivery Package bearbeiten – KI-Radar{% endblock %}
 {% block content %}
-<div class="page-header">
-  <div>
+<div class="page-header delivery-edit-header">
+  <div class="delivery-edit-heading">
     <div class="eyebrow mb-2">{{ package.use_case.short_id }} · Version {{ package.version }}</div>
     <h1 class="page-title">Delivery Package bearbeiten</h1>
     <p class="page-subtitle">Übernommene Informationen prüfen und nur die Delivery-spezifischen Lücken konkretisieren.</p>
   </div>
-  <a class="btn btn-outline-secondary" href="{{ package.get_absolute_url }}">Abbrechen</a>
+  <div class="delivery-edit-actions">
+    <a class="btn btn-outline-secondary" href="{{ package.get_absolute_url }}">Abbrechen</a>
+  </div>
 </div>
 
 <div class="alert alert-secondary mb-4">
