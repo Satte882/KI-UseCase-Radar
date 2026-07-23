@@ -1,3 +1,6 @@
+from pathlib import Path
+
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -9,20 +12,51 @@ from ki_radar.use_cases.models import UseCase
 from ki_radar.use_cases.workflow import build_delivery_package_journey
 
 from .forms import DeliveryPackageForm
-from .models import DeliveryPackage
+from .models import DELIVERY_SECTION_DEFINITIONS, DeliveryPackage
 from .permissions import (
     can_create_package,
     can_edit_package,
+    can_review_section,
     can_transition_package,
     can_view_package,
 )
-from .readiness import missing_ready_fields, render_delivery_markdown
+from .readiness import evaluate_delivery_readiness, missing_ready_fields
 from .services import (
     APPROVED_STATUSES,
     create_delivery_package,
     hand_over_package,
     mark_package_ready,
+    render_delivery_markdown,
+    review_delivery_section,
 )
+
+METHODOLOGY_PATH = Path(settings.BASE_DIR) / "docs" / "DELIVERY_METHODOLOGY.md"
+METHODOLOGY_DOWNLOAD_NAME = "KI-Radar_Vorgehensmodell_CRISP-MLQ_ML-Test-Score_v2.0.md"
+
+
+def _package_queryset():
+    return DeliveryPackage.objects.select_related(
+        "use_case__business_unit",
+        "use_case__business_owner",
+        "use_case__technical_owner",
+        "use_case__classification",
+        "generated_from_decision__assessment",
+        "generated_from_decision__condition_owner",
+        "created_by",
+        "handed_over_by",
+        "architecture_artifacts",
+    ).prefetch_related(
+        "section_reviews__reviewed_by",
+        "section_reviews__business_confirmed_by",
+        "section_reviews__technical_confirmed_by",
+        "use_case__decision_assessments",
+        "use_case__approval_decisions",
+        "use_case__delivery_packages",
+        "use_case__architecture_origin__stage__value_stream",
+        "use_case__architecture_origin__stage__value_stream__focus",
+        "use_case__architecture_origin__process_analysis",
+        "use_case__architecture_origin__solution_option",
+    )
 
 
 @login_required
@@ -77,8 +111,11 @@ def package_create(request, use_case_id):
         UseCase.objects.select_related(
             "business_unit",
             "business_owner",
+            "technical_owner",
             "classification",
             "architecture_origin__stage__value_stream__focus",
+            "architecture_origin__process_analysis",
+            "architecture_origin__solution_option",
         ).prefetch_related(
             "approval_decisions__assessment",
             "delivery_packages",
@@ -99,28 +136,21 @@ def package_create(request, use_case_id):
 
 @login_required
 def package_detail(request, pk):
-    package = get_object_or_404(
-        DeliveryPackage.objects.select_related(
-            "use_case__business_unit",
-            "use_case__business_owner",
-            "use_case__classification",
-            "generated_from_decision__assessment",
-            "created_by",
-            "handed_over_by",
-            "architecture_artifacts",
-        ).prefetch_related(
-            "use_case__decision_assessments",
-            "use_case__approval_decisions",
-            "use_case__delivery_packages",
-            "use_case__architecture_origin__stage__value_stream",
-            "use_case__architecture_origin__stage__value_stream__focus",
-            "use_case__architecture_origin__process_analysis",
-            "use_case__architecture_origin__solution_option",
-        ),
-        pk=pk,
-    )
+    package = get_object_or_404(_package_queryset(), pk=pk)
     if not can_view_package(request.user, package):
         raise PermissionDenied
+
+    reviews = {review.section_key: review for review in package.section_reviews.all()}
+    section_rows = [
+        {
+            "key": section_key,
+            "label": section_label,
+            "review": reviews.get(section_key),
+            "can_review": can_review_section(request.user, package, section_key),
+        }
+        for section_key, section_label in DELIVERY_SECTION_DEFINITIONS
+    ]
+    findings = evaluate_delivery_readiness(package)
     return render(
         request,
         "delivery/package_detail.html",
@@ -130,25 +160,27 @@ def package_detail(request, pk):
             "can_edit": can_edit_package(request.user, package),
             "can_transition": can_transition_package(request.user),
             "missing_ready_fields": missing_ready_fields(package),
+            "readiness_findings": findings,
+            "section_rows": section_rows,
         },
     )
 
 
 @login_required
 def package_update(request, pk):
-    package = get_object_or_404(
-        DeliveryPackage.objects.select_related(
-            "use_case",
-            "architecture_artifacts",
-        ),
-        pk=pk,
-    )
+    package = get_object_or_404(_package_queryset(), pk=pk)
     if not can_edit_package(request.user, package):
         raise PermissionDenied
-    form = DeliveryPackageForm(request.POST or None, instance=package)
+    form = DeliveryPackageForm(request.POST or None, instance=package, actor=request.user)
     if request.method == "POST" and form.is_valid():
         form.save()
-        messages.success(request, "Delivery Package wurde aktualisiert.")
+        messages.success(
+            request,
+            (
+                "Delivery Package wurde aktualisiert; geänderte Sektionen benötigen "
+                "eine neue Bestätigung."
+            ),
+        )
         return redirect(package)
     return render(
         request,
@@ -159,11 +191,31 @@ def package_update(request, pk):
 
 @login_required
 @require_POST
+def package_section_review(request, pk, section_key):
+    package = get_object_or_404(_package_queryset(), pk=pk)
+    if section_key not in dict(DELIVERY_SECTION_DEFINITIONS):
+        raise PermissionDenied
+    if not can_review_section(request.user, package, section_key):
+        raise PermissionDenied
+    try:
+        review_delivery_section(
+            package=package,
+            section_key=section_key,
+            action=request.POST.get("action", ""),
+            actor=request.user,
+            note=request.POST.get("review_note", ""),
+        )
+    except ValidationError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, "Sektionsprüfung wurde gespeichert.")
+    return redirect(package)
+
+
+@login_required
+@require_POST
 def package_mark_ready(request, pk):
-    package = get_object_or_404(
-        DeliveryPackage.objects.select_related("architecture_artifacts"),
-        pk=pk,
-    )
+    package = get_object_or_404(_package_queryset(), pk=pk)
     if not can_transition_package(request.user):
         raise PermissionDenied
     try:
@@ -178,7 +230,7 @@ def package_mark_ready(request, pk):
 @login_required
 @require_POST
 def package_handover(request, pk):
-    package = get_object_or_404(DeliveryPackage, pk=pk)
+    package = get_object_or_404(_package_queryset(), pk=pk)
     if not can_transition_package(request.user):
         raise PermissionDenied
     try:
@@ -192,13 +244,7 @@ def package_handover(request, pk):
 
 @login_required
 def package_export_markdown(request, pk):
-    package = get_object_or_404(
-        DeliveryPackage.objects.select_related(
-            "use_case",
-            "architecture_artifacts",
-        ),
-        pk=pk,
-    )
+    package = get_object_or_404(_package_queryset(), pk=pk)
     if not can_view_package(request.user, package):
         raise PermissionDenied
     response = HttpResponse(
@@ -207,5 +253,25 @@ def package_export_markdown(request, pk):
     )
     response["Content-Disposition"] = (
         f'attachment; filename="{package.use_case.short_id}-delivery-v{package.version}.md"'
+    )
+    return response
+
+
+@login_required
+def methodology_reference(request):
+    methodology = METHODOLOGY_PATH.read_text(encoding="utf-8")
+    return render(
+        request,
+        "delivery/methodology_reference.html",
+        {"methodology": methodology},
+    )
+
+
+@login_required
+def methodology_download(request):
+    methodology = METHODOLOGY_PATH.read_text(encoding="utf-8")
+    response = HttpResponse(methodology, content_type="text/markdown; charset=utf-8")
+    response["Content-Disposition"] = (
+        f'attachment; filename="{METHODOLOGY_DOWNLOAD_NAME}"'
     )
     return response
