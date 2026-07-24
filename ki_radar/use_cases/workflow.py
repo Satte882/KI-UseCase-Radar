@@ -312,8 +312,13 @@ def _apply_delivery_action(journey: JourneyState, use_case, user) -> JourneyStat
                 key="delivery",
                 label="Delivery",
                 state="current",
-                url=package.get_absolute_url(),
+                url=(
+                    reverse("delivery:package_mark_ready", kwargs={"pk": package.pk})
+                    if transition_allowed
+                    else package.get_absolute_url()
+                ),
                 action_label="Als bereit markieren" if transition_allowed else "Readiness öffnen",
+                action_method="post" if transition_allowed else "get",
                 reason=(
                     (
                         "Alle Pflichtinhalte und Bestätigungen liegen vor. "

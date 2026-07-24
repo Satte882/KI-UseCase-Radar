@@ -360,6 +360,42 @@ def test_topbar_renders_delivery_package_creation_as_post_form(
 
 
 @pytest.mark.django_db
+def test_topbar_marks_ready_delivery_package_via_post(
+    client,
+    owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_use_case(owner, business_unit)
+    approve_use_case(use_case, coordinator)
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    complete_delivery_readiness(package)
+    ready_url = reverse("delivery:package_mark_ready", kwargs={"pk": package.pk})
+    request = RequestFactory().get(package.get_absolute_url())
+    request.user = coordinator
+    journey = build_use_case_journey(use_case, coordinator)
+
+    rendered = render_to_string(
+        "includes/context_topbar.html",
+        {"journey": journey, "request": request},
+        request=request,
+    )
+
+    assert f'<form method="post" action="{ready_url}">' in rendered
+    assert 'name="csrfmiddlewaretoken"' in rendered
+    assert "Als bereit markieren" in rendered
+    assert f'href="{ready_url}"' not in rendered
+
+    client.force_login(coordinator)
+    response = client.post(ready_url)
+    package.refresh_from_db()
+
+    assert response.status_code == 302
+    assert response.url == package.get_absolute_url()
+    assert package.status == DeliveryPackage.Status.READY
+
+
+@pytest.mark.django_db
 def test_delivery_overview_is_visible_and_creation_is_coordinator_only(
     client,
     owner,
