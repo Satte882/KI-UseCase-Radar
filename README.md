@@ -252,6 +252,8 @@ Ohne konfigurierten API-Key werden keine Use-Case-Daten an OpenRouter gesendet. 
 
 Details zu Datenarten, Änderungshistorie, Nachweislinks, lokalen und produktiven Volumes, Backups, Löschung und optionalen externen Übertragungen stehen in [Datenspeicherung und Datenfluss](docs/DATA_STORAGE.md).
 
+---
+
 ## Zentrale Architekturentscheidungen
 
 Architekturentscheidungen werden als Architecture Decision Records dokumentiert. Sie halten nicht nur das Ergebnis, sondern auch Kontext, Trade-offs und Konsequenzen einer Entscheidung fest.
