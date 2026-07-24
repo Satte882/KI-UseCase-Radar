@@ -289,9 +289,17 @@ Die Confidence wird aus vier nachvollziehbaren Kriterien abgeleitet:
 - Quellen widersprechen sich,
 - wesentliche Bestandteile fehlen.
 
-Ein vorhandener Quellenkonflikt führt immer zu **niedriger Confidence**, unabhängig von der Modellbewertung.
+### Kombinationsregel
 
-Zusätzlich zum Label werden die Gründe gespeichert.
+Jedes der vier Kriterien wird zunächst einzeln als **hoch**, **mittel** oder **niedrig** eingestuft. Die Gesamteinstufung wird konservativ abgeleitet:
+
+- **Hoch:** alle vier Einzelkriterien sind hoch.
+- **Mittel:** kein Einzelkriterium ist niedrig und mindestens ein Einzelkriterium ist mittel.
+- **Niedrig:** mindestens ein Einzelkriterium ist niedrig.
+
+Ein vorhandener Quellenkonflikt setzt das Kriterium Konsistenz auf **niedrig** und führt damit immer zu einer niedrigen Gesamteinstufung, unabhängig von der Modellbewertung.
+
+Zusätzlich zum Gesamtlabel werden die vier Einzelbewertungen und ihre Gründe gespeichert.
 
 ---
 
@@ -325,6 +333,10 @@ Während des KI-Piloten werden zusätzlich geprüft:
 - mindestens drei Vorschläge je Delivery Package,
 - bevorzugt Vorschläge, die unverändert übernommen wurden,
 - Prüfung durch eine zweite fachlich oder technisch geeignete Person.
+
+Die stichprobenprüfende Person darf nicht mit einer Person identisch sein, die die jeweilige Sektion ursprünglich fachlich oder technisch bestätigt hat. Ein Rollenkollaps, beispielsweise Business Owner und Technical Owner in einer Person, hebt diese Unabhängigkeitsanforderung nicht auf.
+
+Bei kleinen Teams wird eine unbeteiligte fachlich oder technisch geeignete Person aus einem anderen Use Case, Team oder einer unabhängigen Koordinationsrolle eingesetzt. Steht keine solche Person zur Verfügung, wird die Stichprobe als **nicht unabhängig geprüft** gekennzeichnet, zählt nicht zum verbindlichen Mindestumfang und muss nachgeholt werden. Eine Selbstprüfung oder reine Rollenumschaltung gilt nicht als unabhängige Stichprobenkontrolle.
 
 Erfasst werden:
 
@@ -423,15 +435,15 @@ Der Lieferantenauswahl-Use-Case wird auf dem eingefrorenen Baseline-Stand erneut
 - gleiche Ausgangsdaten,
 - gleiche Zielqualität.
 
-#### Szenario B: unbekannter Use Case
+#### Szenario B: unbekannte Use Cases
 
-Ein zweiter Use Case wird ohne vorher ausgearbeitete Texte durchgeführt:
+Mindestens drei zuvor nicht ausgearbeitete Use Cases mit unterschiedlicher fachlicher und technischer Komplexität werden durchgeführt:
 
-- manuell oder mit minimaler Unterstützung,
-- anschließend KI-unterstützt,
-- fachliche Qualitätsprüfung durch eine zweite Person.
+- jeweils manuell oder mit minimaler Unterstützung,
+- anschließend jeweils KI-unterstützt,
+- fachliche Qualitätsprüfung jeweils durch eine zweite Person.
 
-Damit wird verhindert, dass der bekannte Lieferantenfall allein die Ergebnisse bestimmt.
+Damit wird verhindert, dass der bekannte Lieferantenfall oder ein einzelner unbekannter Testfall allein die Ergebnisse bestimmt.
 
 ### Zielhypothese
 
