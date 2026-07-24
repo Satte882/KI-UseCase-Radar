@@ -2,6 +2,8 @@ from decimal import Decimal
 
 import pytest
 from django.core.exceptions import ValidationError
+from django.template.loader import render_to_string
+from django.test import RequestFactory
 from django.urls import reverse
 from django.utils import timezone
 
@@ -22,6 +24,7 @@ from ki_radar.delivery.services import (
     review_delivery_section,
 )
 from ki_radar.use_cases.models import ApprovalDecision, DecisionAssessment, UseCase
+from ki_radar.use_cases.workflow import build_use_case_journey
 
 
 def make_use_case(owner, business_unit, **overrides):
@@ -321,6 +324,7 @@ def test_delivery_views_require_post_for_creation_and_export_markdown(
     created = client.post(create_url)
     package = DeliveryPackage.objects.get(use_case=use_case)
     assert created.status_code == 302
+    assert created.url == package.get_absolute_url()
 
     export = client.get(reverse("delivery:package_export_markdown", kwargs={"pk": package.pk}))
     assert export.status_code == 200
@@ -328,6 +332,31 @@ def test_delivery_views_require_post_for_creation_and_export_markdown(
     assert "# Delivery Package" in export.content.decode()
     assert "## Akzeptanzkriterien" in export.content.decode()
     assert render_delivery_markdown(package) == export.content.decode()
+
+
+@pytest.mark.django_db
+def test_topbar_renders_delivery_package_creation_as_post_form(
+    owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_use_case(owner, business_unit)
+    approve_use_case(use_case, coordinator)
+    create_url = reverse("delivery:package_create", kwargs={"use_case_id": use_case.pk})
+    request = RequestFactory().get(use_case.get_absolute_url())
+    request.user = coordinator
+    journey = build_use_case_journey(use_case, coordinator)
+
+    rendered = render_to_string(
+        "includes/context_topbar.html",
+        {"journey": journey, "request": request},
+        request=request,
+    )
+
+    assert f'<form method="post" action="{create_url}">' in rendered
+    assert 'name="csrfmiddlewaretoken"' in rendered
+    assert "Delivery Package erzeugen" in rendered
+    assert f'href="{create_url}"' not in rendered
 
 
 @pytest.mark.django_db

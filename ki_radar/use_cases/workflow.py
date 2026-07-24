@@ -201,6 +201,7 @@ def build_value_stream_journey(value_stream: ValueStream, user) -> JourneyState:
                     key=step.key,
                     label=step.label,
                     state="upcoming",
+                    action_method=step.action_method,
                     reason="Der Deep Dive beginnt erst nach der Auswahl des Value Streams.",
                 )
             )
@@ -229,6 +230,7 @@ def build_process_analysis_journey(process_analysis: ProcessAnalysis, user) -> J
                         key=step.key,
                         label=step.label,
                         state="upcoming",
+                        action_method=step.action_method,
                         reason="Der Deep Dive ist bis zur Fokusentscheidung zurückgestellt.",
                     )
                 )
@@ -257,6 +259,7 @@ def _normalize_concrete_links(journey: JourneyState, use_case) -> JourneyState:
                 state=step.state,
                 url=url,
                 action_label=action_label,
+                action_method=step.action_method,
                 reason=step.reason,
                 details=step.details,
             )

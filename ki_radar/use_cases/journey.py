@@ -26,6 +26,7 @@ class JourneyStep:
     state: str
     url: str | None = None
     action_label: str = ""
+    action_method: str = "get"
     reason: str = ""
     details: tuple[str, ...] = field(default_factory=tuple)
 
@@ -279,6 +280,7 @@ def _use_case_steps(use_case: UseCase, user) -> tuple[list[JourneyStep], str]:
                     else None
                 ),
                 action_label="Delivery Package erzeugen" if can_manage_delivery else "",
+                action_method="post",
                 reason=_permission_reason(
                     can_manage_delivery,
                     "Die finale Freigabe liegt vor; das Delivery Package fehlt.",
