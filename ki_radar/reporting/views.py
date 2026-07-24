@@ -152,7 +152,7 @@ def _build_outcome_stage_action(
                 return _stage_action(
                     phase,
                     "Das vollständige Package ist bereit für die verbindliche Übergabe.",
-                    action_label="Übergabe durchführen",
+                    action_label="An Delivery übergeben",
                     url=package.get_absolute_url(),
                     state="available",
                 )

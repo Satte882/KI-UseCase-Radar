@@ -88,7 +88,7 @@ def test_handover_has_its_own_workspace_context(client, coordinator, owner, busi
     action = response.context["active_stage_action"]
     content = response.content.decode()
     assert response.context["active_stage"] == "handover"
-    assert action["action_label"] == "Übergabe durchführen"
+    assert action["action_label"] == "An Delivery übergeben"
     assert action["url"] == package.get_absolute_url()
     assert "Aktiver Bereich" in content
     assert "Übergabe" in content

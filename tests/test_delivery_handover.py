@@ -420,7 +420,7 @@ def test_topbar_hands_over_ready_delivery_package_via_post(
 
     assert f'<form method="post" action="{handover_url}">' in rendered
     assert 'name="csrfmiddlewaretoken"' in rendered
-    assert "Übergabe durchführen" in rendered
+    assert "An Delivery übergeben" in rendered
     assert f'href="{handover_url}"' not in rendered
 
     client.force_login(coordinator)
