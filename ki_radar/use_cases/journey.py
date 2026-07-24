@@ -305,9 +305,17 @@ def _use_case_steps(use_case: UseCase, user) -> tuple[list[JourneyStep], str]:
                 key="delivery",
                 label="Delivery",
                 state="current",
-                url=package.get_absolute_url(),
-                action_label="Übergabe durchführen",
-                reason="Das Delivery Package ist vollständig und bereit zur verbindlichen Übergabe.",
+                url=(
+                    reverse("delivery:package_handover", kwargs={"pk": package.pk})
+                    if can_decide
+                    else package.get_absolute_url()
+                ),
+                action_label="Übergabe durchführen" if can_decide else "Delivery Package öffnen",
+                action_method="post" if can_decide else "get",
+                reason=_permission_reason(
+                    can_decide,
+                    "Das Delivery Package ist vollständig und bereit zur verbindlichen Übergabe.",
+                ),
             )
         )
     else:
