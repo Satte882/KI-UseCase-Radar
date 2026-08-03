@@ -10,6 +10,7 @@ from ki_radar.architecture.models import (
     ValueStream,
     ValueStreamStage,
 )
+from ki_radar.architecture.provenance import build_process_prefill, process_provenance_rows
 from ki_radar.core.taxonomy import BusinessDomain, ScreeningLevel
 from ki_radar.use_cases.intake_views import SESSION_KEY, _persist_optional_origin
 from ki_radar.use_cases.models import UseCase
@@ -124,6 +125,9 @@ def test_stage_can_prefill_existing_intake_without_bypassing_it(
     assert stored["affected_process"] == value_stream_stage.name
     assert stored["problem_statement"] == value_stream_stage.pain_points
     assert stored["source_stage_id"] == str(value_stream_stage.pk)
+    assert stored["title"] == value_stream_stage.name
+    assert stored["_source_manifest"]["copy_mode"] == "copy_on_create"
+    assert stored["_source_manifest"]["fields"]["affected_process"]["source_field"] == "name"
 
 
 @pytest.mark.django_db
@@ -144,11 +148,19 @@ def test_optional_origin_is_persisted_only_for_valid_stage(
 
     _persist_optional_origin(
         candidate=use_case,
-        stored={"source_stage_id": str(value_stream_stage.pk)},
+        stored={
+            "source_stage_id": str(value_stream_stage.pk),
+            "_source_manifest": {
+                "schema_version": 1,
+                "copy_mode": "copy_on_create",
+                "fields": {},
+            },
+        },
     )
 
     origin = UseCaseOrigin.objects.get(use_case=use_case)
     assert origin.stage == value_stream_stage
+    assert origin.source_manifest["copy_mode"] == "copy_on_create"
 
     direct_use_case = UseCase.objects.create(
         title="Direkt erfasster Use Case",
@@ -254,3 +266,34 @@ def test_use_case_detail_shows_complete_architecture_origin_chain(
     assert process_analysis.name in content
     assert solution_option.name in content
     assert use_case.title in content
+
+
+@pytest.mark.django_db
+def test_process_prefill_has_field_sources_and_detects_later_source_change(
+    owner, value_stream_stage
+):
+    initial, manifest = build_process_prefill(value_stream_stage)
+    process = ProcessAnalysis.objects.create(
+        stage=value_stream_stage,
+        status=ProcessAnalysis.Status.DRAFT,
+        scope_start="Start",
+        scope_end="Ende",
+        current_flow="Ist-Ablauf",
+        business_rules="",
+        handoffs="",
+        exceptions="",
+        target_state_principles="",
+        analyzed_by=owner,
+        source_manifest=manifest,
+        **initial,
+    )
+
+    assert process.name == value_stream_stage.name
+    assert manifest["fields"]["roles"]["artifact_label"] == "Value-Stream-Phase"
+    value_stream_stage.actors = "Einkauf, Fachbereich und Compliance"
+    value_stream_stage.save(update_fields=["actors", "updated_at"])
+
+    rows = {row["field"]: row for row in process_provenance_rows(process)}
+    assert rows["roles"]["source_changed"] is True
+    assert rows["roles"]["working_value"] == "Einkauf und Fachbereich"
+    assert rows["roles"]["current_source_value"] == "Einkauf, Fachbereich und Compliance"

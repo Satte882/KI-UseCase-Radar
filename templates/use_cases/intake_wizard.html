@@ -64,6 +64,7 @@
       {% if blockers %}
       <div class="alert alert-danger"><strong>{{ blockers|length }} Pflichtangaben fehlen. Der Use Case ist noch nicht bewertungsbereit.</strong><ul class="mb-0 mt-2">{% for blocker in blockers %}<li><span aria-hidden="true">⚠</span> {{ blocker }}</li>{% endfor %}</ul></div>
       {% endif %}
+      {% include "includes/source_context.html" with source_context_title="Übernommener Discovery-Kontext" source_context_open=True %}
       <div class="row g-4">
         <div class="col-md-6"><div class="section-title">Problem</div><p>{{ candidate.problem_statement }}</p></div>
         <div class="col-md-6"><div class="section-title">Prozess</div><p>{{ candidate.affected_process }}</p><p class="small text-muted">{{ candidate.summary }}</p></div>

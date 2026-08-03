@@ -18,6 +18,8 @@
   </div></div>
 </div>
 
+{% include "includes/source_context.html" with source_context_title="Übernommener Quellenstand" source_context_diffs=process_analysis source_context_open=True %}
+
 <form method="post" class="app-card">
   {% csrf_token %}
   <div class="card-header"><strong>Prozessanalyse · ADM Phase B</strong><div class="small text-muted mt-1">Der Fokus liegt auf dem fachlichen Ablauf und den Ursachen, nicht auf einer vorgezogenen Technologiewahl.</div></div>

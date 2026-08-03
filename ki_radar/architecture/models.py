@@ -115,6 +115,7 @@ class ProcessAnalysis(TimeStampedModel):
     name = models.CharField(max_length=200)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
     version = models.PositiveIntegerField(default=1, editable=False)
+    source_manifest = models.JSONField(default=dict, blank=True, editable=False)
     scope_start = models.TextField(verbose_name="Prozessstart")
     scope_end = models.TextField(verbose_name="Prozessende")
     trigger = models.TextField(verbose_name="Auslöser")
@@ -292,6 +293,7 @@ class UseCaseOrigin(TimeStampedModel):
         on_delete=models.PROTECT,
         related_name="use_case_origins",
     )
+    source_manifest = models.JSONField(default=dict, blank=True)
 
     class Meta:
         ordering = ["-created_at"]

@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
-
-from django.core.exceptions import ObjectDoesNotExist
 
 from .architecture_artifacts import get_delivery_architecture_artifacts
 from .models import DELIVERY_SECTION_DEFINITIONS, DeliveryPackage, DeliverySectionReview
+from .provenance import delivery_provenance_rows
 
 
 @dataclass(frozen=True)
@@ -98,57 +96,29 @@ def _is_generic_placeholder(value: str) -> bool:
     return any(fragment in normalized for fragment in GENERIC_PLACEHOLDER_FRAGMENTS)
 
 
-def _parse_manifest_time(value: str | None) -> datetime | None:
-    if not value:
-        return None
-    try:
-        return datetime.fromisoformat(value)
-    except ValueError:
-        return None
-
-
 def _source_staleness_findings(
     package: DeliveryPackage,
     reviews_by_key,
 ) -> list[ReadinessFinding]:
-    review = reviews_by_key.get("problem_and_target")
-    if review is None or not review.source_manifest:
-        return []
-
-    manifest = review.source_manifest
     findings: list[ReadinessFinding] = []
-    source_objects = [("use_case", package.use_case)]
-    try:
-        origin = package.use_case.architecture_origin
-    except ObjectDoesNotExist:
-        origin = None
-    if origin is not None:
-        source_objects.extend(
-            [
-                ("value_stream", origin.stage.value_stream),
-                ("process_analysis", origin.process_analysis),
-                ("solution_option", origin.solution_option),
-            ]
-        )
-    source_objects.extend(
-        [
-            ("assessment", package.generated_from_decision.assessment),
-            ("approval", package.generated_from_decision),
-        ]
-    )
-
-    for key, source in source_objects:
-        if source is None or not hasattr(source, "updated_at"):
+    seen_fields: set[str] = set()
+    for section_key, review in reviews_by_key.items():
+        if review is None or not review.source_manifest:
             continue
-        recorded = _parse_manifest_time((manifest.get(key) or {}).get("updated_at"))
-        current = source.updated_at
-        if recorded and current and current > recorded:
+        for row in delivery_provenance_rows(package, review.source_manifest):
+            if row["field"] in seen_fields or not row["source_changed"]:
+                continue
+            seen_fields.add(row["field"])
             findings.append(
                 ReadinessFinding(
-                    "delivery_control",
-                    "SOURCE_CHANGED_AFTER_SNAPSHOT",
+                    section_key,
+                    "SOURCE_FIELD_CHANGED_AFTER_SNAPSHOT",
                     "warning",
-                    f"Die Quelle „{key}“ wurde nach Erzeugung dieser Package-Version geändert.",
+                    (
+                        f"Die Quelle für „{row['field_label']}“ wurde nach Erzeugung "
+                        "dieser Package-Version geändert. Arbeitswert und Quellenstand "
+                        "müssen bewusst geprüft werden."
+                    ),
                 )
             )
     return findings

@@ -20,6 +20,7 @@ from .permissions import (
     confirmation_role_label,
     reviewer_roles,
 )
+from .provenance import build_delivery_provenance, section_source_manifest
 from .readiness import blocking_findings, missing_ready_fields
 
 APPROVED_STATUSES = {
@@ -94,26 +95,9 @@ def _source_entry(source, *, version=None) -> dict[str, str | int | None]:
 
 
 def build_source_manifest(use_case: UseCase, decision: ApprovalDecision) -> dict:
-    try:
-        origin = use_case.architecture_origin
-    except ObjectDoesNotExist:
-        origin = None
+    """Build the field-level source snapshot used by all Delivery sections."""
 
-    manifest = {
-        "use_case": _source_entry(use_case),
-        "assessment": _source_entry(decision.assessment, version=decision.assessment.version),
-        "approval": _source_entry(decision),
-    }
-    if origin is not None:
-        manifest.update(
-            {
-                "value_stream": _source_entry(origin.stage.value_stream),
-                "value_stream_stage": _source_entry(origin.stage),
-                "process_analysis": _source_entry(origin.process_analysis),
-                "solution_option": _source_entry(origin.solution_option),
-            }
-        )
-    return manifest
+    return build_delivery_provenance(use_case)
 
 
 def _origin_context(use_case: UseCase):
@@ -211,7 +195,8 @@ def build_initial_delivery_data(
     use_case: UseCase,
     decision: ApprovalDecision,
 ) -> dict[str, str]:
-    _origin, process, option = _origin_context(use_case)
+    origin, process, option = _origin_context(use_case)
+    value_stream = origin.stage.value_stream if origin else None
     metric = (
         f"{use_case.metric_name}: Baseline {use_case.metric_baseline} "
         f"→ Ziel {use_case.metric_target} {use_case.metric_unit}.\n"
@@ -228,31 +213,6 @@ def build_initial_delivery_data(
     if use_case.legal_review_required:
         checks.append("Rechtsprüfung erforderlich")
 
-    process_context = []
-    if process is not None:
-        process_context.extend(
-            [
-                f"Prozess: {process.name}",
-                f"Bottleneck/Ursache: {process.bottlenecks}",
-                f"Prozess-Baseline: {process.baseline_metrics}",
-            ]
-        )
-
-    target_lines = [use_case.expected_benefit]
-    if option and option.expected_value:
-        target_lines.append(f"Beitrag der bevorzugten Lösung: {option.expected_value}")
-
-    test_lines = ["Happy Path, Datenfehler, fachliche Ausnahme und manuellen Eingriff testen."]
-    if process and process.exceptions:
-        test_lines.append(f"Bekannte Prozessausnahmen: {process.exceptions}")
-
-    risks = []
-    if option and option.risks:
-        risks.append(option.risks)
-    risks.append(
-        f"Bewertung: Risiko/Komplexität {decision.assessment.get_risk_complexity_display()}."
-    )
-
     condition_lines = [
         f"Freigabe: {decision.get_decision_status_display()}",
         f"Begründung: {decision.rationale}",
@@ -268,23 +228,41 @@ def build_initial_delivery_data(
     else:
         condition_lines.append("Keine Auflagen.")
 
-    data = {
-        "problem_context": "\n".join(
-            [
-                f"Problem: {use_case.problem_statement}",
-                f"Betroffener Prozess: {use_case.affected_process}",
-                f"Organisationseinheit: {use_case.business_unit}",
-                *process_context,
-            ]
+    users = process.roles if process else (use_case.intended_users or use_case.target_users)
+    system_context = process.systems if process else use_case.source_systems
+    if option and option.data_requirements:
+        data_context = option.data_requirements
+    elif process:
+        data_context = process.data_objects
+    else:
+        data_context = use_case.data_sources
+    solution_outline = (
+        option.description if option else (use_case.intended_purpose or use_case.summary)
+    )
+    integrations = (
+        option.integration_impact
+        if option and option.integration_impact
+        else use_case.interface_description
+    )
+
+    return {
+        "problem_context": use_case.problem_statement,
+        "target_outcome": use_case.expected_benefit,
+        "in_scope": (
+            value_stream.scope_in
+            if value_stream
+            else (use_case.summary or use_case.affected_process)
         ),
-        "target_outcome": "\n".join(target_lines),
-        "in_scope": use_case.summary or use_case.affected_process,
-        "out_of_scope": "Nicht im MVP enthaltene Funktionen explizit ergänzen.",
-        "users_and_scenarios": use_case.intended_users or use_case.target_users,
-        "solution_outline": use_case.intended_purpose or use_case.summary,
-        "system_context": use_case.source_systems,
-        "data_context": use_case.data_sources,
-        "integrations": use_case.interface_description,
+        "out_of_scope": (
+            value_stream.scope_out
+            if value_stream and value_stream.scope_out
+            else "Nicht im MVP enthaltene Funktionen explizit ergänzen."
+        ),
+        "users_and_scenarios": users,
+        "solution_outline": solution_outline,
+        "system_context": system_context,
+        "data_context": data_context,
+        "integrations": integrations,
         "functional_requirements": (
             "1. Kernablauf aus dem freigegebenen Use Case umsetzen.\n"
             "2. Fachliche Entscheidung und Ergebnis nachvollziehbar darstellen."
@@ -308,12 +286,35 @@ def build_initial_delivery_data(
             "2. Freigabeauflagen und Governance-Anforderungen sind umgesetzt.\n"
             f"3. {metric}"
         ),
-        "test_scenarios": "\n".join(test_lines),
+        "test_scenarios": (
+            "Happy Path, Datenfehler, fachliche Ausnahme und manuellen Eingriff testen."
+            + (
+                f"\nBekannte Prozessausnahmen: {process.exceptions}"
+                if process and process.exceptions
+                else ""
+            )
+        ),
         "measurement_plan": metric,
         "dependencies": "",
-        "risks": "\n".join(risks),
+        "risks": (
+            option.risks
+            if option and option.risks
+            else (
+                "Bewertung: Risiko/Komplexität "
+                f"{decision.assessment.get_risk_complexity_display()}."
+            )
+        ),
         "assumptions": "",
-        "architecture_decisions": "",
+        "architecture_decisions": (
+            "\n".join(
+                value
+                for value in [
+                    option.architecture_fit if option else "",
+                    option.technology_constraints if option else "",
+                ]
+                if value
+            )
+        ),
         "initial_backlog": (
             "Epic 1: Kernprozess und Nutzerfluss\n"
             "Epic 2: Daten und Integrationen\n"
@@ -322,10 +323,6 @@ def build_initial_delivery_data(
         "external_delivery_url": "",
         "handover_notes": "\n".join(condition_lines),
     }
-    for key, value in _architecture_context(use_case).items():
-        if value:
-            data[key] = value
-    return data
 
 
 def _create_section_reviews(package: DeliveryPackage, manifest: dict) -> None:
@@ -336,7 +333,7 @@ def _create_section_reviews(package: DeliveryPackage, manifest: dict) -> None:
                 section_key=section_key,
                 content_origin=SECTION_ORIGINS[section_key],
                 review_status=DeliverySectionReview.ReviewStatus.NEEDS_REVIEW,
-                source_manifest=manifest,
+                source_manifest=section_source_manifest(manifest, section_key),
             )
             for section_key, _ in DELIVERY_SECTION_DEFINITIONS
         ]

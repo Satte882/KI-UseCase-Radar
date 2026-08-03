@@ -19,6 +19,8 @@
 
 {% if not process_analysis.stage.value_stream.focus.is_selected %}<div class="alert alert-warning"><strong>Deep Dive nicht freigegeben:</strong> Der übergeordnete Value Stream muss zuerst vollständig bewertet und für die Vertiefung ausgewählt werden.</div>{% endif %}
 
+{% include "includes/source_context.html" with source_context_title="Quellenherkunft der Prozessanalyse" source_context_diffs=True %}
+
 <div class="app-card mb-4" id="process-validation">
   <div class="card-header d-flex flex-wrap justify-content-between align-items-start gap-3">
     <div><strong>Validierung des Ist-Prozesses</strong><div class="small text-muted mt-1">Eigenständiger Nachweis für die konkret geprüfte Prozessversion.</div></div>

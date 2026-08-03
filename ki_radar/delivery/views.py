@@ -24,6 +24,7 @@ from .permissions import (
     can_view_package,
     reviewer_roles,
 )
+from .provenance import delivery_provenance_rows
 from .readiness import missing_ready_fields
 from .services import (
     APPROVED_STATUSES,
@@ -180,6 +181,9 @@ def package_detail(request, pk):
                 ),
                 "responsible_role": responsible_role,
                 "responsible_person": responsible_person,
+                "source_context": (
+                    delivery_provenance_rows(package, review.source_manifest) if review else []
+                ),
             }
         )
 

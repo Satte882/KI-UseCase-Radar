@@ -1,0 +1,23 @@
+{% if source_context %}
+<details class="app-card mb-4" {% if source_context_open %}open{% endif %}>
+  <summary class="card-header"><strong>{{ source_context_title|default:"Quellkontext" }}</strong><div class="small text-muted mt-1">Arbeitswerte sind eigenständige Kopien. Der gespeicherte Quellenstand bleibt nachvollziehbar; spätere Änderungen werden als Abweichung markiert.</div></summary>
+  <div class="card-body table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead><tr><th>Feld</th><th>Quelle</th><th>Übernommener Stand</th>{% if source_context_diffs %}<th>Aktuelle Quelle</th><th>Arbeitswert</th>{% endif %}</tr></thead>
+      <tbody>
+      {% for row in source_context %}
+        <tr{% if row.source_changed %} class="table-warning"{% endif %}>
+          <th scope="row">{{ row.field_label }}</th>
+          <td>{{ row.artifact_label }}</td>
+          <td class="text-preline">{{ row.snapshot_value|default:"–" }}</td>
+          {% if source_context_diffs %}
+          <td class="text-preline">{{ row.current_source_value|default:"–" }}{% if row.source_changed %}<div class="small text-warning-emphasis mt-1">Quelle wurde nach der Übernahme geändert.</div>{% endif %}</td>
+          <td class="text-preline">{{ row.working_value|default:"–" }}{% if row.working_changed %}<div class="small text-muted mt-1">Arbeitswert wurde bewusst bearbeitet.</div>{% endif %}</td>
+          {% endif %}
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</details>
+{% endif %}

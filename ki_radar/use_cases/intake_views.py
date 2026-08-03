@@ -6,6 +6,7 @@ from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect, render
 
 from ki_radar.accounts.models import BusinessUnit
+from ki_radar.architecture.provenance import stored_provenance_rows
 from ki_radar.core.taxonomy import BusinessDomain
 
 from .intake import WIZARD_STEPS
@@ -145,6 +146,7 @@ def _persist_optional_origin(*, candidate: UseCase, stored: dict) -> None:
         stage=stage,
         process_analysis=process_analysis,
         solution_option=solution_option,
+        source_manifest=stored.get("_source_manifest", {}),
     )
 
 
@@ -198,6 +200,7 @@ def use_case_intake(request, step: int = 1):
                 "stored": stored,
                 "candidate": candidate,
                 "blockers": blockers,
+                "source_context": stored_provenance_rows(stored),
             },
         )
 
