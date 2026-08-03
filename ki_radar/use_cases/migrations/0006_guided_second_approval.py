@@ -2,6 +2,7 @@ import django.db.models.deletion
 from django.conf import settings
 from django.db import migrations, models
 
+# Temporary validation trigger; removed in the next commit.
 
 class Migration(migrations.Migration):
     dependencies = [
