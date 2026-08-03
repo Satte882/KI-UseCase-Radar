@@ -215,13 +215,14 @@ def test_golden_path_uses_one_use_case_from_value_stream_to_pilot(settings):
 
     before = build_use_case_journey(use_case, coordinator)
     steps = {step.key: step for step in before.steps}
-    assert [step.key for step in before.steps[:8]] == [
+    assert [step.key for step in before.steps[:9]] == [
         "value_stream",
         "focus",
         "process",
         "solution",
         "use_case",
         "assessment",
+        "governance",
         "approval",
         "delivery",
     ]
@@ -234,6 +235,7 @@ def test_golden_path_uses_one_use_case_from_value_stream_to_pilot(settings):
             "solution",
             "use_case",
             "assessment",
+            "governance",
             "approval",
         ]
     )
