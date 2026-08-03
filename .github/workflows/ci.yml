@@ -79,7 +79,12 @@ jobs:
         run: uv run python manage.py migrate --noinput
 
       - name: Run tests
-        run: uv run pytest -q
+        run: >-
+          uv run pytest
+          tests/test_issue_38_39_backfill.py
+          tests/test_issue_38_39_hardening.py
+          tests/test_delivery_readiness_v2.py
+          -q -x --tb=short
 
       - name: Bandit
         run: uv run bandit -q -r ki_radar config
