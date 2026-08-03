@@ -665,12 +665,7 @@ def resolve_technical_owner_source_change(
     refresh_technical_owner_source_snapshot(package, adoption=adoption)
     reset_section_reviews(
         package,
-        {
-            "solution_direction",
-            "architecture_and_data",
-            "requirements_and_governance",
-            "delivery_control",
-        },
+        {"solution_direction", "architecture_and_data", "requirements_and_governance", "delivery_control"},
     )
     return decision
 
