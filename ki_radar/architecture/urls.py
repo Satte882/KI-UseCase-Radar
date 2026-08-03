@@ -64,6 +64,11 @@ urlpatterns = [
         name="process_analysis_validate",
     ),
     path(
+        "processes/<uuid:pk>/options/compare/",
+        views.solution_option_compare,
+        name="solution_option_compare",
+    ),
+    path(
         "processes/<uuid:process_analysis_id>/options/new/",
         views.solution_option_create,
         name="solution_option_create",
