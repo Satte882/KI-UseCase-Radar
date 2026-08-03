@@ -151,6 +151,7 @@ def _source_staleness_findings(
         )
     return findings
 
+
 def evaluate_delivery_readiness(package: DeliveryPackage) -> list[ReadinessFinding]:
     if package.readiness_schema_version < 2:
         return []

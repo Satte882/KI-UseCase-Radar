@@ -255,6 +255,7 @@ def test_use_case_detail_shows_complete_architecture_origin_chain(
     assert solution_option.name in content
     assert use_case.title in content
 
+
 @pytest.mark.django_db
 def test_process_analysis_stores_field_level_source_snapshot(client, owner, value_stream_stage):
     client.force_login(owner)

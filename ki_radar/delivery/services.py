@@ -400,6 +400,7 @@ def build_initial_delivery_data(
         "handover_notes": "\n".join(condition_lines),
     }
 
+
 def _create_section_reviews(package: DeliveryPackage, manifest: dict) -> None:
     DeliverySectionReview.objects.bulk_create(
         [

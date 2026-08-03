@@ -457,6 +457,7 @@ def test_delivery_page_labels_admin_override_by_confirmation_role(
     assert "Admin-Sonderbestätigung ohne Vier-Augen-Prinzip" in body
     assert "Administrativer Ende-zu-Ende-Test" in body
 
+
 @pytest.mark.django_db
 def test_delivery_uses_canonical_working_values_and_reports_field_level_source_change(
     owner,
@@ -481,9 +482,7 @@ def test_delivery_uses_canonical_working_values_and_reports_field_level_source_c
     findings = evaluate_delivery_readiness(package)
 
     messages = [
-        finding.message
-        for finding in findings
-        if finding.code == "SOURCE_CHANGED_AFTER_SNAPSHOT"
+        finding.message for finding in findings if finding.code == "SOURCE_CHANGED_AFTER_SNAPSHOT"
     ]
     assert any("Ziel und erwartetes Ergebnis" in message for message in messages)
     assert any("Durchlaufzeit und Rückfragen reduzieren" in message for message in messages)

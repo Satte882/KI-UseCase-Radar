@@ -204,19 +204,13 @@ def build_use_case_source_snapshot(*, stage, process_analysis=None, solution_opt
                         else "process_analysis"
                     ),
                     label=(
-                        "Lösungsoption"
-                        if solution_option.data_requirements
-                        else "Prozessanalyse"
+                        "Lösungsoption" if solution_option.data_requirements else "Prozessanalyse"
                     ),
                     obj=(
-                        solution_option
-                        if solution_option.data_requirements
-                        else process_analysis
+                        solution_option if solution_option.data_requirements else process_analysis
                     ),
                     field=(
-                        "data_requirements"
-                        if solution_option.data_requirements
-                        else "data_objects"
+                        "data_requirements" if solution_option.data_requirements else "data_objects"
                     ),
                     value=solution_option.data_requirements or process_analysis.data_objects,
                 ),
