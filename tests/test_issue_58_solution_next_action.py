@@ -133,8 +133,10 @@ def test_candidate_option_keeps_solution_choice_current(coordinator):
     steps = {step.key: step for step in journey.steps}
 
     assert journey.next_action == steps["solution"]
-    assert journey.next_action.action_label == "Lösungsoptionen prüfen"
-    assert journey.next_action.url == f"{process.get_absolute_url()}#loesungsoptionen"
+    assert journey.next_action.action_label == "Lösungsoptionen vergleichen"
+    assert journey.next_action.url == reverse(
+        "architecture:solution_option_compare", kwargs={"pk": process.pk}
+    )
     assert "1 Lösungsoption liegt vor" in journey.next_action.reason
     assert steps["use_case"].state == "upcoming"
 
@@ -171,7 +173,7 @@ def test_first_option_action_is_visible_on_process_page(client, coordinator):
 
 
 @pytest.mark.django_db
-def test_candidate_options_are_guided_without_claiming_comparison_page(client, coordinator):
+def test_candidate_options_are_guided_to_comparison_page(client, coordinator):
     process = _complete_process(coordinator)
     _candidate_option(process, coordinator)
     client.force_login(coordinator)
@@ -180,8 +182,8 @@ def test_candidate_options_are_guided_without_claiming_comparison_page(client, c
     content = response.content.decode()
 
     assert response.status_code == 200
-    assert "Lösungsoptionen prüfen" in content
+    assert "Lösungsoptionen vergleichen" in content
     assert "Lösungsentscheidung offen" in content
     assert "Weitere Option ergänzen" in content
     assert "Erste Option ergänzen" not in content
-    assert "Lösungsoptionen vergleichen" not in content
+    assert "Lösungsoptionen vergleichen" in content
