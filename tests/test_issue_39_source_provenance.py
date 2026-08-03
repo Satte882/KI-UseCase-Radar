@@ -50,3 +50,18 @@ def test_source_differences_keeps_unchanged_sources_out_of_review():
     }
 
     assert source_differences(snapshot, stage=stage) == []
+
+
+def test_source_differences_ignores_unavailable_optional_source_artifacts():
+    value_stream = SimpleNamespace(pk="vs-1")
+    stage = SimpleNamespace(pk="stage-1", value_stream=value_stream)
+    snapshot = {
+        "expected_benefit": {
+            "kind": "solution_option",
+            "label": "Lösungsoption",
+            "field": "expected_value",
+            "value": "Zeitersparnis",
+        }
+    }
+
+    assert source_differences(snapshot, stage=stage, solution_option=None) == []
