@@ -10,6 +10,8 @@ from django.utils import timezone
 
 from ki_radar.core.models import TimeStampedModel
 
+from .audit import ImmutableAuditManager
+
 DELIVERY_SECTION_DEFINITIONS = (
     ("problem_and_target", "Problem und Ziel"),
     ("scope_and_users", "Scope, Nutzer und MVP"),
@@ -259,7 +261,7 @@ class DeliveryRoleSourceDecision(TimeStampedModel):
 
     delivery_package = models.ForeignKey(
         DeliveryPackage,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="role_source_decisions",
     )
     role_key = models.CharField(max_length=40, choices=RoleKey.choices)
@@ -277,6 +279,8 @@ class DeliveryRoleSourceDecision(TimeStampedModel):
     )
     decided_at = models.DateTimeField(default=timezone.now, editable=False)
     source_updated_at = models.DateTimeField(null=True, blank=True)
+
+    objects = ImmutableAuditManager()
 
     class Meta:
         ordering = ["-decided_at", "-created_at"]
