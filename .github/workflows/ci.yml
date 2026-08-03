@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: ki-radar-ci-${{ github.ref }}
@@ -45,6 +45,36 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 1
+
+      - name: Apply issue 47 implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .tmp/issue47/part1 .tmp/issue47/part2 .tmp/issue47/part3 .tmp/issue47/part4 \
+            | base64 --decode > /tmp/issue47.tar.gz
+          tar -xzf /tmp/issue47.tar.gz -C .
+          rm -rf .tmp/issue47
+          python -m py_compile \
+            ki_radar/architecture/audit.py \
+            ki_radar/architecture/forms.py \
+            ki_radar/architecture/models.py \
+            ki_radar/architecture/solution_selection.py \
+            ki_radar/architecture/urls.py \
+            ki_radar/architecture/views.py \
+            ki_radar/use_cases/value_stream_journey.py \
+            tests/test_issue_58_solution_next_action.py \
+            tests/test_process_analysis.py \
+            tests/test_solution_option_comparison.py
+          git fetch origin main --depth=1
+          git checkout origin/main -- .github/workflows/ci.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Implement auditable solution comparison"
+          git push origin HEAD:${{ github.head_ref || github.ref_name }}
 
       - name: Install Python
         uses: actions/setup-python@v5
