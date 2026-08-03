@@ -71,9 +71,7 @@ def _screening(use_case, coordinator, *, privacy_required=False):
 
 
 @pytest.mark.django_db
-def test_assessment_is_followed_by_governance_screening(
-    assessed_use_case, independent_coordinator
-):
+def test_assessment_is_followed_by_governance_screening(assessed_use_case, independent_coordinator):
     journey = build_use_case_journey(assessed_use_case, independent_coordinator)
     steps = {step.key: step for step in journey.steps}
     keys = [step.key for step in journey.steps]
@@ -150,4 +148,4 @@ def test_governance_workspace_keeps_value_stream_and_local_journey_context(
     assert "Governance" in content
     assert 'aria-label="Lokale Initiative"' in content
     assert 'aria-label="Phasen des Arbeitsmodells"' in content
-    assert 'sidebar-local-blocked' in content
+    assert "sidebar-local-blocked" in content
