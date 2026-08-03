@@ -1,0 +1,20 @@
+name: Audit issue 57 scope references
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Locate scope references
+        run: |
+          printf '%s\n' '=== value_stream.scope / scope fields ==='
+          rg -n "value_stream\.scope|\.scope\b|scope=|\"scope\"|'scope'" ki_radar templates tests docs || true
+          printf '%s\n' '=== architecture migrations ==='
+          find ki_radar/architecture/migrations -maxdepth 1 -type f -printf '%f\n' | sort
