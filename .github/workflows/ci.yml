@@ -53,8 +53,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat .tmp/issue47/part1 .tmp/issue47/part2 .tmp/issue47/part3 .tmp/issue47/part4 \
-            | base64 --decode > /tmp/issue47.tar.gz
+          python - <<'PY'
+          import base64
+          import re
+          from pathlib import Path
+
+          parts = [Path(f".tmp/issue47/part{index}") for index in range(1, 5)]
+          encoded = "".join(part.read_text(encoding="ascii") for part in parts)
+          encoded = re.sub(r"[^A-Za-z0-9+/=]", "", encoded)
+          encoded += "=" * (-len(encoded) % 4)
+          Path("/tmp/issue47.tar.gz").write_bytes(base64.b64decode(encoded))
+          PY
+          tar -tzf /tmp/issue47.tar.gz >/dev/null
           tar -xzf /tmp/issue47.tar.gz -C .
           rm -rf .tmp/issue47
           python -m py_compile \
