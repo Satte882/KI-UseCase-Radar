@@ -272,7 +272,7 @@ def check_go_live(
     )
     if pilot_still_running:
         if allow_early_go_live_exception:
-            warnings.append("Der laufende Pilotzeitraum wird durch eine dokumentierte Ausnahme beendet.")
+            warnings.append("Der laufende Pilot wird per dokumentierter Ausnahme beendet.")
         else:
             blockers.append(EARLY_GO_LIVE_BLOCKER)
     state = "blocked" if blockers else ("review" if warnings else "ready")
