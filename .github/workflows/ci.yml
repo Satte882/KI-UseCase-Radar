@@ -51,6 +51,14 @@ jobs:
 
       - name: Apply final issue 37 patch once
         run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("scripts/apply_issue37_admin_exception.py")
+          text = path.read_text(encoding="utf-8")
+          marker = "# Fix the Ruff finding from the interrupted CI run."
+          if marker in text:
+              path.write_text(text.split(marker, 1)[0].rstrip() + "\n", encoding="utf-8")
+          PY
           python scripts/apply_issue37_admin_exception.py
           rm scripts/apply_issue37_admin_exception.py
           rm -f .github/workflows/apply-issue37-admin-exception.yml .issue37-trigger
