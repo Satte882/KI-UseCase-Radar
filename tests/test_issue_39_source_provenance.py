@@ -35,3 +35,18 @@ def test_source_differences_reports_only_changed_source_values():
             "current": "Aktueller Auslöser",
         }
     ]
+
+
+def test_source_differences_keeps_unchanged_sources_out_of_review():
+    value_stream = SimpleNamespace(pk="vs-1", trigger="Bestellung eingegangen")
+    stage = SimpleNamespace(pk="stage-1", value_stream=value_stream)
+    snapshot = {
+        "trigger": {
+            "kind": "value_stream",
+            "label": "Value Stream",
+            "field": "trigger",
+            "value": "Bestellung eingegangen",
+        }
+    }
+
+    assert source_differences(snapshot, stage=stage) == []
