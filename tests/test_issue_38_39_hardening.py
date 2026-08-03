@@ -1,7 +1,8 @@
 from decimal import Decimal
 
 import pytest
-from django.db import DatabaseError, transaction
+from django.core.exceptions import ValidationError
+from django.db.models.deletion import ProtectedError
 from django.utils import timezone
 
 from ki_radar.delivery.models import DeliveryRoleSourceDecision
@@ -118,14 +119,11 @@ def test_role_source_audit_rejects_bulk_mutation_and_parent_deletion(
         actor=owner,
     )
 
-    with pytest.raises(DatabaseError, match="unveränderlich"):
-        with transaction.atomic():
-            DeliveryRoleSourceDecision.objects.filter(pk=decision.pk).update(
-                rationale="Manipuliert"
-            )
-    with pytest.raises(DatabaseError, match="unveränderlich"):
-        with transaction.atomic():
-            DeliveryRoleSourceDecision.objects.filter(pk=decision.pk).delete()
-    with pytest.raises(DatabaseError, match="unveränderlich"):
-        with transaction.atomic():
-            package.delete()
+    with pytest.raises(ValidationError, match="unveränderlich"):
+        DeliveryRoleSourceDecision.objects.filter(pk=decision.pk).update(
+            rationale="Manipuliert"
+        )
+    with pytest.raises(ValidationError, match="unveränderlich"):
+        DeliveryRoleSourceDecision.objects.filter(pk=decision.pk).delete()
+    with pytest.raises(ProtectedError):
+        package.delete()
