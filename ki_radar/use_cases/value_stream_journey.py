@@ -1,14 +1,17 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 from django.urls import reverse
 
-from ki_radar.architecture.models import ProcessAnalysis, ValueStream
+from ki_radar.architecture.models import ProcessAnalysis, SolutionOption, ValueStream
 
 from . import journey as legacy
 from . import workflow
 
 JourneyState = workflow.JourneyState
 JourneyStep = workflow.JourneyStep
+ORIGINAL_BUILD_PROCESS = workflow.build_process_analysis_journey
 ORIGINAL_BUILD_VALUE_STREAM = workflow.build_value_stream_journey
 
 
@@ -103,6 +106,55 @@ def _guide_focus_stage_selection(
     )
 
 
+def _guide_solution_choice(
+    process_analysis: ProcessAnalysis,
+    journey: JourneyState,
+) -> JourneyState:
+    options = list(process_analysis.solution_options.all())
+    if any(option.recommendation == SolutionOption.Recommendation.PREFERRED for option in options):
+        return journey
+
+    solution_step = next(
+        (step for step in journey.steps if step.key == "solution" and step.state == "current"),
+        None,
+    )
+    if solution_step is None:
+        return journey
+
+    if not options:
+        guided_solution = replace(
+            solution_step,
+            url=reverse(
+                "architecture:solution_option_create",
+                kwargs={"process_pk": process_analysis.pk},
+            ),
+            action_label="Erste Lösungsoption ergänzen",
+            reason=(
+                "Noch keine Lösungsoption ist dokumentiert. Erfasse zuerst eine "
+                "organisatorische, regelbasierte oder technische Alternative."
+            ),
+        )
+    else:
+        option_count = len(options)
+        guided_solution = replace(
+            solution_step,
+            url=f"{process_analysis.get_absolute_url()}#loesungsoptionen",
+            action_label="Lösungsoptionen prüfen",
+            reason=(
+                f"{option_count} Lösungsoption"
+                f"{'en liegen' if option_count != 1 else ' liegt'} vor; "
+                "eine bevorzugte Option ist noch nicht festgelegt."
+            ),
+        )
+
+    steps = [guided_solution if step.key == "solution" else step for step in journey.steps]
+    return _state(
+        path_label=journey.path_label,
+        steps=steps,
+        completion_message=journey.completion_message,
+    )
+
+
 def build_value_stream_journey(value_stream: ValueStream, user) -> JourneyState:
     journey = ORIGINAL_BUILD_VALUE_STREAM(value_stream, user)
     has_stages = value_stream.stages.exists()
@@ -122,6 +174,16 @@ def build_value_stream_journey(value_stream: ValueStream, user) -> JourneyState:
     return journey
 
 
+def build_process_analysis_journey(
+    process_analysis: ProcessAnalysis,
+    user,
+) -> JourneyState:
+    journey = ORIGINAL_BUILD_PROCESS(process_analysis, user)
+    return _guide_solution_choice(process_analysis, journey)
+
+
 def install() -> None:
     workflow.build_value_stream_journey = build_value_stream_journey
+    workflow.build_process_analysis_journey = build_process_analysis_journey
     legacy.build_value_stream_journey = build_value_stream_journey
+    legacy.build_process_analysis_journey = build_process_analysis_journey
