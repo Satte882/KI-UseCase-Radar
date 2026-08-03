@@ -47,13 +47,22 @@
   </div>
 </div>
 
-<div class="app-card mb-4">
+<div class="app-card mb-4" id="loesungsoptionen">
   <div class="card-header d-flex justify-content-between align-items-start gap-3">
-    <div><strong>Lösungsoptionen · ADM Phase E</strong><div class="small text-muted mt-1">Alternativen sichtbar vergleichen; maximal eine Option wird ausdrücklich bevorzugt.</div></div>
-    {% if can_edit and process_analysis.stage.value_stream.focus.is_selected %}<a class="btn btn-sm btn-primary" href="{% url 'architecture:solution_option_create' process_analysis.pk %}">Option ergänzen</a>{% endif %}
+    <div><strong>Lösungsoptionen · ADM Phase E</strong><div class="small text-muted mt-1">Alternativen sichtbar prüfen; maximal eine Option wird ausdrücklich bevorzugt.</div></div>
+    {% if can_edit and process_analysis.stage.value_stream.focus.is_selected %}
+      {% if process_analysis.solution_options.all %}
+      <a class="btn btn-sm btn-outline-secondary" href="{% url 'architecture:solution_option_create' process_analysis.pk %}">Weitere Option ergänzen</a>
+      {% else %}
+      <a class="btn btn-sm btn-primary" href="{% url 'architecture:solution_option_create' process_analysis.pk %}">Erste Option ergänzen</a>
+      {% endif %}
+    {% endif %}
   </div>
   <div class="card-body">
     {% if not process_analysis.stage.value_stream.focus.is_selected %}<p class="text-muted">Lösungsoptionen können dokumentiert werden, eine bevorzugte Option und die Use-Case-Ableitung setzen jedoch eine positive Fokusentscheidung voraus.</p>{% endif %}
+    {% if journey.next_action.key == 'solution' and journey.next_action.action_label == 'Lösungsoptionen prüfen' %}
+    <div class="alert alert-info"><strong>Lösungsentscheidung offen.</strong> Prüfe die vorhandenen Alternativen und kennzeichne anschließend genau eine Option als bevorzugt. Die eigenständige Vergleichs- und Auswahlansicht wird separat in Issue #47 bearbeitet.</div>
+    {% endif %}
     <div class="solution-option-grid">
       {% for option in process_analysis.solution_options.all %}
       <section class="solution-option-card solution-option-{{ option.recommendation }}">
