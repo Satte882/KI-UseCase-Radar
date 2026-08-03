@@ -182,6 +182,22 @@ def _review_data(use_case, pilot_start):
     }
 
 
+def _pilot_start_url(use_case):
+    return reverse("reviews:create", kwargs={"use_case_id": use_case.pk}) + "?action=pilot_start"
+
+
+def _pilot_start_payload(use_case, package, *, rationale):
+    return {
+        "review_date": timezone.localdate().isoformat(),
+        "pilot_start": timezone.localdate(package.handed_over_at).isoformat(),
+        "rationale": rationale,
+        "open_actions": "",
+        "action_owner": "",
+        "action_due_date": "",
+        "next_review_date": use_case.next_review_date.isoformat(),
+    }
+
+
 @pytest.fixture
 def handed_over_candidate(owner, coordinator, business_unit):
     use_case = _make_pilot_candidate(owner, coordinator, business_unit)
@@ -435,6 +451,124 @@ def test_manipulated_owner_post_is_forced_to_pilot_start(
 
 
 @pytest.mark.django_db
+def test_assigned_business_owner_can_open_and_submit_pilot_start(
+    client,
+    handed_over_candidate,
+    owner,
+):
+    use_case, package = handed_over_candidate
+    pilot_start = timezone.localdate(package.handed_over_at)
+    rationale = "Delivery ist übergeben; der Business Owner startet den Pilot."
+    url = _pilot_start_url(use_case)
+    client.force_login(owner)
+
+    assert client.get(url).status_code == 200
+    response = client.post(
+        url,
+        _pilot_start_payload(use_case, package, rationale=rationale),
+    )
+
+    use_case.refresh_from_db()
+    review = use_case.reviews.get()
+    assert response.status_code == 302
+    assert use_case.status == UseCase.Status.PILOT
+    assert use_case.pilot_start == pilot_start
+    assert review.reviewer == owner
+    assert review.previous_status == UseCase.Status.REVIEW
+    assert review.new_status == UseCase.Status.PILOT
+    assert review.decision == Review.Decision.START_PILOT
+    assert review.rationale == rationale
+
+
+@pytest.mark.django_db
+def test_coordinator_can_open_and_submit_pilot_start(
+    client,
+    handed_over_candidate,
+    coordinator,
+):
+    use_case, package = handed_over_candidate
+    url = _pilot_start_url(use_case)
+    client.force_login(coordinator)
+
+    assert client.get(url).status_code == 200
+    response = client.post(
+        url,
+        _pilot_start_payload(
+            use_case,
+            package,
+            rationale="Der KI-Koordinator startet den vorbereiteten Pilot.",
+        ),
+    )
+
+    use_case.refresh_from_db()
+    assert response.status_code == 302
+    assert use_case.status == UseCase.Status.PILOT
+    assert use_case.reviews.get().reviewer == coordinator
+
+
+@pytest.mark.django_db
+def test_unassigned_business_owner_cannot_open_or_submit_pilot_start(
+    client,
+    handed_over_candidate,
+    other_owner,
+):
+    use_case, package = handed_over_candidate
+    url = _pilot_start_url(use_case)
+    client.force_login(other_owner)
+
+    assert client.get(url).status_code == 403
+    assert (
+        client.post(
+            url,
+            _pilot_start_payload(use_case, package, rationale="Nicht zugeordnet."),
+        ).status_code
+        == 403
+    )
+    use_case.refresh_from_db()
+    assert use_case.status == UseCase.Status.REVIEW
+    assert use_case.reviews.count() == 0
+
+
+@pytest.mark.django_db
+def test_assigned_user_without_business_owner_group_cannot_open_or_submit_pilot_start(
+    client,
+    handed_over_candidate,
+    reader,
+):
+    use_case, package = handed_over_candidate
+    use_case.business_owner = reader
+    use_case.save(update_fields=["business_owner", "updated_at"])
+    url = _pilot_start_url(use_case)
+    client.force_login(reader)
+
+    assert client.get(url).status_code == 403
+    assert (
+        client.post(
+            url,
+            _pilot_start_payload(use_case, package, rationale="Gruppe fehlt."),
+        ).status_code
+        == 403
+    )
+    use_case.refresh_from_db()
+    assert use_case.status == UseCase.Status.REVIEW
+    assert use_case.reviews.count() == 0
+
+
+@pytest.mark.django_db
+def test_business_owner_cannot_open_general_lifecycle_review(
+    client,
+    handed_over_candidate,
+    owner,
+):
+    use_case, _package = handed_over_candidate
+    client.force_login(owner)
+
+    response = client.get(reverse("reviews:create", kwargs={"use_case_id": use_case.pk}))
+
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
 def test_pilot_start_post_rejects_unauthorized_roles(
     client,
     handed_over_candidate,
@@ -442,7 +576,7 @@ def test_pilot_start_post_rejects_unauthorized_roles(
     technical_admin,
 ):
     use_case, package = handed_over_candidate
-    url = reverse("reviews:create", kwargs={"use_case_id": use_case.pk}) + "?action=pilot_start"
+    url = _pilot_start_url(use_case)
     payload = {
         "review_date": timezone.localdate().isoformat(),
         "pilot_start": timezone.localdate(package.handed_over_at).isoformat(),
@@ -463,7 +597,7 @@ def test_pilot_start_form_defaults_to_today_and_limits_future_dates(
 ):
     use_case, _package = handed_over_candidate
     client.force_login(owner)
-    url = reverse("reviews:create", kwargs={"use_case_id": use_case.pk}) + "?action=pilot_start"
+    url = _pilot_start_url(use_case)
 
     response = client.get(url)
 
