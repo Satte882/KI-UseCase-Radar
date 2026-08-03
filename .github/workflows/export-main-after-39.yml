@@ -1,0 +1,22 @@
+name: Export main after issue 39
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    if: github.head_ref == 'chore/export-main-after-39'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package repository
+        run: zip -qr source-after-39.zip . -x '.git/*'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source-after-39
+          path: source-after-39.zip
+          retention-days: 1
