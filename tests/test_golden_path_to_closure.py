@@ -58,12 +58,14 @@ def _record_measurement(use_case, *, actual=Decimal("2.8")):
     use_case.metric_measurement_period = "Pilot vom 01.07. bis 21.07.2026"
     use_case.metric_measured_at = timezone.localdate()
     use_case.metric_evidence_url = "https://example.invalid/evidence/supplier-pilot-result"
+    use_case.planned_pilot_end = timezone.localdate()
     use_case.save(
         update_fields=[
             "metric_actual",
             "metric_measurement_period",
             "metric_measured_at",
             "metric_evidence_url",
+            "planned_pilot_end",
             "updated_at",
         ]
     )
