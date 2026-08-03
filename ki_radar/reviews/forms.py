@@ -187,17 +187,14 @@ class ReviewForm(forms.ModelForm):
         elif use_case.status != UseCase.Status.REVIEW:
             self.fields.pop("pilot_start", None)
 
+        selected_decision = self.fields["decision"].initial
+        if self.is_bound:
+            selected_decision = self.data.get("decision")
         early_exception_visible = bool(
             use_case.status == UseCase.Status.PILOT
             and use_case.planned_pilot_end
             and use_case.planned_pilot_end > today
-            and (
-                requested_action == "go_live"
-                or (
-                    self.is_bound
-                    and self.data.get("decision") == Review.Decision.GO_LIVE
-                )
-            )
+            and (requested_action == "go_live" or selected_decision == Review.Decision.GO_LIVE)
         )
         if not early_exception_visible:
             for name in [
