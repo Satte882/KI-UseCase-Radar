@@ -62,11 +62,15 @@ ASSESSMENT_BLOCKERS = {
     "Risiko und Komplexität sind für eine Freigabe zu hoch",
 }
 
+ROLE_SEPARATION_BLOCKERS = {
+    "Bewertende und entscheidende Person müssen verschieden sein",
+    "Fachlich verantwortliche und freigebende Person müssen verschieden sein",
+}
+
 DECISION_BLOCKERS = {
     "Positive Freigabeentscheidung",
     "Separate Governance-Bestätigung durch die entscheidende Person",
-    "Bewertende und entscheidende Person müssen verschieden sein",
-    "Fachlich verantwortliche und freigebende Person müssen verschieden sein",
+    *ROLE_SEPARATION_BLOCKERS,
 }
 
 DELIVERY_BLOCKERS = {
@@ -129,6 +133,20 @@ def build_blocker_details(use_case: UseCase, blockers: list[str]) -> list[Blocke
                     target_url=f"{edit_url}?highlight={field_name}",
                     target_anchor=f"#field-{field_name}",
                     field_name=field_name,
+                )
+            )
+            continue
+
+        if label in ROLE_SEPARATION_BLOCKERS:
+            details.append(
+                BlockerDetail(
+                    code=_code(label),
+                    label=label,
+                    category="role",
+                    action_label="Andere KI-Koordination zuweisen",
+                    target_url=f"{edit_url}?highlight=coordinator",
+                    target_anchor="#field-coordinator",
+                    field_name="coordinator",
                 )
             )
             continue
