@@ -16,6 +16,7 @@ from django.views.decorators.http import require_POST
 
 from ki_radar.accounts.models import BusinessUnit
 from ki_radar.accounts.permissions import is_coordinator
+from ki_radar.architecture.provenance import use_case_provenance_rows
 from ki_radar.core.navigation import requested_return_to
 from ki_radar.core.taxonomy import BusinessDomain
 
@@ -164,6 +165,9 @@ def _detail_context(request, use_case: UseCase, *, copilot_analysis: str = "") -
     return {
         "use_case": use_case,
         "architecture_origin": architecture_origin,
+        "source_context": (
+            use_case_provenance_rows(architecture_origin) if architecture_origin else []
+        ),
         "journey": journey,
         "status_dimensions": build_use_case_status_dimensions(use_case, journey),
         "history": history,

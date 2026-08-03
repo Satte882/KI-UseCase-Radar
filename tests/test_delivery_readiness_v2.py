@@ -96,6 +96,11 @@ def test_package_creates_seven_reviews_with_source_manifest(
     assert package.readiness_schema_version == 2
     assert package.section_reviews.count() == 7
     assert all(review.source_manifest for review in package.section_reviews.all())
+    problem_manifest = package.section_reviews.get(section_key="problem_and_target").source_manifest
+    assert problem_manifest["schema_version"] == 2
+    assert problem_manifest["fields"]["problem_context"]["source_field"] == "problem_statement"
+    assert package.problem_context == use_case.problem_statement
+    assert package.problem_context.count(use_case.problem_statement) == 1
     assert all(
         review.review_status == DeliverySectionReview.ReviewStatus.NEEDS_REVIEW
         for review in package.section_reviews.all()
@@ -456,3 +461,28 @@ def test_delivery_page_labels_admin_override_by_confirmation_role(
     assert f"Technisch: {technical_admin} · Admin-Sonderbestätigung" in body
     assert "Admin-Sonderbestätigung ohne Vier-Augen-Prinzip" in body
     assert "Administrativer Ende-zu-Ende-Test" in body
+
+
+@pytest.mark.django_db
+def test_delivery_source_change_is_field_specific_and_does_not_rewrite_working_value(
+    owner, other_owner, coordinator, business_unit
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    original = package.problem_context
+
+    use_case.problem_statement = "Die Quelle wurde nachträglich präzisiert."
+    use_case.save(update_fields=["problem_statement", "updated_at"])
+    findings = evaluate_delivery_readiness(package)
+
+    assert package.problem_context == original
+    assert any(
+        finding.code == "SOURCE_FIELD_CHANGED_AFTER_SNAPSHOT"
+        and "Problem und Geschäftskontext" in finding.message
+        for finding in findings
+    )

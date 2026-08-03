@@ -102,6 +102,13 @@
         </div>
         {% endif %}
         {% if row.review.review_note %}<div class="text-preline small mb-3">{{ row.review.review_note }}</div>{% endif %}
+        {% if row.source_context %}
+        <details class="small mb-3"><summary>Quellenstand und Arbeitswerte</summary>
+          <div class="table-responsive mt-2"><table class="table table-sm mb-0"><thead><tr><th>Feld</th><th>Quelle</th><th>Übernommen</th><th>Aktuelle Quelle</th><th>Arbeitswert</th></tr></thead><tbody>
+          {% for source in row.source_context %}<tr{% if source.source_changed %} class="table-warning"{% endif %}><th>{{ source.field_label }}</th><td>{{ source.artifact_label }}</td><td class="text-preline">{{ source.snapshot_value|default:"–" }}</td><td class="text-preline">{{ source.current_source_value|default:"–" }}{% if source.source_changed %}<div class="text-warning-emphasis">Quelle geändert</div>{% endif %}</td><td class="text-preline">{{ source.working_value|default:"–" }}</td></tr>{% endfor %}
+          </tbody></table></div>
+        </details>
+        {% endif %}
         {% endif %}
         {% if row.can_review and package.status != 'handed_over' %}
         <form method="post" action="{% url 'delivery:package_section_review' package.pk row.key %}" class="section-review-form">

@@ -33,6 +33,12 @@ from .models import (
     ValueStreamStage,
 )
 from .permissions import can_edit_value_stream, can_manage_architecture
+from .provenance import (
+    build_option_use_case_prefill,
+    build_process_prefill,
+    build_stage_use_case_prefill,
+    process_provenance_rows,
+)
 
 SOLUTION_TYPE_MAP = {
     SolutionOption.OptionType.RULE_AUTOMATION: UseCase.SolutionType.AUTOMATION,
@@ -256,18 +262,15 @@ def stage_start_use_case(request, pk):
     if not _focus_is_selected(stage.value_stream):
         messages.warning(request, FOCUS_REQUIRED_MESSAGE)
         return redirect(stage.value_stream)
-    stored = {
-        "title": f"{stage.name}: KI-Potenzial",
-        "business_unit": stage.value_stream.business_unit_id,
-        "affected_process": stage.name,
-        "summary": stage.description,
-        "target_users": stage.actors,
-        "source_systems": stage.systems,
-        "source_stage_id": str(stage.pk),
-        **_classification_prefill(stage.value_stream, stage.name),
-    }
-    if stage.pain_points.strip():
-        stored["problem_statement"] = stage.pain_points.strip()
+    stored, source_manifest = build_stage_use_case_prefill(stage)
+    stored.update(
+        {
+            "business_unit": stage.value_stream.business_unit_id,
+            "source_stage_id": str(stage.pk),
+            "_source_manifest": source_manifest,
+            **_classification_prefill(stage.value_stream, stage.name),
+        }
+    )
     request.session[SESSION_KEY] = stored
     request.session.modified = True
     messages.info(request, DISCOVERY_PREFILL_MESSAGE)
@@ -285,30 +288,33 @@ def process_analysis_create(request, stage_id):
     if not _focus_is_selected(stage.value_stream):
         messages.warning(request, FOCUS_REQUIRED_MESSAGE)
         return redirect(stage.value_stream)
-    form = ProcessAnalysisForm(
-        request.POST or None,
-        initial={
-            "name": f"Prozessanalyse: {stage.name}",
-            "trigger": stage.value_stream.trigger,
-            "outcome": stage.description or stage.value_stream.outcome,
-            "roles": stage.actors,
-            "systems": stage.systems,
-            "data_objects": stage.documents,
-            "bottlenecks": stage.pain_points,
-            "baseline_metrics": stage.baseline_metrics,
-        },
-    )
+    initial, source_manifest = build_process_prefill(stage)
+    form = ProcessAnalysisForm(request.POST or None, initial=initial)
     if request.method == "POST" and form.is_valid():
         process_analysis = form.save(commit=False)
         process_analysis.stage = stage
         process_analysis.analyzed_by = request.user
+        process_analysis.source_manifest = source_manifest
         process_analysis.save()
         messages.success(request, "Prozessanalyse wurde angelegt.")
         return redirect(process_analysis)
     return render(
         request,
         "architecture/process_analysis_form.html",
-        {"form": form, "stage": stage, "title": "Prozessanalyse anlegen"},
+        {
+            "form": form,
+            "stage": stage,
+            "title": "Prozessanalyse anlegen",
+            "source_context": [
+                {
+                    "field_label": form.fields[name].label,
+                    "artifact_label": entry["artifact_label"],
+                    "snapshot_value": entry["source_value"],
+                }
+                for name, entry in source_manifest["fields"].items()
+                if name in form.fields
+            ],
+        },
     )
 
 
@@ -385,6 +391,7 @@ def process_analysis_update(request, pk):
             "stage": process_analysis.stage,
             "process_analysis": process_analysis,
             "title": "Prozessanalyse bearbeiten",
+            "source_context": process_provenance_rows(process_analysis),
         },
     )
 
@@ -516,24 +523,14 @@ def solution_option_start_use_case(request, pk):
         option.option_type,
         UseCase.SolutionType.OTHER,
     )
-    stored = {
-        "title": option.name,
-        "business_unit": stage.value_stream.business_unit_id,
-        "problem_statement": process_analysis.bottlenecks,
-        "affected_process": process_analysis.name,
-        "summary": process_analysis.current_flow,
-        "target_users": process_analysis.roles,
-        "source_systems": process_analysis.systems,
-        "intended_users": process_analysis.roles,
-        "intended_purpose": option.description,
-        "expected_benefit": option.expected_value,
-        "data_sources": option.data_requirements or process_analysis.data_objects,
-        "solution_type": solution_type,
-        "source_stage_id": str(stage.pk),
-        "source_process_analysis_id": str(process_analysis.pk),
-        "source_solution_option_id": str(option.pk),
-        **_classification_prefill(stage.value_stream, process_analysis.name),
-    }
+    stored, source_manifest = build_option_use_case_prefill(option, solution_type=solution_type)
+    stored.update(
+        {
+            "business_unit": stage.value_stream.business_unit_id,
+            "_source_manifest": source_manifest,
+            **_classification_prefill(stage.value_stream, process_analysis.name),
+        }
+    )
     request.session[SESSION_KEY] = stored
     request.session.modified = True
     messages.info(request, PREFERRED_PREFILL_MESSAGE)
