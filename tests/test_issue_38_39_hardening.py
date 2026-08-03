@@ -120,9 +120,7 @@ def test_role_source_audit_rejects_bulk_mutation_and_parent_deletion(
     )
 
     with pytest.raises(ValidationError, match="unveränderlich"):
-        DeliveryRoleSourceDecision.objects.filter(pk=decision.pk).update(
-            rationale="Manipuliert"
-        )
+        DeliveryRoleSourceDecision.objects.filter(pk=decision.pk).update(rationale="Manipuliert")
     with pytest.raises(ValidationError, match="unveränderlich"):
         DeliveryRoleSourceDecision.objects.filter(pk=decision.pk).delete()
     with pytest.raises(ProtectedError):
