@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -23,7 +23,7 @@ from .blockers import build_blocker_details
 from .copilot import CopilotUnavailable, analyze_use_case
 from .forms import UseCaseForm
 from .governance_status import build_governance_statuses
-from .models import UseCase
+from .models import ApprovalDecision, UseCase
 from .outcome_workspace import build_outcome_workspace_journey
 from .permissions import can_create_use_case, can_edit_use_case, can_view_use_case
 from .services import decision_due_date
@@ -196,7 +196,17 @@ def use_case_detail(request, pk):
             "reviews",
             "evidence_links",
             "decision_assessments",
-            "approval_decisions",
+            Prefetch(
+                "approval_decisions",
+                queryset=ApprovalDecision.objects.select_related(
+                    "assessment__assessed_by",
+                    "decided_by",
+                    "condition_owner",
+                    "second_approval_assignee",
+                    "second_approved_by",
+                    "second_approval_returned_by",
+                ).order_by("-created_at"),
+            ),
             "delivery_packages",
         ),
         pk=pk,
