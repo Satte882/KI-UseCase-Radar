@@ -54,7 +54,9 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen --dev
       - name: Apply issue 57 patch
-        run: python scripts/apply_issue57.py
+        run: |
+          python scripts/apply_issue57.py
+          python scripts/fix_issue57_tests.py
       - name: Format and lint implementation
         run: |
           uv run ruff format ki_radar tests
@@ -67,7 +69,7 @@ jobs:
           uv run pytest -q tests/test_value_stream_scope.py tests/test_value_stream_assignments.py tests/test_architecture_discovery.py tests/test_process_analysis.py tests/test_focus_prioritization.py tests/test_delivery_handover.py tests/test_issue_58_value_stream_next_action.py tests/test_issue_58_solution_next_action.py
       - name: Commit validated implementation and restore CI
         run: |
-          rm scripts/apply_issue57.py
+          rm scripts/apply_issue57.py scripts/fix_issue57_tests.py
           rm .github/workflows/audit57.yml
           git show origin/main:.github/workflows/ci.yml > .github/workflows/ci.yml
           git config user.name "github-actions[bot]"
