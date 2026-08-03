@@ -1,4 +1,9 @@
-from ki_radar.accounts.permissions import is_business_owner, is_coordinator
+from ki_radar.accounts.permissions import (
+    GROUP_BUSINESS_OWNER,
+    GROUP_COORDINATOR,
+    in_group,
+    is_coordinator,
+)
 from ki_radar.use_cases.permissions import can_view_use_case
 
 from .models import DeliveryPackage, DeliverySectionReview
@@ -29,7 +34,11 @@ def can_create_package(user) -> bool:
 def can_confirm_business(user, package: DeliveryPackage, section_key: str) -> bool:
     return bool(
         section_key in BUSINESS_SECTIONS
-        and (package.use_case.business_owner_id == user.id or is_business_owner(user))
+        and (
+            package.use_case.business_owner_id == user.id
+            or in_group(user, GROUP_BUSINESS_OWNER)
+            or in_group(user, GROUP_COORDINATOR)
+        )
     )
 
 
