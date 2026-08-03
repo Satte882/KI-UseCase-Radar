@@ -27,7 +27,7 @@
 
 {% if owner_role_collapse %}
 <div class="alert alert-secondary mb-4">
-  <strong>Zusammengeführte Verantwortung:</strong> {{ package.use_case.business_owner }} ist Business Owner sowie Technical Owner. Die fachliche und technische Bestätigung bleiben getrennt nachvollziehbar. Bei kritischer Priorität oder hohem Risiko wird zusätzlich eine unabhängige Zweitprüfung empfohlen.
+  <strong>Zusammengeführte Verantwortung:</strong> {{ package.use_case.business_owner }} ist Business Owner sowie Technical Owner. Die beiden Bestätigungen bleiben getrennte Aktionen. Bestätigt dieselbe Person beide Rollen, ist vor der Übergabe eine unabhängige Kontrolle erforderlich.
 </div>
 {% endif %}
 
@@ -93,18 +93,31 @@
         <div class="small mb-2"><strong>Zuständig:</strong> {{ row.responsible_role }} · {{ row.responsible_person }}</div>
         {% if row.review %}
         <div class="small mb-2">
-          Fachlich: {{ row.review.business_confirmed_by|default:"offen" }}<br>
-          Technisch: {{ row.review.technical_confirmed_by|default:"offen" }}
+          Fachlich: {{ row.review.business_confirmed_by|default:"offen" }}{% if row.review.business_confirmation_role %} · {{ row.review.business_confirmation_role }}{% endif %}{% if row.review.business_confirmed_at %} · {{ row.review.business_confirmed_at|date:"d.m.Y H:i" }}{% endif %}<br>
+          Technisch: {{ row.review.technical_confirmed_by|default:"offen" }}{% if row.review.technical_confirmation_role %} · {{ row.review.technical_confirmation_role }}{% endif %}{% if row.review.technical_confirmed_at %} · {{ row.review.technical_confirmed_at|date:"d.m.Y H:i" }}{% endif %}
         </div>
+        {% if row.review.has_role_collapse %}
+        <div class="alert alert-warning py-2 small mb-2">
+          <strong>Keine unabhängige Vier-Augen-Bestätigung.</strong> {{ row.review.role_collapse_reason }}
+          {% if row.review.independent_checked_by %}<br>Unabhängig kontrolliert durch {{ row.review.independent_checked_by }} · {{ row.review.independent_check_role }} · {{ row.review.independent_checked_at|date:"d.m.Y H:i" }}{% else %}<br>Vor „Bereit zur Übergabe“ ist eine Kontrolle durch eine andere fachlich oder technisch berechtigte Person erforderlich.{% endif %}
+        </div>
+        {% endif %}
         {% if row.review.review_note %}<div class="text-preline small mb-3">{{ row.review.review_note }}</div>{% endif %}
         {% endif %}
         {% if row.can_review and package.status != 'handed_over' %}
         <form method="post" action="{% url 'delivery:package_section_review' package.pk row.key %}" class="section-review-form">
           {% csrf_token %}
-          <label class="form-label" for="review-note-{{ row.key }}">Prüfhinweis oder Begründung <span class="text-muted">(bei „Nicht relevant“ verpflichtend)</span></label>
+          <label class="form-label" for="review-note-{{ row.key }}">Prüfhinweis oder Begründung <span class="text-muted">(bei Blockierung oder „Nicht relevant“ verpflichtend)</span></label>
           <textarea class="form-control mb-2" id="review-note-{{ row.key }}" name="review_note" rows="2">{% if row.review %}{{ row.review.review_note }}{% endif %}</textarea>
+          {% if row.show_role_collapse_reason and row.can_confirm_business or row.show_role_collapse_reason and row.can_confirm_technical %}
+          <label class="form-label small" for="role-collapse-{{ row.key }}">Begründung bei Bestätigung beider Rollen durch dieselbe Person</label>
+          <input class="form-control form-control-sm mb-2" id="role-collapse-{{ row.key }}" name="role_collapse_reason" value="{% if row.review %}{{ row.review.role_collapse_reason }}{% endif %}">
+          <div class="small text-muted mb-2">Nur erforderlich, sobald du in dieser Sektion auch die zweite Rolle selbst bestätigst.</div>
+          {% endif %}
           <div class="d-flex gap-2 flex-wrap">
-            <button class="btn btn-sm btn-primary" name="action" value="confirm">Bestätigen</button>
+            {% if row.can_confirm_business %}<button class="btn btn-sm btn-primary" name="action" value="confirm_business">Fachlich bestätigen</button>{% endif %}
+            {% if row.can_confirm_technical %}<button class="btn btn-sm btn-primary" name="action" value="confirm_technical">Technisch bestätigen</button>{% endif %}
+            {% if row.can_independent_check %}<button class="btn btn-sm btn-primary" name="action" value="independent_check">Unabhängig kontrollieren</button>{% endif %}
             <button class="btn btn-sm btn-outline-secondary" name="action" value="block">Blockieren</button>
             <button class="btn btn-sm btn-outline-secondary" name="action" value="not_applicable" data-requires-review-note>Nicht relevant</button>
           </div>

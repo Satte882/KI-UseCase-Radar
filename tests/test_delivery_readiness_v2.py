@@ -271,3 +271,177 @@ def test_package_detail_shows_methodology_actions(
     assert "Vorgehensmodell herunterladen" in content
     assert reverse("delivery:methodology_reference") in content
     assert reverse("delivery:methodology_download") in content
+
+
+@pytest.mark.django_db
+def test_shared_section_requires_explicit_confirmation_role(
+    owner, other_owner, coordinator, business_unit
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+
+    with pytest.raises(ValidationError, match="ausdrücklich auswählen"):
+        review_delivery_section(
+            package=package,
+            section_key="solution_direction",
+            action="confirm",
+            actor=coordinator,
+        )
+
+
+@pytest.mark.django_db
+def test_authorized_substitutes_can_confirm_only_the_selected_role(
+    owner, other_owner, coordinator, business_unit
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+
+    review_delivery_section(
+        package=package,
+        section_key="solution_direction",
+        action="confirm_business",
+        actor=other_owner,
+    )
+    review_delivery_section(
+        package=package,
+        section_key="solution_direction",
+        action="confirm_technical",
+        actor=coordinator,
+    )
+
+    review = package.section_reviews.get(section_key="solution_direction")
+    assert review.business_confirmed_by == other_owner
+    assert review.business_confirmation_role == "Berechtigte fachliche Stellvertretung"
+    assert review.technical_confirmed_by == coordinator
+    assert review.technical_confirmation_role == "Berechtigte technische Stellvertretung"
+    assert review.review_status == DeliverySectionReview.ReviewStatus.CONFIRMED
+
+
+@pytest.mark.django_db
+def test_unassigned_person_cannot_silently_confirm_both_roles(
+    owner, other_owner, coordinator, business_unit
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    review_delivery_section(
+        package=package,
+        section_key="solution_direction",
+        action="confirm_business",
+        actor=coordinator,
+    )
+
+    with pytest.raises(ValidationError, match="Rollenkollaps"):
+        review_delivery_section(
+            package=package,
+            section_key="solution_direction",
+            action="confirm_technical",
+            actor=coordinator,
+            role_collapse_reason="Kleines Team.",
+        )
+
+
+@pytest.mark.django_db
+def test_dual_owner_requires_reason_and_independent_control(
+    owner, other_owner, coordinator, business_unit
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    review_delivery_section(
+        package=package,
+        section_key="solution_direction",
+        action="confirm_business",
+        actor=owner,
+    )
+
+    with pytest.raises(ValidationError, match="Begründung erforderlich"):
+        review_delivery_section(
+            package=package,
+            section_key="solution_direction",
+            action="confirm_technical",
+            actor=owner,
+        )
+
+    review_delivery_section(
+        package=package,
+        section_key="solution_direction",
+        action="confirm_technical",
+        actor=owner,
+        role_collapse_reason="Business- und Technikverantwortung liegen im Pilotteam zusammen.",
+    )
+    review = package.section_reviews.get(section_key="solution_direction")
+    assert review.has_role_collapse is True
+    assert review.review_status == DeliverySectionReview.ReviewStatus.NEEDS_REVIEW
+    assert any(
+        item.code == "INDEPENDENT_CONFIRMATION_MISSING"
+        for item in evaluate_delivery_readiness(package)
+    )
+
+    review_delivery_section(
+        package=package,
+        section_key="solution_direction",
+        action="independent_check",
+        actor=other_owner,
+        note="Fachliche Plausibilität unabhängig kontrolliert.",
+    )
+    review.refresh_from_db()
+    assert review.independent_checked_by == other_owner
+    assert review.independent_checked_at is not None
+    assert review.independent_check_role == "Fachlich berechtigte Kontrolle"
+    assert review.review_status == DeliverySectionReview.ReviewStatus.CONFIRMED
+
+
+@pytest.mark.django_db
+def test_delivery_page_shows_separate_actions_and_audit_details(
+    client, owner, other_owner, coordinator, business_unit
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    review_delivery_section(
+        package=package,
+        section_key="solution_direction",
+        action="confirm_business",
+        actor=owner,
+    )
+    review_delivery_section(
+        package=package,
+        section_key="solution_direction",
+        action="confirm_technical",
+        actor=owner,
+        role_collapse_reason="Kleines Pilotteam mit dokumentiertem Rollenkollaps.",
+    )
+    client.force_login(other_owner)
+
+    response = client.get(package.get_absolute_url())
+    body = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Fachlich bestätigen" in body
+    assert "Technisch bestätigen" not in body or "Unabhängig kontrollieren" in body
+    assert "Keine unabhängige Vier-Augen-Bestätigung" in body
+    assert "Kleines Pilotteam" in body
+    assert "Unabhängig kontrollieren" in body

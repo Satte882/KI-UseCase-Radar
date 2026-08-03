@@ -114,7 +114,8 @@ def test_missing_technical_owner_is_the_primary_delivery_action(
 
 
 @pytest.mark.django_db
-def test_role_collapse_creates_a_non_blocking_quality_warning(
+def test_role_collapse_assignment_explains_the_actual_control_rule(
+    client,
     owner,
     coordinator,
     business_unit,
@@ -126,16 +127,15 @@ def test_role_collapse_creates_a_non_blocking_quality_warning(
         technical_owner=owner,
         priority=UseCase.Priority.CRITICAL,
     )
+    client.force_login(owner)
 
-    findings = build_actionable_findings(package, coordinator)
-    warning = next(
-        item for item in findings if item.code == "OWNER_ROLE_COLLAPSE_REVIEW_RECOMMENDED"
-    )
+    response = client.get(package.get_absolute_url())
+    body = response.content.decode()
 
-    assert warning.severity == "warning"
-    assert warning.priority_class == 6
-    assert warning.url == ""
-    assert "unabhängige Zweitprüfung" in warning.message
+    assert response.status_code == 200
+    assert "Zusammengeführte Verantwortung" in body
+    assert "Bestätigt dieselbe Person beide Rollen" in body
+    assert "unabhängige Kontrolle erforderlich" in body
 
 
 @pytest.mark.django_db
