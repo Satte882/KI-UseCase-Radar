@@ -1,0 +1,36 @@
+tests.test_delivery_to_pilot::test_golden_path_uses_one_use_case_from_value_stream_to_pilot
+AssertionError: assert ['value_strea...essment', ...] == ['value_strea...essment', ...]
+  
+  At index 6 diff: 'governance' != 'approval'
+  
+  Full diff:
+    [
+        'value_stream',
+        'focus',
+        'process',
+        'solution',
+        'use_case',
+        'assessment',
+  +     'governance',
+        'approval',
+  -     'delivery',
+    ]
+
+tests.test_guided_journey::test_invoice_demo_has_complete_discovery_chain_and_ready_delivery
+AssertionError: assert ['value_strea...essment', ...] == ['value_strea...essment', ...]
+  
+  At index 6 diff: 'governance' != 'approval'
+  Left contains one more item: 'delivery'
+  
+  Full diff:
+    [
+        'value_stream',
+        'focus',
+        'process',
+        'solution',
+        'use_case',
+        'assessment',
+  +     'governance',
+        'approval',
+        'delivery',
+    ]
