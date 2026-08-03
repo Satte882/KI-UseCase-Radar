@@ -24,7 +24,7 @@
     </div>
   </div>
   <div class="col-xl-8">
-    <form method="post" class="app-card">{% csrf_token %}
+    <form method="post" class="app-card" id="review-form" data-initially-dirty="{% if form.is_bound %}true{% else %}false{% endif %}">{% csrf_token %}
       <div class="card-header"><strong>{% if pilot_start_only %}Pilotbeginn bestätigen{% else %}Review und Beschluss{% endif %}</strong><div class="small text-muted mt-1">{% if pilot_start_only %}Der tatsächliche Pilotbeginn muss am oder nach dem verbindlichen Übergabedatum liegen und darf nicht in der Zukunft liegen.{% else %}Die Entscheidung bleibt menschlich verantwortlich und wird revisionsfähig dokumentiert.{% endif %}</div></div>
       <div class="card-body">{{ form.non_field_errors }}<div class="row g-3">
         {% for field in form %}
@@ -36,8 +36,39 @@
           {% endif %}
         {% endfor %}
       </div></div>
-      <div class="card-body border-top d-flex justify-content-end gap-2"><a class="btn btn-outline-secondary" href="{{ use_case.get_absolute_url }}">Abbrechen</a><button class="btn btn-primary px-4">{% if pilot_start_only %}Pilot starten{% else %}Entscheidung speichern{% endif %}</button></div>
+      <div class="card-body border-top d-flex flex-wrap justify-content-end align-items-center gap-2"><span class="small text-muted me-auto">Bei ungespeicherten Änderungen warnt der Browser vor dem Verlassen der Seite.</span><a class="btn btn-outline-secondary" href="{{ use_case.get_absolute_url }}">Abbrechen</a><button class="btn btn-primary px-4">{% if pilot_start_only %}Pilot starten{% else %}Entscheidung speichern{% endif %}</button></div>
     </form>
   </div>
 </div>
+{% endblock %}
+{% block extra_js %}
+<script>
+(() => {
+  "use strict";
+
+  const form = document.getElementById("review-form");
+  if (!form) {
+    return;
+  }
+
+  let isDirty = form.dataset.initiallyDirty === "true";
+  let isSubmitting = false;
+  const markDirty = () => {
+    isDirty = true;
+  };
+
+  form.addEventListener("input", markDirty);
+  form.addEventListener("change", markDirty);
+  form.addEventListener("submit", () => {
+    isSubmitting = true;
+  });
+  window.addEventListener("beforeunload", (event) => {
+    if (!isDirty || isSubmitting) {
+      return;
+    }
+    event.preventDefault();
+    event.returnValue = "";
+  });
+})();
+</script>
 {% endblock %}
