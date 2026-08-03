@@ -64,7 +64,11 @@ jobs:
         run: uv sync --frozen --dev
 
       - name: Ruff lint
-        run: uv run ruff check .
+        shell: bash
+        run: |
+          uv run ruff check --fix ki_radar/governance/views.py
+          git diff -- ki_radar/governance/views.py
+          exit 1
 
       - name: Ruff format
         run: uv run ruff format --check .
