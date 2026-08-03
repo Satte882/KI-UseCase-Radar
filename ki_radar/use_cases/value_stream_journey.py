@@ -112,8 +112,7 @@ def _guide_solution_choice(
 ) -> JourneyState:
     options = list(process_analysis.solution_options.all())
     if any(
-        option.recommendation == SolutionOption.Recommendation.PREFERRED
-        for option in options
+        option.recommendation == SolutionOption.Recommendation.PREFERRED for option in options
     ):
         return journey
 
