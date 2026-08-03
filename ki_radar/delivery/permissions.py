@@ -39,6 +39,7 @@ def can_confirm_business(user, package: DeliveryPackage, section_key: str) -> bo
             package.use_case.business_owner_id == user.id
             or in_group(user, GROUP_BUSINESS_OWNER)
             or in_group(user, GROUP_COORDINATOR)
+            or is_technical_admin(user)
         )
     )
 

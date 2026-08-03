@@ -145,14 +145,28 @@ def complete_delivery_readiness(package):
     )
     artifacts.save()
 
+    business_actor = package.use_case.business_owner
+    technical_actor = package.use_case.technical_owner
+    if technical_actor is None or technical_actor.pk == business_actor.pk:
+        technical_actor = package.created_by
+
     for review in package.section_reviews.all():
-        review_delivery_section(
-            package=package,
-            section_key=review.section_key,
-            action="confirm",
-            actor=package.created_by,
-            note="Inhalt für Delivery geprüft.",
-        )
+        if "business" in review.required_confirmations:
+            review_delivery_section(
+                package=package,
+                section_key=review.section_key,
+                action="confirm_business",
+                actor=business_actor,
+                note="Fachlicher Inhalt für Delivery geprüft.",
+            )
+        if "technical" in review.required_confirmations:
+            review_delivery_section(
+                package=package,
+                section_key=review.section_key,
+                action="confirm_technical",
+                actor=technical_actor,
+                note="Technischer Inhalt für Delivery geprüft.",
+            )
 
 
 @pytest.mark.django_db

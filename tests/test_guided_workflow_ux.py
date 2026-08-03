@@ -239,7 +239,7 @@ def test_delivery_detail_exposes_direct_primary_action_and_not_applicable_guidan
     assert 'data-testid="primary-readiness-action"' in body
     assert "Technical Owner benennen" in body
     assert "Technical Owner zuordnen" in body
-    assert "bei „Nicht relevant“ verpflichtend" in body
+    assert "bei Blockierung oder „Nicht relevant“ verpflichtend" in body
     assert "data-requires-review-note" in body
 
 
