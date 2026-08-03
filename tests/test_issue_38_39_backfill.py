@@ -135,9 +135,7 @@ def test_source_snapshot_backfill_covers_existing_process_and_use_case_origin(
         source_snapshot={},
     )
 
-    migration = import_module(
-        "ki_radar.architecture.migrations.0009_backfill_source_provenance"
-    )
+    migration = import_module("ki_radar.architecture.migrations.0009_backfill_source_provenance")
     migration.backfill_source_snapshots(django_apps, None)
 
     process.refresh_from_db()
@@ -167,9 +165,7 @@ def test_historical_package_owner_backfill_uses_owner_at_package_creation(
     use_case.technical_owner = replacement
     use_case.save(update_fields=["technical_owner", "updated_at"])
 
-    migration = import_module(
-        "ki_radar.delivery.migrations.0006_harden_role_source_audit"
-    )
+    migration = import_module("ki_radar.delivery.migrations.0006_harden_role_source_audit")
     migration.reconstruct_package_owners(django_apps, None)
 
     package.refresh_from_db()
