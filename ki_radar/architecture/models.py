@@ -3,12 +3,15 @@ from __future__ import annotations
 import uuid
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 
 from ki_radar.accounts.models import BusinessUnit
 from ki_radar.core.models import TimeStampedModel
+
+from .audit import ImmutableDecisionManager
 
 
 class ValueStream(TimeStampedModel):
@@ -198,6 +201,15 @@ class SolutionOption(TimeStampedModel):
         PREFERRED = "preferred", "Bevorzugte Option"
         REJECTED = "rejected", "Verworfen"
 
+    class EvaluationStatus(models.TextChoices):
+        DRAFT = "draft", "Noch nicht vollständig bewertet"
+        ASSESSED = "assessed", "Bewertet"
+
+    class Effort(models.TextChoices):
+        LOW = "low", "Niedrig"
+        MEDIUM = "medium", "Mittel"
+        HIGH = "high", "Hoch"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     process_analysis = models.ForeignKey(
         ProcessAnalysis,
@@ -211,8 +223,18 @@ class SolutionOption(TimeStampedModel):
         choices=Recommendation.choices,
         default=Recommendation.CANDIDATE,
     )
+    evaluation_status = models.CharField(
+        max_length=20,
+        choices=EvaluationStatus.choices,
+        default=EvaluationStatus.DRAFT,
+        verbose_name="Bewertungsstatus",
+    )
     description = models.TextField(verbose_name="Lösungsbeschreibung")
     expected_value = models.TextField(verbose_name="Erwarteter Beitrag")
+    bottleneck_coverage = models.TextField(
+        blank=True,
+        verbose_name="Abdeckung von Bottleneck und Ursache",
+    )
     feasibility = models.CharField(
         max_length=10,
         choices=[("low", "Niedrig"), ("medium", "Mittel"), ("high", "Hoch")],
@@ -225,6 +247,12 @@ class SolutionOption(TimeStampedModel):
         verbose_name="Auswirkung auf Anwendungen",
     )
     integration_impact = models.TextField(blank=True, verbose_name="Integrationen")
+    integration_effort = models.CharField(
+        max_length=10,
+        choices=Effort.choices,
+        default=Effort.MEDIUM,
+        verbose_name="Integrationsaufwand",
+    )
     technology_constraints = models.TextField(
         blank=True,
         verbose_name="Technologieleitplanken",
@@ -258,6 +286,22 @@ class SolutionOption(TimeStampedModel):
         return self.process_analysis.get_absolute_url()
 
     @property
+    def comparison_complete(self) -> bool:
+        required = (
+            self.description,
+            self.expected_value,
+            self.bottleneck_coverage,
+            self.data_requirements,
+            self.application_impact,
+            self.integration_impact,
+            self.risks,
+            self.architecture_fit,
+        )
+        return self.evaluation_status == self.EvaluationStatus.ASSESSED and all(
+            str(value).strip() for value in required
+        )
+
+    @property
     def starts_ai_use_case(self) -> bool:
         non_ai_option_types = {
             self.OptionType.ORGANIZATIONAL,
@@ -266,6 +310,52 @@ class SolutionOption(TimeStampedModel):
             self.OptionType.NO_TECH,
         }
         return self.option_type not in non_ai_option_types
+
+
+class SolutionSelectionDecision(TimeStampedModel):
+    process_analysis = models.ForeignKey(
+        ProcessAnalysis,
+        on_delete=models.PROTECT,
+        related_name="solution_selection_decisions",
+    )
+    selected_option = models.ForeignKey(
+        SolutionOption,
+        on_delete=models.PROTECT,
+        related_name="selection_decisions",
+    )
+    rationale = models.TextField(verbose_name="Auswahlbegründung")
+    comparison_snapshot = models.JSONField(default=list, editable=False)
+    decided_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="solution_selection_decisions",
+    )
+    decided_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    objects = ImmutableDecisionManager()
+
+    class Meta:
+        ordering = ["-decided_at", "-created_at"]
+
+    def save(self, *args, **kwargs):
+        if self.pk and type(self).objects.filter(pk=self.pk).exists():
+            raise ValidationError("Eine dokumentierte Lösungsentscheidung ist unveränderlich.")
+        if (
+            self.selected_option_id
+            and self.process_analysis_id
+            and self.selected_option.process_analysis_id != self.process_analysis_id
+        ):
+            raise ValidationError("Die ausgewählte Option gehört nicht zu dieser Prozessanalyse.")
+        if not self.rationale.strip():
+            raise ValidationError("Für die Lösungsentscheidung ist eine Begründung erforderlich.")
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError("Eine dokumentierte Lösungsentscheidung darf nicht gelöscht werden.")
+
+    def __str__(self) -> str:
+        return f"{self.process_analysis}: {self.selected_option}"
 
 
 class UseCaseOrigin(TimeStampedModel):

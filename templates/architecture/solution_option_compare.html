@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Lösungsoptionen vergleichen – KI-Radar{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="eyebrow mb-2">{{ process_analysis.name }}</div>
+    <h1 class="page-title">Lösungsoptionen vergleichen</h1>
+    <p class="page-subtitle">Einheitliche Entscheidungsmatrix in lösungsoffener Reihenfolge: organisatorisch und regelbasiert vor komplexeren technischen Optionen.</p>
+  </div>
+  <a class="btn btn-outline-secondary" href="{{ process_analysis.get_absolute_url }}">Zur Prozessanalyse</a>
+</div>
+
+{% for blocker in blockers %}<div class="alert alert-warning">{{ blocker }}</div>{% endfor %}
+
+<div class="app-card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-start gap-3">
+    <div><strong>Vergleichsmatrix</strong><div class="small text-muted mt-1">Alle Optionen werden anhand derselben Kriterien gegenübergestellt.</div></div>
+    {% if can_select %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'architecture:solution_option_create' process_analysis.pk %}">Option ergänzen</a>{% endif %}
+  </div>
+  <div class="card-body table-responsive">
+    <table class="table align-middle comparison-matrix">
+      <thead><tr><th scope="col">Kriterium</th>{% for option in options %}<th scope="col"><span class="badge badge-soft">{{ option.get_option_type_display }}</span><div class="mt-2">{{ option.name }}</div><div class="small text-muted">{{ option.get_evaluation_status_display }}</div></th>{% endfor %}</tr></thead>
+      <tbody>
+        <tr><th scope="row">Lösungsbeschreibung</th>{% for option in options %}<td class="text-preline">{{ option.description }}</td>{% endfor %}</tr>
+        <tr><th scope="row">Erwarteter Beitrag</th>{% for option in options %}<td class="text-preline">{{ option.expected_value }}</td>{% endfor %}</tr>
+        <tr><th scope="row">Bottleneck-Abdeckung</th>{% for option in options %}<td class="text-preline">{{ option.bottleneck_coverage|default:"–" }}</td>{% endfor %}</tr>
+        <tr><th scope="row">Machbarkeit</th>{% for option in options %}<td>{{ option.get_feasibility_display }}</td>{% endfor %}</tr>
+        <tr><th scope="row">Datenanforderungen</th>{% for option in options %}<td class="text-preline">{{ option.data_requirements|default:"–" }}</td>{% endfor %}</tr>
+        <tr><th scope="row">Anwendungsauswirkung</th>{% for option in options %}<td class="text-preline">{{ option.application_impact|default:"–" }}</td>{% endfor %}</tr>
+        <tr><th scope="row">Integrationsaufwand</th>{% for option in options %}<td>{{ option.get_integration_effort_display }}</td>{% endfor %}</tr>
+        <tr><th scope="row">Integrationen</th>{% for option in options %}<td class="text-preline">{{ option.integration_impact|default:"–" }}</td>{% endfor %}</tr>
+        <tr><th scope="row">Risiken</th>{% for option in options %}<td class="text-preline">{{ option.risks|default:"–" }}</td>{% endfor %}</tr>
+        <tr><th scope="row">Architecture Fit</th>{% for option in options %}<td class="text-preline">{{ option.architecture_fit|default:"–" }}</td>{% endfor %}</tr>
+        <tr><th scope="row">Entscheidungsstatus</th>{% for option in options %}<td>{{ option.get_recommendation_display }}</td>{% endfor %}</tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if can_select %}
+<form method="post" class="app-card mb-4">
+  {% csrf_token %}
+  <div class="card-header"><strong>Bevorzugte Option auswählen</strong><div class="small text-muted mt-1">Die Auswahl wird mit Vergleichsstand, Person, Zeitpunkt und Begründung unveränderlich gespeichert.</div></div>
+  <div class="card-body">
+    {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="mb-3"><label class="form-label">{{ form.selected_option.label }}</label>{{ form.selected_option }}{{ form.selected_option.errors }}</div>
+    <div><label class="form-label" for="{{ form.rationale.id_for_label }}">{{ form.rationale.label }}</label>{{ form.rationale }}<div class="form-text">{{ form.rationale.help_text }}</div>{{ form.rationale.errors }}</div>
+  </div>
+  <div class="card-body border-top border-secondary-subtle text-end"><button class="btn btn-primary" {% if blockers %}disabled{% endif %}>Bevorzugte Option auswählen</button></div>
+</form>
+{% endif %}
+
+<div class="app-card">
+  <div class="card-header"><strong>Auswahlhistorie</strong></div>
+  <div class="card-body">
+    {% for decision in selection_history %}
+      <section class="border-bottom border-secondary-subtle pb-3 mb-3">
+        <div class="d-flex justify-content-between gap-3"><strong>{{ decision.selected_option.name }}</strong><span class="text-muted">{{ decision.decided_at|date:"d.m.Y H:i" }}</span></div>
+        <div class="small text-muted mt-1">Entschieden von {{ decision.decided_by|default:"Gelöschter Nutzer" }} · {{ decision.comparison_snapshot|length }} verglichene Optionen</div>
+        <div class="text-preline mt-2">{{ decision.rationale }}</div>
+      </section>
+    {% empty %}<p class="text-muted mb-0">Noch keine auditierbare Auswahl dokumentiert.</p>{% endfor %}
+  </div>
+</div>
+{% endblock %}

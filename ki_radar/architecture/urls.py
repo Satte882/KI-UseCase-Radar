@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import gated_views, views
+from . import gated_views, solution_views, views
 
 app_name = "architecture"
 
@@ -62,6 +62,11 @@ urlpatterns = [
         "processes/<uuid:pk>/validate/",
         views.process_analysis_validate,
         name="process_analysis_validate",
+    ),
+    path(
+        "processes/<uuid:pk>/options/compare/",
+        solution_views.solution_option_compare,
+        name="solution_option_compare",
     ),
     path(
         "processes/<uuid:process_analysis_id>/options/new/",

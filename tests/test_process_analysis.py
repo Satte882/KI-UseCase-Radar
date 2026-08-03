@@ -137,7 +137,7 @@ def test_owner_can_create_process_analysis_from_stage(
 
 
 @pytest.mark.django_db
-def test_solution_options_allow_non_ai_alternatives_and_only_one_preferred(
+def test_solution_options_allow_non_ai_alternatives_and_separate_selection(
     owner,
     architecture_context,
     preferred_option,
@@ -154,16 +154,22 @@ def test_solution_options_allow_non_ai_alternatives_and_only_one_preferred(
     )
     assert organizational.get_option_type_display() == "Organisatorische Änderung"
 
-    form = SolutionOptionForm(
+    form = SolutionOptionForm(process_analysis=process)
+    assert "recommendation" not in form.fields
+    assert "evaluation_status" in form.fields
+
+    assessed = SolutionOptionForm(
         {
-            "name": "Zweite bevorzugte Option",
+            "name": "Alternative KI-Lösung",
             "option_type": SolutionOption.OptionType.GENERATIVE_AI,
-            "recommendation": SolutionOption.Recommendation.PREFERRED,
+            "evaluation_status": SolutionOption.EvaluationStatus.ASSESSED,
             "description": "Alternative KI-Lösung",
             "expected_value": "Weitere Zeitersparnis",
+            "bottleneck_coverage": "",
             "feasibility": "medium",
             "data_requirements": "Angebote",
             "application_impact": "Neue Anwendung",
+            "integration_effort": "medium",
             "integration_impact": "Keine",
             "technology_constraints": "EU-Hosting",
             "risks": "Halluzinationen",
@@ -171,8 +177,8 @@ def test_solution_options_allow_non_ai_alternatives_and_only_one_preferred(
         },
         process_analysis=process,
     )
-    assert not form.is_valid()
-    assert "recommendation" in form.errors
+    assert not assessed.is_valid()
+    assert "bottleneck_coverage" in assessed.errors
 
 
 @pytest.mark.django_db

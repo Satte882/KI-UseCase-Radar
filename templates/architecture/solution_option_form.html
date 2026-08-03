@@ -12,12 +12,12 @@
 
 <form method="post" class="app-card">
   {% csrf_token %}
-  <div class="card-header"><strong>Opportunities &amp; Solutions · ADM Phase E</strong><div class="small text-muted mt-1">Eine Option wird nicht automatisch bevorzugt. Der Status benötigt eine nachvollziehbare Begründung.</div></div>
+  <div class="card-header"><strong>Opportunities &amp; Solutions · ADM Phase E</strong><div class="small text-muted mt-1">Hier wird die Option bewertet. Die bevorzugte Lösung wird anschließend ausschließlich in der Vergleichsansicht ausgewählt.</div></div>
   <div class="card-body">
     {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
     <div class="row g-3">
       {% for field in form %}
-      <div class="{% if field.name == 'name' or field.name == 'option_type' or field.name == 'recommendation' or field.name == 'feasibility' %}col-md-6{% else %}col-12{% endif %}">
+      <div class="{% if field.name == 'name' or field.name == 'option_type' or field.name == 'evaluation_status' or field.name == 'integration_effort' or field.name == 'feasibility' %}col-md-6{% else %}col-12{% endif %}">
         <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
         {{ field }}
         {{ field.errors }}

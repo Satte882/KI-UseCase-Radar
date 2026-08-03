@@ -342,42 +342,45 @@ class SolutionOptionForm(StyledModelForm):
             self.process_analysis = self.instance.process_analysis
         else:
             self.process_analysis = None
-
-    def clean_recommendation(self):
-        recommendation = self.cleaned_data["recommendation"]
-        if (
-            recommendation != SolutionOption.Recommendation.PREFERRED
-            or self.process_analysis is None
-        ):
-            return recommendation
-        focus = get_value_stream_focus(self.process_analysis.stage.value_stream)
-        if focus is None or not focus.is_selected:
-            raise forms.ValidationError(
-                "Eine Lösungsoption kann erst nach einer dokumentierten Auswahl des Value Streams "
-                "bevorzugt werden."
-            )
-        existing = self.process_analysis.solution_options.filter(
-            recommendation=SolutionOption.Recommendation.PREFERRED
+        self.fields[
+            "evaluation_status"
+        ].help_text = (
+            "Als bewertet markieren, sobald alle Vergleichskriterien belastbar dokumentiert sind."
         )
-        if self.instance.pk:
-            existing = existing.exclude(pk=self.instance.pk)
-        if existing.exists():
-            raise forms.ValidationError(
-                "Für diese Prozessanalyse ist bereits eine bevorzugte Lösungsoption festgelegt."
-            )
-        return recommendation
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get("evaluation_status") != SolutionOption.EvaluationStatus.ASSESSED:
+            return cleaned
+        required = {
+            "bottleneck_coverage": "Abdeckung von Bottleneck und Ursache",
+            "data_requirements": "Datenanforderungen",
+            "application_impact": "Auswirkung auf Anwendungen",
+            "integration_impact": "Integrationen",
+            "risks": "Risiken und Nachteile",
+            "architecture_fit": "Begründung und Architecture Fit",
+        }
+        for field_name, label in required.items():
+            if not str(cleaned.get(field_name, "")).strip():
+                self.add_error(
+                    field_name,
+                    f"{label} ist für den Status 'Bewertet' erforderlich.",
+                )
+        return cleaned
 
     class Meta:
         model = SolutionOption
         fields = [
             "name",
             "option_type",
-            "recommendation",
+            "evaluation_status",
             "description",
             "expected_value",
+            "bottleneck_coverage",
             "feasibility",
             "data_requirements",
             "application_impact",
+            "integration_effort",
             "integration_impact",
             "technology_constraints",
             "risks",
@@ -386,6 +389,7 @@ class SolutionOptionForm(StyledModelForm):
         widgets = {
             "description": forms.Textarea(attrs={"rows": 5}),
             "expected_value": forms.Textarea(attrs={"rows": 4}),
+            "bottleneck_coverage": forms.Textarea(attrs={"rows": 4}),
             "data_requirements": forms.Textarea(attrs={"rows": 4}),
             "application_impact": forms.Textarea(attrs={"rows": 4}),
             "integration_impact": forms.Textarea(attrs={"rows": 4}),
@@ -393,3 +397,26 @@ class SolutionOptionForm(StyledModelForm):
             "risks": forms.Textarea(attrs={"rows": 4}),
             "architecture_fit": forms.Textarea(attrs={"rows": 5}),
         }
+
+
+class SolutionSelectionForm(forms.Form):
+    selected_option = forms.ModelChoiceField(
+        queryset=SolutionOption.objects.none(),
+        label="Bevorzugte Option",
+        widget=forms.RadioSelect,
+    )
+    rationale = forms.CharField(
+        label="Auswahlbegründung",
+        widget=forms.Textarea(attrs={"rows": 5, "class": FORM_CONTROL}),
+        help_text=(
+            "Begründen Sie insbesondere, warum einfachere organisatorische oder "
+            "regelbasierte Alternativen nicht ausreichen."
+        ),
+    )
+
+    def __init__(self, *args, options=(), **kwargs):
+        super().__init__(*args, **kwargs)
+        option_ids = [option.pk for option in options]
+        field = self.fields["selected_option"]
+        field.queryset = SolutionOption.objects.filter(pk__in=option_ids)
+        field.choices = [("", "---------"), *((option.pk, option.name) for option in options)]
