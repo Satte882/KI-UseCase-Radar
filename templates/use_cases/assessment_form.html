@@ -2,8 +2,13 @@
 {% block title %}Bewertung – {{ use_case.short_id }}{% endblock %}
 {% block content %}
 <div class="page-header">
-  <div><div class="eyebrow mb-2">{{ use_case.short_id }} · Strukturierte Bewertung</div><h1 class="page-title">{{ use_case.title }}</h1><p class="page-subtitle">Confidence wird aus Evidenzqualität, Aktualität, Abdeckung, unabhängiger Prüfung und geklärten Annahmen hergeleitet.</p></div>
+  <div>
+    <div class="eyebrow mb-2">{{ journey.path_label }} · {{ use_case.short_id }} · Strukturierte Bewertung</div>
+    <h1 class="page-title">{{ use_case.title }}</h1>
+    <p class="page-subtitle">Confidence wird aus Evidenzqualität, Aktualität, Abdeckung, unabhängiger Prüfung und geklärten Annahmen hergeleitet.</p>
+  </div>
 </div>
+{% include "includes/journey_stepper.html" %}
 <form method="post">{% csrf_token %}<input type="hidden" name="return_to" value="{{ return_to }}">
   <div class="app-card mb-4">
     <div class="card-header"><strong>Fachliche Bewertung</strong></div>
