@@ -3,12 +3,17 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 
+from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
-from django.db.models import Max
+from django.db.models import Max, Q
 from django.utils import timezone
 
-from ki_radar.accounts.permissions import is_coordinator
+from ki_radar.accounts.permissions import (
+    GROUP_COORDINATOR,
+    GROUP_TECH_ADMIN,
+    is_coordinator,
+)
 from ki_radar.delivery.services import current_delivery_package, current_handed_over_package
 
 from .models import ApprovalDecision, DecisionAssessment, UseCase
@@ -523,6 +528,40 @@ def create_decision_assessment(*, use_case: UseCase, actor, data) -> DecisionAss
     return assessment
 
 
+def eligible_second_approvers(*, use_case: UseCase, first_decider):
+    assessment = use_case.decision_assessments.first()
+    excluded_ids = {
+        user_id
+        for user_id in [
+            getattr(first_decider, "id", None),
+            assessment.assessed_by_id if assessment else None,
+            use_case.business_owner_id,
+        ]
+        if user_id is not None
+    }
+    return (
+        get_user_model()
+        .objects.filter(is_active=True, is_anonymized=False)
+        .filter(Q(is_superuser=True) | Q(groups__name__in=[GROUP_COORDINATOR, GROUP_TECH_ADMIN]))
+        .exclude(pk__in=excluded_ids)
+        .distinct()
+        .order_by("last_name", "first_name", "username")
+    )
+
+
+def can_review_conditional_decision(*, decision: ApprovalDecision, actor) -> bool:
+    if not decision.is_pending_second_approval or not is_coordinator(actor):
+        return False
+    return (
+        eligible_second_approvers(
+            use_case=decision.use_case,
+            first_decider=decision.decided_by,
+        )
+        .filter(pk=actor.pk)
+        .exists()
+    )
+
+
 def _save_approval_decision(**kwargs) -> ApprovalDecision:
     decision = ApprovalDecision(**kwargs)
     decision.full_clean()
@@ -555,12 +594,21 @@ def submit_approval_decision(*, use_case: UseCase, actor, data) -> ApprovalDecis
         if use_case.approval_decisions.filter(
             decision_status=UseCase.DecisionStatus.APPROVED_WITH_CONDITIONS,
             finalized_at__isnull=True,
+            second_approval_returned_at__isnull=True,
         ).exists():
             raise ValidationError("Es besteht bereits eine offene zweite Freigabe.")
+        assignee = data.get("second_approval_assignee")
+        eligible = eligible_second_approvers(use_case=use_case, first_decider=actor)
+        if assignee is None or not eligible.filter(pk=assignee.pk).exists():
+            raise ValidationError(
+                "Für die Freigabe mit Auflagen muss eine unabhängige berechtigte "
+                "Person als bevorzugte Zweitprüfung zugewiesen werden."
+            )
         return _save_approval_decision(
             use_case=use_case,
             assessment=assessment,
             decided_by=actor,
+            second_approval_requested_at=timezone.now(),
             **data,
         )
 
@@ -579,17 +627,9 @@ def submit_approval_decision(*, use_case: UseCase, actor, data) -> ApprovalDecis
 
 @transaction.atomic
 def confirm_conditional_decision(*, decision: ApprovalDecision, actor) -> ApprovalDecision:
-    if not is_coordinator(actor):
-        raise PermissionDenied
-    if not decision.is_pending_second_approval:
-        raise ValidationError("Diese Entscheidung wartet nicht auf eine zweite Freigabe.")
-    if actor.id in {decision.decided_by_id, decision.assessment.assessed_by_id}:
-        raise ValidationError(
-            "Die zweite Freigabe muss durch eine weitere unabhängige berechtigte Person erfolgen."
-        )
-    if actor.id == decision.use_case.business_owner_id:
-        raise ValidationError(
-            "Die fachlich verantwortliche Person darf die eigene Freigabe nicht bestätigen."
+    if not can_review_conditional_decision(decision=decision, actor=actor):
+        raise PermissionDenied(
+            "Für diese unabhängige Zweitprüfung fehlt die Berechtigung oder Personentrennung."
         )
     if decision.assessment_id != decision.use_case.decision_assessments.first().id:
         raise ValidationError("Seit dem Vorschlag wurde eine neue Bewertung erstellt.")
@@ -610,4 +650,33 @@ def confirm_conditional_decision(*, decision: ApprovalDecision, actor) -> Approv
     decision.use_case.decision_status = decision.decision_status
     decision.use_case._history_user = actor
     decision.use_case.save()
+    return decision
+
+
+@transaction.atomic
+def return_conditional_decision(
+    *,
+    decision: ApprovalDecision,
+    actor,
+    reason: str,
+) -> ApprovalDecision:
+    if not can_review_conditional_decision(decision=decision, actor=actor):
+        raise PermissionDenied(
+            "Für diese unabhängige Zweitprüfung fehlt die Berechtigung oder Personentrennung."
+        )
+    return_reason = reason.strip()
+    if not return_reason:
+        raise ValidationError("Für die Rückgabe ist eine konkrete Begründung erforderlich.")
+    decision.second_approval_returned_by = actor
+    decision.second_approval_returned_at = timezone.now()
+    decision.second_approval_return_reason = return_reason
+    decision.full_clean()
+    decision.save(
+        update_fields=[
+            "second_approval_returned_by",
+            "second_approval_returned_at",
+            "second_approval_return_reason",
+            "updated_at",
+        ]
+    )
     return decision

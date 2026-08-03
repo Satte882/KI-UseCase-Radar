@@ -17,9 +17,9 @@ urlpatterns = [
         name="approval_decision_create",
     ),
     path(
-        "decision/<int:decision_id>/confirm/",
-        decision_views.conditional_decision_confirm,
-        name="conditional_decision_confirm",
+        "decision/<int:decision_id>/second-approval/",
+        decision_views.second_approval_review,
+        name="second_approval_review",
     ),
     path("<uuid:pk>/copilot/", views.use_case_copilot, name="copilot"),
 ]
