@@ -17,13 +17,31 @@ from .services import (
     create_decision_assessment,
     submit_approval_decision,
 )
+from .workflow import build_use_case_journey
+
+
+def _decision_use_case_queryset():
+    return UseCase.objects.select_related(
+        "business_unit",
+        "business_owner",
+        "coordinator",
+        "technical_owner",
+        "architecture_origin__stage__value_stream",
+        "architecture_origin__stage__value_stream__focus",
+        "architecture_origin__process_analysis",
+        "architecture_origin__solution_option",
+    ).prefetch_related(
+        "decision_assessments",
+        "approval_decisions",
+        "delivery_packages",
+    )
 
 
 @login_required
 def assessment_create(request, pk):
     if not is_coordinator(request.user):
         raise PermissionDenied
-    use_case = get_object_or_404(UseCase, pk=pk)
+    use_case = get_object_or_404(_decision_use_case_queryset(), pk=pk)
     return_to = requested_return_to(request, use_case.get_absolute_url())
     if request.method == "POST":
         form = DecisionAssessmentForm(request.POST)
@@ -44,7 +62,12 @@ def assessment_create(request, pk):
     return render(
         request,
         "use_cases/assessment_form.html",
-        {"form": form, "use_case": use_case, "return_to": return_to},
+        {
+            "form": form,
+            "use_case": use_case,
+            "journey": build_use_case_journey(use_case, request.user),
+            "return_to": return_to,
+        },
     )
 
 
@@ -52,10 +75,7 @@ def assessment_create(request, pk):
 def approval_decision_create(request, pk):
     if not is_coordinator(request.user):
         raise PermissionDenied
-    use_case = get_object_or_404(
-        UseCase.objects.prefetch_related("decision_assessments", "approval_decisions"),
-        pk=pk,
-    )
+    use_case = get_object_or_404(_decision_use_case_queryset(), pk=pk)
     return_to = requested_return_to(request, use_case.get_absolute_url())
     assessment = use_case.decision_assessments.first()
     if assessment is None:
@@ -105,6 +125,7 @@ def approval_decision_create(request, pk):
             "form": form,
             "use_case": use_case,
             "assessment": assessment,
+            "journey": build_use_case_journey(use_case, request.user),
             "approval_check": check,
             "approval_blocker_details": blocker_details,
             "first_approval_blocker": blocker_details[0] if blocker_details else None,
