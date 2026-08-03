@@ -113,7 +113,9 @@ def _validate_review_transition(*, use_case: UseCase, actor, review_data: dict) 
             if not str(review_data.get(field_name, "")).strip()
         ]
         if missing:
-            raise ValidationError("Für die vorzeitige Produktivsetzung fehlen: " + ", ".join(missing))
+            raise ValidationError(
+                "Für die vorzeitige Produktivsetzung fehlen: " + ", ".join(missing)
+            )
         review_data["early_go_live_original_pilot_end"] = use_case.planned_pilot_end
     else:
         for field_name in EARLY_EXCEPTION_FIELDS:
