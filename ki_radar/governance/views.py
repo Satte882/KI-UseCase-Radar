@@ -82,9 +82,7 @@ def assessment_create(request, use_case_id):
                 required = getattr(assessment, config["required_field"])
                 setattr(use_case, config["required_field"], required)
                 setattr(use_case, config["completed_field"], False)
-                update_fields.extend(
-                    [config["required_field"], config["completed_field"]]
-                )
+                update_fields.extend([config["required_field"], config["completed_field"]])
             use_case._history_user = request.user
             use_case.save(update_fields=update_fields)
 
