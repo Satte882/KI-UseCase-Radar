@@ -328,7 +328,7 @@ def test_authorized_substitutes_can_confirm_only_the_selected_role(
 
 
 @pytest.mark.django_db
-def test_unassigned_person_cannot_silently_confirm_both_roles(
+def test_non_admin_cannot_confirm_both_roles(
     owner, other_owner, coordinator, business_unit
 ):
     use_case = make_approved_use_case(
@@ -345,20 +345,18 @@ def test_unassigned_person_cannot_silently_confirm_both_roles(
         actor=coordinator,
     )
 
-    with pytest.raises(ValidationError, match="Rollenkollaps"):
+    with pytest.raises(ValidationError, match="Technischer Administrator"):
         review_delivery_section(
             package=package,
             section_key="solution_direction",
             action="confirm_technical",
             actor=coordinator,
-            role_collapse_reason="Kleines Team.",
+            role_collapse_reason="Testdurchlauf.",
         )
 
 
 @pytest.mark.django_db
-def test_dual_owner_requires_reason_and_independent_control(
-    owner, other_owner, coordinator, business_unit
-):
+def test_dual_owner_is_not_an_exception(owner, business_unit, coordinator):
     use_case = make_approved_use_case(
         owner=owner,
         technical_owner=owner,
@@ -373,50 +371,23 @@ def test_dual_owner_requires_reason_and_independent_control(
         actor=owner,
     )
 
-    with pytest.raises(ValidationError, match="Begründung erforderlich"):
+    with pytest.raises(ValidationError, match="Technischer Administrator"):
         review_delivery_section(
             package=package,
             section_key="solution_direction",
             action="confirm_technical",
             actor=owner,
+            role_collapse_reason="Kleines Team.",
         )
-
-    review_delivery_section(
-        package=package,
-        section_key="solution_direction",
-        action="confirm_technical",
-        actor=owner,
-        role_collapse_reason="Business- und Technikverantwortung liegen im Pilotteam zusammen.",
-    )
-    review = package.section_reviews.get(section_key="solution_direction")
-    assert review.has_role_collapse is True
-    assert review.review_status == DeliverySectionReview.ReviewStatus.NEEDS_REVIEW
-    assert any(
-        item.code == "INDEPENDENT_CONFIRMATION_MISSING"
-        for item in evaluate_delivery_readiness(package)
-    )
-
-    review_delivery_section(
-        package=package,
-        section_key="solution_direction",
-        action="independent_check",
-        actor=other_owner,
-        note="Fachliche Plausibilität unabhängig kontrolliert.",
-    )
-    review.refresh_from_db()
-    assert review.independent_checked_by == other_owner
-    assert review.independent_checked_at is not None
-    assert review.independent_check_role == "Fachlich berechtigte Kontrolle"
-    assert review.review_status == DeliverySectionReview.ReviewStatus.CONFIRMED
 
 
 @pytest.mark.django_db
-def test_delivery_page_shows_separate_actions_and_audit_details(
-    client, owner, other_owner, coordinator, business_unit
+def test_technical_admin_can_use_audited_same_person_exception(
+    owner, other_owner, coordinator, technical_admin, business_unit
 ):
     use_case = make_approved_use_case(
         owner=owner,
-        technical_owner=owner,
+        technical_owner=other_owner,
         coordinator=coordinator,
         business_unit=business_unit,
     )
@@ -425,23 +396,66 @@ def test_delivery_page_shows_separate_actions_and_audit_details(
         package=package,
         section_key="solution_direction",
         action="confirm_business",
-        actor=owner,
+        actor=technical_admin,
+    )
+
+    with pytest.raises(ValidationError, match="Admin-Sonderbestätigung"):
+        review_delivery_section(
+            package=package,
+            section_key="solution_direction",
+            action="confirm_technical",
+            actor=technical_admin,
+        )
+
+    review_delivery_section(
+        package=package,
+        section_key="solution_direction",
+        action="confirm_technical",
+        actor=technical_admin,
+        role_collapse_reason="Vollständiger administrativer Test des Delivery-Flows.",
+    )
+    review = package.section_reviews.get(section_key="solution_direction")
+
+    assert review.admin_override_confirmed is True
+    assert review.has_role_collapse is True
+    assert review.review_status == DeliverySectionReview.ReviewStatus.CONFIRMED
+    assert review.business_confirmation_role == "Admin-Sonderbestätigung"
+    assert review.technical_confirmation_role == "Admin-Sonderbestätigung"
+    assert review.role_collapse_reason.startswith("Vollständiger administrativer Test")
+
+
+@pytest.mark.django_db
+def test_delivery_page_labels_admin_override_by_confirmation_role(
+    client, owner, other_owner, coordinator, technical_admin, business_unit
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    review_delivery_section(
+        package=package,
+        section_key="solution_direction",
+        action="confirm_business",
+        actor=technical_admin,
     )
     review_delivery_section(
         package=package,
         section_key="solution_direction",
         action="confirm_technical",
-        actor=owner,
-        role_collapse_reason="Kleines Pilotteam mit dokumentiertem Rollenkollaps.",
+        actor=technical_admin,
+        role_collapse_reason="Administrativer Ende-zu-Ende-Test.",
     )
-    client.force_login(other_owner)
+    client.force_login(technical_admin)
 
     response = client.get(package.get_absolute_url())
     body = response.content.decode()
 
     assert response.status_code == 200
-    assert "Fachlich bestätigen" in body
-    assert "Technisch bestätigen" not in body or "Unabhängig kontrollieren" in body
-    assert "Keine unabhängige Vier-Augen-Bestätigung" in body
-    assert "Kleines Pilotteam" in body
-    assert "Unabhängig kontrollieren" in body
+    assert f"Fachlich: {technical_admin} · Admin-Sonderbestätigung" in body
+    assert f"Technisch: {technical_admin} · Admin-Sonderbestätigung" in body
+    assert "Admin-Sonderbestätigung ohne Vier-Augen-Prinzip" in body
+    assert "Administrativer Ende-zu-Ende-Test" in body
+

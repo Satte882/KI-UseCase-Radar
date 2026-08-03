@@ -201,31 +201,14 @@ def evaluate_delivery_readiness(package: DeliveryPackage) -> list[ReadinessFindi
                 )
             )
         elif review.review_status == DeliverySectionReview.ReviewStatus.NEEDS_REVIEW:
-            if (
-                review.has_role_collapse
-                and review.role_confirmations_complete
-                and not review.independent_control_complete
-            ):
-                findings.append(
-                    ReadinessFinding(
-                        section_key,
-                        "INDEPENDENT_CONFIRMATION_MISSING",
-                        "blocker",
-                        (
-                            f"Für „{section_label}“ fehlt nach der zusammengeführten "
-                            "Rollenbestätigung eine unabhängige Kontrolle."
-                        ),
-                    )
+            findings.append(
+                ReadinessFinding(
+                    section_key,
+                    "SECTION_NEEDS_REVIEW",
+                    "blocker",
+                    f"Die Sektion „{section_label}“ wurde noch nicht vollständig bestätigt.",
                 )
-            else:
-                findings.append(
-                    ReadinessFinding(
-                        section_key,
-                        "SECTION_NEEDS_REVIEW",
-                        "blocker",
-                        f"Die Sektion „{section_label}“ wurde noch nicht vollständig bestätigt.",
-                    )
-                )
+            )
         elif review.review_status == DeliverySectionReview.ReviewStatus.NOT_APPLICABLE:
             if not _text(review.review_note):
                 findings.append(
@@ -237,20 +220,17 @@ def evaluate_delivery_readiness(package: DeliveryPackage) -> list[ReadinessFindi
                     )
                 )
         elif not review.confirmations_complete:
-            code = (
-                "INDEPENDENT_CONFIRMATION_MISSING"
-                if review.has_role_collapse and not review.independent_control_complete
-                else "REQUIRED_CONFIRMATION_MISSING"
-            )
-            message = (
-                f"Für „{section_label}“ fehlt eine unabhängige Kontrolle."
-                if code == "INDEPENDENT_CONFIRMATION_MISSING"
-                else (
-                    f"Für „{section_label}“ fehlen erforderliche fachliche oder "
-                    "technische Bestätigungen."
+            findings.append(
+                ReadinessFinding(
+                    section_key,
+                    "REQUIRED_CONFIRMATION_MISSING",
+                    "blocker",
+                    (
+                        f"Für „{section_label}“ fehlen erforderliche fachliche oder "
+                        "technische Bestätigungen."
+                    ),
                 )
             )
-            findings.append(ReadinessFinding(section_key, code, "blocker", message))
 
     for section_key, field_names in READY_REQUIRED_FIELDS.items():
         for field_name in field_names:

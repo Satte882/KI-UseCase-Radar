@@ -18,8 +18,8 @@ from .models import DELIVERY_SECTION_DEFINITIONS, DeliveryPackage
 from .permissions import (
     can_create_package,
     can_edit_package,
-    can_independently_check,
     can_review_section,
+    can_use_admin_confirmation_override,
     can_transition_package,
     can_view_package,
     reviewer_roles,
@@ -57,7 +57,6 @@ def _package_queryset():
         "section_reviews__reviewed_by",
         "section_reviews__business_confirmed_by",
         "section_reviews__technical_confirmed_by",
-        "section_reviews__independent_checked_by",
         "use_case__decision_assessments",
         "use_case__approval_decisions",
         "use_case__delivery_packages",
@@ -176,13 +175,8 @@ def package_detail(request, pk):
                     and "technical" in review.required_confirmations
                     and review.technical_confirmed_at is None
                 ),
-                "can_independent_check": bool(
-                    review and can_independently_check(request.user, package, review)
-                ),
-                "show_role_collapse_reason": bool(
-                    shared_section
-                    and package.use_case.business_owner_id == request.user.id
-                    and package.use_case.technical_owner_id == request.user.id
+                "show_admin_override_reason": bool(
+                    shared_section and can_use_admin_confirmation_override(request.user)
                 ),
                 "responsible_role": responsible_role,
                 "responsible_person": responsible_person,

@@ -15,7 +15,11 @@ from .models import (
     DeliveryPackage,
     DeliverySectionReview,
 )
-from .permissions import confirmation_role_label, reviewer_roles
+from .permissions import (
+    can_use_admin_confirmation_override,
+    confirmation_role_label,
+    reviewer_roles,
+)
 from .readiness import blocking_findings, missing_ready_fields
 
 APPROVED_STATUSES = {
@@ -374,10 +378,7 @@ def reset_section_reviews(package: DeliveryPackage, section_keys: set[str]) -> N
         business_confirmation_role="",
         technical_confirmation_role="",
         role_collapse_reason="",
-        independent_checked_by=None,
-        independent_checked_at=None,
-        independent_check_role="",
-        independent_check_note="",
+        admin_override_confirmed=False,
     )
     if package.status == DeliveryPackage.Status.READY:
         package.status = DeliveryPackage.Status.DRAFT
@@ -431,23 +432,21 @@ def review_delivery_section(
         other_role = "technical" if role == "business" else "business"
         other_actor_id = getattr(review, f"{other_role}_confirmed_by_id")
         if other_actor_id == actor.id:
-            dual_owner = bool(
-                package.use_case.business_owner_id == actor.id
-                and package.use_case.technical_owner_id == actor.id
-            )
-            if not dual_owner:
+            if not can_use_admin_confirmation_override(actor):
                 raise ValidationError(
-                    "Dieselbe Person darf beide Rollen nur bei ausdrücklich zugewiesenem "
-                    "Business- und Technical-Owner-Rollenkollaps bestätigen."
+                    "Dieselbe Person darf fachlich und technisch nur als Technischer "
+                    "Administrator für Admin- oder Testzwecke bestätigen."
                 )
             collapse_reason = role_collapse_reason.strip()
             if not collapse_reason:
                 raise ValidationError(
-                    "Für die zusammengeführte Rollenbestätigung ist eine Begründung erforderlich."
+                    "Für die Admin-Sonderbestätigung ist eine Begründung erforderlich."
                 )
             review.role_collapse_reason = collapse_reason
+            review.admin_override_confirmed = True
         else:
             review.role_collapse_reason = ""
+            review.admin_override_confirmed = False
 
         assigned_owner_id = (
             package.use_case.business_owner_id
@@ -459,35 +458,15 @@ def review_delivery_section(
         setattr(
             review,
             f"{role}_confirmation_role",
-            confirmation_role_label(role, assigned=assigned_owner_id == actor.id),
+            confirmation_role_label(
+                role,
+                assigned=assigned_owner_id == actor.id,
+                admin_override=review.admin_override_confirmed,
+            ),
         )
-        review.independent_checked_by = None
-        review.independent_checked_at = None
-        review.independent_check_role = ""
-        review.independent_check_note = ""
-        review.review_status = (
-            DeliverySectionReview.ReviewStatus.CONFIRMED
-            if review.confirmations_complete
-            else DeliverySectionReview.ReviewStatus.NEEDS_REVIEW
-        )
-    elif action == "independent_check":
-        if not review.has_role_collapse:
-            raise ValidationError("Für diese Sektion ist keine unabhängige Kontrolle offen.")
-        if review.business_confirmed_by_id == actor.id:
-            raise ValidationError("Die bestätigende Person kann sich nicht selbst kontrollieren.")
-        independent_roles = reviewer_roles(actor, package, section_key)
-        if not independent_roles:
-            raise ValidationError("Für die unabhängige Kontrolle fehlt eine geeignete Rolle.")
-        review.independent_checked_by = actor
-        review.independent_checked_at = now
-        review.independent_check_role = (
-            "Fachlich und technisch berechtigte Kontrolle"
-            if independent_roles == {"business", "technical"}
-            else "Fachlich berechtigte Kontrolle"
-            if "business" in independent_roles
-            else "Technisch berechtigte Kontrolle"
-        )
-        review.independent_check_note = review.review_note
+        if review.admin_override_confirmed:
+            review.business_confirmation_role = "Admin-Sonderbestätigung"
+            review.technical_confirmation_role = "Admin-Sonderbestätigung"
         review.review_status = (
             DeliverySectionReview.ReviewStatus.CONFIRMED
             if review.confirmations_complete
@@ -511,10 +490,7 @@ def review_delivery_section(
         review.business_confirmation_role = ""
         review.technical_confirmation_role = ""
         review.role_collapse_reason = ""
-        review.independent_checked_by = None
-        review.independent_checked_at = None
-        review.independent_check_role = ""
-        review.independent_check_note = ""
+        review.admin_override_confirmed = False
     else:
         raise ValidationError("Unbekannte Aktion für die Sektionsprüfung.")
 

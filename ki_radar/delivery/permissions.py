@@ -3,10 +3,11 @@ from ki_radar.accounts.permissions import (
     GROUP_COORDINATOR,
     in_group,
     is_coordinator,
+    is_technical_admin,
 )
 from ki_radar.use_cases.permissions import can_view_use_case
 
-from .models import DeliveryPackage, DeliverySectionReview
+from .models import DeliveryPackage
 
 BUSINESS_SECTIONS = {
     "problem_and_target",
@@ -78,20 +79,21 @@ def reviewer_roles(user, package: DeliveryPackage, section_key: str) -> set[str]
     return roles
 
 
-def confirmation_role_label(role: str, *, assigned: bool) -> str:
+def can_use_admin_confirmation_override(user) -> bool:
+    return is_technical_admin(user)
+
+
+def confirmation_role_label(
+    role: str,
+    *,
+    assigned: bool,
+    admin_override: bool = False,
+) -> str:
+    if admin_override:
+        return "Admin-Sonderbestätigung"
     if role == "business":
         return "Business Owner" if assigned else "Berechtigte fachliche Stellvertretung"
     return "Technical Owner" if assigned else "Berechtigte technische Stellvertretung"
-
-
-def can_independently_check(
-    user,
-    package: DeliveryPackage,
-    review: DeliverySectionReview,
-) -> bool:
-    if not review.has_role_collapse or review.business_confirmed_by_id == user.id:
-        return False
-    return bool(reviewer_roles(user, package, review.section_key))
 
 
 def can_transition_package(user) -> bool:

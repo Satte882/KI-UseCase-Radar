@@ -202,16 +202,7 @@ class DeliverySectionReview(TimeStampedModel):
     business_confirmation_role = models.CharField(max_length=120, blank=True)
     technical_confirmation_role = models.CharField(max_length=120, blank=True)
     role_collapse_reason = models.TextField(blank=True)
-    independent_checked_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="independently_checked_delivery_sections",
-    )
-    independent_checked_at = models.DateTimeField(null=True, blank=True)
-    independent_check_role = models.CharField(max_length=120, blank=True)
-    independent_check_note = models.TextField(blank=True)
+    admin_override_confirmed = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["delivery_package", "section_key"]
@@ -246,9 +237,5 @@ class DeliverySectionReview(TimeStampedModel):
         )
 
     @property
-    def independent_control_complete(self) -> bool:
-        return not self.has_role_collapse or self.independent_checked_at is not None
-
-    @property
     def confirmations_complete(self) -> bool:
-        return self.role_confirmations_complete and self.independent_control_complete
+        return self.role_confirmations_complete
