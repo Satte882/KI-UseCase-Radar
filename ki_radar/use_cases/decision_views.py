@@ -160,7 +160,8 @@ def approval_decision_create(request, pk):
             if hard_check.blockers:
                 form.add_error(
                     None,
-                    "Die Entscheidung ist nicht ausführbar, solange harte Voraussetzungen offen sind.",
+                    "Die Entscheidung ist nicht ausführbar, solange harte "
+                    "Voraussetzungen offen sind.",
                 )
             else:
                 try:
