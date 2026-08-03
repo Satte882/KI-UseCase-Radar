@@ -29,7 +29,7 @@
       <div class="card-body">{{ form.non_field_errors }}<div class="row g-3">
         {% for field in form %}
           {% if field.is_hidden %}{{ field }}{% else %}
-          <div class="{% if field.name == 'rationale' or field.name == 'open_actions' or field.name == 'ending_reason' or field.name == 'data_and_access_handling' or field.name == 'replacement_solution' or field.name == 'final_assessment' or field.name == 'lessons_learned' or field.name == 'go_live_exception_confirmed' %}col-12{% else %}col-md-6{% endif %}">
+          <div class="{% if field.name == 'rationale' or field.name == 'open_actions' or field.name == 'ending_reason' or field.name == 'data_and_access_handling' or field.name == 'replacement_solution' or field.name == 'final_assessment' or field.name == 'lessons_learned' or field.name == 'go_live_exception_confirmed' or field.name == 'early_go_live_exception_confirmed' or field.name == 'early_go_live_evidence_basis' or field.name == 'early_go_live_unobserved_risks' or field.name == 'early_go_live_mitigation_measures' %}col-12{% else %}col-md-6{% endif %}">
             {% if field.field.widget.input_type == 'checkbox' %}<div class="form-check mt-3">{{ field }}<label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label></div>{% else %}<label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% endif %}
             <div class="text-danger small">{{ field.errors }}</div>{% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
           </div>

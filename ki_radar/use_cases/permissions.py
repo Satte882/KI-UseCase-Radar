@@ -35,3 +35,9 @@ def can_confirm_go_live_exception(user) -> bool:
     """Allow a failed-pilot go-live exception only to the explicit coordinator group."""
 
     return bool(user and user.is_authenticated and in_group(user, GROUP_COORDINATOR))
+
+
+def can_confirm_early_go_live_exception(user) -> bool:
+    """Allow an early go-live exception only to the explicit coordinator group."""
+
+    return bool(user and user.is_authenticated and in_group(user, GROUP_COORDINATOR))
