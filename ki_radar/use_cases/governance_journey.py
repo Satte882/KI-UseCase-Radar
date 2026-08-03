@@ -48,13 +48,16 @@ def _governance_step(use_case: UseCase, user) -> JourneyStep:
                 key="governance",
                 label="Governance",
                 state="optional",
-                reason="Für die finale negative Entscheidung ist keine positive Freigabeprüfung erforderlich.",
+                reason=(
+                    "Für die finale negative Entscheidung ist keine positive "
+                    "Freigabeprüfung erforderlich."
+                ),
             )
         return JourneyStep(
             key="governance",
             label="Governance",
             state="complete",
-            url=f"{use_case.get_absolute_url()}#governance",
+            url=f"{use_case.get_absolute_url()}#status-dimensions",
             action_label="Governance öffnen",
             reason="Der Governance-Pfad wurde vor der finalen positiven Freigabe abgeschlossen.",
         )
@@ -108,7 +111,10 @@ def _governance_step(use_case: UseCase, user) -> JourneyStep:
                 else None
             ),
             action_label=f"{label} durchführen" if allowed else "",
-            reason="Das Governance-Screening ist vorhanden; erforderliche Fachprüfungen sind offen.",
+            reason=(
+                "Das Governance-Screening ist vorhanden; erforderliche Fachprüfungen "
+                "sind offen."
+            ),
             details=tuple(item_label for _item_type, item_label in incomplete_reviews),
         )
 
@@ -126,7 +132,7 @@ def _governance_step(use_case: UseCase, user) -> JourneyStep:
         key="governance",
         label="Governance",
         state="complete",
-        url=f"{use_case.get_absolute_url()}#governance",
+        url=f"{use_case.get_absolute_url()}#status-dimensions",
         action_label="Governance öffnen",
         reason=reason,
     )
@@ -177,6 +183,8 @@ def build_use_case_journey(use_case: UseCase, user) -> JourneyState:
 
 def install() -> None:
     global _original_build_use_case
+    if workflow.build_use_case_journey is build_use_case_journey:
+        return
     _original_build_use_case = workflow.build_use_case_journey
     workflow.build_use_case_journey = build_use_case_journey
     legacy.build_use_case_journey = build_use_case_journey
