@@ -40,9 +40,7 @@ def _state(
             None,
         ),
         completion_message=(
-            journey.completion_message
-            if completion_message is None
-            else completion_message
+            journey.completion_message if completion_message is None else completion_message
         ),
     )
 
