@@ -94,9 +94,7 @@ def test_technical_owner_source_state_is_absent_without_role_manifest():
 def test_technical_owner_source_state_handles_unassigned_owner_values():
     review = SimpleNamespace(
         source_manifest={
-            "role_sources": {
-                "technical_owner": {"id": "", "value": "", "adoption": "copied"}
-            }
+            "role_sources": {"technical_owner": {"id": "", "value": "", "adoption": "copied"}}
         }
     )
     package = SimpleNamespace(
