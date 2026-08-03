@@ -111,18 +111,11 @@ def _guide_solution_choice(
     journey: JourneyState,
 ) -> JourneyState:
     options = list(process_analysis.solution_options.all())
-    if any(
-        option.recommendation == SolutionOption.Recommendation.PREFERRED
-        for option in options
-    ):
+    if any(option.recommendation == SolutionOption.Recommendation.PREFERRED for option in options):
         return journey
 
     solution_step = next(
-        (
-            step
-            for step in journey.steps
-            if step.key == "solution" and step.state == "current"
-        ),
+        (step for step in journey.steps if step.key == "solution" and step.state == "current"),
         None,
     )
     if solution_step is None:
@@ -154,9 +147,7 @@ def _guide_solution_choice(
             ),
         )
 
-    steps = [
-        guided_solution if step.key == "solution" else step for step in journey.steps
-    ]
+    steps = [guided_solution if step.key == "solution" else step for step in journey.steps]
     return _state(
         path_label=journey.path_label,
         steps=steps,
