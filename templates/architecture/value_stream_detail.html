@@ -70,7 +70,7 @@
     <div class="alert alert-secondary"><strong>Phasenerfassung noch offen.</strong> Ergänze die vollständige grobe End-to-End-Struktur und setze den Value Stream anschließend über „Bearbeiten &amp; priorisieren“ auf „Aktiv“.</div>
     {% elif not value_stream.focus.is_selected %}
     <div class="alert alert-secondary"><strong>Deep Dive noch nicht freigegeben.</strong> Vervollständige das Screening und setze die Fokusentscheidung auf „Für Deep Dive ausgewählt“.</div>
-    {% else %}
+    {% elif journey.next_action.action_label == 'Fokusphase auswählen' %}
     <div class="alert alert-info"><strong>Fokusphase auswählen.</strong> Starte den Detail-Deep-Dive gezielt bei der Phase mit dem relevantesten Problem oder Potenzial.</div>
     {% endif %}
     <div class="value-stream-flow">
