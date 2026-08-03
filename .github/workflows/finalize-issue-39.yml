@@ -1,0 +1,40 @@
+name: Finalize issue 39
+
+on:
+  push:
+    branches:
+      - fix/issue-39-source-provenance
+    paths:
+      - .github/workflows/finalize-issue-39.yml
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add process source diff presentation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("templates/architecture/process_analysis_detail.html")
+          content = path.read_text()
+          marker = "{% if not process_analysis.stage.value_stream.focus.is_selected %}<div class=\"alert alert-warning\"><strong>Deep Dive nicht freigegeben:</strong> Der übergeordnete Value Stream muss zuerst vollständig bewertet und für die Vertiefung ausgewählt werden.</div>{% endif %}\n\n"
+          addition = marker + "{% if source_differences %}\n<div class=\"alert alert-warning mb-4\"><strong>Quellenänderungen seit der Übernahme</strong><div class=\"small mt-1\">Die Prozessanalyse bleibt eine eigenständige Arbeitsfassung. Änderungen an der Value-Stream-Phase werden nicht automatisch überschrieben.</div><ul class=\"mb-0 mt-2\">{% for item in source_differences %}<li>{{ item.source_label }} · {{ item.source_field }}: „{{ item.previous|default:\"–\" }}“ → „{{ item.current|default:\"–\" }}“</li>{% endfor %}</ul></div>\n{% endif %}\n\n"
+          if marker not in content:
+              raise SystemExit("source diff insertion marker missing")
+          path.write_text(content.replace(marker, addition, 1))
+          PY
+          python -m compileall -q ki_radar tests
+          rm .github/workflows/finalize-issue-39.yml
+      - name: Commit final issue 39 changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Complete issue #39 source diff presentation"
+          git push
