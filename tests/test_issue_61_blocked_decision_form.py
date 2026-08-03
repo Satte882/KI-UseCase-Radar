@@ -129,7 +129,10 @@ def test_unblocked_form_explains_governance_confirmation_and_warns_on_unsaved_da
     assert response.status_code == 200
     assert 'id="decision-form"' in content
     assert 'data-initially-dirty="false"' in content
-    assert "Sie ersetzt weder offene Fachprüfungen noch die erforderliche Personentrennung" in content
+    assert (
+        "Sie ersetzt weder offene Fachprüfungen noch die erforderliche Personentrennung"
+        in content
+    )
     assert "beforeunload" in content
 
 
