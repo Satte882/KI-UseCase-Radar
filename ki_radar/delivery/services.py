@@ -626,9 +626,7 @@ def resolve_technical_owner_source_change(
     actor,
 ) -> DeliveryRoleSourceDecision:
     if not can_resolve_role_source(actor, package):
-        raise ValidationError(
-            "Für diese Entscheidung zur Rollenquelle fehlt die Berechtigung."
-        )
+        raise ValidationError("Für diese Entscheidung zur Rollenquelle fehlt die Berechtigung.")
     package = DeliveryPackage.objects.select_for_update().get(pk=package.pk)
     if package.status == DeliveryPackage.Status.HANDED_OVER:
         raise ValidationError("Ein übergebenes Delivery Package ist unveränderlich.")
