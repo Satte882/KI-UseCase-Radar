@@ -167,7 +167,7 @@ def test_selection_is_auditable_and_updates_statuses(comparison_process, owner):
     organizational.refresh_from_db()
     assistant.refresh_from_db()
     assert organizational.recommendation == SolutionOption.Recommendation.REJECTED
-    assert assistant.recommendation == Solution.Recommendation.PREFERRED
+    assert assistant.recommendation == SolutionOption.Recommendation.PREFERRED
     assert decision.decided_by == owner
     assert decision.comparison_snapshot[0]["name"] == organizational.name
     assert len(decision.comparison_snapshot) == 2
