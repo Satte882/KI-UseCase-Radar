@@ -9,7 +9,7 @@
   </div>
   <div class="d-flex gap-2">
     <a class="btn btn-outline-secondary" href="{% url 'architecture:value_stream_list' %}">Zur Übersicht</a>
-    {% if can_edit %}<a class="btn btn-primary" href="{% url 'architecture:value_stream_update' value_stream.pk %}">Bearbeiten &amp; priorisieren</a>{% endif %}
+    {% if can_edit %}<a class="btn btn-primary" href="{% url 'architecture:value_stream_update' value_stream.pk %}">{% if value_stream.focus.is_selected and value_stream.status == 'active' %}Value Stream bearbeiten{% else %}Bearbeiten &amp; priorisieren{% endif %}</a>{% endif %}
   </div>
 </div>
 
@@ -60,13 +60,19 @@
   </div>
 </div>
 
-<div class="app-card">
+<div class="app-card" id="end-to-end-phasen">
   <div class="card-header d-flex justify-content-between align-items-start gap-3">
-    <div><strong>End-to-End-Phasen</strong><div class="small text-muted mt-1">Wertschöpfung zuerst grob strukturieren. Prozess-Deep-Dives und Use Cases beginnen erst nach der dokumentierten Fokusauswahl.</div></div>
+    <div><strong>End-to-End-Phasen</strong><div class="small text-muted mt-1">Wertschöpfung zuerst mit 5–10 groben Phasen strukturieren. Erst danach wird bewusst eine Fokusphase für den Prozess-Deep-Dive gewählt.</div></div>
     {% if can_edit %}<a class="btn btn-sm btn-primary" href="{% url 'architecture:stage_create' value_stream.pk %}">Phase ergänzen</a>{% endif %}
   </div>
   <div class="card-body">
-    {% if not value_stream.focus.is_selected %}<div class="alert alert-secondary"><strong>Deep Dive noch nicht freigegeben.</strong> Vervollständige das Screening und setze die Fokusentscheidung auf „Für Deep Dive ausgewählt“.</div>{% endif %}
+    {% if value_stream.status == 'draft' %}
+    <div class="alert alert-secondary"><strong>Phasenerfassung noch offen.</strong> Ergänze die vollständige grobe End-to-End-Struktur und setze den Value Stream anschließend über „Bearbeiten &amp; priorisieren“ auf „Aktiv“.</div>
+    {% elif not value_stream.focus.is_selected %}
+    <div class="alert alert-secondary"><strong>Deep Dive noch nicht freigegeben.</strong> Vervollständige das Screening und setze die Fokusentscheidung auf „Für Deep Dive ausgewählt“.</div>
+    {% else %}
+    <div class="alert alert-info"><strong>Fokusphase auswählen.</strong> Starte den Detail-Deep-Dive gezielt bei der Phase mit dem relevantesten Problem oder Potenzial.</div>
+    {% endif %}
     <div class="value-stream-flow">
       {% for stage in value_stream.stages.all %}
       <section class="value-stream-stage">
@@ -94,8 +100,17 @@
           {% for origin in stage.use_case_origins.all %}<a href="{{ origin.use_case.get_absolute_url }}">{{ origin.use_case.short_id }} · {{ origin.use_case.title }}</a>{% endfor %}
         </div>
         {% endif %}
-        {% if can_edit and value_stream.focus.is_selected %}<a class="btn btn-sm btn-primary w-100 mt-3" href="{% url 'architecture:process_analysis_create' stage.pk %}">Prozess im Detail analysieren</a>{% elif can_edit %}<button class="btn btn-sm btn-outline-secondary w-100 mt-3" type="button" disabled>Erst Fokusentscheidung abschließen</button>{% endif %}
-        {% if can_create_use_case and value_stream.focus.is_selected %}<a class="btn btn-sm btn-outline-secondary w-100 mt-2" href="{% url 'architecture:stage_start_use_case' stage.pk %}">Use Case direkt aus Phase ableiten</a>{% endif %}
+        {% if can_edit and value_stream.status == 'active' and value_stream.focus.is_selected %}
+        <a class="btn btn-sm btn-primary w-100 mt-3" href="{% url 'architecture:process_analysis_create' stage.pk %}">Als Fokusphase analysieren</a>
+        {% elif can_edit and value_stream.status == 'draft' %}
+        <button class="btn btn-sm btn-outline-secondary w-100 mt-3" type="button" disabled>Erst Phasenerfassung abschließen</button>
+        {% elif can_edit %}
+        <button class="btn btn-sm btn-outline-secondary w-100 mt-3" type="button" disabled>Erst Fokusentscheidung abschließen</button>
+        {% endif %}
+        {% if can_create_use_case and value_stream.status == 'active' and value_stream.focus.is_selected %}
+        <a class="btn btn-sm btn-outline-secondary w-100 mt-2" href="{% url 'architecture:stage_start_use_case' stage.pk %}">Use Case direkt aus Phase ableiten</a>
+        <div class="small text-muted mt-2">Abgekürzter Pfad ohne Prozessanalyse und Lösungsvergleich.</div>
+        {% endif %}
       </section>
       {% empty %}
       <div class="text-muted">Noch keine Phasen erfasst. Beginnen Sie mit 5–10 groben End-to-End-Phasen statt mit Detailprozessen.</div>
