@@ -14,7 +14,6 @@ from ki_radar.use_cases.workflow import build_use_case_journey
 from .forms import GovernanceAssessmentForm, GovernanceReviewForm
 from .models import GovernanceReview
 
-
 REVIEW_CONFIG = {
     GovernanceReview.ReviewType.PRIVACY: {
         "label": "Datenschutzprüfung",
@@ -96,7 +95,8 @@ def assessment_create(request, use_case_id):
 
             messages.success(
                 request,
-                "Governance-Screening wurde gespeichert. Erforderliche Fachprüfungen sind neu geöffnet.",
+                "Governance-Screening wurde gespeichert. "
+                "Erforderliche Fachprüfungen sind neu geöffnet.",
             )
             return redirect(_next_url(use_case))
     else:
