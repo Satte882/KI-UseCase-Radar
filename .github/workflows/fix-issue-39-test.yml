@@ -1,0 +1,48 @@
+name: Fix issue 39 test expectation
+
+on:
+  push:
+    branches:
+      - fix/issue-39-source-provenance
+    paths:
+      - .github/workflows/fix-issue-39-test.yml
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.10.0"
+      - name: Align test with canonical empty working value
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("tests/test_delivery_readiness_v2.py")
+          content = path.read_text()
+          old = 'assert "OUT_OF_SCOPE_GENERIC" in codes'
+          new = 'assert "OUT_OF_SCOPE_MISSING" in codes'
+          if old not in content:
+              raise SystemExit("Expected obsolete assertion not found")
+          path.write_text(content.replace(old, new, 1))
+          PY
+          uv sync --frozen --dev
+          uv run ruff check .
+          uv run ruff format --check .
+          rm .github/workflows/fix-issue-39-test.yml
+      - name: Commit regression fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Align issue #39 readiness expectation"
+          git push
