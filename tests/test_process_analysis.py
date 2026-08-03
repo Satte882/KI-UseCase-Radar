@@ -61,9 +61,7 @@ def architecture_context(owner, business_unit):
         scope_end="Lieferant ist ausgewählt",
         trigger="Ablauf der Angebotsfrist",
         outcome="Nachvollziehbare Lieferantenentscheidung",
-        current_flow=(
-            "Angebote öffnen, Werte übertragen, fehlende Angaben nachfordern, bewerten."
-        ),
+        current_flow=("Angebote öffnen, Werte übertragen, fehlende Angaben nachfordern, bewerten."),
         roles="Einkauf erstellt Vergleich; Fachbereich bewertet Qualität.",
         systems="ERP, Shared Inbox, Dateiablage",
         data_objects="Angebote, Kriterien, Lieferantenstammdaten",

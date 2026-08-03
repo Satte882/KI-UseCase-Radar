@@ -272,9 +272,7 @@ def test_selection_audit_rejects_bulk_changes_and_inconsistent_option(
     )
 
     with pytest.raises(ValidationError, match="unveränderlich"):
-        SolutionSelectionDecision.objects.filter(pk=decision.pk).update(
-            rationale="Manipuliert"
-        )
+        SolutionSelectionDecision.objects.filter(pk=decision.pk).update(rationale="Manipuliert")
     with pytest.raises(ValidationError, match="unveränderlich"):
         SolutionSelectionDecision.objects.filter(pk=decision.pk).delete()
     with pytest.raises(ProtectedError):

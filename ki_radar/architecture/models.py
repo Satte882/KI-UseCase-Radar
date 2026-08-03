@@ -348,15 +348,11 @@ class SolutionSelectionDecision(TimeStampedModel):
         ):
             raise ValidationError("Die ausgewählte Option gehört nicht zu dieser Prozessanalyse.")
         if not self.rationale.strip():
-            raise ValidationError(
-                "Für die Lösungsentscheidung ist eine Begründung erforderlich."
-            )
+            raise ValidationError("Für die Lösungsentscheidung ist eine Begründung erforderlich.")
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        raise ValidationError(
-            "Eine dokumentierte Lösungsentscheidung darf nicht gelöscht werden."
-        )
+        raise ValidationError("Eine dokumentierte Lösungsentscheidung darf nicht gelöscht werden.")
 
     def __str__(self) -> str:
         return f"{self.process_analysis}: {self.selected_option}"

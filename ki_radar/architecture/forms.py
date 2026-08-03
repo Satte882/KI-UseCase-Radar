@@ -342,7 +342,9 @@ class SolutionOptionForm(StyledModelForm):
             self.process_analysis = self.instance.process_analysis
         else:
             self.process_analysis = None
-        self.fields["evaluation_status"].help_text = (
+        self.fields[
+            "evaluation_status"
+        ].help_text = (
             "Als bewertet markieren, sobald alle Vergleichskriterien belastbar dokumentiert sind."
         )
 
