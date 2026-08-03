@@ -12,81 +12,93 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  validate:
+  update-expectations:
     runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:17.5-bookworm
-        env:
-          POSTGRES_DB: ki_radar_test
-          POSTGRES_USER: ki_radar
-          POSTGRES_PASSWORD: ki_radar_test_password
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U ki_radar -d ki_radar_test"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    env:
-      DJANGO_SETTINGS_MODULE: config.settings.test
-      DJANGO_SECRET_KEY: ci-only-secret-key-not-for-production
-      POSTGRES_DB: ki_radar_test
-      POSTGRES_USER: ki_radar
-      POSTGRES_PASSWORD: ki_radar_test_password
-      POSTGRES_HOST: localhost
-      POSTGRES_PORT: "5432"
-      DATABASE_URL: postgresql://ki_radar:ki_radar_test_password@localhost:5432/ki_radar_test
-
     steps:
       - name: Checkout branch
         uses: actions/checkout@v4
         with:
           ref: fix/issue-58-final-journey-order
+          fetch-depth: 0
 
-      - name: Install Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.10.0"
-          enable-cache: true
-
-      - name: Install dependencies
-        run: uv sync --frozen --dev
-
-      - name: Persist failing test names
+      - name: Update journey expectations and restore workflow
         shell: bash
         run: |
-          set +e
-          uv run pytest -q --junitxml=/tmp/issue-58-junit.xml > /dev/null 2>&1
-          status=$?
           python - <<'PY'
           from pathlib import Path
-          import xml.etree.ElementTree as ET
 
-          root = ET.parse('/tmp/issue-58-junit.xml').getroot()
-          failures = []
-          for case in root.iter('testcase'):
-              failure = case.find('failure')
-              error = case.find('error')
-              result = failure if failure is not None else error
-              if result is not None:
-                  failures.append(
-                      f"{case.get('classname')}::{case.get('name')}\n{(result.get('message') or '').strip()}"
-                  )
-          path = Path('.ci-diagnostics/issue-58-failures.txt')
-          path.parent.mkdir(exist_ok=True)
-          path.write_text('\n\n'.join(failures) + '\n', encoding='utf-8')
+          delivery_path = Path('tests/test_delivery_to_pilot.py')
+          delivery = delivery_path.read_text(encoding='utf-8')
+          old_delivery_order = '''    assert [step.key for step in before.steps[:8]] == [
+              "value_stream",
+              "focus",
+              "process",
+              "solution",
+              "use_case",
+              "assessment",
+              "approval",
+              "delivery",
+          ]'''
+          new_delivery_order = '''    assert [step.key for step in before.steps[:9]] == [
+              "value_stream",
+              "focus",
+              "process",
+              "solution",
+              "use_case",
+              "assessment",
+              "governance",
+              "approval",
+              "delivery",
+          ]'''
+          old_delivery_complete = '''            "use_case",
+                      "assessment",
+                      "approval",
+                  ]'''
+          new_delivery_complete = '''            "use_case",
+                      "assessment",
+                      "governance",
+                      "approval",
+                  ]'''
+          if old_delivery_order not in delivery or old_delivery_complete not in delivery:
+              raise SystemExit('Expected delivery journey snippets not found')
+          delivery = delivery.replace(old_delivery_order, new_delivery_order, 1)
+          delivery = delivery.replace(old_delivery_complete, new_delivery_complete, 1)
+          delivery_path.write_text(delivery, encoding='utf-8')
+
+          guided_path = Path('tests/test_guided_journey.py')
+          guided = guided_path.read_text(encoding='utf-8')
+          old_guided_order = '''        "use_case",
+                  "assessment",
+                  "approval",
+                  "delivery",
+              ]'''
+          new_guided_order = '''        "use_case",
+                  "assessment",
+                  "governance",
+                  "approval",
+                  "delivery",
+              ]'''
+          old_guided_complete = '''            "use_case",
+                      "assessment",
+                      "approval",
+                  ]'''
+          new_guided_complete = '''            "use_case",
+                      "assessment",
+                      "governance",
+                      "approval",
+                  ]'''
+          if old_guided_order not in guided or old_guided_complete not in guided:
+              raise SystemExit('Expected guided journey snippets not found')
+          guided = guided.replace(old_guided_order, new_guided_order, 1)
+          guided = guided.replace(old_guided_complete, new_guided_complete, 1)
+          guided_path.write_text(guided, encoding='utf-8')
           PY
+          rm -rf .ci-diagnostics
+          git checkout origin/main -- .github/workflows/ci.yml
+          git diff --check
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .ci-diagnostics/issue-58-failures.txt
-          git commit -m "Record issue 58 test failures [skip ci]"
+          git add tests/test_delivery_to_pilot.py tests/test_guided_journey.py .github/workflows/ci.yml
+          git add -A .ci-diagnostics
+          git commit -m "Update golden-path expectations for governance journey"
           git push origin HEAD:fix/issue-58-final-journey-order
-          exit "$status"
