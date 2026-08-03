@@ -1,3 +1,5 @@
+"""Unveränderliche QuerySet- und Manager-Bausteine für Delivery-Auditdaten."""
+
 from django.core.exceptions import ValidationError
 from django.db import models
 
