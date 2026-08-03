@@ -509,8 +509,7 @@ def test_delivery_package_snapshots_technical_owner_and_blocks_unresolved_source
     findings = evaluate_delivery_readiness(package)
     assert package.technical_owner == other_owner
     assert any(
-        finding.code == "TECHNICAL_OWNER_SOURCE_CHANGE_UNRESOLVED"
-        and finding.severity == "blocker"
+        finding.code == "TECHNICAL_OWNER_SOURCE_CHANGE_UNRESOLVED" and finding.severity == "blocker"
         for finding in findings
     )
 
@@ -652,9 +651,10 @@ def test_technical_owner_source_change_is_visible_and_resolvable_in_delivery_ui(
     assert "Offene Abweichung" in content
     assert str(other_owner) in content
     assert str(owner) in content
-    assert reverse(
-        "delivery:package_resolve_technical_owner_source", kwargs={"pk": package.pk}
-    ) in content
+    assert (
+        reverse("delivery:package_resolve_technical_owner_source", kwargs={"pk": package.pk})
+        in content
+    )
 
     response = client.post(
         reverse("delivery:package_resolve_technical_owner_source", kwargs={"pk": package.pk}),

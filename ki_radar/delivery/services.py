@@ -565,9 +565,7 @@ def review_delivery_section(
             review.admin_override_confirmed = False
 
         assigned_owner_id = (
-            package.use_case.business_owner_id
-            if role == "business"
-            else package.technical_owner_id
+            package.use_case.business_owner_id if role == "business" else package.technical_owner_id
         )
         setattr(review, f"{role}_confirmed_by", actor)
         setattr(review, f"{role}_confirmed_at", now)
