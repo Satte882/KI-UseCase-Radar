@@ -12,6 +12,7 @@ SELECTION_WORKFLOW = (
     ("focus", "Fokus & Priorisierung", ("focus",)),
     ("use_cases", "Use Cases", ("process", "solution", "use_case")),
     ("assessment", "Bewertung", ("assessment",)),
+    ("governance", "Governance", ("governance",)),
     ("approval", "Freigabe", ("approval",)),
     ("delivery", "Delivery", ("delivery",)),
 )
@@ -76,15 +77,32 @@ def _selection_route_states(request):
     states = {key: "context" for key, _label, _keys in SELECTION_WORKFLOW}
 
     if namespace == "architecture":
-        states["discovery"] = "current"
-        states["focus"] = "upcoming"
-        states["use_cases"] = "upcoming"
+        states.update(
+            discovery="current",
+            focus="upcoming",
+            use_cases="upcoming",
+            assessment="upcoming",
+            governance="upcoming",
+            approval="upcoming",
+            delivery="upcoming",
+        )
     elif namespace == "use_cases" and url_name == "assessment_create":
         states.update(
             discovery="optional",
             focus="optional",
             use_cases="complete",
             assessment="current",
+            governance="upcoming",
+            approval="upcoming",
+            delivery="upcoming",
+        )
+    elif namespace == "governance":
+        states.update(
+            discovery="optional",
+            focus="optional",
+            use_cases="complete",
+            assessment="complete",
+            governance="current",
             approval="upcoming",
             delivery="upcoming",
         )
@@ -94,6 +112,7 @@ def _selection_route_states(request):
             focus="optional",
             use_cases="complete",
             assessment="complete",
+            governance="complete",
             approval="current",
             delivery="upcoming",
         )
@@ -103,6 +122,7 @@ def _selection_route_states(request):
             focus="optional",
             use_cases="current",
             assessment="upcoming",
+            governance="upcoming",
             approval="upcoming",
             delivery="upcoming",
         )
@@ -112,6 +132,7 @@ def _selection_route_states(request):
             focus="optional",
             use_cases="complete",
             assessment="complete",
+            governance="complete",
             approval="complete",
             delivery="current",
         )
@@ -121,6 +142,7 @@ def _selection_route_states(request):
             focus="optional",
             use_cases="complete",
             assessment="complete",
+            governance="complete",
             approval="current",
             delivery="upcoming",
         )
@@ -152,6 +174,7 @@ def _links(request):
         "focus": reverse("architecture:value_stream_list"),
         "use_cases": reverse("use_cases:list"),
         "assessment": reverse("reporting:portfolio"),
+        "governance": reverse("reporting:dashboard"),
         "approval": reverse("reporting:dashboard"),
         "delivery": reverse("delivery:package_list"),
         "handover": _outcome_link(request, "handover"),
@@ -197,7 +220,7 @@ def workflow_steps(journey, request):
 def local_step_group(step_key):
     if step_key in {"value_stream", "focus", "process", "solution"}:
         return "analysis"
-    if step_key in {"use_case", "assessment", "approval", "delivery"}:
+    if step_key in {"use_case", "assessment", "governance", "approval", "delivery"}:
         return "initiative"
     if step_key in OUTCOME_STEP_KEYS:
         return "outcome"
