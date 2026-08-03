@@ -108,11 +108,7 @@ def build_value_stream_journey(value_stream: ValueStream, user) -> JourneyState:
     has_stages = value_stream.stages.exists()
     has_analysis = ProcessAnalysis.objects.filter(stage__value_stream=value_stream).exists()
 
-    if (
-        has_stages
-        and not has_analysis
-        and value_stream.status == ValueStream.Status.DRAFT
-    ):
+    if has_stages and not has_analysis and value_stream.status == ValueStream.Status.DRAFT:
         return _guide_phase_completion(value_stream, journey)
 
     if (
