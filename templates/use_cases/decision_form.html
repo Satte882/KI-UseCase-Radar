@@ -10,13 +10,55 @@
 </div>
 {% include "includes/journey_stepper.html" %}
 {% include "includes/status_dimensions.html" %}
+
+<div class="app-card mb-4" id="decision-roles">
+  <div class="card-header"><strong>Rollen und Personentrennung</strong><div class="small text-muted mt-1">Eine Checkbox oder ein Rollenwechsel derselben Person ersetzt keine unabhängige Entscheidung.</div></div>
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-6 col-xl-3"><div class="section-title">Bewertende Person</div><strong>{% if assessment.assessed_by %}{{ assessment.assessed_by.get_display_name }}{% else %}Nicht dokumentiert{% endif %}</strong><div class="small text-muted">Assessment v{{ assessment.version }}</div></div>
+      <div class="col-md-6 col-xl-3"><div class="section-title">Business Owner</div><strong>{% if use_case.business_owner %}{{ use_case.business_owner.get_display_name }}{% else %}Nicht zugewiesen{% endif %}</strong><div class="small text-muted">Fachliche Verantwortung</div></div>
+      <div class="col-md-6 col-xl-3"><div class="section-title">Zugewiesene KI-Koordination</div><strong>{% if use_case.coordinator %}{{ use_case.coordinator.get_display_name }}{% else %}Nicht zugewiesen{% endif %}</strong><div class="small text-muted">Koordination des Entscheidungswegs</div></div>
+      <div class="col-md-6 col-xl-3"><div class="section-title">Aktuell entscheidende Person</div><strong>{{ deciding_actor.get_display_name }}</strong><div class="small text-muted">Angemeldete, ausführende Person</div></div>
+    </div>
+  </div>
+</div>
+
+{% if approval_blocker_details %}
+<div class="app-card decision-panel mb-4" id="decision-blockers">
+  <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <div><strong>Entscheidung nicht ausführbar</strong><div class="small text-muted mt-1">Für „{{ selected_status_label }}“ sind {{ approval_blocker_details|length }} harte Voraussetzungen offen. Das Entscheidungsformular wird erst danach freigeschaltet.</div></div>
+    <span class="badge state-blocked">Blockiert</span>
+  </div>
+  <div class="card-body">
+    <div class="blocker-actions">
+      {% for blocker in approval_blocker_details %}
+      <div class="blocker-action blocker-{{ blocker.category }}">
+        <div><span class="blocker-icon" aria-hidden="true">⚠</span><strong>{{ blocker.label }}</strong><div class="small text-muted">Dieser Punkt kann nicht durch die Entscheidungsbestätigung übersteuert werden.</div></div>
+        <a class="btn btn-outline-secondary btn-sm" href="{{ blocker.target_href }}">{{ blocker.action_label }}</a>
+      </div>
+      {% endfor %}
+    </div>
+    {% if decision_alternatives %}
+    <hr>
+    <div class="section-title">Zulässige alternative Entscheidungen</div>
+    <p class="small text-muted">Diese Alternativen besitzen für die aktuell handelnde Person keine harten Voraussetzungen. Sie werden separat geprüft und begründet.</p>
+    <div class="d-flex flex-wrap gap-2">{% for alternative in decision_alternatives %}<a class="btn btn-outline-secondary" href="{{ alternative.url }}">{{ alternative.label }} prüfen</a>{% endfor %}</div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+{% if approval_check.warnings %}
+<div class="alert alert-warning mb-4"><strong>Abweichungshinweise</strong><ul class="mb-0 mt-2">{% for warning in approval_check.warnings %}<li>{{ warning }}</li>{% endfor %}</ul></div>
+{% endif %}
+
 <div class="row g-4">
   <div class="col-xl-5">
     <div class="app-card mb-4">
       <div class="card-header d-flex justify-content-between"><strong>Bewertung v{{ assessment.version }}</strong><span class="badge {% if assessment.confidence_level == 'low' %}state-blocked{% elif assessment.confidence_level == 'medium' %}state-review{% else %}state-ready{% endif %}">Confidence {{ assessment.confidence_label }}</span></div>
       <div class="card-body">
         <dl class="row mb-0 small">
-          <dt class="col-6 text-muted">Bewertende Person</dt><dd class="col-6">{{ assessment.assessed_by.get_display_name }}</dd>
+          <dt class="col-6 text-muted">Bewertende Person</dt><dd class="col-6">{% if assessment.assessed_by %}{{ assessment.assessed_by.get_display_name }}{% else %}–{% endif %}</dd>
           <dt class="col-6 text-muted">Wirtschaftlicher Nutzen</dt><dd class="col-6">{{ assessment.get_business_value_display }}</dd>
           <dt class="col-6 text-muted">Strategischer Beitrag</dt><dd class="col-6">{{ assessment.get_strategic_fit_display }}</dd>
           <dt class="col-6 text-muted">Technische Machbarkeit</dt><dd class="col-6">{{ assessment.get_technical_feasibility_display }}</dd>
@@ -27,22 +69,13 @@
         <hr><p class="small mb-2">{{ assessment.rationale }}</p><a href="{{ assessment.evidence_url }}" target="_blank" rel="noopener noreferrer">Nachweis öffnen</a>
       </div>
     </div>
-    <div class="app-card decision-panel">
-      <div class="card-header"><strong>{{ approval_check.state_label }}</strong></div>
-      <div class="card-body">
-        {% if approval_blocker_details %}
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3"><div><strong>{{ approval_blocker_details|length }} Voraussetzungen offen</strong><div class="small text-muted">Die positive Entscheidung bleibt serverseitig blockiert.</div></div>{% if first_approval_blocker %}<a class="btn btn-outline-danger btn-sm" href="{{ first_approval_blocker.target_href }}">Offenen Punkt anzeigen</a>{% endif %}</div>
-        <div class="blocker-actions">{% for blocker in approval_blocker_details %}<div class="blocker-action blocker-{{ blocker.category }}"><div><span class="blocker-icon" aria-hidden="true">⚠</span><strong>{{ blocker.label }}</strong></div><a class="btn btn-outline-secondary btn-sm" href="{{ blocker.target_href }}">{{ blocker.action_label }}</a></div>{% endfor %}</div>
-        {% endif %}
-        {% if approval_check.warnings %}<div class="section-title {% if approval_blocker_details %}mt-3{% endif %}">Abweichungshinweise</div><ul class="decision-list">{% for warning in approval_check.warnings %}<li>{{ warning }}</li>{% endfor %}</ul>{% endif %}
-        {% if not approval_blocker_details and not approval_check.warnings %}<p class="text-muted mb-0">Die aktuell gewählte Entscheidung erfüllt alle strukturierten Voraussetzungen.</p>{% endif %}
-      </div>
-    </div>
   </div>
   <div class="col-xl-7">
-    <form method="post">{% csrf_token %}<input type="hidden" name="return_to" value="{{ return_to }}">
+    {% if decision_form_enabled %}
+    <form method="post" id="decision-form" data-initially-dirty="{% if form.is_bound %}true{% else %}false{% endif %}">
+      {% csrf_token %}<input type="hidden" name="return_to" value="{{ return_to }}">
       <div class="app-card">
-        <div class="card-header"><strong>Entscheidung dokumentieren</strong></div>
+        <div class="card-header"><strong>Entscheidung dokumentieren</strong><div class="small text-muted mt-1">Ausgewählter Prüfpfad: {{ selected_status_label }}. Die Eingaben werden erst nach erneuter serverseitiger Gate-Prüfung gespeichert.</div></div>
         <div class="card-body"><div class="row g-3">
           {{ form.non_field_errors }}
           {% for field in form %}
@@ -53,9 +86,47 @@
           </div>
           {% endfor %}
         </div></div>
-        <div class="card-footer d-flex justify-content-end gap-2"><a class="btn btn-outline-secondary" href="{{ return_to }}">Abbrechen</a><button class="btn btn-primary">Entscheidung prüfen, speichern und zurückkehren</button></div>
+        <div class="card-footer d-flex flex-wrap justify-content-end align-items-center gap-2"><span class="small text-muted me-auto">Bei ungespeicherten Änderungen warnt der Browser vor dem Verlassen der Seite.</span><a class="btn btn-outline-secondary" href="{{ return_to }}">Abbrechen</a><button class="btn btn-primary">Entscheidung prüfen, speichern und zurückkehren</button></div>
       </div>
     </form>
+    {% else %}
+    <div class="app-card">
+      <div class="card-header"><strong>Formular gesperrt</strong></div>
+      <div class="card-body"><p class="mb-0 text-muted">Behebe zuerst die oben aufgeführten Voraussetzungen oder wähle eine zulässige alternative Entscheidung. Es können hier noch keine Entscheidungsdaten eingegeben werden.</p></div>
+      <div class="card-footer"><a class="btn btn-outline-secondary" href="{{ return_to }}">Zurück zum Use Case</a></div>
+    </div>
+    {% endif %}
   </div>
 </div>
+{% endblock %}
+{% block extra_js %}
+<script>
+(() => {
+  "use strict";
+
+  const form = document.getElementById("decision-form");
+  if (!form) {
+    return;
+  }
+
+  let isDirty = form.dataset.initiallyDirty === "true";
+  let isSubmitting = false;
+  const markDirty = () => {
+    isDirty = true;
+  };
+
+  form.addEventListener("input", markDirty);
+  form.addEventListener("change", markDirty);
+  form.addEventListener("submit", () => {
+    isSubmitting = true;
+  });
+  window.addEventListener("beforeunload", (event) => {
+    if (!isDirty || isSubmitting) {
+      return;
+    }
+    event.preventDefault();
+    event.returnValue = "";
+  });
+})();
+</script>
 {% endblock %}
