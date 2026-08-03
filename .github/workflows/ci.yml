@@ -29,68 +29,42 @@ jobs:
 
           delivery_path = Path('tests/test_delivery_to_pilot.py')
           delivery = delivery_path.read_text(encoding='utf-8')
-          old_delivery_order = '''    assert [step.key for step in before.steps[:8]] == [
-              "value_stream",
-              "focus",
-              "process",
-              "solution",
-              "use_case",
-              "assessment",
-              "approval",
-              "delivery",
-          ]'''
-          new_delivery_order = '''    assert [step.key for step in before.steps[:9]] == [
-              "value_stream",
-              "focus",
-              "process",
-              "solution",
-              "use_case",
-              "assessment",
-              "governance",
-              "approval",
-              "delivery",
-          ]'''
-          old_delivery_complete = '''            "use_case",
-                      "assessment",
-                      "approval",
-                  ]'''
-          new_delivery_complete = '''            "use_case",
-                      "assessment",
-                      "governance",
-                      "approval",
-                  ]'''
-          if old_delivery_order not in delivery or old_delivery_complete not in delivery:
-              raise SystemExit('Expected delivery journey snippets not found')
-          delivery = delivery.replace(old_delivery_order, new_delivery_order, 1)
-          delivery = delivery.replace(old_delivery_complete, new_delivery_complete, 1)
+          replacements = [
+              (
+                  'assert [step.key for step in before.steps[:8]]',
+                  'assert [step.key for step in before.steps[:9]]',
+              ),
+              (
+                  '        "assessment",\n        "approval",\n        "delivery",',
+                  '        "assessment",\n        "governance",\n        "approval",\n        "delivery",',
+              ),
+              (
+                  '            "assessment",\n            "approval",\n        ]',
+                  '            "assessment",\n            "governance",\n            "approval",\n        ]',
+              ),
+          ]
+          for old, new in replacements:
+              if old not in delivery:
+                  raise SystemExit(f'Expected delivery snippet not found: {old!r}')
+              delivery = delivery.replace(old, new, 1)
           delivery_path.write_text(delivery, encoding='utf-8')
 
           guided_path = Path('tests/test_guided_journey.py')
           guided = guided_path.read_text(encoding='utf-8')
-          old_guided_order = '''        "use_case",
-                  "assessment",
-                  "approval",
-                  "delivery",
-              ]'''
-          new_guided_order = '''        "use_case",
-                  "assessment",
-                  "governance",
-                  "approval",
-                  "delivery",
-              ]'''
-          old_guided_complete = '''            "use_case",
-                      "assessment",
-                      "approval",
-                  ]'''
-          new_guided_complete = '''            "use_case",
-                      "assessment",
-                      "governance",
-                      "approval",
-                  ]'''
-          if old_guided_order not in guided or old_guided_complete not in guided:
-              raise SystemExit('Expected guided journey snippets not found')
-          guided = guided.replace(old_guided_order, new_guided_order, 1)
-          guided = guided.replace(old_guided_complete, new_guided_complete, 1)
+          replacements = [
+              (
+                  '        "assessment",\n        "approval",\n        "delivery",',
+                  '        "assessment",\n        "governance",\n        "approval",\n        "delivery",',
+              ),
+              (
+                  '            "assessment",\n            "approval",\n        ]',
+                  '            "assessment",\n            "governance",\n            "approval",\n        ]',
+              ),
+          ]
+          for old, new in replacements:
+              if old not in guided:
+                  raise SystemExit(f'Expected guided snippet not found: {old!r}')
+              guided = guided.replace(old, new, 1)
           guided_path.write_text(guided, encoding='utf-8')
           PY
           rm -rf .ci-diagnostics
