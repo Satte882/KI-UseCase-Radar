@@ -54,7 +54,9 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen --dev
       - name: Apply issue 48 patch
-        run: python scripts/apply_issue48.py
+        run: |
+          python scripts/apply_issue48.py
+          python scripts/fix_issue48_lint.py
       - name: Format and lint implementation
         run: |
           uv run ruff format ki_radar/architecture/forms.py tests/test_value_stream_assignments.py
@@ -67,7 +69,7 @@ jobs:
           uv run pytest -q tests/test_value_stream_assignments.py
       - name: Commit validated implementation and restore CI
         run: |
-          rm scripts/apply_issue48.py
+          rm scripts/apply_issue48.py scripts/fix_issue48_lint.py
           git show origin/main:.github/workflows/ci.yml > .github/workflows/ci.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
