@@ -3,6 +3,7 @@ from __future__ import annotations
 from django.urls import reverse
 
 from ki_radar.accounts.permissions import is_coordinator
+from ki_radar.delivery.models import DeliveryPackage
 
 from . import journey as legacy
 from . import workflow
@@ -25,7 +26,12 @@ REVIEW_ORDER = (
 _original_build_use_case = None
 
 
-def _state(journey: JourneyState, steps: list[JourneyStep]) -> JourneyState:
+def _state(
+    journey: JourneyState,
+    steps: list[JourneyStep],
+    *,
+    completion_message: str | None = None,
+) -> JourneyState:
     return JourneyState(
         path_label=journey.path_label,
         steps=tuple(steps),
@@ -33,7 +39,9 @@ def _state(journey: JourneyState, steps: list[JourneyStep]) -> JourneyState:
             (step for step in steps if step.state in {"current", "blocked"}),
             None,
         ),
-        completion_message=journey.completion_message,
+        completion_message=(
+            journey.completion_message if completion_message is None else completion_message
+        ),
     )
 
 
@@ -137,6 +145,15 @@ def _governance_step(use_case: UseCase, user) -> JourneyStep:
     )
 
 
+def _completion_message(use_case: UseCase, journey: JourneyState) -> str:
+    package = use_case.delivery_packages.first()
+    if package is None or package.status != DeliveryPackage.Status.HANDED_OVER:
+        return journey.completion_message
+    if use_case.status == UseCase.Status.ENDED:
+        return "Journey abgeschlossen: Das Vorhaben wurde fachlich beendet."
+    return ""
+
+
 def _insert_governance(
     use_case: UseCase,
     user,
@@ -170,7 +187,11 @@ def _insert_governance(
     if not inserted:
         steps.append(governance_step)
 
-    return _state(journey, steps)
+    return _state(
+        journey,
+        steps,
+        completion_message=_completion_message(use_case, journey),
+    )
 
 
 def build_use_case_journey(use_case: UseCase, user) -> JourneyState:
