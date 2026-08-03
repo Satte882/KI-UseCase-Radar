@@ -61,7 +61,7 @@
   <div class="card-body">
     {% if not process_analysis.stage.value_stream.focus.is_selected %}<p class="text-muted">Lösungsoptionen können dokumentiert werden, eine bevorzugte Option und die Use-Case-Ableitung setzen jedoch eine positive Fokusentscheidung voraus.</p>{% endif %}
     {% if journey.next_action.key == 'solution' and journey.next_action.action_label == 'Lösungsoptionen prüfen' %}
-    <div class="alert alert-info"><strong>Lösungsentscheidung offen.</strong> Prüfe die vorhandenen Alternativen und kennzeichne anschließend genau eine Option als bevorzugt. Die eigenständige Vergleichs- und Auswahlansicht wird separat in Issue #47 bearbeitet.</div>
+    <div class="alert alert-info"><strong>Lösungsentscheidung offen.</strong> Prüfe die vorhandenen Alternativen. Öffne anschließend die fachlich bevorzugte Option über „Option bearbeiten“ und setze dort den Status auf „Bevorzugte Option“.</div>
     {% endif %}
     <div class="solution-option-grid">
       {% for option in process_analysis.solution_options.all %}
