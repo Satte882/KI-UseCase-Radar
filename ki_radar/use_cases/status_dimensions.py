@@ -228,8 +228,7 @@ def _approval_dimension(use_case: UseCase) -> StatusDimension:
             label="Bewertung erforderlich",
             state="review",
             explanation=(
-                "Eine Freigabeentscheidung ist erst nach einer strukturierten "
-                "Bewertung möglich."
+                "Eine Freigabeentscheidung ist erst nach einer strukturierten Bewertung möglich."
             ),
         )
 
@@ -256,9 +255,7 @@ def _measurement_dimension(use_case: UseCase) -> StatusDimension:
     }[result]
     explanations = {
         UseCase.MetricResult.ACHIEVED: "Der gemessene Ist-Wert erfüllt das definierte Ziel.",
-        UseCase.MetricResult.NOT_ACHIEVED: (
-            "Der gemessene Ist-Wert verfehlt das definierte Ziel."
-        ),
+        UseCase.MetricResult.NOT_ACHIEVED: ("Der gemessene Ist-Wert verfehlt das definierte Ziel."),
         UseCase.MetricResult.NOT_MEASURED: (
             "Ziel und Messlogik sind definiert; ein Ist-Wert fehlt."
         ),
@@ -286,13 +283,10 @@ def _lifecycle_dimension(use_case: UseCase) -> StatusDimension:
     explanations = {
         UseCase.Status.IDEA: "Der Use Case befindet sich in Erfassung und fachlicher Klärung.",
         UseCase.Status.REVIEW: "Bewertung, Freigabe und Übergabe werden vorbereitet.",
-        UseCase.Status.PILOT: (
-            "Der Use Case wird unter definierten Pilotbedingungen erprobt."
-        ),
+        UseCase.Status.PILOT: ("Der Use Case wird unter definierten Pilotbedingungen erprobt."),
         UseCase.Status.OPERATION: "Der Use Case befindet sich im geregelten Betrieb.",
         UseCase.Status.ENDED: (
-            "Der Lifecycle ist beendet; Abschluss und Datenbehandlung bleiben "
-            "nachvollziehbar."
+            "Der Lifecycle ist beendet; Abschluss und Datenbehandlung bleiben nachvollziehbar."
         ),
     }
     return StatusDimension(
