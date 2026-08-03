@@ -271,3 +271,188 @@ def test_package_detail_shows_methodology_actions(
     assert "Vorgehensmodell herunterladen" in content
     assert reverse("delivery:methodology_reference") in content
     assert reverse("delivery:methodology_download") in content
+
+
+@pytest.mark.django_db
+def test_shared_section_requires_explicit_confirmation_role(
+    owner, other_owner, coordinator, business_unit
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+
+    with pytest.raises(ValidationError, match="ausdrücklich auswählen"):
+        review_delivery_section(
+            package=package,
+            section_key="solution_direction",
+            action="confirm",
+            actor=coordinator,
+        )
+
+
+@pytest.mark.django_db
+def test_authorized_substitutes_can_confirm_only_the_selected_role(
+    owner, other_owner, coordinator, business_unit
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+
+    review_delivery_section(
+        package=package,
+        section_key="solution_direction",
+        action="confirm_business",
+        actor=other_owner,
+    )
+    review_delivery_section(
+        package=package,
+        section_key="solution_direction",
+        action="confirm_technical",
+        actor=coordinator,
+    )
+
+    review = package.section_reviews.get(section_key="solution_direction")
+    assert review.business_confirmed_by == other_owner
+    assert review.business_confirmation_role == "Berechtigte fachliche Stellvertretung"
+    assert review.technical_confirmed_by == coordinator
+    assert review.technical_confirmation_role == "Berechtigte technische Stellvertretung"
+    assert review.review_status == DeliverySectionReview.ReviewStatus.CONFIRMED
+
+
+@pytest.mark.django_db
+def test_non_admin_cannot_confirm_both_roles(owner, other_owner, coordinator, business_unit):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    review_delivery_section(
+        package=package,
+        section_key="solution_direction",
+        action="confirm_business",
+        actor=coordinator,
+    )
+
+    with pytest.raises(ValidationError, match="Technischer Administrator"):
+        review_delivery_section(
+            package=package,
+            section_key="solution_direction",
+            action="confirm_technical",
+            actor=coordinator,
+            role_collapse_reason="Testdurchlauf.",
+        )
+
+
+@pytest.mark.django_db
+def test_dual_owner_is_not_an_exception(owner, business_unit, coordinator):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    review_delivery_section(
+        package=package,
+        section_key="solution_direction",
+        action="confirm_business",
+        actor=owner,
+    )
+
+    with pytest.raises(ValidationError, match="Technischer Administrator"):
+        review_delivery_section(
+            package=package,
+            section_key="solution_direction",
+            action="confirm_technical",
+            actor=owner,
+            role_collapse_reason="Kleines Team.",
+        )
+
+
+@pytest.mark.django_db
+def test_technical_admin_can_use_audited_same_person_exception(
+    owner, other_owner, coordinator, technical_admin, business_unit
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    review_delivery_section(
+        package=package,
+        section_key="solution_direction",
+        action="confirm_business",
+        actor=technical_admin,
+    )
+
+    with pytest.raises(ValidationError, match="Admin-Sonderbestätigung"):
+        review_delivery_section(
+            package=package,
+            section_key="solution_direction",
+            action="confirm_technical",
+            actor=technical_admin,
+        )
+
+    review_delivery_section(
+        package=package,
+        section_key="solution_direction",
+        action="confirm_technical",
+        actor=technical_admin,
+        role_collapse_reason="Vollständiger administrativer Test des Delivery-Flows.",
+    )
+    review = package.section_reviews.get(section_key="solution_direction")
+
+    assert review.admin_override_confirmed is True
+    assert review.has_role_collapse is True
+    assert review.review_status == DeliverySectionReview.ReviewStatus.CONFIRMED
+    assert review.business_confirmation_role == "Admin-Sonderbestätigung"
+    assert review.technical_confirmation_role == "Admin-Sonderbestätigung"
+    assert review.role_collapse_reason.startswith("Vollständiger administrativer Test")
+
+
+@pytest.mark.django_db
+def test_delivery_page_labels_admin_override_by_confirmation_role(
+    client, owner, other_owner, coordinator, technical_admin, business_unit
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    review_delivery_section(
+        package=package,
+        section_key="solution_direction",
+        action="confirm_business",
+        actor=technical_admin,
+    )
+    review_delivery_section(
+        package=package,
+        section_key="solution_direction",
+        action="confirm_technical",
+        actor=technical_admin,
+        role_collapse_reason="Administrativer Ende-zu-Ende-Test.",
+    )
+    client.force_login(technical_admin)
+
+    response = client.get(package.get_absolute_url())
+    body = response.content.decode()
+
+    assert response.status_code == 200
+    assert f"Fachlich: {technical_admin} · Admin-Sonderbestätigung" in body
+    assert f"Technisch: {technical_admin} · Admin-Sonderbestätigung" in body
+    assert "Admin-Sonderbestätigung ohne Vier-Augen-Prinzip" in body
+    assert "Administrativer Ende-zu-Ende-Test" in body

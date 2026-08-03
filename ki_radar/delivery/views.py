@@ -20,7 +20,9 @@ from .permissions import (
     can_edit_package,
     can_review_section,
     can_transition_package,
+    can_use_admin_confirmation_override,
     can_view_package,
+    reviewer_roles,
 )
 from .readiness import missing_ready_fields
 from .services import (
@@ -150,12 +152,32 @@ def package_detail(request, pk):
     section_rows = []
     for section_key, section_label in DELIVERY_SECTION_DEFINITIONS:
         responsible_role, responsible_person = section_responsibility(package, section_key)
+        review = reviews.get(section_key)
+        roles = reviewer_roles(request.user, package, section_key)
+        shared_section = {"business", "technical"}.issubset(
+            review.required_confirmations if review else frozenset()
+        )
         section_rows.append(
             {
                 "key": section_key,
                 "label": section_label,
-                "review": reviews.get(section_key),
+                "review": review,
                 "can_review": can_review_section(request.user, package, section_key),
+                "can_confirm_business": bool(
+                    review
+                    and "business" in roles
+                    and "business" in review.required_confirmations
+                    and review.business_confirmed_at is None
+                ),
+                "can_confirm_technical": bool(
+                    review
+                    and "technical" in roles
+                    and "technical" in review.required_confirmations
+                    and review.technical_confirmed_at is None
+                ),
+                "show_admin_override_reason": bool(
+                    shared_section and can_use_admin_confirmation_override(request.user)
+                ),
                 "responsible_role": responsible_role,
                 "responsible_person": responsible_person,
             }
@@ -234,6 +256,7 @@ def package_section_review(request, pk, section_key):
             action=request.POST.get("action", ""),
             actor=request.user,
             note=request.POST.get("review_note", ""),
+            role_collapse_reason=request.POST.get("role_collapse_reason", ""),
         )
     except ValidationError as exc:
         messages.error(request, _validation_message(exc))

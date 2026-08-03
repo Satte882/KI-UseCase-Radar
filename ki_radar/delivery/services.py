@@ -15,7 +15,11 @@ from .models import (
     DeliveryPackage,
     DeliverySectionReview,
 )
-from .permissions import reviewer_roles
+from .permissions import (
+    can_use_admin_confirmation_override,
+    confirmation_role_label,
+    reviewer_roles,
+)
 from .readiness import blocking_findings, missing_ready_fields
 
 APPROVED_STATUSES = {
@@ -371,6 +375,10 @@ def reset_section_reviews(package: DeliveryPackage, section_keys: set[str]) -> N
         business_confirmed_at=None,
         technical_confirmed_by=None,
         technical_confirmed_at=None,
+        business_confirmation_role="",
+        technical_confirmation_role="",
+        role_collapse_reason="",
+        admin_override_confirmed=False,
     )
     if package.status == DeliveryPackage.Status.READY:
         package.status = DeliveryPackage.Status.DRAFT
@@ -385,6 +393,7 @@ def review_delivery_section(
     action: str,
     actor,
     note: str = "",
+    role_collapse_reason: str = "",
 ) -> DeliverySectionReview:
     try:
         review = package.section_reviews.select_for_update().get(section_key=section_key)
@@ -395,18 +404,69 @@ def review_delivery_section(
     if not roles:
         raise ValidationError("Für diese Sektionsprüfung fehlt die erforderliche Rolle.")
 
+    if action == "confirm":
+        open_roles = [
+            role
+            for role in ("business", "technical")
+            if role in roles
+            and role in review.required_confirmations
+            and getattr(review, f"{role}_confirmed_at") is None
+        ]
+        if len(open_roles) != 1:
+            raise ValidationError(
+                "Bitte die fachliche oder technische Bestätigung ausdrücklich auswählen."
+            )
+        action = f"confirm_{open_roles[0]}"
+
     now = timezone.now()
     review.reviewed_by = actor
     review.reviewed_at = now
     review.review_note = note.strip()
 
-    if action == "confirm":
-        if "business" in roles and "business" in review.required_confirmations:
-            review.business_confirmed_by = actor
-            review.business_confirmed_at = now
-        if "technical" in roles and "technical" in review.required_confirmations:
-            review.technical_confirmed_by = actor
-            review.technical_confirmed_at = now
+    if action in {"confirm_business", "confirm_technical"}:
+        role = action.removeprefix("confirm_")
+        if role not in roles or role not in review.required_confirmations:
+            role_label = "fachliche" if role == "business" else "technische"
+            raise ValidationError(f"Für die {role_label} Bestätigung fehlt die Berechtigung.")
+
+        other_role = "technical" if role == "business" else "business"
+        other_actor_id = getattr(review, f"{other_role}_confirmed_by_id")
+        if other_actor_id == actor.id:
+            if not can_use_admin_confirmation_override(actor):
+                raise ValidationError(
+                    "Dieselbe Person darf fachlich und technisch nur als Technischer "
+                    "Administrator für Admin- oder Testzwecke bestätigen."
+                )
+            collapse_reason = role_collapse_reason.strip()
+            if not collapse_reason:
+                raise ValidationError(
+                    "Für die Admin-Sonderbestätigung ist eine Begründung erforderlich."
+                )
+            review.role_collapse_reason = collapse_reason
+            review.admin_override_confirmed = True
+        else:
+            review.role_collapse_reason = ""
+            review.admin_override_confirmed = False
+
+        assigned_owner_id = (
+            package.use_case.business_owner_id
+            if role == "business"
+            else package.use_case.technical_owner_id
+        )
+        setattr(review, f"{role}_confirmed_by", actor)
+        setattr(review, f"{role}_confirmed_at", now)
+        setattr(
+            review,
+            f"{role}_confirmation_role",
+            confirmation_role_label(
+                role,
+                assigned=assigned_owner_id == actor.id,
+                admin_override=review.admin_override_confirmed,
+            ),
+        )
+        if review.admin_override_confirmed:
+            review.business_confirmation_role = "Admin-Sonderbestätigung"
+            review.technical_confirmation_role = "Admin-Sonderbestätigung"
         review.review_status = (
             DeliverySectionReview.ReviewStatus.CONFIRMED
             if review.confirmations_complete
@@ -427,6 +487,10 @@ def review_delivery_section(
         review.business_confirmed_at = None
         review.technical_confirmed_by = None
         review.technical_confirmed_at = None
+        review.business_confirmation_role = ""
+        review.technical_confirmation_role = ""
+        review.role_collapse_reason = ""
+        review.admin_override_confirmed = False
     else:
         raise ValidationError("Unbekannte Aktion für die Sektionsprüfung.")
 

@@ -7,7 +7,6 @@ from django.urls import reverse
 
 from ki_radar.accounts.permissions import is_coordinator
 from ki_radar.core.navigation import with_return_to
-from ki_radar.use_cases.models import UseCase
 from ki_radar.use_cases.permissions import can_edit_use_case
 
 from .models import DELIVERY_SECTION_DEFINITIONS, SECTION_REVIEW_REQUIREMENTS, DeliveryPackage
@@ -167,26 +166,6 @@ def _synthetic_findings(package: DeliveryPackage) -> list[ReadinessFinding]:
             )
         )
 
-    role_collapse = (
-        technical_owner is not None
-        and technical_owner.pk == package.use_case.business_owner_id
-        and (
-            package.use_case.priority == UseCase.Priority.CRITICAL
-            or package.use_case.risk_complexity == UseCase.Level.HIGH
-        )
-    )
-    if role_collapse:
-        findings.append(
-            ReadinessFinding(
-                "delivery_control",
-                "OWNER_ROLE_COLLAPSE_REVIEW_RECOMMENDED",
-                "warning",
-                (
-                    "Business- und technische Verantwortung liegen bei derselben Person. "
-                    "Für dieses kritische Vorhaben wird eine unabhängige Zweitprüfung empfohlen."
-                ),
-            )
-        )
     return findings
 
 
@@ -229,6 +208,8 @@ def _build_action(
         title = (
             f"Begründung für „{label}“ ergänzen"
             if code == "NOT_APPLICABLE_REASON_MISSING"
+            else f"Unabhängige Kontrolle für „{label}“ durchführen"
+            if code == "INDEPENDENT_CONFIRMATION_MISSING"
             else f"Sektion „{label}“ prüfen"
         )
         action_label = "Sektion prüfen"
@@ -275,11 +256,6 @@ def _build_action(
         can_execute = is_coordinator(user)
         if can_execute:
             url = package.use_case.get_absolute_url()
-    elif code == "OWNER_ROLE_COLLAPSE_REVIEW_RECOMMENDED":
-        title = "Unabhängige Zweitprüfung empfohlen"
-        responsible_role = "KI-Koordinator"
-        responsible_person = "Nicht blockierende Qualitätssicherung"
-
     return ActionableFinding(
         code=code,
         section_key=section_key,

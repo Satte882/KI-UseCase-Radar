@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from ki_radar.core.navigation import safe_internal_url, with_return_to
-from ki_radar.delivery.actions import build_actionable_findings, primary_delivery_action
+from ki_radar.delivery.actions import primary_delivery_action
 from ki_radar.delivery.forms import DeliveryPackageForm
 from ki_radar.delivery.services import create_delivery_package
 from ki_radar.reporting.templatetags.worklist_tags import worklist_rows
@@ -114,7 +114,8 @@ def test_missing_technical_owner_is_the_primary_delivery_action(
 
 
 @pytest.mark.django_db
-def test_role_collapse_creates_a_non_blocking_quality_warning(
+def test_role_collapse_assignment_explains_the_actual_control_rule(
+    client,
     owner,
     coordinator,
     business_unit,
@@ -126,16 +127,15 @@ def test_role_collapse_creates_a_non_blocking_quality_warning(
         technical_owner=owner,
         priority=UseCase.Priority.CRITICAL,
     )
+    client.force_login(owner)
 
-    findings = build_actionable_findings(package, coordinator)
-    warning = next(
-        item for item in findings if item.code == "OWNER_ROLE_COLLAPSE_REVIEW_RECOMMENDED"
-    )
+    response = client.get(package.get_absolute_url())
+    body = response.content.decode()
 
-    assert warning.severity == "warning"
-    assert warning.priority_class == 6
-    assert warning.url == ""
-    assert "unabhängige Zweitprüfung" in warning.message
+    assert response.status_code == 200
+    assert "Zusammengeführte Verantwortung" in body
+    assert "Bestätigt dieselbe Person beide Rollen" in body
+    assert "unabhängige Kontrolle erforderlich" in body
 
 
 @pytest.mark.django_db
@@ -239,7 +239,7 @@ def test_delivery_detail_exposes_direct_primary_action_and_not_applicable_guidan
     assert 'data-testid="primary-readiness-action"' in body
     assert "Technical Owner benennen" in body
     assert "Technical Owner zuordnen" in body
-    assert "bei „Nicht relevant“ verpflichtend" in body
+    assert "bei Blockierung oder „Nicht relevant“ verpflichtend" in body
     assert "data-requires-review-note" in body
 
 
