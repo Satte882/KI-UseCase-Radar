@@ -99,3 +99,15 @@ def confirmation_role_label(
 
 def can_transition_package(user) -> bool:
     return is_coordinator(user)
+
+
+def can_resolve_role_source(user, package: DeliveryPackage) -> bool:
+    if package.status == DeliveryPackage.Status.HANDED_OVER:
+        return False
+    return bool(
+        package.use_case.business_owner_id == user.id
+        or package.technical_owner_id == user.id
+        or package.use_case.technical_owner_id == user.id
+        or is_coordinator(user)
+        or is_technical_admin(user)
+    )
