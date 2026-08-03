@@ -160,7 +160,7 @@ def test_generic_prefill_and_open_reviews_are_readiness_blockers(
     codes = {finding.code for finding in findings}
 
     assert "SECTION_NEEDS_REVIEW" in codes
-    assert "OUT_OF_SCOPE_GENERIC" in codes
+    assert "OUT_OF_SCOPE_MISSING" in codes
     assert "SYSTEM_RESPONSIBILITIES_GENERIC" in codes
 
 
