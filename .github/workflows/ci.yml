@@ -64,7 +64,50 @@ jobs:
         run: uv sync --frozen --dev
 
       - name: Apply issue 44 patch
-        run: python scripts/apply_issue44.py
+        run: |
+          python scripts/apply_issue44.py
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("ki_radar/use_cases/decision_views.py")
+          text = path.read_text(encoding="utf-8")
+          old = '''                        messages.info(
+                            request,
+                            "Die Freigabe mit Auflagen wurde zur unabhängigen Zweitprüfung "
+                            f"an {decision.second_approval_assignee.get_display_name()} zugewiesen.",
+                        )'''
+          new = '''                        assignee_name = (
+                            decision.second_approval_assignee.get_display_name()
+                        )
+                        messages.info(
+                            request,
+                            "Die Freigabe mit Auflagen wurde zur unabhängigen Zweitprüfung "
+                            f"an {assignee_name} zugewiesen.",
+                        )'''
+          if old not in text:
+              raise RuntimeError("Expected decision message not found")
+          path.write_text(text.replace(old, new, 1), encoding="utf-8")
+
+          path = Path("tests/test_guided_second_approval.py")
+          text = path.read_text(encoding="utf-8")
+          text = text.replace(
+              "from django.contrib.auth.models import Group\n",
+              "from django.contrib.auth.models import Group\n"
+              "from django.core.exceptions import PermissionDenied\n",
+              1,
+          )
+          text = text.replace(
+              "from ki_radar.use_cases.models import ApprovalDecision, DecisionAssessment, UseCase\n",
+              "from ki_radar.use_cases.models import DecisionAssessment, UseCase\n",
+              1,
+          )
+          text = text.replace(
+              "with pytest.raises(Exception):",
+              "with pytest.raises(PermissionDenied):",
+              1,
+          )
+          path.write_text(text, encoding="utf-8")
+          PY
 
       - name: Format and lint patch
         run: |
