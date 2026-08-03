@@ -127,6 +127,23 @@ def _source_staleness_findings(
         "solution_option": origin.solution_option if origin is not None else None,
     }
     findings: list[ReadinessFinding] = []
+    role_source = (review.source_manifest.get("role_sources") or {}).get("technical_owner")
+    if role_source is not None:
+        snapshot_id = str(role_source.get("id") or "")
+        current_id = str(package.use_case.technical_owner_id or "")
+        if snapshot_id != current_id:
+            findings.append(
+                ReadinessFinding(
+                    "architecture_and_data",
+                    "TECHNICAL_OWNER_SOURCE_CHANGE_UNRESOLVED",
+                    "blocker",
+                    (
+                        "Der Technical Owner wurde am Use Case geändert. Alter Package-Wert, "
+                        "neuer Quellwert und Übernahmeentscheidung müssen vor der Übergabe "
+                        "nachvollziehbar geklärt werden."
+                    ),
+                )
+            )
     for package_field, source in (review.source_manifest.get("field_sources") or {}).items():
         obj = objects.get(source.get("kind"))
         source_field = source.get("field")
@@ -157,7 +174,7 @@ def evaluate_delivery_readiness(package: DeliveryPackage) -> list[ReadinessFindi
         return []
 
     findings: list[ReadinessFinding] = []
-    if package.use_case.technical_owner_id is None:
+    if package.technical_owner_id is None:
         findings.append(
             ReadinessFinding(
                 "architecture_and_data",

@@ -13,9 +13,11 @@ from .exports import render_delivery_markdown
 from .models import (
     DELIVERY_SECTION_DEFINITIONS,
     DeliveryPackage,
+    DeliveryRoleSourceDecision,
     DeliverySectionReview,
 )
 from .permissions import (
+    can_transition_package,
     can_use_admin_confirmation_override,
     confirmation_role_label,
     reviewer_roles,
@@ -209,6 +211,8 @@ def build_source_manifest(use_case: UseCase, decision: ApprovalDecision) -> dict
             "technical_owner": {
                 "id": str(use_case.technical_owner_id or ""),
                 "value": str(use_case.technical_owner or ""),
+                "updated_at": _iso(use_case.updated_at),
+                "adoption": "copied",
             },
         },
     }
@@ -263,6 +267,49 @@ def delivery_source_differences(package: DeliveryPackage) -> list[dict]:
     return differences
 
 
+def technical_owner_source_state(package: DeliveryPackage) -> dict | None:
+    review = package.section_reviews.filter(section_key="architecture_and_data").first()
+    if review is None:
+        return None
+    source = (review.source_manifest.get("role_sources") or {}).get("technical_owner")
+    if source is None:
+        return None
+    current_owner = package.use_case.technical_owner
+    current_id = str(package.use_case.technical_owner_id or "")
+    snapshot_id = str(source.get("id") or "")
+    return {
+        "role_key": "technical_owner",
+        "working_id": str(package.technical_owner_id or ""),
+        "working_value": str(package.technical_owner or "Nicht benannt"),
+        "snapshot_id": snapshot_id,
+        "snapshot_value": str(source.get("value") or "Nicht benannt"),
+        "current_source_id": current_id,
+        "current_source_value": str(current_owner or "Nicht benannt"),
+        "source_changed": current_id != snapshot_id,
+        "adoption": source.get("adoption", "copied"),
+    }
+
+
+def refresh_technical_owner_source_snapshot(
+    package: DeliveryPackage,
+    *,
+    adoption: str,
+) -> None:
+    source = {
+        "id": str(package.use_case.technical_owner_id or ""),
+        "value": str(package.use_case.technical_owner or ""),
+        "updated_at": _iso(package.use_case.updated_at),
+        "adoption": adoption,
+    }
+    for review in package.section_reviews.all():
+        manifest = dict(review.source_manifest or {})
+        role_sources = dict(manifest.get("role_sources") or {})
+        role_sources["technical_owner"] = source
+        manifest["role_sources"] = role_sources
+        review.source_manifest = manifest
+        review.save(update_fields=["source_manifest", "updated_at"])
+
+
 def _architecture_artifacts_payload(
     use_case: UseCase,
     decision: ApprovalDecision,
@@ -272,13 +319,8 @@ def _architecture_artifacts_payload(
     data_objects = use_case.data_sources
     application_impact = option.application_impact if option else ""
     integration_impact = use_case.interface_description
-    technical_owner = use_case.technical_owner
-    business_owner = use_case.business_owner
-
     target_components = application_impact or "Zielkomponenten im Delivery Package konkretisieren."
     system_responsibility = (
-        f"Fachlicher Owner: {business_owner}\n"
-        f"Technischer Owner: {technical_owner or 'noch nicht benannt'}\n"
         "Führendes System/System of Record: konkretisieren.\n"
         f"Zu ändernde oder neue Komponenten: {target_components}"
     )
@@ -426,6 +468,7 @@ def create_delivery_package(*, use_case: UseCase, actor) -> DeliveryPackage:
     ) + 1
     package = DeliveryPackage(
         use_case=use_case,
+        technical_owner=use_case.technical_owner,
         version=version,
         generated_from_decision=decision,
         created_by=actor,
@@ -522,9 +565,7 @@ def review_delivery_section(
             review.admin_override_confirmed = False
 
         assigned_owner_id = (
-            package.use_case.business_owner_id
-            if role == "business"
-            else package.use_case.technical_owner_id
+            package.use_case.business_owner_id if role == "business" else package.technical_owner_id
         )
         setattr(review, f"{role}_confirmed_by", actor)
         setattr(review, f"{role}_confirmed_at", now)
@@ -575,6 +616,58 @@ def review_delivery_section(
 
 
 @transaction.atomic
+def resolve_technical_owner_source_change(
+    *,
+    package: DeliveryPackage,
+    action: str,
+    rationale: str,
+    actor,
+) -> DeliveryRoleSourceDecision:
+    if not can_transition_package(actor):
+        raise ValidationError(
+            "Nur die KI-Koordination darf Quellenänderungen im Delivery Package entscheiden."
+        )
+    package = DeliveryPackage.objects.select_for_update().get(pk=package.pk)
+    if package.status == DeliveryPackage.Status.HANDED_OVER:
+        raise ValidationError("Ein übergebenes Delivery Package ist unveränderlich.")
+    reason = rationale.strip()
+    if not reason:
+        raise ValidationError("Für die Übernahmeentscheidung ist eine Begründung erforderlich.")
+    state = technical_owner_source_state(package)
+    if state is None or not state["source_changed"]:
+        raise ValidationError("Es liegt keine offene Änderung des Technical Owners vor.")
+    if action not in {
+        DeliveryRoleSourceDecision.Decision.ADOPT_SOURCE,
+        DeliveryRoleSourceDecision.Decision.KEEP_PACKAGE,
+    }:
+        raise ValidationError("Unbekannte Übernahmeentscheidung.")
+
+    old_owner = package.technical_owner
+    new_owner = package.use_case.technical_owner
+    decision = DeliveryRoleSourceDecision.objects.create(
+        delivery_package=package,
+        role_key=DeliveryRoleSourceDecision.RoleKey.TECHNICAL_OWNER,
+        old_value_id=str(package.technical_owner_id or ""),
+        old_value_label=str(old_owner) if old_owner else "Nicht benannt",
+        new_value_id=str(package.use_case.technical_owner_id or ""),
+        new_value_label=str(new_owner) if new_owner else "Nicht benannt",
+        decision=action,
+        rationale=reason,
+        decided_by=actor,
+        source_updated_at=package.use_case.updated_at,
+    )
+    if action == DeliveryRoleSourceDecision.Decision.ADOPT_SOURCE:
+        package.technical_owner = new_owner
+        package.save(update_fields=["technical_owner", "updated_at"])
+        adoption = "adopted"
+    else:
+        adoption = "kept"
+    refresh_technical_owner_source_snapshot(package, adoption=adoption)
+    reset_section_reviews(package, {"architecture_and_data"})
+    return decision
+
+
+@transaction.atomic
 def mark_package_ready(package: DeliveryPackage) -> None:
     if package.status == DeliveryPackage.Status.HANDED_OVER:
         raise ValidationError("Ein übergebenes Delivery Package ist unveränderlich.")
@@ -618,7 +711,10 @@ __all__ = [
     "latest_final_approval",
     "mark_package_ready",
     "missing_ready_fields",
+    "refresh_technical_owner_source_snapshot",
     "render_delivery_markdown",
     "reset_section_reviews",
+    "resolve_technical_owner_source_change",
     "review_delivery_section",
+    "technical_owner_source_state",
 ]

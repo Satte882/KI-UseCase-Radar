@@ -34,6 +34,24 @@ def _source_manifest(package: DeliveryPackage) -> str:
     return f"```json\n{json.dumps(review.source_manifest, ensure_ascii=False, indent=2)}\n```"
 
 
+def _role_source_decisions(package: DeliveryPackage) -> str:
+    decisions = package.role_source_decisions.select_related("decided_by").all()
+    if not decisions:
+        return "Keine Quellenentscheidungen dokumentiert."
+    rows = [
+        "| Zeitpunkt | Rolle | Alt | Neue Quelle | Entscheidung | Begründung | Person |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for decision in decisions:
+        rows.append(
+            f"| {decision.decided_at:%d.%m.%Y %H:%M} | "
+            f"{decision.get_role_key_display()} | {decision.old_value_label or '-'} | "
+            f"{decision.new_value_label or '-'} | {decision.get_decision_display()} | "
+            f"{decision.rationale} | {decision.decided_by or 'Gelöschte Person'} |"
+        )
+    return "\n".join(rows)
+
+
 def render_delivery_markdown(package: DeliveryPackage) -> str:
     sections = [
         ("Problem und Geschäftskontext", package.problem_context),
@@ -93,6 +111,7 @@ def render_delivery_markdown(package: DeliveryPackage) -> str:
         [
             ("Sektionsprüfung", _review_summary(package)),
             ("Quellenstand", _source_manifest(package)),
+            ("Quellenentscheidungen", _role_source_decisions(package)),
             ("Readiness-Findings", findings_text),
         ]
     )
@@ -102,7 +121,8 @@ def render_delivery_markdown(package: DeliveryPackage) -> str:
         f"# Delivery Package - {package.use_case.short_id} {package.use_case.title}\n\n"
         f"Version: {package.version}  \n"
         f"Readiness-Schema: {package.readiness_schema_version}  \n"
-        f"Status: {package.get_status_display()}\n\n"
+        f"Status: {package.get_status_display()}  \n"
+        f"Technical Owner: {package.technical_owner or 'Nicht benannt'}\n\n"
         "Methodische Referenz: `docs/DELIVERY_METHODOLOGY.md`\n\n"
         f"{body}\n"
     )

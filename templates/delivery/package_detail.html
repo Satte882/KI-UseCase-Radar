@@ -22,12 +22,48 @@
 <div class="kpi-strip mb-4">
   <div class="kpi-cell"><small>Status</small><strong>{{ package.get_status_display }}</strong></div>
   <div class="kpi-cell"><small>Version</small><strong>{{ package.version }}</strong></div>
-  <div class="kpi-cell"><small>Technical Owner · Technik, Daten und KI</small><strong>{{ package.use_case.technical_owner|default:"Nicht benannt" }}</strong></div>
+  <div class="kpi-cell"><small>Technical Owner · Technik, Daten und KI</small><strong>{{ package.technical_owner|default:"Nicht benannt" }}</strong></div>
 </div>
 
 {% if owner_role_collapse %}
 <div class="alert alert-secondary mb-4">
   <strong>Zusammengeführte Verantwortung:</strong> {{ package.use_case.business_owner }} ist Business Owner sowie Technical Owner. Die beiden Bestätigungen bleiben getrennte Aktionen. Bestätigt dieselbe Person beide Rollen, ist vor der Übergabe eine unabhängige Kontrolle erforderlich.
+</div>
+{% endif %}
+
+{% if technical_owner_source_change or role_source_decisions %}
+<div class="app-card mb-4" id="technical-owner-source-change">
+  <div class="card-header"><strong>Quellenentscheidung · Technical Owner</strong><div class="small text-muted mt-1">Rollenänderungen am Use Case werden nicht stillschweigend in eine bestehende Package-Version übernommen.</div></div>
+  <div class="card-body">
+    {% if technical_owner_source_change %}
+    <div class="alert alert-warning">
+      <strong>Offene Abweichung:</strong> Package-Wert „{{ technical_owner_source_change.working_value }}“, aktueller Use-Case-Wert „{{ technical_owner_source_change.current_source_value }}“.
+    </div>
+    {% if package.status == 'handed_over' %}
+    <div class="alert alert-secondary">Die übergebene Package-Version bleibt unveränderlich. Die spätere Quellenänderung wird nur angezeigt und nicht übernommen.</div>
+    {% elif can_transition %}
+    <form method="post" action="{% url 'delivery:package_resolve_technical_owner_source' package.pk %}" class="mb-4">
+      {% csrf_token %}
+      <label class="form-label" for="technical-owner-rationale">Begründung der Übernahmeentscheidung</label>
+      <textarea class="form-control mb-3" id="technical-owner-rationale" name="rationale" rows="3" required></textarea>
+      <div class="d-flex gap-2 flex-wrap">
+        <button class="btn btn-primary" name="action" value="adopt_source">Neuen Owner übernehmen</button>
+        <button class="btn btn-outline-secondary" name="action" value="keep_package">Package-Zuordnung beibehalten</button>
+      </div>
+    </form>
+    {% else %}
+    <div class="alert alert-secondary">Die KI-Koordination muss diese Abweichung vor der Übergabe entscheiden.</div>
+    {% endif %}
+    {% endif %}
+
+    {% if role_source_decisions %}
+    <div class="section-title mb-2">Entscheidungsverlauf</div>
+    <div class="table-responsive"><table class="table table-sm mb-0">
+      <thead><tr><th>Zeitpunkt</th><th>Alt</th><th>Neue Quelle</th><th>Entscheidung</th><th>Begründung</th><th>Person</th></tr></thead>
+      <tbody>{% for decision in role_source_decisions %}<tr><td>{{ decision.decided_at|date:"d.m.Y H:i" }}</td><td>{{ decision.old_value_label|default:"Nicht benannt" }}</td><td>{{ decision.new_value_label|default:"Nicht benannt" }}</td><td>{{ decision.get_decision_display }}</td><td>{{ decision.rationale }}</td><td>{{ decision.decided_by|default:"Gelöschte Person" }}</td></tr>{% endfor %}</tbody>
+    </table></div>
+    {% endif %}
+  </div>
 </div>
 {% endif %}
 

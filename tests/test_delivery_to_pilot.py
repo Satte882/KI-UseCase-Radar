@@ -172,6 +172,9 @@ def _make_pilot_candidate(owner, coordinator, business_unit, *, technical_owner=
 
 
 def _create_package(use_case, coordinator, *, handover=False):
+    if use_case.technical_owner_id is None:
+        use_case.technical_owner = coordinator
+        use_case.save(update_fields=["technical_owner", "updated_at"])
     package = create_delivery_package(use_case=use_case, actor=coordinator)
     _complete_delivery_readiness(package)
     mark_package_ready(package)

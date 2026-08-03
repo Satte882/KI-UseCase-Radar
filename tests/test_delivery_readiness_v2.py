@@ -8,10 +8,12 @@ from django.core.exceptions import ValidationError
 from django.urls import reverse
 from django.utils import timezone
 
-from ki_radar.delivery.models import DeliverySectionReview
+from ki_radar.delivery.models import DeliveryRoleSourceDecision, DeliverySectionReview
 from ki_radar.delivery.readiness import evaluate_delivery_readiness
 from ki_radar.delivery.services import (
     create_delivery_package,
+    render_delivery_markdown,
+    resolve_technical_owner_source_change,
     review_delivery_section,
 )
 from ki_radar.use_cases.models import ApprovalDecision, DecisionAssessment, UseCase
@@ -486,3 +488,186 @@ def test_delivery_uses_canonical_working_values_and_reports_field_level_source_c
     ]
     assert any("Ziel und erwartetes Ergebnis" in message for message in messages)
     assert any("Durchlaufzeit und Rückfragen reduzieren" in message for message in messages)
+
+
+@pytest.mark.django_db
+def test_delivery_package_snapshots_technical_owner_and_blocks_unresolved_source_change(
+    owner, other_owner, coordinator, business_unit
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+
+    assert package.technical_owner == other_owner
+    use_case.technical_owner = owner
+    use_case.save(update_fields=["technical_owner", "updated_at"])
+
+    findings = evaluate_delivery_readiness(package)
+    assert package.technical_owner == other_owner
+    assert any(
+        finding.code == "TECHNICAL_OWNER_SOURCE_CHANGE_UNRESOLVED" and finding.severity == "blocker"
+        for finding in findings
+    )
+
+
+@pytest.mark.django_db
+def test_technical_owner_source_change_can_be_adopted_with_audit_decision(
+    owner, other_owner, coordinator, business_unit
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    review_delivery_section(
+        package=package,
+        section_key="architecture_and_data",
+        action="confirm_technical",
+        actor=coordinator,
+    )
+    use_case.technical_owner = owner
+    use_case.save(update_fields=["technical_owner", "updated_at"])
+
+    decision = resolve_technical_owner_source_change(
+        package=package,
+        action=DeliveryRoleSourceDecision.Decision.ADOPT_SOURCE,
+        rationale="Die technische Verantwortung wurde organisatorisch neu zugeordnet.",
+        actor=coordinator,
+    )
+
+    package.refresh_from_db()
+    review = package.section_reviews.get(section_key="architecture_and_data")
+    assert package.technical_owner == owner
+    assert decision.old_value_id == str(other_owner.pk)
+    assert decision.new_value_id == str(owner.pk)
+    assert decision.decided_by == coordinator
+    decision.rationale = "Nachträglich verändert"
+    with pytest.raises(ValidationError, match="Quellenentscheidung ist unveränderlich"):
+        decision.save()
+    with pytest.raises(ValidationError, match="Quellenentscheidung ist unveränderlich"):
+        decision.delete()
+    assert review.review_status == DeliverySectionReview.ReviewStatus.NEEDS_REVIEW
+    assert not any(
+        finding.code == "TECHNICAL_OWNER_SOURCE_CHANGE_UNRESOLVED"
+        for finding in evaluate_delivery_readiness(package)
+    )
+    export = render_delivery_markdown(package)
+    assert "Quellenentscheidungen" in export
+    assert "Die technische Verantwortung wurde organisatorisch neu zugeordnet." in export
+
+
+@pytest.mark.django_db
+def test_technical_owner_source_change_can_be_kept_and_handover_version_is_immutable(
+    owner, other_owner, coordinator, business_unit
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    use_case.technical_owner = owner
+    use_case.save(update_fields=["technical_owner", "updated_at"])
+
+    decision = resolve_technical_owner_source_change(
+        package=package,
+        action=DeliveryRoleSourceDecision.Decision.KEEP_PACKAGE,
+        rationale="Die bestehende Package-Zuordnung bleibt für diese Version verantwortlich.",
+        actor=coordinator,
+    )
+    package.refresh_from_db()
+    assert package.technical_owner == other_owner
+    assert decision.decision == DeliveryRoleSourceDecision.Decision.KEEP_PACKAGE
+    assert not any(
+        finding.code == "TECHNICAL_OWNER_SOURCE_CHANGE_UNRESOLVED"
+        for finding in evaluate_delivery_readiness(package)
+    )
+
+    package.status = package.Status.HANDED_OVER
+    package.save(update_fields=["status", "updated_at"])
+    use_case.technical_owner = coordinator
+    use_case.save(update_fields=["technical_owner", "updated_at"])
+    with pytest.raises(ValidationError, match="unveränderlich"):
+        resolve_technical_owner_source_change(
+            package=package,
+            action=DeliveryRoleSourceDecision.Decision.ADOPT_SOURCE,
+            rationale="Darf nach Übergabe nicht mehr erfolgen.",
+            actor=coordinator,
+        )
+
+
+@pytest.mark.django_db
+def test_technical_owner_source_change_requires_coordinator_permission(
+    owner, other_owner, coordinator, business_unit
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    use_case.technical_owner = owner
+    use_case.save(update_fields=["technical_owner", "updated_at"])
+
+    with pytest.raises(ValidationError, match="Nur die KI-Koordination"):
+        resolve_technical_owner_source_change(
+            package=package,
+            action=DeliveryRoleSourceDecision.Decision.ADOPT_SOURCE,
+            rationale="Unberechtigter Übernahmeversuch.",
+            actor=owner,
+        )
+
+
+@pytest.mark.django_db
+def test_technical_owner_source_change_is_visible_and_resolvable_in_delivery_ui(
+    client,
+    owner,
+    other_owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    use_case.technical_owner = owner
+    use_case.save(update_fields=["technical_owner", "updated_at"])
+    client.force_login(coordinator)
+
+    response = client.get(reverse("delivery:package_detail", kwargs={"pk": package.pk}))
+    content = response.content.decode()
+    assert response.status_code == 200
+    assert "Offene Abweichung" in content
+    assert str(other_owner) in content
+    assert str(owner) in content
+    assert (
+        reverse("delivery:package_resolve_technical_owner_source", kwargs={"pk": package.pk})
+        in content
+    )
+
+    response = client.post(
+        reverse("delivery:package_resolve_technical_owner_source", kwargs={"pk": package.pk}),
+        {
+            "action": DeliveryRoleSourceDecision.Decision.ADOPT_SOURCE,
+            "rationale": "Die neue technische Verantwortung gilt für die aktuelle Package-Version.",
+        },
+    )
+
+    assert response.status_code == 302
+    package.refresh_from_db()
+    assert package.technical_owner == owner
+    assert package.role_source_decisions.filter(
+        decision=DeliveryRoleSourceDecision.Decision.ADOPT_SOURCE,
+        decided_by=coordinator,
+    ).exists()

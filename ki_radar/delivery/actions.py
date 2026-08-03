@@ -48,6 +48,7 @@ FIELD_CODES = PACKAGE_FIELD_CODES | ARCHITECTURE_FIELD_CODES
 RESPONSIBILITY_CODES = {
     "TECHNICAL_OWNER_MISSING",
     "TECHNICAL_OWNER_INACTIVE",
+    "TECHNICAL_OWNER_SOURCE_CHANGE_UNRESOLVED",
 }
 STRUCTURE_CODES = {
     "SECTION_REVIEW_MISSING",
@@ -99,7 +100,7 @@ def _display_name(user) -> str:
 def section_responsibility(package: DeliveryPackage, section_key: str) -> tuple[str, str]:
     requirements = SECTION_REVIEW_REQUIREMENTS.get(section_key, frozenset())
     business_owner = package.use_case.business_owner
-    technical_owner = package.use_case.technical_owner
+    technical_owner = package.technical_owner
 
     if requirements == {"business"}:
         return "Business Owner", _display_name(business_owner)
@@ -152,7 +153,7 @@ def _use_case_edit_url(package: DeliveryPackage, field_name: str, return_to: str
 
 def _synthetic_findings(package: DeliveryPackage) -> list[ReadinessFinding]:
     findings: list[ReadinessFinding] = []
-    technical_owner = package.use_case.technical_owner
+    technical_owner = package.technical_owner
     if technical_owner is not None and not technical_owner.is_active:
         findings.append(
             ReadinessFinding(
@@ -186,7 +187,15 @@ def _build_action(
     can_execute = False
     field_name = FIELD_CODES.get(code, "")
 
-    if code in {"TECHNICAL_OWNER_MISSING", "TECHNICAL_OWNER_INACTIVE"}:
+    if code == "TECHNICAL_OWNER_SOURCE_CHANGE_UNRESOLVED":
+        title = "Änderung des Technical Owners entscheiden"
+        action_label = "Abweichung auflösen"
+        responsible_role = "KI-Koordinator"
+        responsible_person = "Berechtigte Koordination"
+        can_execute = is_coordinator(user)
+        if can_execute:
+            url = f"{package.get_absolute_url()}#technical-owner-source-change"
+    elif code in {"TECHNICAL_OWNER_MISSING", "TECHNICAL_OWNER_INACTIVE"}:
         title = (
             "Technical Owner benennen" if code.endswith("MISSING") else "Technical Owner ersetzen"
         )

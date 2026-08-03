@@ -15,6 +15,11 @@ urlpatterns = [
         views.package_section_review,
         name="package_section_review",
     ),
+    path(
+        "<uuid:pk>/sources/technical-owner/resolve/",
+        views.package_resolve_technical_owner_source,
+        name="package_resolve_technical_owner_source",
+    ),
     path("<uuid:pk>/ready/", views.package_mark_ready, name="package_mark_ready"),
     path("<uuid:pk>/handover/", views.package_handover, name="package_handover"),
     path("<uuid:pk>/export.md", views.package_export_markdown, name="package_export_markdown"),
