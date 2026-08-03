@@ -3,22 +3,48 @@ name: KI-Radar CI
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: ki-radar-ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  repair:
+  validate:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17.5-bookworm
+        env:
+          POSTGRES_DB: ki_radar_test
+          POSTGRES_USER: ki_radar
+          POSTGRES_PASSWORD: ki_radar_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ki_radar -d ki_radar_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings.test
+      DJANGO_SECRET_KEY: ci-only-secret-key-not-for-production
+      POSTGRES_DB: ki_radar_test
+      POSTGRES_USER: ki_radar
+      POSTGRES_PASSWORD: ki_radar_test_password
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "5432"
+      DATABASE_URL: postgresql://ki_radar:ki_radar_test_password@localhost:5432/ki_radar_test
+
     steps:
-      - name: Checkout feature branch
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
 
       - name: Install Python
         uses: actions/setup-python@v5
@@ -31,40 +57,59 @@ jobs:
           version: "0.10.0"
           enable-cache: true
 
+      - name: Verify lockfile
+        run: uv lock --check
+
       - name: Install dependencies
         run: uv sync --frozen --dev
 
-      - name: Apply deterministic fixes
-        shell: python
+      - name: Ruff lint
+        run: uv run ruff check .
+
+      - name: Ruff format
+        run: uv run ruff format --check .
+
+      - name: Django system check
+        run: uv run python manage.py check
+
+      - name: Verify migrations
+        run: uv run python manage.py makemigrations --check --dry-run
+
+      - name: Apply migrations
+        run: uv run python manage.py migrate --noinput
+
+      - name: Run tests
+        run: uv run pytest -q
+
+      - name: Bandit
+        run: uv run bandit -q -r ki_radar config
+
+      - name: Dependency audit
+        run: uv run pip-audit
+
+      - name: Prepare Compose validation
+        shell: bash
         run: |
-          from pathlib import Path
+          set -euo pipefail
+          mkdir -p .ci-secrets/prod .ci-secrets/staging deploy/certs
+          for secret in django_secret_key db_password sentry_dsn monitoring_token; do
+            printf 'ci-placeholder\n' > ".ci-secrets/prod/${secret}"
+          done
+          for secret in django_secret_key db_password; do
+            printf 'ci-placeholder\n' > ".ci-secrets/staging/${secret}"
+          done
 
-          service = Path("ki_radar/architecture/solution_selection.py")
-          text = service.read_text()
-          needle = '        .select_related("stage__value_stream__focus")\n'
-          if needle not in text:
-              raise SystemExit("expected select_related call not found")
-          service.write_text(text.replace(needle, ""))
+      - name: Validate local Compose
+        run: docker compose -f compose.local.yml config --quiet
 
-          template = Path("templates/architecture/process_analysis_detail.html")
-          text = template.read_text()
-          old_action = "journey.next_action_label == 'Lösungsoptionen vergleichen'"
-          if old_action not in text:
-              raise SystemExit("expected journey attribute not found")
-          text = text.replace(
-              old_action,
-              "journey.next_action.action_label == 'Lösungsoptionen vergleichen'",
-          )
-          text = text.replace("state-blocked%{% else", "state-blocked{% else")
-          template.write_text(text)
+      - name: Validate production Compose
+        run: SECRETS_DIR="$PWD/.ci-secrets/prod" docker compose --env-file .env.production.example -f compose.prod.yml config --quiet
 
-      - name: Format Python fix
-        run: uv run ruff format ki_radar/architecture/solution_selection.py
+      - name: Validate staging Compose
+        run: STAGING_SECRETS_DIR="$PWD/.ci-secrets/staging" docker compose --env-file .env.staging.example -f compose.staging.yml config --quiet
 
-      - name: Commit fixes
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add ki_radar/architecture/solution_selection.py templates/architecture/process_analysis_detail.html
-          git diff --cached --quiet || git commit -m "Issue #47: PostgreSQL-Lock und Journey-Anzeige korrigieren"
-          git push origin HEAD:${{ github.head_ref }}
+      - name: Build production image
+        run: docker build -t ki-radar:ci .
+
+      - name: Build development image
+        run: docker build -f Dockerfile.dev -t ki-radar-dev:ci .
