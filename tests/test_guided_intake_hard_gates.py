@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 from django.contrib.auth.models import Group
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.urls import reverse
 from django.utils import timezone
 
@@ -263,6 +263,7 @@ def test_conditional_approval_requires_second_independent_person(
             conditions="Messkonzept vor Pilotstart fachlich bestätigen.",
             condition_owner=owner,
             condition_due_date=timezone.localdate() + timedelta(days=14),
+            second_approval_assignee=second_approver,
         ),
     )
 
@@ -270,7 +271,7 @@ def test_conditional_approval_requires_second_independent_person(
     assert decision.is_pending_second_approval
     assert decision_ready_use_case.decision_status == UseCase.DecisionStatus.READY
 
-    with pytest.raises(ValidationError, match="weitere unabhängige"):
+    with pytest.raises(PermissionDenied, match="Personentrennung"):
         confirm_conditional_decision(decision=decision, actor=approver)
 
     confirm_conditional_decision(decision=decision, actor=second_approver)

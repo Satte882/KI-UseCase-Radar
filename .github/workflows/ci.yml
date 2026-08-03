@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: ki-radar-ci-${{ github.ref }}
@@ -45,9 +45,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: fix/issue-44-guided-second-approval
-          fetch-depth: 0
 
       - name: Install Python
         uses: actions/setup-python@v5
@@ -60,27 +57,59 @@ jobs:
           version: "0.10.0"
           enable-cache: true
 
+      - name: Verify lockfile
+        run: uv lock --check
+
       - name: Install dependencies
         run: uv sync --frozen --dev
 
-      - name: Apply legacy test alignment
-        run: python scripts/apply_issue44_test_alignment.py
+      - name: Ruff lint
+        run: uv run ruff check .
 
-      - name: Format and lint aligned tests
-        run: |
-          uv run ruff format tests/test_demo_data.py tests/test_guided_intake_hard_gates.py tests/test_pr_a_enforcement.py
-          uv run ruff check tests/test_demo_data.py tests/test_guided_intake_hard_gates.py tests/test_pr_a_enforcement.py
+      - name: Ruff format
+        run: uv run ruff format --check .
 
-      - name: Run affected tests
-        run: |
-          uv run pytest -q tests/test_demo_data.py tests/test_guided_intake_hard_gates.py tests/test_pr_a_enforcement.py tests/test_guided_second_approval.py
+      - name: Django system check
+        run: uv run python manage.py check
 
-      - name: Commit alignment and restore CI
+      - name: Verify migrations
+        run: uv run python manage.py makemigrations --check --dry-run
+
+      - name: Apply migrations
+        run: uv run python manage.py migrate --noinput
+
+      - name: Run tests
+        run: uv run pytest -q
+
+      - name: Bandit
+        run: uv run bandit -q -r ki_radar config
+
+      - name: Dependency audit
+        run: uv run pip-audit
+
+      - name: Prepare Compose validation
+        shell: bash
         run: |
-          rm scripts/apply_issue44_test_alignment.py
-          git show origin/main:.github/workflows/ci.yml > .github/workflows/ci.yml
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "Align existing tests with guided second approval"
-          git push origin HEAD:fix/issue-44-guided-second-approval
+          set -euo pipefail
+          mkdir -p .ci-secrets/prod .ci-secrets/staging deploy/certs
+          for secret in django_secret_key db_password sentry_dsn monitoring_token; do
+            printf 'ci-placeholder\n' > ".ci-secrets/prod/${secret}"
+          done
+          for secret in django_secret_key db_password; do
+            printf 'ci-placeholder\n' > ".ci-secrets/staging/${secret}"
+          done
+
+      - name: Validate local Compose
+        run: docker compose -f compose.local.yml config --quiet
+
+      - name: Validate production Compose
+        run: SECRETS_DIR="$PWD/.ci-secrets/prod" docker compose --env-file .env.production.example -f compose.prod.yml config --quiet
+
+      - name: Validate staging Compose
+        run: STAGING_SECRETS_DIR="$PWD/.ci-secrets/staging" docker compose --env-file .env.staging.example -f compose.staging.yml config --quiet
+
+      - name: Build production image
+        run: docker build -t ki-radar:ci .
+
+      - name: Build development image
+        run: docker build -f Dockerfile.dev -t ki-radar-dev:ci .
