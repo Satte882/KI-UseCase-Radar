@@ -140,11 +140,18 @@ def _persist_optional_origin(*, candidate: UseCase, stored: dict) -> None:
             pk=source_option_id,
             process_analysis=process_analysis,
         ).first()
+    from ki_radar.architecture.provenance import build_use_case_source_snapshot
+
     UseCaseOrigin.objects.create(
         use_case=candidate,
         stage=stage,
         process_analysis=process_analysis,
         solution_option=solution_option,
+        source_snapshot=build_use_case_source_snapshot(
+            stage=stage,
+            process_analysis=process_analysis,
+            solution_option=solution_option,
+        ),
     )
 
 

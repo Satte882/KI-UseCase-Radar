@@ -270,13 +270,16 @@ def test_delivery_package_uses_optional_architecture_origin(
 
     package = create_delivery_package(use_case=use_case, actor=coordinator)
 
-    assert "Value Stream: Beschaffung bis Zahlung" in package.in_scope
-    assert package.solution_outline == option.description
-    assert package.system_context == process.systems
-    assert package.integrations == option.integration_impact
-    assert package.architecture_decisions == option.architecture_fit
-    assert process.exceptions in package.test_scenarios
-    assert process.exceptions not in package.assumptions
+    assert package.in_scope == stream.scope_in
+    assert package.solution_outline == use_case.intended_purpose
+    assert package.system_context == use_case.source_systems
+    assert package.integrations == use_case.interface_description
+    assert package.architecture_decisions == ""
+    assert process.exceptions not in package.test_scenarios
+    assert process.current_flow not in package.problem_context
+    source_manifest = package.section_reviews.first().source_manifest
+    assert source_manifest["field_sources"]["in_scope"]["label"] == "Value Stream"
+    assert source_manifest["field_sources"]["solution_outline"]["label"] == "Use Case"
 
 
 @pytest.mark.django_db

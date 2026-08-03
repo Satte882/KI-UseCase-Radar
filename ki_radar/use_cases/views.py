@@ -16,6 +16,7 @@ from django.views.decorators.http import require_POST
 
 from ki_radar.accounts.models import BusinessUnit
 from ki_radar.accounts.permissions import is_coordinator
+from ki_radar.architecture.provenance import source_differences
 from ki_radar.core.navigation import requested_return_to
 from ki_radar.core.taxonomy import BusinessDomain
 
@@ -164,6 +165,16 @@ def _detail_context(request, use_case: UseCase, *, copilot_analysis: str = "") -
     return {
         "use_case": use_case,
         "architecture_origin": architecture_origin,
+        "origin_source_differences": (
+            source_differences(
+                architecture_origin.source_snapshot,
+                stage=architecture_origin.stage,
+                process_analysis=architecture_origin.process_analysis,
+                solution_option=architecture_origin.solution_option,
+            )
+            if architecture_origin is not None
+            else []
+        ),
         "journey": journey,
         "status_dimensions": build_use_case_status_dimensions(use_case, journey),
         "history": history,

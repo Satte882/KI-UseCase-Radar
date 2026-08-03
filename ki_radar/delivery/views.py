@@ -28,6 +28,7 @@ from .readiness import missing_ready_fields
 from .services import (
     APPROVED_STATUSES,
     create_delivery_package,
+    delivery_source_differences,
     hand_over_package,
     mark_package_ready,
     render_delivery_markdown,
@@ -202,6 +203,7 @@ def package_detail(request, pk):
             "primary_readiness_finding": primary_finding,
             "section_rows": section_rows,
             "owner_role_collapse": role_collapse,
+            "delivery_source_rows": delivery_source_differences(package),
         },
     )
 

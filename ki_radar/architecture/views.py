@@ -33,6 +33,7 @@ from .models import (
     ValueStreamStage,
 )
 from .permissions import can_edit_value_stream, can_manage_architecture
+from .provenance import build_process_source_snapshot, source_differences
 
 SOLUTION_TYPE_MAP = {
     SolutionOption.OptionType.RULE_AUTOMATION: UseCase.SolutionType.AUTOMATION,
@@ -257,7 +258,7 @@ def stage_start_use_case(request, pk):
         messages.warning(request, FOCUS_REQUIRED_MESSAGE)
         return redirect(stage.value_stream)
     stored = {
-        "title": f"{stage.name}: KI-Potenzial",
+        "title": stage.name,
         "business_unit": stage.value_stream.business_unit_id,
         "affected_process": stage.name,
         "summary": stage.description,
@@ -288,7 +289,7 @@ def process_analysis_create(request, stage_id):
     form = ProcessAnalysisForm(
         request.POST or None,
         initial={
-            "name": f"Prozessanalyse: {stage.name}",
+            "name": stage.name,
             "trigger": stage.value_stream.trigger,
             "outcome": stage.description or stage.value_stream.outcome,
             "roles": stage.actors,
@@ -302,6 +303,7 @@ def process_analysis_create(request, stage_id):
         process_analysis = form.save(commit=False)
         process_analysis.stage = stage
         process_analysis.analyzed_by = request.user
+        process_analysis.source_snapshot = build_process_source_snapshot(stage)
         process_analysis.save()
         messages.success(request, "Prozessanalyse wurde angelegt.")
         return redirect(process_analysis)
@@ -335,6 +337,10 @@ def process_analysis_detail(request, pk):
             "can_edit": _can_edit_process(request.user, process_analysis),
             "can_validate": _can_edit_process(request.user, process_analysis),
             "latest_validation": process_analysis.validations.first(),
+            "source_differences": source_differences(
+                process_analysis.source_snapshot,
+                stage=process_analysis.stage,
+            ),
             "can_create_use_case": can_create_use_case(request.user),
         },
     )
@@ -385,6 +391,10 @@ def process_analysis_update(request, pk):
             "stage": process_analysis.stage,
             "process_analysis": process_analysis,
             "title": "Prozessanalyse bearbeiten",
+            "source_differences": source_differences(
+                process_analysis.source_snapshot,
+                stage=process_analysis.stage,
+            ),
         },
     )
 

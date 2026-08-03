@@ -130,6 +130,24 @@
 </div>
 {% endif %}
 
+{% if delivery_source_rows %}
+<div class="app-card mb-4">
+  <div class="card-header"><strong>Quellkontext der Arbeitsfassung</strong><div class="small text-muted mt-1">Das Delivery Package enthält eine eigenständige Arbeitsfassung. Quellen werden getrennt mit dem bei der Erzeugung übernommenen Stand dargestellt.</div></div>
+  <div class="card-body">
+    <div class="list-group list-group-flush">
+      {% for row in delivery_source_rows %}
+      <div class="list-group-item bg-transparent px-0">
+        <div class="d-flex justify-content-between gap-3"><strong>{{ row.package_label }}</strong><span class="badge {% if row.changed %}state-review{% else %}state-ready{% endif %}">{% if row.changed %}Quelle geändert{% else %}Quellenstand unverändert{% endif %}</span></div>
+        <div class="small text-muted mt-1">{{ row.source_label }} · {{ row.source_field }}</div>
+        <div class="text-preline mt-2">{{ row.snapshot|default:"–" }}</div>
+        {% if row.changed %}<div class="alert alert-warning mt-2 mb-0"><strong>Aktueller Quellenwert</strong><div class="text-preline mt-1">{{ row.current|default:"–" }}</div></div>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <div class="delivery-artifact-grid mb-4">
   <section class="app-card card-body"><div class="section-title">Problem und Kontext</div><div class="text-preline">{{ package.problem_context }}</div></section>
   <section class="app-card card-body"><div class="section-title">Ziel und Ergebnis</div><div class="text-preline">{{ package.target_outcome }}</div></section>

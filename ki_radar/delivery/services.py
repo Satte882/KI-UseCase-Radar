@@ -93,27 +93,16 @@ def _source_entry(source, *, version=None) -> dict[str, str | int | None]:
     return entry
 
 
-def build_source_manifest(use_case: UseCase, decision: ApprovalDecision) -> dict:
-    try:
-        origin = use_case.architecture_origin
-    except ObjectDoesNotExist:
-        origin = None
-
-    manifest = {
-        "use_case": _source_entry(use_case),
-        "assessment": _source_entry(decision.assessment, version=decision.assessment.version),
-        "approval": _source_entry(decision),
+def _field_source(*, kind: str, label: str, source, field: str, value=None) -> dict:
+    raw_value = getattr(source, field) if value is None else value
+    return {
+        "kind": kind,
+        "label": label,
+        "id": str(source.pk),
+        "field": field,
+        "value": "" if raw_value is None else str(raw_value),
+        "updated_at": _iso(getattr(source, "updated_at", None)),
     }
-    if origin is not None:
-        manifest.update(
-            {
-                "value_stream": _source_entry(origin.stage.value_stream),
-                "value_stream_stage": _source_entry(origin.stage),
-                "process_analysis": _source_entry(origin.process_analysis),
-                "solution_option": _source_entry(origin.solution_option),
-            }
-        )
-    return manifest
 
 
 def _origin_context(use_case: UseCase):
@@ -124,53 +113,165 @@ def _origin_context(use_case: UseCase):
     return origin, origin.process_analysis, origin.solution_option
 
 
-def _architecture_context(use_case: UseCase) -> dict[str, str]:
-    origin, process, option = _origin_context(use_case)
-    if origin is None:
-        return {}
-    return {
-        "in_scope": (
-            f"Value Stream: {origin.stage.value_stream.name}\n"
-            f"Phase: {origin.stage.name}\n"
-            + (
-                f"Prozess: {process.name}\nStart: {process.scope_start}\nEnde: {process.scope_end}"
-                if process
-                else origin.stage.description
-            )
+def build_delivery_field_sources(use_case: UseCase) -> dict[str, dict]:
+    origin, _process, _option = _origin_context(use_case)
+    sources = {
+        "problem_context": _field_source(
+            kind="use_case",
+            label="Use Case",
+            source=use_case,
+            field="problem_statement",
         ),
-        "users_and_scenarios": process.roles if process else origin.stage.actors,
-        "solution_outline": option.description if option else use_case.intended_purpose,
-        "system_context": process.systems if process else origin.stage.systems,
-        "data_context": (
-            option.data_requirements
-            if option and option.data_requirements
-            else process.data_objects
-            if process
-            else origin.stage.documents
+        "target_outcome": _field_source(
+            kind="use_case",
+            label="Use Case",
+            source=use_case,
+            field="expected_benefit",
         ),
-        "integrations": option.integration_impact if option else use_case.interface_description,
-        "risks": option.risks if option else "",
-        "architecture_decisions": "\n".join(
-            value
-            for value in [
-                option.architecture_fit if option else origin.stage.value_stream.constraints,
-                option.technology_constraints if option else "",
-            ]
-            if value
+        "users_and_scenarios": _field_source(
+            kind="use_case",
+            label="Use Case",
+            source=use_case,
+            field="intended_users" if use_case.intended_users else "target_users",
+        ),
+        "solution_outline": _field_source(
+            kind="use_case",
+            label="Use Case",
+            source=use_case,
+            field="intended_purpose" if use_case.intended_purpose else "summary",
+        ),
+        "system_context": _field_source(
+            kind="use_case",
+            label="Use Case",
+            source=use_case,
+            field="source_systems",
+        ),
+        "data_context": _field_source(
+            kind="use_case",
+            label="Use Case",
+            source=use_case,
+            field="data_sources",
+        ),
+        "integrations": _field_source(
+            kind="use_case",
+            label="Use Case",
+            source=use_case,
+            field="interface_description",
+        ),
+        "human_oversight": _field_source(
+            kind="use_case",
+            label="Use Case",
+            source=use_case,
+            field="human_oversight",
+        ),
+        "operations_and_support": _field_source(
+            kind="use_case",
+            label="Use Case",
+            source=use_case,
+            field="support_responsibility",
         ),
     }
+    if origin is not None:
+        sources["in_scope"] = _field_source(
+            kind="value_stream",
+            label="Value Stream",
+            source=origin.stage.value_stream,
+            field="scope_in",
+        )
+        sources["out_of_scope"] = _field_source(
+            kind="value_stream",
+            label="Value Stream",
+            source=origin.stage.value_stream,
+            field="scope_out",
+        )
+    else:
+        sources["in_scope"] = _field_source(
+            kind="use_case",
+            label="Use Case",
+            source=use_case,
+            field="summary" if use_case.summary else "affected_process",
+        )
+    return sources
+
+
+def build_source_manifest(use_case: UseCase, decision: ApprovalDecision) -> dict:
+    origin, process, option = _origin_context(use_case)
+    manifest = {
+        "use_case": _source_entry(use_case),
+        "assessment": _source_entry(decision.assessment, version=decision.assessment.version),
+        "approval": _source_entry(decision),
+        "field_sources": build_delivery_field_sources(use_case),
+        "role_sources": {
+            "business_owner": {
+                "id": str(use_case.business_owner_id or ""),
+                "value": str(use_case.business_owner or ""),
+            },
+            "technical_owner": {
+                "id": str(use_case.technical_owner_id or ""),
+                "value": str(use_case.technical_owner or ""),
+            },
+        },
+    }
+    if origin is not None:
+        manifest.update(
+            {
+                "value_stream": _source_entry(origin.stage.value_stream),
+                "value_stream_stage": _source_entry(origin.stage),
+                "process_analysis": _source_entry(process),
+                "solution_option": _source_entry(option),
+            }
+        )
+    return manifest
+
+
+def _current_source_objects(use_case: UseCase) -> dict:
+    origin, process, option = _origin_context(use_case)
+    return {
+        "use_case": use_case,
+        "value_stream": origin.stage.value_stream if origin is not None else None,
+        "value_stream_stage": origin.stage if origin is not None else None,
+        "process_analysis": process,
+        "solution_option": option,
+    }
+
+
+def delivery_source_differences(package: DeliveryPackage) -> list[dict]:
+    review = package.section_reviews.filter(section_key="problem_and_target").first()
+    if review is None:
+        return []
+    objects = _current_source_objects(package.use_case)
+    differences = []
+    for package_field, source in (review.source_manifest.get("field_sources") or {}).items():
+        obj = objects.get(source.get("kind"))
+        source_field = source.get("field")
+        if obj is None or not source_field:
+            continue
+        current = getattr(obj, source_field, None)
+        current_text = "" if current is None else str(current)
+        snapshot_text = str(source.get("value") or "")
+        differences.append(
+            {
+                "package_field": package_field,
+                "package_label": str(package._meta.get_field(package_field).verbose_name),
+                "source_label": source.get("label", "Quelle"),
+                "source_field": source_field,
+                "snapshot": snapshot_text,
+                "current": current_text,
+                "changed": current_text != snapshot_text,
+            }
+        )
+    return differences
 
 
 def _architecture_artifacts_payload(
     use_case: UseCase,
     decision: ApprovalDecision,
 ) -> dict[str, str]:
-    _origin, process, option = _origin_context(use_case)
-    systems = process.systems if process else use_case.source_systems
-    data_objects = process.data_objects if process else use_case.data_sources
-    handoffs = process.handoffs if process else ""
+    _origin, _process, option = _origin_context(use_case)
+    systems = use_case.source_systems
+    data_objects = use_case.data_sources
     application_impact = option.application_impact if option else ""
-    integration_impact = option.integration_impact if option else use_case.interface_description
+    integration_impact = use_case.interface_description
     technical_owner = use_case.technical_owner
     business_owner = use_case.business_owner
 
@@ -190,7 +291,6 @@ def _architecture_artifacts_payload(
         "system_responsibilities": system_responsibility,
         "data_flows": (
             f"Datenobjekte und Quellen:\n{data_objects or 'Noch nicht dokumentiert.'}\n\n"
-            f"Übergaben und Informationsflüsse:\n{handoffs or 'Noch zu konkretisieren.'}\n\n"
             f"Integrationen:\n{integration_impact or 'Noch zu konkretisieren.'}"
         ),
         "data_quality_and_access": (
@@ -211,7 +311,7 @@ def build_initial_delivery_data(
     use_case: UseCase,
     decision: ApprovalDecision,
 ) -> dict[str, str]:
-    _origin, process, option = _origin_context(use_case)
+    origin, _process, _option = _origin_context(use_case)
     metric = (
         f"{use_case.metric_name}: Baseline {use_case.metric_baseline} "
         f"→ Ziel {use_case.metric_target} {use_case.metric_unit}.\n"
@@ -228,31 +328,6 @@ def build_initial_delivery_data(
     if use_case.legal_review_required:
         checks.append("Rechtsprüfung erforderlich")
 
-    process_context = []
-    if process is not None:
-        process_context.extend(
-            [
-                f"Prozess: {process.name}",
-                f"Bottleneck/Ursache: {process.bottlenecks}",
-                f"Prozess-Baseline: {process.baseline_metrics}",
-            ]
-        )
-
-    target_lines = [use_case.expected_benefit]
-    if option and option.expected_value:
-        target_lines.append(f"Beitrag der bevorzugten Lösung: {option.expected_value}")
-
-    test_lines = ["Happy Path, Datenfehler, fachliche Ausnahme und manuellen Eingriff testen."]
-    if process and process.exceptions:
-        test_lines.append(f"Bekannte Prozessausnahmen: {process.exceptions}")
-
-    risks = []
-    if option and option.risks:
-        risks.append(option.risks)
-    risks.append(
-        f"Bewertung: Risiko/Komplexität {decision.assessment.get_risk_complexity_display()}."
-    )
-
     condition_lines = [
         f"Freigabe: {decision.get_decision_status_display()}",
         f"Begründung: {decision.rationale}",
@@ -268,18 +343,16 @@ def build_initial_delivery_data(
     else:
         condition_lines.append("Keine Auflagen.")
 
-    data = {
-        "problem_context": "\n".join(
-            [
-                f"Problem: {use_case.problem_statement}",
-                f"Betroffener Prozess: {use_case.affected_process}",
-                f"Organisationseinheit: {use_case.business_unit}",
-                *process_context,
-            ]
+    value_stream = origin.stage.value_stream if origin is not None else None
+    return {
+        "problem_context": use_case.problem_statement,
+        "target_outcome": use_case.expected_benefit,
+        "in_scope": (
+            value_stream.scope_in
+            if value_stream is not None
+            else use_case.summary or use_case.affected_process
         ),
-        "target_outcome": "\n".join(target_lines),
-        "in_scope": use_case.summary or use_case.affected_process,
-        "out_of_scope": "Nicht im MVP enthaltene Funktionen explizit ergänzen.",
+        "out_of_scope": value_stream.scope_out if value_stream is not None else "",
         "users_and_scenarios": use_case.intended_users or use_case.target_users,
         "solution_outline": use_case.intended_purpose or use_case.summary,
         "system_context": use_case.source_systems,
@@ -308,10 +381,14 @@ def build_initial_delivery_data(
             "2. Freigabeauflagen und Governance-Anforderungen sind umgesetzt.\n"
             f"3. {metric}"
         ),
-        "test_scenarios": "\n".join(test_lines),
+        "test_scenarios": (
+            "Happy Path, Datenfehler, fachliche Ausnahme und manuellen Eingriff testen."
+        ),
         "measurement_plan": metric,
         "dependencies": "",
-        "risks": "\n".join(risks),
+        "risks": (
+            f"Bewertung: Risiko/Komplexität {decision.assessment.get_risk_complexity_display()}."
+        ),
         "assumptions": "",
         "architecture_decisions": "",
         "initial_backlog": (
@@ -322,10 +399,6 @@ def build_initial_delivery_data(
         "external_delivery_url": "",
         "handover_notes": "\n".join(condition_lines),
     }
-    for key, value in _architecture_context(use_case).items():
-        if value:
-            data[key] = value
-    return data
 
 
 def _create_section_reviews(package: DeliveryPackage, manifest: dict) -> None:
@@ -540,6 +613,7 @@ __all__ = [
     "current_delivery_package",
     "current_handed_over_package",
     "delivery_eligibility",
+    "delivery_source_differences",
     "hand_over_package",
     "latest_final_approval",
     "mark_package_ready",
