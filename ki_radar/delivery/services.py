@@ -39,6 +39,13 @@ SECTION_ORIGINS = {
     "delivery_control": DeliverySectionReview.ContentOrigin.MIXED,
 }
 
+TECHNICAL_OWNER_ADOPTION_RESET_SECTIONS = {
+    "solution_direction",
+    "architecture_and_data",
+    "requirements_and_governance",
+    "delivery_control",
+}
+
 
 def latest_final_approval(use_case: UseCase) -> ApprovalDecision | None:
     return (
@@ -663,10 +670,7 @@ def resolve_technical_owner_source_change(
     else:
         adoption = "kept"
     refresh_technical_owner_source_snapshot(package, adoption=adoption)
-    reset_section_reviews(
-        package,
-        {"solution_direction", "architecture_and_data", "requirements_and_governance", "delivery_control"},
-    )
+    reset_section_reviews(package, TECHNICAL_OWNER_ADOPTION_RESET_SECTIONS)
     return decision
 
 
