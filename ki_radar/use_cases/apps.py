@@ -7,6 +7,8 @@ class UseCasesConfig(AppConfig):
 
     def ready(self):
         from . import classification  # noqa: F401
+        from .value_stream_journey import install as install_value_stream_journey
         from .workflow import install
 
         install()
+        install_value_stream_journey()

@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import gated_views, views
 
 app_name = "architecture"
 
@@ -10,7 +10,7 @@ def _stage_create_from_journey(request, stream_pk):
 
 
 def _process_create_from_journey(request, stage_pk):
-    return views.process_analysis_create(request, stage_id=stage_pk)
+    return gated_views.process_analysis_create(request, stage_id=stage_pk)
 
 
 def _option_create_from_journey(request, process_pk):
@@ -35,12 +35,12 @@ urlpatterns = [
     path("stages/<uuid:pk>/edit/", views.stage_update, name="stage_update"),
     path(
         "stages/<uuid:pk>/start-use-case/",
-        views.stage_start_use_case,
+        gated_views.stage_start_use_case,
         name="stage_start_use_case",
     ),
     path(
         "stages/<uuid:stage_id>/processes/new/",
-        views.process_analysis_create,
+        gated_views.process_analysis_create,
         name="process_analysis_create",
     ),
     path(
