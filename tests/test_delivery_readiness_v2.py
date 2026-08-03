@@ -456,3 +456,34 @@ def test_delivery_page_labels_admin_override_by_confirmation_role(
     assert f"Technisch: {technical_admin} · Admin-Sonderbestätigung" in body
     assert "Admin-Sonderbestätigung ohne Vier-Augen-Prinzip" in body
     assert "Administrativer Ende-zu-Ende-Test" in body
+
+@pytest.mark.django_db
+def test_delivery_uses_canonical_working_values_and_reports_field_level_source_change(
+    owner,
+    other_owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+
+    assert package.problem_context == use_case.problem_statement
+    assert package.problem_context.count(use_case.problem_statement) == 1
+    assert package.solution_outline == use_case.intended_purpose
+
+    use_case.expected_benefit = "Durchlaufzeit und Rückfragen reduzieren."
+    use_case.save(update_fields=["expected_benefit", "updated_at"])
+    findings = evaluate_delivery_readiness(package)
+
+    messages = [
+        finding.message
+        for finding in findings
+        if finding.code == "SOURCE_CHANGED_AFTER_SNAPSHOT"
+    ]
+    assert any("Ziel und erwartetes Ergebnis" in message for message in messages)
+    assert any("Durchlaufzeit und Rückfragen reduzieren" in message for message in messages)

@@ -115,44 +115,41 @@ def _source_staleness_findings(
     if review is None or not review.source_manifest:
         return []
 
-    manifest = review.source_manifest
-    findings: list[ReadinessFinding] = []
-    source_objects = [("use_case", package.use_case)]
     try:
         origin = package.use_case.architecture_origin
     except ObjectDoesNotExist:
         origin = None
-    if origin is not None:
-        source_objects.extend(
-            [
-                ("value_stream", origin.stage.value_stream),
-                ("process_analysis", origin.process_analysis),
-                ("solution_option", origin.solution_option),
-            ]
-        )
-    source_objects.extend(
-        [
-            ("assessment", package.generated_from_decision.assessment),
-            ("approval", package.generated_from_decision),
-        ]
-    )
-
-    for key, source in source_objects:
-        if source is None or not hasattr(source, "updated_at"):
+    objects = {
+        "use_case": package.use_case,
+        "value_stream": origin.stage.value_stream if origin is not None else None,
+        "value_stream_stage": origin.stage if origin is not None else None,
+        "process_analysis": origin.process_analysis if origin is not None else None,
+        "solution_option": origin.solution_option if origin is not None else None,
+    }
+    findings: list[ReadinessFinding] = []
+    for package_field, source in (review.source_manifest.get("field_sources") or {}).items():
+        obj = objects.get(source.get("kind"))
+        source_field = source.get("field")
+        if obj is None or not source_field:
             continue
-        recorded = _parse_manifest_time((manifest.get(key) or {}).get("updated_at"))
-        current = source.updated_at
-        if recorded and current and current > recorded:
-            findings.append(
-                ReadinessFinding(
-                    "delivery_control",
-                    "SOURCE_CHANGED_AFTER_SNAPSHOT",
-                    "warning",
-                    f"Die Quelle „{key}“ wurde nach Erzeugung dieser Package-Version geändert.",
-                )
+        current = getattr(obj, source_field, None)
+        current_text = "" if current is None else str(current)
+        snapshot_text = str(source.get("value") or "")
+        if current_text == snapshot_text:
+            continue
+        label = str(package._meta.get_field(package_field).verbose_name)
+        findings.append(
+            ReadinessFinding(
+                "delivery_control",
+                "SOURCE_CHANGED_AFTER_SNAPSHOT",
+                "warning",
+                (
+                    f"Quelle für „{label}“ geändert: "
+                    f"„{snapshot_text or '–'}“ → „{current_text or '–'}“."
+                ),
             )
+        )
     return findings
-
 
 def evaluate_delivery_readiness(package: DeliveryPackage) -> list[ReadinessFinding]:
     if package.readiness_schema_version < 2:

@@ -254,3 +254,72 @@ def test_use_case_detail_shows_complete_architecture_origin_chain(
     assert process_analysis.name in content
     assert solution_option.name in content
     assert use_case.title in content
+
+@pytest.mark.django_db
+def test_process_analysis_stores_field_level_source_snapshot(client, owner, value_stream_stage):
+    client.force_login(owner)
+    response = client.post(
+        reverse("architecture:process_analysis_create", args=[value_stream_stage.pk]),
+        {
+            "name": value_stream_stage.name,
+            "status": ProcessAnalysis.Status.DRAFT,
+            "scope_start": "Angebote liegen vor",
+            "scope_end": "Entscheidung ist dokumentiert",
+            "trigger": value_stream_stage.value_stream.trigger,
+            "outcome": value_stream_stage.description,
+            "current_flow": "Angebote werden manuell verglichen.",
+            "roles": value_stream_stage.actors,
+            "systems": value_stream_stage.systems,
+            "data_objects": value_stream_stage.documents,
+            "business_rules": "",
+            "handoffs": "",
+            "bottlenecks": value_stream_stage.pain_points,
+            "exceptions": "",
+            "baseline_metrics": value_stream_stage.baseline_metrics,
+            "target_state_principles": "",
+        },
+    )
+
+    process = ProcessAnalysis.objects.get(stage=value_stream_stage)
+    assert response.status_code == 302
+    assert process.source_snapshot["roles"]["label"] == "Value-Stream-Phase"
+    assert process.source_snapshot["roles"]["value"] == value_stream_stage.actors
+
+    value_stream_stage.actors = "Einkauf, Fachbereich und Controlling"
+    value_stream_stage.save(update_fields=["actors", "updated_at"])
+    detail = client.get(process.get_absolute_url()).content.decode()
+
+    assert "Quellenänderungen" in detail
+    assert "Einkauf, Fachbereich und Controlling" in detail
+
+
+@pytest.mark.django_db
+def test_use_case_origin_stores_snapshot_and_shows_later_source_diff(
+    client,
+    owner,
+    business_unit,
+    value_stream_stage,
+):
+    use_case = UseCase.objects.create(
+        title=value_stream_stage.name,
+        problem_statement=value_stream_stage.pain_points,
+        business_unit=business_unit,
+        affected_process=value_stream_stage.name,
+        business_owner=owner,
+        submitter=owner,
+        expected_benefit="Auswahl beschleunigen",
+    )
+    _persist_optional_origin(
+        candidate=use_case,
+        stored={"source_stage_id": str(value_stream_stage.pk)},
+    )
+    origin = UseCaseOrigin.objects.get(use_case=use_case)
+    assert origin.source_snapshot["affected_process"]["value"] == value_stream_stage.name
+
+    value_stream_stage.name = "Lieferantenentscheidung"
+    value_stream_stage.save(update_fields=["name", "updated_at"])
+    client.force_login(owner)
+    content = client.get(use_case.get_absolute_url()).content.decode()
+
+    assert "Quellenänderungen seit der Übernahme" in content
+    assert "Lieferantenentscheidung" in content

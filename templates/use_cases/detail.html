@@ -167,6 +167,9 @@
           <dt class="col-sm-4 text-muted">Lösungsoption</dt><dd class="col-sm-8">{% if architecture_origin.solution_option %}{{ architecture_origin.solution_option.name }}{% else %}–{% endif %}</dd>
           <dt class="col-sm-4 text-muted">Use Case</dt><dd class="col-sm-8">{{ use_case.short_id }} · {{ use_case.title }}</dd>
         </dl>
+        {% if origin_source_differences %}
+        <div class="alert alert-warning mt-3 mb-0"><strong>Quellenänderungen seit der Übernahme</strong><div class="small mt-1">Die aktuelle Use-Case-Arbeitsfassung bleibt unverändert; die Abweichungen müssen bewusst geprüft werden.</div><ul class="mb-0 mt-2">{% for item in origin_source_differences %}<li>{{ item.target_field }} aus {{ item.source_label }}: „{{ item.previous|default:"–" }}“ → „{{ item.current|default:"–" }}“</li>{% endfor %}</ul></div>
+        {% endif %}
       </div>
     </div>
     {% endif %}
