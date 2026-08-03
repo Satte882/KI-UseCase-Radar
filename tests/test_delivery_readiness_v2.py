@@ -328,9 +328,7 @@ def test_authorized_substitutes_can_confirm_only_the_selected_role(
 
 
 @pytest.mark.django_db
-def test_non_admin_cannot_confirm_both_roles(
-    owner, other_owner, coordinator, business_unit
-):
+def test_non_admin_cannot_confirm_both_roles(owner, other_owner, coordinator, business_unit):
     use_case = make_approved_use_case(
         owner=owner,
         technical_owner=other_owner,
@@ -458,4 +456,3 @@ def test_delivery_page_labels_admin_override_by_confirmation_role(
     assert f"Technisch: {technical_admin} · Admin-Sonderbestätigung" in body
     assert "Admin-Sonderbestätigung ohne Vier-Augen-Prinzip" in body
     assert "Administrativer Ende-zu-Ende-Test" in body
-
