@@ -23,6 +23,7 @@ jobs:
         run: |
           rm scripts/apply_issue37_admin_exception.py
           rm .github/workflows/apply-issue37-admin-exception.yml
+          rm -f .issue37-trigger
       - name: Commit final product changes
         run: |
           git config user.name "github-actions[bot]"
