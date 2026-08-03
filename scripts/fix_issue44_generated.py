@@ -31,3 +31,14 @@ text = text.replace(
     1,
 )
 path.write_text(text, encoding="utf-8")
+
+old_migration = Path("ki_radar/use_cases/migrations/0003_guided_second_approval.py")
+new_migration = Path("ki_radar/use_cases/migrations/0006_guided_second_approval.py")
+migration_text = old_migration.read_text(encoding="utf-8")
+migration_text = migration_text.replace(
+    '("use_cases", "0002_decision_quality_metrics")',
+    '("use_cases", "0005_use_case_classification")',
+    1,
+)
+new_migration.write_text(migration_text, encoding="utf-8")
+old_migration.unlink()
