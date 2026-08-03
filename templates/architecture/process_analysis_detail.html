@@ -9,6 +9,7 @@
   </div>
   <div class="d-flex gap-2 flex-wrap">
     <a class="btn btn-outline-secondary" href="{{ process_analysis.stage.value_stream.get_absolute_url }}">Zum Value Stream</a>
+    {% if can_validate and process_analysis.status != 'validated' %}<a class="btn btn-outline-primary" href="{% url 'architecture:process_analysis_validate' process_analysis.pk %}">Ist-Prozess validieren</a>{% endif %}
     {% if can_edit %}<a class="btn btn-primary" href="{% url 'architecture:process_analysis_update' process_analysis.pk %}">Bearbeiten</a>{% endif %}
   </div>
 </div>
@@ -17,6 +18,33 @@
 {% include "includes/journey_stepper.html" %}
 
 {% if not process_analysis.stage.value_stream.focus.is_selected %}<div class="alert alert-warning"><strong>Deep Dive nicht freigegeben:</strong> Der übergeordnete Value Stream muss zuerst vollständig bewertet und für die Vertiefung ausgewählt werden.</div>{% endif %}
+
+<div class="app-card mb-4" id="process-validation">
+  <div class="card-header d-flex flex-wrap justify-content-between align-items-start gap-3">
+    <div><strong>Validierung des Ist-Prozesses</strong><div class="small text-muted mt-1">Eigenständiger Nachweis für die konkret geprüfte Prozessversion.</div></div>
+    <span class="badge {% if process_analysis.status == 'validated' %}state-ready{% elif process_analysis.status == 'review_required' %}state-blocked{% else %}state-review{% endif %}">{{ process_analysis.get_status_display }}</span>
+  </div>
+  <div class="card-body">
+    <div class="small text-muted mb-3">Aktuelle Prozessversion: <strong>v{{ process_analysis.version }}</strong></div>
+    {% if latest_validation and latest_validation.process_version == process_analysis.version %}
+    <dl class="row mb-0">
+      <dt class="col-sm-4 text-muted">Geprüfte Version</dt><dd class="col-sm-8">v{{ latest_validation.process_version }}</dd>
+      <dt class="col-sm-4 text-muted">Validiert durch</dt><dd class="col-sm-8">{{ latest_validation.validated_by.get_display_name|default:"Nicht mehr verfügbar" }}</dd>
+      <dt class="col-sm-4 text-muted">Rolle</dt><dd class="col-sm-8">{{ latest_validation.validator_role }}</dd>
+      <dt class="col-sm-4 text-muted">Zeitpunkt</dt><dd class="col-sm-8">{{ latest_validation.validated_at|date:"d.m.Y H:i" }}</dd>
+      <dt class="col-sm-4 text-muted">Notiz</dt><dd class="col-sm-8 text-preline">{{ latest_validation.note|default:"Keine zusätzliche Notiz" }}</dd>
+      <dt class="col-sm-4 text-muted">Nachweis</dt><dd class="col-sm-8">{% if latest_validation.evidence_url %}<a href="{{ latest_validation.evidence_url }}" target="_blank" rel="noopener noreferrer">Validierungsnachweis öffnen</a>{% else %}Kein separater Nachweis hinterlegt{% endif %}</dd>
+    </dl>
+    {% else %}
+    <div class="alert alert-warning mb-0"><strong>Keine Validierung für Version v{{ process_analysis.version }}.</strong> Der angezeigte Prozessstatus ist noch nicht durch ein eigenständiges Validierungsartefakt belegt.</div>
+    {% endif %}
+    {% if process_analysis.validations.all %}
+    <hr>
+    <div class="section-title">Historische Validierungen</div>
+    <ul class="mb-0">{% for validation in process_analysis.validations.all %}<li>v{{ validation.process_version }} · {{ validation.validated_at|date:"d.m.Y H:i" }} · {{ validation.validator_role }} · {% if validation.validated_by %}{{ validation.validated_by.get_display_name }}{% else %}Person nicht mehr verfügbar{% endif %}</li>{% endfor %}</ul>
+    {% endif %}
+  </div>
+</div>
 
 <div class="architecture-summary-grid mb-4">
   <section class="app-card card-body"><div class="section-title">Prozessstart</div><div class="text-preline">{{ process_analysis.scope_start }}</div></section>

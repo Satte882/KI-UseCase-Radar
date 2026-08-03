@@ -59,6 +59,11 @@ urlpatterns = [
         name="process_analysis_update",
     ),
     path(
+        "processes/<uuid:pk>/validate/",
+        views.process_analysis_validate,
+        name="process_analysis_validate",
+    ),
+    path(
         "processes/<uuid:process_analysis_id>/options/new/",
         views.solution_option_create,
         name="solution_option_create",
