@@ -46,9 +46,12 @@ FIELD_TARGETS = {
     "Menschliche Aufsicht": "human_oversight",
     "Umgang mit Daten und Zugängen": "data_and_access_handling",
     "Beendigungsgrund": "ending_reason",
-    "Datenschutzprüfung": "privacy_review_completed",
-    "Informationssicherheitsprüfung": "security_review_completed",
-    "Rechtsprüfung": "legal_review_completed",
+}
+
+GOVERNANCE_REVIEW_BLOCKERS = {
+    "Datenschutzprüfung": "privacy",
+    "Informationssicherheitsprüfung": "security",
+    "Rechtsprüfung": "legal",
 }
 
 ASSESSMENT_BLOCKERS = {
@@ -57,7 +60,6 @@ ASSESSMENT_BLOCKERS = {
     "Technische Machbarkeit ist zu niedrig",
     "Datenverfügbarkeit und -qualität sind zu niedrig",
     "Risiko und Komplexität sind für eine Freigabe zu hoch",
-    "Governance-Vorprüfung",
 }
 
 DECISION_BLOCKERS = {
@@ -80,11 +82,7 @@ def _code(label: str) -> str:
 
 
 def build_blocker_details(use_case: UseCase, blockers: list[str]) -> list[BlockerDetail]:
-    """Derive actionable metadata from the canonical string blockers.
-
-    The string list remains the compatibility surface. Details are generated from it in one
-    place, so UI metadata cannot drift from the server-side gate result.
-    """
+    """Derive actionable metadata from the canonical string blockers."""
 
     edit_url = reverse("use_cases:edit", kwargs={"pk": use_case.pk})
     detail_url = use_case.get_absolute_url()
@@ -92,6 +90,34 @@ def build_blocker_details(use_case: UseCase, blockers: list[str]) -> list[Blocke
     details: list[BlockerDetail] = []
 
     for label in blockers:
+        if label in {"Governance-Screening", "Governance-Vorprüfung"}:
+            details.append(
+                BlockerDetail(
+                    code="governance_screening_missing",
+                    label=label,
+                    category="process",
+                    action_label="Governance-Screening öffnen",
+                    target_url=reverse("governance:create", kwargs={"use_case_id": use_case.pk}),
+                )
+            )
+            continue
+
+        review_type = GOVERNANCE_REVIEW_BLOCKERS.get(label)
+        if review_type:
+            details.append(
+                BlockerDetail(
+                    code=f"governance_{review_type}_review_open",
+                    label=label,
+                    category="process",
+                    action_label=f"{label} durchführen",
+                    target_url=reverse(
+                        "governance:review",
+                        kwargs={"use_case_id": use_case.pk, "review_type": review_type},
+                    ),
+                )
+            )
+            continue
+
         field_name = FIELD_TARGETS.get(label)
         if field_name:
             details.append(
@@ -103,18 +129,6 @@ def build_blocker_details(use_case: UseCase, blockers: list[str]) -> list[Blocke
                     target_url=f"{edit_url}?highlight={field_name}",
                     target_anchor=f"#field-{field_name}",
                     field_name=field_name,
-                )
-            )
-            continue
-
-        if label == "Governance-Screening":
-            details.append(
-                BlockerDetail(
-                    code="governance_screening_missing",
-                    label=label,
-                    category="process",
-                    action_label="Governance-Screening anlegen",
-                    target_url=reverse("governance:create", kwargs={"use_case_id": use_case.pk}),
                 )
             )
             continue

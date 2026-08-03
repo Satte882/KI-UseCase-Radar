@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 from simple_history.models import HistoricalRecords
 
 from ki_radar.core.models import TimeStampedModel
@@ -51,3 +52,45 @@ class GovernanceAssessment(TimeStampedModel):
 
     def __str__(self) -> str:
         return f"{self.use_case.short_id} - {self.assessment_date}"
+
+
+class GovernanceReview(TimeStampedModel):
+    class ReviewType(models.TextChoices):
+        PRIVACY = "privacy", "Datenschutzprüfung"
+        SECURITY = "security", "Informationssicherheitsprüfung"
+        LEGAL = "legal", "Rechtsprüfung"
+
+    class Result(models.TextChoices):
+        PASSED = "passed", "Bestanden"
+        PASSED_WITH_CONDITIONS = "passed_with_conditions", "Bestanden mit Auflagen"
+        FAILED = "failed", "Nicht bestanden"
+
+    use_case = models.ForeignKey(
+        UseCase,
+        on_delete=models.CASCADE,
+        related_name="governance_reviews",
+    )
+    review_type = models.CharField(max_length=20, choices=ReviewType.choices)
+    reviewed_at = models.DateField(default=timezone.localdate)
+    reviewer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="completed_governance_reviews",
+    )
+    result = models.CharField(max_length=30, choices=Result.choices)
+    rationale = models.TextField()
+    evidence_url = models.URLField()
+
+    class Meta:
+        ordering = ["-reviewed_at", "-created_at"]
+
+    @property
+    def is_completed(self) -> bool:
+        return self.result in {
+            self.Result.PASSED,
+            self.Result.PASSED_WITH_CONDITIONS,
+        }
+
+    def __str__(self) -> str:
+        return f"{self.use_case.short_id} - {self.get_review_type_display()}"

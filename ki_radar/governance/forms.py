@@ -1,7 +1,7 @@
 from django import forms
 from django.utils import timezone
 
-from .models import GovernanceAssessment
+from .models import GovernanceAssessment, GovernanceReview
 
 
 class DateInput(forms.DateInput):
@@ -74,3 +74,25 @@ class GovernanceAssessmentForm(forms.ModelForm):
                 if isinstance(field.widget, forms.CheckboxInput)
                 else "form-control",
             )
+
+
+class GovernanceReviewForm(forms.ModelForm):
+    class Meta:
+        model = GovernanceReview
+        fields = ["reviewed_at", "result", "rationale", "evidence_url"]
+        widgets = {
+            "reviewed_at": DateInput(),
+            "rationale": forms.Textarea(attrs={"rows": 5}),
+        }
+        labels = {
+            "reviewed_at": "Prüfdatum",
+            "result": "Prüfergebnis",
+            "rationale": "Begründung und wesentliche Feststellungen",
+            "evidence_url": "Nachweislink",
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["reviewed_at"].initial = timezone.localdate()
+        for field in self.fields.values():
+            field.widget.attrs.setdefault("class", "form-control")
