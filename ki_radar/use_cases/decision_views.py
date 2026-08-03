@@ -5,18 +5,23 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.views.decorators.http import require_POST
 
 from ki_radar.accounts.permissions import is_coordinator
 from ki_radar.core.navigation import requested_return_to, with_return_to
 
 from .blockers import build_blocker_details
-from .decision_forms import ApprovalDecisionForm, DecisionAssessmentForm
+from .decision_forms import (
+    ApprovalDecisionForm,
+    DecisionAssessmentForm,
+    SecondApprovalReviewForm,
+)
 from .models import ApprovalDecision, UseCase
 from .services import (
     approval_check,
+    can_review_conditional_decision,
     confirm_conditional_decision,
     create_decision_assessment,
+    return_conditional_decision,
     submit_approval_decision,
 )
 from .status_dimensions import build_use_case_status_dimensions
@@ -145,7 +150,7 @@ def approval_decision_create(request, pk):
 
     selected_status = _selected_decision_status(request, assessment)
     if request.method == "POST":
-        form = ApprovalDecisionForm(request.POST)
+        form = ApprovalDecisionForm(request.POST, actor=request.user, use_case=use_case)
         if form.is_valid():
             selected_status = form.cleaned_data["decision_status"]
             hard_check = approval_check(
@@ -173,8 +178,9 @@ def approval_decision_create(request, pk):
                     if decision.is_pending_second_approval:
                         messages.info(
                             request,
-                            "Die Freigabe mit Auflagen wartet auf eine zweite unabhängige "
-                            "Bestätigung.",
+                            "Die Freigabe mit Auflagen wurde zur unabhängigen Zweitprüfung "
+                            f"an {decision.second_approval_assignee.get_display_name()} "
+                            "zugewiesen.",
                         )
                     else:
                         messages.success(
@@ -183,7 +189,11 @@ def approval_decision_create(request, pk):
                         )
                     return redirect(return_to)
     else:
-        form = ApprovalDecisionForm(initial={"decision_status": selected_status})
+        form = ApprovalDecisionForm(
+            initial={"decision_status": selected_status},
+            actor=request.user,
+            use_case=use_case,
+        )
 
     hard_check = approval_check(
         use_case=use_case,
@@ -221,20 +231,55 @@ def approval_decision_create(request, pk):
 
 
 @login_required
-@require_POST
-def conditional_decision_confirm(request, decision_id):
-    if not is_coordinator(request.user):
-        raise PermissionDenied
+def second_approval_review(request, decision_id):
     decision = get_object_or_404(
         ApprovalDecision.objects.select_related(
-            "use_case", "assessment", "assessment__assessed_by", "decided_by"
+            "use_case__business_owner",
+            "use_case__coordinator",
+            "assessment__assessed_by",
+            "decided_by",
+            "condition_owner",
+            "second_approval_assignee",
+            "second_approved_by",
+            "second_approval_returned_by",
         ),
         pk=decision_id,
     )
-    try:
-        confirm_conditional_decision(decision=decision, actor=request.user)
-    except ValidationError as exc:
-        messages.error(request, "; ".join(exc.messages) if exc.messages else str(exc))
-    else:
-        messages.success(request, "Die zweite Freigabe wurde bestätigt.")
-    return redirect(decision.use_case)
+    from .permissions import can_view_use_case
+
+    if not can_view_use_case(request.user, decision.use_case):
+        raise PermissionDenied
+
+    can_act = can_review_conditional_decision(decision=decision, actor=request.user)
+    form = SecondApprovalReviewForm(request.POST or None)
+    if request.method == "POST":
+        if not can_act:
+            raise PermissionDenied
+        if form.is_valid():
+            try:
+                if form.cleaned_data["action"] == "confirm":
+                    confirm_conditional_decision(decision=decision, actor=request.user)
+                    messages.success(request, "Die unabhängige Zweitprüfung wurde bestätigt.")
+                else:
+                    return_conditional_decision(
+                        decision=decision,
+                        actor=request.user,
+                        reason=form.cleaned_data["return_reason"],
+                    )
+                    messages.info(request, "Die Entscheidung wurde begründet zurückgegeben.")
+            except (PermissionDenied, ValidationError) as exc:
+                form.add_error(None, exc)
+            else:
+                return redirect(decision.use_case)
+
+    return render(
+        request,
+        "use_cases/second_approval_review.html",
+        {
+            "decision": decision,
+            "use_case": decision.use_case,
+            "assessment": decision.assessment,
+            "form": form,
+            "can_act": can_act,
+        },
+    )

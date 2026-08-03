@@ -3,7 +3,7 @@ from decimal import Decimal
 
 import pytest
 from django.contrib.auth.models import Group
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.utils import timezone
 
 from ki_radar.accounts.models import User
@@ -168,6 +168,7 @@ def test_pilot_transition_requires_positive_approval(owner, coordinator, busines
 def test_owner_cannot_be_second_conditional_approver(owner, coordinator, business_unit):
     use_case = make_ready_use_case(owner, business_unit)
     first_approver = make_coordinator("first-approver", business_unit)
+    second_approver = make_coordinator("second-approver", business_unit)
     coordinator_group, _ = Group.objects.get_or_create(name=GROUP_COORDINATOR)
     owner.groups.add(coordinator_group)
     create_decision_assessment(
@@ -183,10 +184,11 @@ def test_owner_cannot_be_second_conditional_approver(owner, coordinator, busines
             conditions="Messkonzept vor Pilotstart bestätigen.",
             condition_owner=owner,
             condition_due_date=timezone.localdate() + timedelta(days=14),
+            second_approval_assignee=second_approver,
         ),
     )
 
-    with pytest.raises(ValidationError, match="fachlich verantwortliche Person"):
+    with pytest.raises(PermissionDenied, match="Personentrennung"):
         confirm_conditional_decision(decision=decision, actor=owner)
 
     use_case.refresh_from_db()

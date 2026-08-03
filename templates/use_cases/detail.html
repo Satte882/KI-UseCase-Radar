@@ -67,8 +67,12 @@
 {% for approval in use_case.approval_decisions.all %}
 {% if approval.is_pending_second_approval %}
 <div class="alert alert-warning d-flex flex-wrap justify-content-between align-items-center gap-3" id="approval-pending">
-  <div><strong>Zweite Freigabe ausstehend</strong><div class="small">{{ approval.get_decision_status_display }} wurde von {% if approval.decided_by %}{{ approval.decided_by.get_display_name }}{% else %}einer berechtigten Person{% endif %} vorgeschlagen. Der Entscheidungsstatus wurde noch nicht verändert.</div></div>
-  {% if nav_is_coordinator %}<form method="post" action="{% url 'use_cases:conditional_decision_confirm' approval.pk %}">{% csrf_token %}<button class="btn btn-warning">Als zweite Person bestätigen</button></form>{% endif %}
+  <div>
+    <strong>Unabhängige Zweitprüfung ausstehend</strong>
+    <div class="small">{{ approval.get_decision_status_display }} wurde von {% if approval.decided_by %}{{ approval.decided_by.get_display_name }}{% else %}einer berechtigten Person{% endif %} vorgeschlagen. Bevorzugt zugewiesen: {% if approval.second_approval_assignee %}{{ approval.second_approval_assignee.get_display_name }}{% else %}nicht dokumentiert{% endif %}. Der Entscheidungsstatus wurde noch nicht verändert.</div>
+    {% if approval.second_approval_requested_at %}<div class="small text-muted">Prüfauftrag seit {{ approval.second_approval_requested_at|date:"d.m.Y H:i" }} · Andere unabhängige berechtigte Personen dürfen übernehmen.</div>{% endif %}
+  </div>
+  <a class="btn btn-warning" href="{% url 'use_cases:second_approval_review' approval.pk %}">Zweitprüfung öffnen</a>
 </div>
 {% endif %}
 {% endfor %}

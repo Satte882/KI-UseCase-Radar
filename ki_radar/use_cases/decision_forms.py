@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth import get_user_model
 
 from .models import ApprovalDecision, DecisionAssessment, UseCase
+from .services import eligible_second_approvers
 
 
 class DateInput(forms.DateInput):
@@ -91,6 +92,7 @@ class ApprovalDecisionForm(forms.ModelForm):
             "conditions",
             "condition_owner",
             "condition_due_date",
+            "second_approval_assignee",
         ]
         widgets = {
             "rationale": forms.Textarea(attrs={"rows": 5}),
@@ -104,6 +106,7 @@ class ApprovalDecisionForm(forms.ModelForm):
             "conditions": "Auflagen",
             "condition_owner": "Verantwortliche Person für die Auflage",
             "condition_due_date": "Fälligkeit der Auflage",
+            "second_approval_assignee": "Bevorzugte unabhängige Zweitprüfung",
         }
         help_texts = {
             "governance_confirmed": (
@@ -111,9 +114,13 @@ class ApprovalDecisionForm(forms.ModelForm):
                 "Sie ersetzt weder offene Fachprüfungen noch die erforderliche "
                 "Personentrennung."
             ),
+            "second_approval_assignee": (
+                "Die Zuweisung benennt die bevorzugte prüfende Person. Andere ebenfalls "
+                "unabhängige und berechtigte Personen können die Aufgabe übernehmen."
+            ),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, actor=None, use_case=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["decision_status"].choices = [
             (UseCase.DecisionStatus.DEFERRED, UseCase.DecisionStatus.DEFERRED.label),
@@ -130,19 +137,61 @@ class ApprovalDecisionForm(forms.ModelForm):
             .order_by("last_name", "first_name", "username")
         )
         self.fields["condition_owner"].queryset = users
+        self.fields["second_approval_assignee"].queryset = (
+            eligible_second_approvers(use_case=use_case, first_decider=actor)
+            if use_case is not None and actor is not None
+            else users.none()
+        )
+        selected_status = (
+            self.data.get("decision_status")
+            if self.is_bound
+            else self.initial.get("decision_status")
+        )
+        self.fields["second_approval_assignee"].required = (
+            selected_status == UseCase.DecisionStatus.APPROVED_WITH_CONDITIONS
+        )
         for field in self.fields.values():
             field.widget.attrs.setdefault("class", "form-control")
         self.fields["decision_status"].widget.attrs["class"] = "form-select"
         self.fields["condition_owner"].widget.attrs["class"] = "form-select"
+        self.fields["second_approval_assignee"].widget.attrs["class"] = "form-select"
         self.fields["governance_confirmed"].widget.attrs["class"] = "form-check-input"
 
     def clean(self):
         cleaned = super().clean()
         if cleaned.get("decision_status") == UseCase.DecisionStatus.APPROVED_WITH_CONDITIONS:
-            for field_name in ["conditions", "condition_owner", "condition_due_date"]:
+            for field_name in [
+                "conditions",
+                "condition_owner",
+                "condition_due_date",
+                "second_approval_assignee",
+            ]:
                 if not cleaned.get(field_name):
                     self.add_error(
                         field_name,
                         "Dieses Feld ist für eine Freigabe mit Auflagen erforderlich.",
                     )
+        else:
+            cleaned["second_approval_assignee"] = None
+        return cleaned
+
+
+class SecondApprovalReviewForm(forms.Form):
+    return_reason = forms.CharField(
+        required=False,
+        label="Begründung der Rückgabe",
+        widget=forms.Textarea(attrs={"rows": 4, "class": "form-control"}),
+    )
+
+    def clean(self):
+        cleaned = super().clean()
+        action = self.data.get("action", "")
+        if action not in {"confirm", "return"}:
+            raise forms.ValidationError("Unbekannte Aktion für die Zweitprüfung.")
+        if action == "return" and not (cleaned.get("return_reason") or "").strip():
+            self.add_error(
+                "return_reason",
+                "Für die Rückgabe ist eine konkrete Begründung erforderlich.",
+            )
+        cleaned["action"] = action
         return cleaned

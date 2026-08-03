@@ -49,6 +49,15 @@ DEMO_USERS = [
         "business_unit": f"{DEMO_PREFIX} Daten & Plattformen",
     },
     {
+        "username": "demo_ki_pruefer",
+        "first_name": "Robin",
+        "last_name": "Review",
+        "email": "ki.pruefer@example.invalid",
+        "job_function": f"{DEMO_PREFIX} Unabhängige Zweitprüfung",
+        "group": GROUP_COORDINATOR,
+        "business_unit": f"{DEMO_PREFIX} Daten & Plattformen",
+    },
+    {
         "username": "demo_business_owner",
         "first_name": "Bente",
         "last_name": "Owner",

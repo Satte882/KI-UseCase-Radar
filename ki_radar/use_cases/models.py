@@ -416,6 +416,23 @@ class ApprovalDecision(TimeStampedModel):
         related_name="decision_conditions",
     )
     condition_due_date = models.DateField(null=True, blank=True)
+    second_approval_assignee = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="assigned_second_approval_decisions",
+    )
+    second_approval_requested_at = models.DateTimeField(null=True, blank=True)
+    second_approval_returned_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="returned_second_approval_decisions",
+    )
+    second_approval_returned_at = models.DateTimeField(null=True, blank=True)
+    second_approval_return_reason = models.TextField(blank=True)
     second_approved_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
@@ -436,7 +453,12 @@ class ApprovalDecision(TimeStampedModel):
         return (
             self.decision_status == UseCase.DecisionStatus.APPROVED_WITH_CONDITIONS
             and self.finalized_at is None
+            and self.second_approval_returned_at is None
         )
+
+    @property
+    def is_returned_from_second_approval(self) -> bool:
+        return self.second_approval_returned_at is not None
 
     @property
     def is_final(self) -> bool:
