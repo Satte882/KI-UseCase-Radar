@@ -95,8 +95,8 @@ def test_open_governance_review_hides_form_but_offers_negative_alternatives(
     assert "Datenschutzprüfung durchführen" in content
     assert 'id="decision-form"' not in content
     assert "Zulässige alternative Entscheidungen" in content
-    assert "Zurückstellen prüfen" in content
-    assert "Nicht weiterverfolgen prüfen" in content
+    assert "Zurückgestellt prüfen" in content
+    assert "Nicht weiterverfolgt prüfen" in content
 
 
 @pytest.mark.django_db
@@ -113,7 +113,7 @@ def test_negative_decision_form_can_open_despite_positive_governance_blocker(
 
     assert response.status_code == 200
     assert 'id="decision-form"' in content
-    assert "Ausgewählter Prüfpfad: Zurückstellen" in content
+    assert "Ausgewählter Prüfpfad: Zurückgestellt" in content
     assert 'id="decision-blockers"' not in content
 
 
