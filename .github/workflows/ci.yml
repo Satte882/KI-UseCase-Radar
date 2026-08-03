@@ -64,7 +64,9 @@ jobs:
         run: uv sync --frozen --dev
 
       - name: Apply issue 45 patch
-        run: python scripts/apply_issue45.py
+        run: |
+          mkdir -p templates/use_cases/includes
+          python scripts/apply_issue45.py
 
       - name: Format and lint implementation
         run: |
