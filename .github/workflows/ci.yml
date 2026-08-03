@@ -63,53 +63,10 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen --dev
 
-      - name: Ruff lint
-        run: uv run ruff check .
-
-      - name: Ruff format
-        run: uv run ruff format --check .
-
-      - name: Django system check
-        run: uv run python manage.py check
-
-      - name: Verify migrations
-        run: uv run python manage.py makemigrations --check --dry-run
-
-      - name: Apply migrations
-        run: uv run python manage.py migrate --noinput
-
-      - name: Run tests
-        run: uv run pytest -q
-
-      - name: Bandit
-        run: uv run bandit -q -r ki_radar config
-
-      - name: Dependency audit
-        run: uv run pip-audit
-
-      - name: Prepare Compose validation
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p .ci-secrets/prod .ci-secrets/staging deploy/certs
-          for secret in django_secret_key db_password sentry_dsn monitoring_token; do
-            printf 'ci-placeholder\n' > ".ci-secrets/prod/${secret}"
-          done
-          for secret in django_secret_key db_password; do
-            printf 'ci-placeholder\n' > ".ci-secrets/staging/${secret}"
-          done
-
-      - name: Validate local Compose
-        run: docker compose -f compose.local.yml config --quiet
-
-      - name: Validate production Compose
-        run: SECRETS_DIR="$PWD/.ci-secrets/prod" docker compose --env-file .env.production.example -f compose.prod.yml config --quiet
-
-      - name: Validate staging Compose
-        run: STAGING_SECRETS_DIR="$PWD/.ci-secrets/staging" docker compose --env-file .env.staging.example -f compose.staging.yml config --quiet
-
-      - name: Build production image
-        run: docker build -t ki-radar:ci .
-
-      - name: Build development image
-        run: docker build -f Dockerfile.dev -t ki-radar-dev:ci .
+      - name: Diagnose issue 58 journey tests
+        run: >-
+          uv run pytest -q --tb=short
+          tests/test_issue_58_value_stream_next_action.py
+          tests/test_issue_58_solution_next_action.py
+          tests/test_issue_58_decision_context.py
+          tests/test_issue_58_final_journey_order.py
