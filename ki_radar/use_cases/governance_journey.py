@@ -112,8 +112,7 @@ def _governance_step(use_case: UseCase, user) -> JourneyStep:
             ),
             action_label=f"{label} durchführen" if allowed else "",
             reason=(
-                "Das Governance-Screening ist vorhanden; erforderliche Fachprüfungen "
-                "sind offen."
+                "Das Governance-Screening ist vorhanden; erforderliche Fachprüfungen sind offen."
             ),
             details=tuple(item_label for _item_type, item_label in incomplete_reviews),
         )
