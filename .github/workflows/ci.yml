@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: ki-radar-ci-${{ github.ref }}
@@ -45,9 +45,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: fix/issue-45-decision-history
-          fetch-depth: 0
 
       - name: Install Python
         uses: actions/setup-python@v5
@@ -60,32 +57,59 @@ jobs:
           version: "0.10.0"
           enable-cache: true
 
+      - name: Verify lockfile
+        run: uv lock --check
+
       - name: Install dependencies
         run: uv sync --frozen --dev
 
-      - name: Apply issue 45 patch
-        run: |
-          mkdir -p templates/use_cases/includes
-          python scripts/apply_issue45.py
+      - name: Ruff lint
+        run: uv run ruff check .
 
-      - name: Format and lint implementation
-        run: |
-          uv run ruff format ki_radar/use_cases/views.py tests/test_decision_history.py
-          uv run ruff check ki_radar/use_cases/views.py tests/test_decision_history.py
+      - name: Ruff format
+        run: uv run ruff format --check .
 
-      - name: Verify system and focused tests
-        run: |
-          uv run python manage.py check
-          uv run python manage.py makemigrations --check --dry-run
-          uv run python manage.py migrate --noinput
-          uv run pytest -q tests/test_decision_history.py tests/test_guided_second_approval.py
+      - name: Django system check
+        run: uv run python manage.py check
 
-      - name: Commit validated implementation and restore CI
+      - name: Verify migrations
+        run: uv run python manage.py makemigrations --check --dry-run
+
+      - name: Apply migrations
+        run: uv run python manage.py migrate --noinput
+
+      - name: Run tests
+        run: uv run pytest -q
+
+      - name: Bandit
+        run: uv run bandit -q -r ki_radar config
+
+      - name: Dependency audit
+        run: uv run pip-audit
+
+      - name: Prepare Compose validation
+        shell: bash
         run: |
-          rm scripts/apply_issue45.py
-          git show origin/main:.github/workflows/ci.yml > .github/workflows/ci.yml
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "Issue #45: Vollständigen Freigabeverlauf darstellen"
-          git push origin HEAD:fix/issue-45-decision-history
+          set -euo pipefail
+          mkdir -p .ci-secrets/prod .ci-secrets/staging deploy/certs
+          for secret in django_secret_key db_password sentry_dsn monitoring_token; do
+            printf 'ci-placeholder\n' > ".ci-secrets/prod/${secret}"
+          done
+          for secret in django_secret_key db_password; do
+            printf 'ci-placeholder\n' > ".ci-secrets/staging/${secret}"
+          done
+
+      - name: Validate local Compose
+        run: docker compose -f compose.local.yml config --quiet
+
+      - name: Validate production Compose
+        run: SECRETS_DIR="$PWD/.ci-secrets/prod" docker compose --env-file .env.production.example -f compose.prod.yml config --quiet
+
+      - name: Validate staging Compose
+        run: STAGING_SECRETS_DIR="$PWD/.ci-secrets/staging" docker compose --env-file .env.staging.example -f compose.staging.yml config --quiet
+
+      - name: Build production image
+        run: docker build -t ki-radar:ci .
+
+      - name: Build development image
+        run: docker build -f Dockerfile.dev -t ki-radar-dev:ci .
