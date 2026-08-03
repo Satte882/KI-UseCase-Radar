@@ -70,8 +70,8 @@ jobs:
 
       - name: Format and lint patch
         run: |
-          uv run ruff format ki_radar/use_cases/models.py ki_radar/use_cases/services.py ki_radar/use_cases/decision_forms.py ki_radar/use_cases/decision_views.py ki_radar/use_cases/urls.py ki_radar/core/demo_data.py tests/test_guided_second_approval.py ki_radar/use_cases/migrations/0003_guided_second_approval.py
-          uv run ruff check ki_radar/use_cases/models.py ki_radar/use_cases/services.py ki_radar/use_cases/decision_forms.py ki_radar/use_cases/decision_views.py ki_radar/use_cases/urls.py ki_radar/core/demo_data.py tests/test_guided_second_approval.py ki_radar/use_cases/migrations/0003_guided_second_approval.py
+          uv run ruff format ki_radar/use_cases/models.py ki_radar/use_cases/services.py ki_radar/use_cases/decision_forms.py ki_radar/use_cases/decision_views.py ki_radar/use_cases/urls.py ki_radar/core/demo_data.py tests/test_guided_second_approval.py ki_radar/use_cases/migrations/0006_guided_second_approval.py
+          uv run ruff check ki_radar/use_cases/models.py ki_radar/use_cases/services.py ki_radar/use_cases/decision_forms.py ki_radar/use_cases/decision_views.py ki_radar/use_cases/urls.py ki_radar/core/demo_data.py tests/test_guided_second_approval.py ki_radar/use_cases/migrations/0006_guided_second_approval.py
 
       - name: Verify migration and targeted tests
         run: |
