@@ -226,4 +226,500 @@ def build_source_manifest(use_case: UseCase, decision: ApprovalDecision) -> dict
     if origin is not None:
         manifest.update(
             {
-                "value_stream": _source_entry(origin.stage.va≤»="25ïµΩŸï¡…ïô•‡†âçΩπô•…µ|à§(ÄÄÄÄÄÄÄÅ•òÅ…Ω±îÅπΩ–Å•∏Å…Ω±ïÃÅΩ»Å…Ω±îÅπΩ–Å•∏Å…ïŸ•ï‹π…ï≈’•…ïë}çΩπô•…µÖ—•ΩπÃË(ÄÄÄÄÄÄÄÄÄÄÄÅ…Ω±ï}±Öâï∞ÄÙÄâôÖç°±•ç°îàÅ•òÅ…Ω±îÄÙÙÄââ’Õ•πïÕÃàÅï±ÕîÄâ—ïç°π•Õç°îà(ÄÄÄÄÄÄÄÄÄÄÄÅ…Ö•ÕîÅYÖ±•ëÖ—•Ωπ……Ω»°òâÒ»Åë•îÅÌ…Ω±ï}±Öâï±ÙÅ	ïÕ”ë—•ù’πúÅôï°±–Åë•îÅ	ï…ïç°—•ù’πú∏à§((ÄÄÄÄÄÄÄÅΩ—°ï…}…Ω±îÄÙÄâ—ïç°π•çÖ∞àÅ•òÅ…Ω±îÄÙÙÄââ’Õ•πïÕÃàÅï±ÕîÄââ’Õ•πïÕÃà(ÄÄÄÄÄÄÄÅΩ—°ï…}Öç—Ω…}•êÄÙÅùï—Ö——»°…ïŸ•ï‹∞ÅòâÌΩ—°ï…}…Ω±ïı}çΩπô•…µïë}âÂ}•êà§(ÄÄÄÄÄÄÄÅ•òÅΩ—°ï…}Öç—Ω…}•êÄÙÙÅÖç—Ω»π•êË(ÄÄÄÄÄÄÄÄÄÄÄÅ•òÅπΩ–ÅçÖπ}’Õï}Öëµ•π}çΩπô•…µÖ—•Ωπ}ΩŸï……•ëî°Öç—Ω»§Ë(ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÅ…Ö•ÕîÅYÖ±•ëÖ—•Ωπ……Ω»†(ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄâ•ïÕï±âîÅAï…ÕΩ∏ÅëÖ…òÅôÖç°±•ç†Å’πêÅ—ïç°π•Õç†Åπ’»ÅÖ±ÃÅQïç°π•Õç°ï»Äà(ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄâëµ•π•Õ—…Ö—Ω»ÅõÒ»Åëµ•∏¥ÅΩëï»ÅQïÕ—È›ïç≠îÅâïÕ”ë—•ùï∏∏à(ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ§(ÄÄÄÄÄÄÄÄÄÄÄÅçΩ±±Ö¡Õï}…ïÖÕΩ∏ÄÙÅ…Ω±ï}çΩ±±Ö¡Õï}…ïÖÕΩ∏πÕ—…•¿†§(ÄÄÄÄÄÄÄÄÄÄÄÅ•òÅπΩ–ÅçΩ±±Ö¡Õï}…ïÖÕΩ∏Ë(ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÅ…Ö•ÕîÅYÖ±•ëÖ—•Ωπ……Ω»†(ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄâÒ»Åë•îÅëµ•∏µMΩπëï…âïÕ”ë—•ù’πúÅ•Õ–Åï•πîÅ	ïùÀÒπë’πúÅï…ôΩ…ëï…±•ç†∏à(ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ§(ÄÄÄÄÄÄÄÄÄÄÄÅ…ïŸ•ï‹π…Ω±ï}çΩ±±Ö¡Õï}…ïÖÕΩ∏ÄÙÅçΩ±±Ö¡Õï}…ïÖÕΩ∏(ÄÄÄÄÄÄÄÄÄÄÄÅ…ïŸ•ï‹πÖëµ•π}ΩŸï……•ëï}çΩπô•…µïêÄÙÅQ…’î(ÄÄÄÄÄÄÄÅï±ÕîË(ÄÄÄÄÄÄÄÄÄÄÄÅ…ïŸ•ï‹π…Ω±ï}çΩ±±Ö¡Õï}…ïÖÕΩ∏ÄÙÄàà(ÄÄÄÄÄÄÄÄÄÄÄÅ…ïŸ•ï‹πÖëµ•π}ΩŸï……•ëï}çΩπô•…µïêÄÙÅÖ±Õî((ÄÄÄÄÄÄÄÅÖÕÕ•ùπïë}Ω›πï…}•êÄÙÄ†(ÄÄÄÄÄÄÄÄÄÄÄÅ¡Öç≠Öùîπ’Õï}çÖÕîπâ’Õ•πïÕÕ}Ω›πï…}•êÅ•òÅ…Ω±îÄÙÙÄââ’Õ•πïÕÃàÅï±ÕîÅ¡Öç≠Öùîπ—ïç°π•çÖ±}Ω›πï…}•ê(ÄÄÄÄÄÄÄÄ§(ÄÄÄÄÄÄÄÅÕï—Ö——»°…ïŸ•ï‹∞ÅòâÌ…Ω±ïı}çΩπô•…µïë}â‰à∞ÅÖç—Ω»§(ÄÄÄÄÄÄÄÅÕï—Ö——»°…ïŸ•ï‹∞ÅòâÌ…Ω±ïı}çΩπô•…µïë}Ö–à∞ÅπΩ‹§(ÄÄÄÄÄÄÄÅÕï—Ö——»†(ÄÄÄÄÄÄÄÄÄÄÄÅ…ïŸ•ï‹∞(ÄÄÄÄÄÄÄÄÄÄÄÅòâÌ…Ω±ïı}çΩπô•…µÖ—•Ωπ}…Ω±îà∞(ÄÄÄÄÄÄÄÄÄÄÄÅçΩπô•…µÖ—•Ωπ}…Ω±ï}±Öâï∞†(ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÅ…Ω±î∞(ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÅÖÕÕ•ùπïêıÖÕÕ•ùπïë}Ω›πï…}•êÄÙÙÅÖç—Ω»π•ê∞(ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÅÖëµ•π}ΩŸï……•ëîı…ïŸ•ï‹πÖëµ•π}ΩŸï……•ëï}çΩπô•…µïê∞(ÄÄÄÄÄÄÄÄÄÄÄÄ§∞(ÄÄÄÄÄÄÄÄ§(ÄÄÄÄÄÄÄÅ•òÅ…ïŸ•ï‹πÖëµ•π}ΩŸï……•ëï}çΩπô•…µïêË(ÄÄÄÄÄÄÄÄÄÄÄÅ…ïŸ•ï‹πâ’Õ•πïÕÕ}çΩπô•…µÖ—•Ωπ}…Ω±îÄÙÄâëµ•∏µMΩπëï…âïÕ”ë—•ù’πúà(ÄÄÄÄÄÄÄÄÄÄÄÅ…ïŸ•ï‹π—ïç°π•çÖ±}çΩπô•…µÖ—•Ωπ}…Ω±îÄÙÄâëµ•∏µMΩπëï…âïÕ”ë—•ù’πúà(ÄÄÄÄÄÄÄÅ…ïŸ•ï‹π…ïŸ•ï›}Õ—Ö—’ÃÄÙÄ†(ÄÄÄÄÄÄÄÄÄÄÄÅï±•Ÿï…ÂMïç—•ΩπIïŸ•ï‹πIïŸ•ï›M—Ö—’Ãπ=9%I5(ÄÄÄÄÄÄÄÄÄÄÄÅ•òÅ…ïŸ•ï‹πçΩπô•…µÖ—•ΩπÕ}çΩµ¡±ï—î(ÄÄÄÄÄÄÄÄÄÄÄÅï±ÕîÅï±•Ÿï…ÂMïç—•ΩπIïŸ•ï‹πIïŸ•ï›M—Ö—’Ãπ9M}IY%\(ÄÄÄÄÄÄÄÄ§(ÄÄÄÅï±•òÅÖç—•Ω∏ÄÙÙÄââ±Ωç¨àË(ÄÄÄÄÄÄÄÅ•òÅπΩ–Å…ïŸ•ï‹π…ïŸ•ï›}πΩ—îË(ÄÄÄÄÄÄÄÄÄÄÄÅ…Ö•ÕîÅYÖ±•ëÖ—•Ωπ……Ω»†âÒ»Åï•πîÅ	±Ωç≠•ï…’πúÅ•Õ–Åï•πîÅ	ïùÀÒπë’πúÅï…ôΩ…ëï…±•ç†∏à§(ÄÄÄÄÄÄÄÅ…ïŸ•ï‹π…ïŸ•ï›}Õ—Ö—’ÃÄÙÅï±•Ÿï…ÂMïç—•ΩπIïŸ•ï‹πIïŸ•ï›M—Ö—’Ãπ	1=-(ÄÄÄÅï±•òÅÖç—•Ω∏ÄÙÙÄâπΩ—}Ö¡¡±•çÖâ±îàË(ÄÄÄÄÄÄÄÅ•òÅπΩ–Å…ïŸ•ï‹π…ïŸ•ï›}πΩ—îË(ÄÄÄÄÄÄÄÄÄÄÄÅ…Ö•ÕîÅYÖ±•ëÖ—•Ωπ……Ω»†â9•ç°—Öπ›ïπëâÖ…≠ï•–Åµ’ÕÃÅâïùÀÒπëï–Å›ï…ëï∏∏à§(ÄÄÄÄÄÄÄÅ…ïŸ•ï‹πçΩπ—ïπ—}Ω…•ù•∏ÄÙÅï±•Ÿï…ÂMïç—•ΩπIïŸ•ï‹πΩπ—ïπ—=…•ù•∏π9=Q}AA1%	1(ÄÄÄÄÄÄÄÅ…ïŸ•ï‹π…ïŸ•ï›}Õ—Ö—’ÃÄÙÅï±•Ÿï…ÂMïç—•ΩπIïŸ•ï‹πIïŸ•ï›M—Ö—’Ãπ9=Q}AA1%	1(ÄÄÄÅï±•òÅÖç—•Ω∏ÄÙÙÄâ…ïÕï–àË(ÄÄÄÄÄÄÄÅ…ïŸ•ï‹π…ïŸ•ï›}Õ—Ö—’ÃÄÙÅï±•Ÿï…ÂMïç—•ΩπIïŸ•ï‹πIïŸ•ï›M—Ö—’Ãπ9M}IY%\(ÄÄÄÄÄÄÄÅ…ïŸ•ï‹πâ’Õ•πïÕÕ}çΩπô•…µïë}â‰ÄÙÅ9Ωπî(ÄÄÄÄÄÄÄÅ…ïŸ•ï‹πâ’Õ•πïÕÕ}çΩπô•…µïë}Ö–ÄÙÅ9Ωπî(ÄÄÄÄÄÄÄÅ…ïŸ•ï‹π—ïç°π•çÖ±}çΩπô•…µïë}â‰ÄÙÅ9Ωπî(ÄÄÄÄÄÄÄÅ…ïŸ•ï‹π—ïç°π•çÖ±}çΩπô•…µïë}Ö–ÄÙÅ9Ωπî(ÄÄÄÄÄÄÄÅ…ïŸ•ï‹πâ’Õ•πïÕÕ}çΩπô•…µÖ—•Ωπ}…Ω±îÄÙÄàà(ÄÄÄÄÄÄÄÅ…ïŸ•ï‹π—ïç°π•çÖ±}çΩπô•…µÖ—•Ωπ}…Ω±îÄÙÄàà(ÄÄÄÄÄÄÄÅ…ïŸ•ï‹π…Ω±ï}çΩ±±Ö¡Õï}…ïÖÕΩ∏ÄÙÄàà(ÄÄÄÄÄÄÄÅ…ïŸ•ï‹πÖëµ•π}ΩŸï……•ëï}çΩπô•…µïêÄÙÅÖ±Õî(ÄÄÄÅï±ÕîË(ÄÄÄÄÄÄÄÅ…Ö•ÕîÅYÖ±•ëÖ—•Ωπ……Ω»†âUπâï≠Öππ—îÅ≠—•Ω∏ÅõÒ»Åë•îÅMï≠—•ΩπÕ¡ÀÒô’πú∏à§((ÄÄÄÅ…ïŸ•ï‹πÕÖŸî†§(ÄÄÄÅ•òÅ¡Öç≠ÖùîπÕ—Ö—’ÃÄÙÙÅï±•Ÿï…ÂAÖç≠ÖùîπM—Ö—’ÃπIdË(ÄÄÄÄÄÄÄÅ¡Öç≠ÖùîπÕ—Ö—’ÃÄÙÅï±•Ÿï…ÂAÖç≠ÖùîπM—Ö—’ÃπIP(ÄÄÄÄÄÄÄÅ¡Öç≠ÖùîπÕÖŸî°’¡ëÖ—ï}ô•ï±ëÃılâÕ—Ö—’Ãà∞Äâ’¡ëÖ—ïë}Ö–ât§(ÄÄÄÅ…ï—’…∏Å…ïŸ•ï‹(()—…ÖπÕÖç—•Ω∏πÖ—Ωµ•å)ëïòÅ…ïÕΩ±Ÿï}—ïç°π•çÖ±}Ω›πï…}ÕΩ’…çï}ç°Öπùî†(ÄÄÄÄ®∞(ÄÄÄÅ¡Öç≠ÖùîËÅï±•Ÿï…ÂAÖç≠Öùî∞(ÄÄÄÅÖç—•Ω∏ËÅÕ—»∞(ÄÄÄÅ…Ö—•ΩπÖ±îËÅÕ—»∞(ÄÄÄÅÖç—Ω»∞(§Ä¥¯Åï±•Ÿï…ÂIΩ±ïMΩ’…çïïç•Õ•Ω∏Ë(ÄÄÄÅ•òÅπΩ–ÅçÖπ}…ïÕΩ±Ÿï}…Ω±ï}ÕΩ’…çî°Öç—Ω»∞Å¡Öç≠Öùî§Ë(ÄÄÄÄÄÄÄÅ…Ö•ÕîÅYÖ±•ëÖ—•Ωπ……Ω»†âÒ»Åë•ïÕîÅπ—Õç°ï•ë’πúÅÈ’»ÅIΩ±±ïπ≈’ï±±îÅôï°±–Åë•îÅ	ï…ïç°—•ù’πú∏à§(ÄÄÄÅ¡Öç≠ÖùîÄÙÅï±•Ÿï…ÂAÖç≠ÖùîπΩâ©ïç—ÃπÕï±ïç—}ôΩ…}’¡ëÖ—î†§πùï–°¡¨ı¡Öç≠Öùîπ¡¨§(ÄÄÄÅ•òÅ¡Öç≠ÖùîπÕ—Ö—’ÃÄÙÙÅï±•Ÿï…ÂAÖç≠ÖùîπM—Ö—’Ãπ!9}=YHË(ÄÄÄÄÄÄÄÅ…Ö•ÕîÅYÖ±•ëÖ—•Ωπ……Ω»†â•∏ÉÒâï…ùïâïπïÃÅï±•Ÿï…‰ÅAÖç≠ÖùîÅ•Õ–Å’πŸïÀëπëï…±•ç†∏à§(ÄÄÄÅ…ïÖÕΩ∏ÄÙÅ…Ö—•ΩπÖ±îπÕ—…•¿†§(ÄÄÄÅ•òÅπΩ–Å…ïÖÕΩ∏Ë(ÄÄÄÄÄÄÄÅ…Ö•ÕîÅYÖ±•ëÖ—•Ωπ……Ω»†âÒ»Åë•îÉqâï…πÖ°µïïπ—Õç°ï•ë’πúÅ•Õ–Åï•πîÅ	ïùÀÒπë’πúÅï…ôΩ…ëï…±•ç†∏à§(ÄÄÄÅÕ—Ö—îÄÙÅ—ïç°π•çÖ±}Ω›πï…}ÕΩ’…çï}Õ—Ö—î°¡Öç≠Öùî§(ÄÄÄÅ•òÅÕ—Ö—îÅ•ÃÅ9ΩπîÅΩ»ÅπΩ–ÅÕ—Ö—ïlâÕΩ’…çï}ç°ÖπùïêâtË(ÄÄÄÄÄÄÄÅ…Ö•ÕîÅYÖ±•ëÖ—•Ωπ……Ω»†âÃÅ±•ïù–Å≠ï•πîÅΩôôïπîÉπëï…’πúÅëïÃÅQïç°π•çÖ∞Å=›πï…ÃÅŸΩ»∏à§(ÄÄÄÅ•òÅÖç—•Ω∏ÅπΩ–Å•∏ÅÏ(ÄÄÄÄÄÄÄÅï±•Ÿï…ÂIΩ±ïMΩ’…çïïç•Õ•Ω∏πïç•Õ•Ω∏π=AQ}M=UI∞(ÄÄÄÄÄÄÄÅï±•Ÿï…ÂIΩ±ïMΩ’…çïïç•Õ•Ω∏πïç•Õ•Ω∏π-A}A-∞(ÄÄÄÅÙË(ÄÄÄÄÄÄÄÅ…Ö•ÕîÅYÖ±•ëÖ—•Ωπ……Ω»†âUπâï≠Öππ—îÉqâï…πÖ°µïïπ—Õç°ï•ë’πú∏à§((ÄÄÄÅΩ±ë}Ω›πï»ÄÙÅ¡Öç≠Öùîπ—ïç°π•çÖ±}Ω›πï»(ÄÄÄÅπï›}Ω›πï»ÄÙÅ¡Öç≠Öùîπ’Õï}çÖÕîπ—ïç°π•çÖ±}Ω›πï»(ÄÄÄÅëïç•Õ•Ω∏ÄÙÅï±•Ÿï…ÂIΩ±ïMΩ’…çïïç•Õ•Ω∏πΩâ©ïç—Ãπç…ïÖ—î†(ÄÄÄÄÄÄÄÅëï±•Ÿï…Â}¡Öç≠Öùîı¡Öç≠Öùî∞(ÄÄÄÄÄÄÄÅ…Ω±ï}≠ï‰ıï±•Ÿï…ÂIΩ±ïMΩ’…çïïç•Õ•Ω∏πIΩ±ï-ï‰πQ!9%1}=]9H∞(ÄÄÄÄÄÄÄÅΩ±ë}ŸÖ±’ï}•êıÕ—»°¡Öç≠Öùîπ—ïç°π•çÖ±}Ω›πï…}•êÅΩ»Äàà§∞(ÄÄÄÄÄÄÄÅΩ±ë}ŸÖ±’ï}±Öâï∞ıÕ—»°Ω±ë}Ω›πï»§Å•òÅΩ±ë}Ω›πï»Åï±ÕîÄâ9•ç°–ÅâïπÖππ–à∞(ÄÄÄÄÄÄÄÅπï›}ŸÖ±’ï}•êıÕ—»°¡Öç≠Öùîπ’Õï}çÖÕîπ—ïç°π•çÖ±}Ω›πï…}•êÅΩ»Äàà§∞(ÄÄÄÄÄÄÄÅπï›}ŸÖ±’ï}±Öâï∞ıÕ—»°πï›}Ω›πï»§Å•òÅπï›}Ω›πï»Åï±ÕîÄâ9•ç°–ÅâïπÖππ–à∞(ÄÄÄÄÄÄÄÅëïç•Õ•Ω∏ıÖç—•Ω∏∞(ÄÄÄÄÄÄÄÅ…Ö—•ΩπÖ±îı…ïÖÕΩ∏∞(ÄÄÄÄÄÄÄÅëïç•ëïë}â‰ıÖç—Ω»∞(ÄÄÄÄÄÄÄÅÕΩ’…çï}’¡ëÖ—ïë}Ö–ı¡Öç≠Öùîπ’Õï}çÖÕîπ’¡ëÖ—ïë}Ö–∞(ÄÄÄÄ§(ÄÄÄÅ•òÅÖç—•Ω∏ÄÙÙÅï±•Ÿï…ÂIΩ±ïMΩ’…çïïç•Õ•Ω∏πïç•Õ•Ω∏π=AQ}M=UIË(ÄÄÄÄÄÄÄÅ¡Öç≠Öùîπ—ïç°π•çÖ±}Ω›πï»ÄÙÅπï›}Ω›πï»(ÄÄÄÄÄÄÄÅ¡Öç≠ÖùîπÕÖŸî°’¡ëÖ—ï}ô•ï±ëÃılâ—ïç°π•çÖ±}Ω›πï»à∞Äâ’¡ëÖ—ïë}Ö–ât§(ÄÄÄÄÄÄÄÅÖëΩ¡—•Ω∏ÄÙÄâÖëΩ¡—ïêà(ÄÄÄÅï±ÕîË(ÄÄÄÄÄÄÄÅÖëΩ¡—•Ω∏ÄÙÄâ≠ï¡–à(ÄÄÄÅ…ïô…ïÕ°}—ïç°π•çÖ±}Ω›πï…}ÕΩ’…çï}ÕπÖ¡Õ°Ω–°¡Öç≠Öùî∞ÅÖëΩ¡—•Ω∏ıÖëΩ¡—•Ω∏§(ÄÄÄÅ…ïÕï—}Õïç—•Ωπ}…ïŸ•ï›Ã°¡Öç≠Öùî∞ÅQ!9%1}=]9I}=AQ%=9}IMQ}MQ%=9L§(ÄÄÄÅ…ï—’…∏Åëïç•Õ•Ω∏(()—…ÖπÕÖç—•Ω∏πÖ—Ωµ•å)ëïòÅµÖ…≠}¡Öç≠Öùï}…ïÖë‰°¡Öç≠ÖùîËÅï±•Ÿï…ÂAÖç≠Öùî§Ä¥¯Å9ΩπîË(ÄÄÄÅ•òÅ¡Öç≠ÖùîπÕ—Ö—’ÃÄÙÙÅï±•Ÿï…ÂAÖç≠ÖùîπM—Ö—’Ãπ!9}=YHË(ÄÄÄÄÄÄÄÅ…Ö•ÕîÅYÖ±•ëÖ—•Ωπ……Ω»†â•∏ÉÒâï…ùïâïπïÃÅï±•Ÿï…‰ÅAÖç≠ÖùîÅ•Õ–Å’πŸïÀëπëï…±•ç†∏à§(ÄÄÄÅô•πë•πùÃÄÙÅâ±Ωç≠•πù}ô•πë•πùÃ°¡Öç≠Öùî§(ÄÄÄÅ•òÅô•πë•πùÃË(ÄÄÄÄÄÄÄÅ…Ö•ÕîÅYÖ±•ëÖ—•Ωπ……Ω»†(ÄÄÄÄÄÄÄÄÄÄÄÄâÒ»Åë•îÉqâï…ùÖâîÅâïÕ—ï°ï∏ÅπΩç†Å	±Ωç≠ï»ËÄà(ÄÄÄÄÄÄÄÄÄÄÄÄ¨ÄàÅÄàπ©Ω•∏°ô•πë•πúπµïÕÕÖùîÅôΩ»Åô•πë•πúÅ•∏Åô•πë•πùÃ§(ÄÄÄÄÄÄÄÄ§(ÄÄÄÅ¡Öç≠ÖùîπÕ—Ö—’ÃÄÙÅï±•Ÿï…ÂAÖç≠ÖùîπM—Ö—’ÃπId(ÄÄÄÅ¡Öç≠ÖùîπÕÖŸî°’¡ëÖ—ï}ô•ï±ëÃılâÕ—Ö—’Ãà∞Äâ’¡ëÖ—ïë}Ö–ât§(()—…ÖπÕÖç—•Ω∏πÖ—Ωµ•å)ëïòÅ°Öπë}ΩŸï…}¡Öç≠Öùî°¡Öç≠ÖùîËÅï±•Ÿï…ÂAÖç≠Öùî∞ÅÖç—Ω»§Ä¥¯Å9ΩπîË(ÄÄÄÅ•òÅ¡Öç≠ÖùîπÕ—Ö—’ÃÄÑÙÅï±•Ÿï…ÂAÖç≠ÖùîπM—Ö—’ÃπIdË(ÄÄÄÄÄÄÄÅ…Ö•ÕîÅYÖ±•ëÖ—•Ωπ……Ω»†(ÄÄÄÄÄÄÄÄÄÄÄÄâ9’»Åï•∏ÅÖ±ÃÅâï…ï•–ÅµÖ…≠•ï…—ïÃÅï±•Ÿï…‰ÅAÖç≠ÖùîÅ≠Öπ∏ÉÒâï…ùïâï∏Å›ï…ëï∏∏à(ÄÄÄÄÄÄÄÄ§(ÄÄÄÅô•πë•πùÃÄÙÅâ±Ωç≠•πù}ô•πë•πùÃ°¡Öç≠Öùî§(ÄÄÄÅ•òÅô•πë•πùÃË(ÄÄÄÄÄÄÄÅ…Ö•ÕîÅYÖ±•ëÖ—•Ωπ……Ω»†(ÄÄÄÄÄÄÄÄÄÄÄÄâ•îÅIïÖë•πïÕÃµAÀÒô’πúÅ•Õ–Åπ•ç°–Åµï°»Åï…õÒ±±–ËÄà(ÄÄÄÄÄÄÄÄÄÄÄÄ¨ÄàÅÄàπ©Ω•∏°ô•πë•πúπµïÕÕÖùîÅôΩ»Åô•πë•πúÅ•∏Åô•πë•πùÃ§(ÄÄÄÄÄÄÄÄ§(ÄÄÄÅ¡Öç≠ÖùîπÕ—Ö—’ÃÄÙÅï±•Ÿï…ÂAÖç≠ÖùîπM—Ö—’Ãπ!9}=YH(ÄÄÄÅ¡Öç≠Öùîπ°Öπëïë}ΩŸï…}â‰ÄÙÅÖç—Ω»(ÄÄÄÅ¡Öç≠Öùîπ°Öπëïë}ΩŸï…}Ö–ÄÙÅ—•µïÈΩπîππΩ‹†§(ÄÄÄÅ¡Öç≠ÖùîπÕÖŸî°’¡ëÖ—ï}ô•ï±ëÃılâÕ—Ö—’Ãà∞Äâ°Öπëïë}ΩŸï…}â‰à∞Äâ°Öπëïë}ΩŸï…}Ö–à∞Äâ’¡ëÖ—ïë}Ö–ât§(()}}Ö±±}|ÄÙÅl(ÄÄÄÄâAAI=Y}MQQUMLà∞(ÄÄÄÄââ’•±ë}•π•—•Ö±}ëï±•Ÿï…Â}ëÖ—Ñà∞(ÄÄÄÄâç…ïÖ—ï}ëï±•Ÿï…Â}¡Öç≠Öùîà∞(ÄÄÄÄâç’……ïπ—}ëï±•Ÿï…Â}¡Öç≠Öùîà∞(ÄÄÄÄâç’……ïπ—}°Öπëïë}ΩŸï…}¡Öç≠Öùîà∞(ÄÄÄÄâëï±•Ÿï…Â}ï±•ù•â•±•—‰à∞(ÄÄÄÄâëï±•Ÿï…Â}ÕΩ’…çï}ë•ôôï…ïπçïÃà∞(ÄÄÄÄâ°Öπë}ΩŸï…}¡Öç≠Öùîà∞(ÄÄÄÄâ±Ö—ïÕ—}ô•πÖ±}Ö¡¡…ΩŸÖ∞à∞(ÄÄÄÄâµÖ…≠}¡Öç≠Öùï}…ïÖë‰à∞(ÄÄÄÄâµ•ÕÕ•πù}…ïÖëÂ}ô•ï±ëÃà∞(ÄÄÄÄâ…ïô…ïÕ°}—ïç°π•çÖ±}Ω›πï…}ÕΩ’…çï}ÕπÖ¡Õ°Ω–à∞(ÄÄÄÄâ…ïπëï…}ëï±•Ÿï…Â}µÖ…≠ëΩ›∏à∞(ÄÄÄÄâ…ïÕï—}Õïç—•Ωπ}…ïŸ•ï›Ãà∞(ÄÄÄÄâ…ïÕΩ±Ÿï}—ïç°π•çÖ±}Ω›πï…}ÕΩ’…çï}ç°Öπùîà∞(ÄÄÄÄâ…ïŸ•ï›}ëï±•Ÿï…Â}Õïç—•Ω∏à∞(ÄÄÄÄâ—ïç°π•çÖ±}Ω›πï…}ÕΩ’…çï}Õ—Ö—îà∞)t(
+                "value_stream": _source_entry(origin.stage.value_stream),
+                "value_stream_stage": _source_entry(origin.stage),
+                "process_analysis": _source_entry(process),
+                "solution_option": _source_entry(option),
+            }
+        )
+    return manifest
+
+
+def _current_source_objects(use_case: UseCase) -> dict:
+    origin, process, option = _origin_context(use_case)
+    return {
+        "use_case": use_case,
+        "value_stream": origin.stage.value_stream if origin is not None else None,
+        "value_stream_stage": origin.stage if origin is not None else None,
+        "process_analysis": process,
+        "solution_option": option,
+    }
+
+
+def delivery_source_differences(package: DeliveryPackage) -> list[dict]:
+    review = package.section_reviews.filter(section_key="problem_and_target").first()
+    if review is None:
+        return []
+    objects = _current_source_objects(package.use_case)
+    differences = []
+    for package_field, source in (review.source_manifest.get("field_sources") or {}).items():
+        obj = objects.get(source.get("kind"))
+        source_field = source.get("field")
+        if obj is None or not source_field:
+            continue
+        current = getattr(obj, source_field, None)
+        current_text = "" if current is None else str(current)
+        snapshot_text = str(source.get("value") or "")
+        differences.append(
+            {
+                "package_field": package_field,
+                "package_label": str(package._meta.get_field(package_field).verbose_name),
+                "source_label": source.get("label", "Quelle"),
+                "source_field": source_field,
+                "snapshot": snapshot_text,
+                "current": current_text,
+                "changed": current_text != snapshot_text,
+            }
+        )
+    return differences
+
+
+def technical_owner_source_state(package: DeliveryPackage) -> dict | None:
+    review = package.section_reviews.filter(section_key="architecture_and_data").first()
+    if review is None:
+        return None
+    source = (review.source_manifest.get("role_sources") or {}).get("technical_owner")
+    if source is None:
+        return None
+    current_owner = package.use_case.technical_owner
+    current_id = str(package.use_case.technical_owner_id or "")
+    snapshot_id = str(source.get("id") or "")
+    return {
+        "role_key": "technical_owner",
+        "working_id": str(package.technical_owner_id or ""),
+        "working_value": str(package.technical_owner or "Nicht benannt"),
+        "snapshot_id": snapshot_id,
+        "snapshot_value": str(source.get("value") or "Nicht benannt"),
+        "current_source_id": current_id,
+        "current_source_value": str(current_owner or "Nicht benannt"),
+        "source_changed": current_id != snapshot_id,
+        "adoption": source.get("adoption", "copied"),
+    }
+
+
+def refresh_technical_owner_source_snapshot(
+    package: DeliveryPackage,
+    *,
+    adoption: str,
+) -> None:
+    source = {
+        "id": str(package.use_case.technical_owner_id or ""),
+        "value": str(package.use_case.technical_owner or ""),
+        "updated_at": _iso(package.use_case.updated_at),
+        "adoption": adoption,
+    }
+    for review in package.section_reviews.all():
+        manifest = dict(review.source_manifest or {})
+        role_sources = dict(manifest.get("role_sources") or {})
+        role_sources["technical_owner"] = source
+        manifest["role_sources"] = role_sources
+        review.source_manifest = manifest
+        review.save(update_fields=["source_manifest", "updated_at"])
+
+
+def _architecture_artifacts_payload(
+    use_case: UseCase,
+    decision: ApprovalDecision,
+) -> dict[str, str]:
+    _origin, _process, option = _origin_context(use_case)
+    systems = use_case.source_systems
+    data_objects = use_case.data_sources
+    application_impact = option.application_impact if option else ""
+    integration_impact = use_case.interface_description
+    target_components = application_impact or "Zielkomponenten im Delivery Package konkretisieren."
+    system_responsibility = (
+        "F√ºhrendes System/System of Record: konkretisieren.\n"
+        f"Zu √§ndernde oder neue Komponenten: {target_components}"
+    )
+    data_readiness = decision.assessment.get_data_readiness_display()
+    return {
+        "system_landscape": (
+            f"Ist-Systeme und Arbeitsmittel:\n{systems or 'Noch nicht dokumentiert.'}\n\n"
+            f"Zielkomponenten und Anwendungsauswirkungen:\n{target_components}"
+        ),
+        "system_responsibilities": system_responsibility,
+        "data_flows": (
+            f"Datenobjekte und Quellen:\n{data_objects or 'Noch nicht dokumentiert.'}\n\n"
+            f"Integrationen:\n{integration_impact or 'Noch zu konkretisieren.'}"
+        ),
+        "data_quality_and_access": (
+            f"Bewertete Datenreife: {data_readiness}\n"
+            "Zugriffsweg, Datenverantwortung, bekannte Qualit√§tsprobleme, Schutzbedarf und "
+            "Aktualisierung konkretisieren."
+        ),
+        "integration_contracts": integration_impact or "Integrationsvertrag konkretisieren.",
+        "integration_operations": (
+            "Authentifizierung, Ausl√∂ser/Frequenz, Fehlerbehandlung, Retry/Fallback, Logging, "
+            "Monitoring und technische Verantwortung konkretisieren."
+        ),
+        "artifacts_url": "",
+    }
+
+
+def build_initial_delivery_data(
+    use_case: UseCase,
+    decision: ApprovalDecision,
+) -> dict[str, str]:
+    origin, _process, _option = _origin_context(use_case)
+    metric = (
+        f"{use_case.metric_name}: Baseline {use_case.metric_baseline} "
+        f"‚Üí Ziel {use_case.metric_target} {use_case.metric_unit}.\n"
+        f"Messmethode: {use_case.metric_measurement_method}\n"
+        f"Messzeitraum: {use_case.metric_measurement_period or 'f√ºr den Pilot festlegen'}"
+        if use_case.metric_name
+        else "Erfolgsmessung im Delivery Package konkretisieren."
+    )
+    checks = []
+    if use_case.privacy_review_required:
+        checks.append("Datenschutzpr√ºfung erforderlich")
+    if use_case.security_review_required:
+        checks.append("Informationssicherheitspr√ºfung erforderlich")
+    if use_case.legal_review_required:
+        checks.append("Rechtspr√ºfung erforderlich")
+
+    condition_lines = [
+        f"Freigabe: {decision.get_decision_status_display()}",
+        f"Begr√ºndung: {decision.rationale}",
+    ]
+    if decision.conditions:
+        condition_lines.extend(
+            [
+                f"Auflagen: {decision.conditions}",
+                f"Auflagenverantwortung: {decision.condition_owner or 'nicht benannt'}",
+                f"F√§lligkeit: {decision.condition_due_date or 'nicht festgelegt'}",
+            ]
+        )
+    else:
+        condition_lines.append("Keine Auflagen.")
+
+    value_stream = origin.stage.value_stream if origin is not None else None
+    return {
+        "problem_context": use_case.problem_statement,
+        "target_outcome": use_case.expected_benefit,
+        "in_scope": (
+            value_stream.scope_in
+            if value_stream is not None
+            else use_case.summary or use_case.affected_process
+        ),
+        "out_of_scope": value_stream.scope_out if value_stream is not None else "",
+        "users_and_scenarios": use_case.intended_users or use_case.target_users,
+        "solution_outline": use_case.intended_purpose or use_case.summary,
+        "system_context": use_case.source_systems,
+        "data_context": use_case.data_sources,
+        "integrations": use_case.interface_description,
+        "functional_requirements": (
+            "1. Kernablauf aus dem freigegebenen Use Case umsetzen.\n"
+            "2. Fachliche Entscheidung und Ergebnis nachvollziehbar darstellen."
+        ),
+        "non_functional_requirements": (
+            "Performance, Verf√ºgbarkeit, Barrierefreiheit und Wartbarkeit konkretisieren."
+        ),
+        "security_privacy_requirements": (
+            "\n".join(checks) or "Keine zus√§tzlichen Pr√ºfungen markiert."
+        ),
+        "human_oversight": use_case.human_oversight or "Menschliche Kontrolle konkretisieren.",
+        "logging_and_audit": (
+            "Fachliche Entscheidungen, Fehler und relevante √Ñnderungen protokollieren."
+        ),
+        "operations_and_support": (
+            use_case.support_responsibility or "Betriebsverantwortung festlegen."
+        ),
+        "mvp_scope": "Kleinsten Ende-zu-Ende-Ablauf f√ºr die Nutzenvalidierung beschreiben.",
+        "acceptance_criteria": (
+            "1. Fachlicher Kernablauf ist Ende-zu-Ende demonstrierbar.\n"
+            "2. Freigabeauflagen und Governance-Anforderungen sind umgesetzt.\n"
+            f"3. {metric}"
+        ),
+        "test_scenarios": (
+            "Happy Path, Datenfehler, fachliche Ausnahme und manuellen Eingriff testen."
+        ),
+        "measurement_plan": metric,
+        "dependencies": "",
+        "risks": (
+            f"Bewertung: Risiko/Komplexit√§t {decision.assessment.get_risk_complexity_display()}."
+        ),
+        "assumptions": "",
+        "architecture_decisions": "",
+        "initial_backlog": (
+            "Epic 1: Kernprozess und Nutzerfluss\n"
+            "Epic 2: Daten und Integrationen\n"
+            "Epic 3: Governance, Betrieb und Erfolgsmessung"
+        ),
+        "external_delivery_url": "",
+        "handover_notes": "\n".join(condition_lines),
+    }
+
+
+def _create_section_reviews(package: DeliveryPackage, manifest: dict) -> None:
+    DeliverySectionReview.objects.bulk_create(
+        [
+            DeliverySectionReview(
+                delivery_package=package,
+                section_key=section_key,
+                content_origin=SECTION_ORIGINS[section_key],
+                review_status=DeliverySectionReview.ReviewStatus.NEEDS_REVIEW,
+                source_manifest=manifest,
+            )
+            for section_key, _ in DELIVERY_SECTION_DEFINITIONS
+        ]
+    )
+
+
+@transaction.atomic
+def create_delivery_package(*, use_case: UseCase, actor) -> DeliveryPackage:
+    eligible, reason, decision = delivery_eligibility(use_case)
+    if not eligible or decision is None:
+        raise ValidationError(reason)
+    version = (
+        use_case.delivery_packages.aggregate(max_version=Max("version"))["max_version"] or 0
+    ) + 1
+    package = DeliveryPackage(
+        use_case=use_case,
+        technical_owner=use_case.technical_owner,
+        version=version,
+        generated_from_decision=decision,
+        created_by=actor,
+        readiness_schema_version=2,
+        **build_initial_delivery_data(use_case, decision),
+    )
+    package._architecture_artifacts_payload = _architecture_artifacts_payload(use_case, decision)
+    package.save()
+    _create_section_reviews(package, build_source_manifest(use_case, decision))
+    return package
+
+
+@transaction.atomic
+def reset_section_reviews(package: DeliveryPackage, section_keys: set[str]) -> None:
+    package.section_reviews.filter(section_key__in=section_keys).update(
+        review_status=DeliverySectionReview.ReviewStatus.NEEDS_REVIEW,
+        reviewed_by=None,
+        reviewed_at=None,
+        business_confirmed_by=None,
+        business_confirmed_at=None,
+        technical_confirmed_by=None,
+        technical_confirmed_at=None,
+        business_confirmation_role="",
+        technical_confirmation_role="",
+        role_collapse_reason="",
+        admin_override_confirmed=False,
+    )
+    if package.status == DeliveryPackage.Status.READY:
+        package.status = DeliveryPackage.Status.DRAFT
+        package.save(update_fields=["status", "updated_at"])
+
+
+@transaction.atomic
+def review_delivery_section(
+    *,
+    package: DeliveryPackage,
+    section_key: str,
+    action: str,
+    actor,
+    note: str = "",
+    role_collapse_reason: str = "",
+) -> DeliverySectionReview:
+    try:
+        review = package.section_reviews.select_for_update().get(section_key=section_key)
+    except DeliverySectionReview.DoesNotExist as exc:
+        raise ValidationError("Die angeforderte Delivery-Sektion existiert nicht.") from exc
+
+    roles = reviewer_roles(actor, package, section_key)
+    if not roles:
+        raise ValidationError("F√ºr diese Sektionspr√ºfung fehlt die erforderliche Rolle.")
+
+    if action == "confirm":
+        open_roles = [
+            role
+            for role in ("business", "technical")
+            if role in roles
+            and role in review.required_confirmations
+            and getattr(review, f"{role}_confirmed_at") is None
+        ]
+        if len(open_roles) != 1:
+            raise ValidationError(
+                "Bitte die fachliche oder technische Best√§tigung ausdr√ºcklich ausw√§hlen."
+            )
+        action = f"confirm_{open_roles[0]}"
+
+    now = timezone.now()
+    review.reviewed_by = actor
+    review.reviewed_at = now
+    review.review_note = note.strip()
+
+    if action in {"confirm_business", "confirm_technical"}:
+        role = action.removeprefix("confirm_")
+        if role not in roles or role not in review.required_confirmations:
+            role_label = "fachliche" if role == "business" else "technische"
+            raise ValidationError(f"F√ºr die {role_label} Best√§tigung fehlt die Berechtigung.")
+
+        other_role = "technical" if role == "business" else "business"
+        other_actor_id = getattr(review, f"{other_role}_confirmed_by_id")
+        if other_actor_id == actor.id:
+            if not can_use_admin_confirmation_override(actor):
+                raise ValidationError(
+                    "Dieselbe Person darf fachlich und technisch nur als Technischer "
+                    "Administrator f√ºr Admin- oder Testzwecke best√§tigen."
+                )
+            collapse_reason = role_collapse_reason.strip()
+            if not collapse_reason:
+                raise ValidationError(
+                    "F√ºr die Admin-Sonderbest√§tigung ist eine Begr√ºndung erforderlich."
+                )
+            review.role_collapse_reason = collapse_reason
+            review.admin_override_confirmed = True
+        else:
+            review.role_collapse_reason = ""
+            review.admin_override_confirmed = False
+
+        assigned_owner_id = (
+            package.use_case.business_owner_id if role == "business" else package.technical_owner_id
+        )
+        setattr(review, f"{role}_confirmed_by", actor)
+        setattr(review, f"{role}_confirmed_at", now)
+        setattr(
+            review,
+            f"{role}_confirmation_role",
+            confirmation_role_label(
+                role,
+                assigned=assigned_owner_id == actor.id,
+                admin_override=review.admin_override_confirmed,
+            ),
+        )
+        if review.admin_override_confirmed:
+            review.business_confirmation_role = "Admin-Sonderbest√§tigung"
+            review.technical_confirmation_role = "Admin-Sonderbest√§tigung"
+        review.review_status = (
+            DeliverySectionReview.ReviewStatus.CONFIRMED
+            if review.confirmations_complete
+            else DeliverySectionReview.ReviewStatus.NEEDS_REVIEW
+        )
+    elif action == "block":
+        if not review.review_note:
+            raise ValidationError("F√ºr eine Blockierung ist eine Begr√ºndung erforderlich.")
+        review.review_status = DeliverySectionReview.ReviewStatus.BLOCKED
+    elif action == "not_applicable":
+        if not review.review_note:
+            raise ValidationError("Nichtanwendbarkeit muss begr√ºndet werden.")
+        review.content_origin = DeliverySectionReview.ContentOrigin.NOT_APPLICABLE
+        review.review_status = DeliverySectionReview.ReviewStatus.NOT_APPLICABLE
+    elif action == "reset":
+        review.review_status = DeliverySectionReview.ReviewStatus.NEEDS_REVIEW
+        review.business_confirmed_by = None
+        review.business_confirmed_at = None
+        review.technical_confirmed_by = None
+        review.technical_confirmed_at = None
+        review.business_confirmation_role = ""
+        review.technical_confirmation_role = ""
+        review.role_collapse_reason = ""
+        review.admin_override_confirmed = False
+    else:
+        raise ValidationError("Unbekannte Aktion f√ºr die Sektionspr√ºfung.")
+
+    review.save()
+    if package.status == DeliveryPackage.Status.READY:
+        package.status = DeliveryPackage.Status.DRAFT
+        package.save(update_fields=["status", "updated_at"])
+    return review
+
+
+@transaction.atomic
+def resolve_technical_owner_source_change(
+    *,
+    package: DeliveryPackage,
+    action: str,
+    rationale: str,
+    actor,
+) -> DeliveryRoleSourceDecision:
+    if not can_resolve_role_source(actor, package):
+        raise ValidationError("F√ºr diese Entscheidung zur Rollenquelle fehlt die Berechtigung.")
+    package = DeliveryPackage.objects.select_for_update().get(pk=package.pk)
+    if package.status == DeliveryPackage.Status.HANDED_OVER:
+        raise ValidationError("Ein √ºbergebenes Delivery Package ist unver√§nderlich.")
+    reason = rationale.strip()
+    if not reason:
+        raise ValidationError("F√ºr die √úbernahmeentscheidung ist eine Begr√ºndung erforderlich.")
+    state = technical_owner_source_state(package)
+    if state is None or not state["source_changed"]:
+        raise ValidationError("Es liegt keine offene √Ñnderung des Technical Owners vor.")
+    if action not in {
+        DeliveryRoleSourceDecision.Decision.ADOPT_SOURCE,
+        DeliveryRoleSourceDecision.Decision.KEEP_PACKAGE,
+    }:
+        raise ValidationError("Unbekannte √úbernahmeentscheidung.")
+
+    old_owner = package.technical_owner
+    new_owner = package.use_case.technical_owner
+    decision = DeliveryRoleSourceDecision.objects.create(
+        delivery_package=package,
+        role_key=DeliveryRoleSourceDecision.RoleKey.TECHNICAL_OWNER,
+        old_value_id=str(package.technical_owner_id or ""),
+        old_value_label=str(old_owner) if old_owner else "Nicht benannt",
+        new_value_id=str(package.use_case.technical_owner_id or ""),
+        new_value_label=str(new_owner) if new_owner else "Nicht benannt",
+        decision=action,
+        rationale=reason,
+        decided_by=actor,
+        source_updated_at=package.use_case.updated_at,
+    )
+    if action == DeliveryRoleSourceDecision.Decision.ADOPT_SOURCE:
+        package.technical_owner = new_owner
+        package.save(update_fields=["technical_owner", "updated_at"])
+        adoption = "adopted"
+    else:
+        adoption = "kept"
+    refresh_technical_owner_source_snapshot(package, adoption=adoption)
+    reset_section_reviews(package, TECHNICAL_OWNER_ADOPTION_RESET_SECTIONS)
+    return decision
+
+
+@transaction.atomic
+def mark_package_ready(package: DeliveryPackage) -> None:
+    if package.status == DeliveryPackage.Status.HANDED_OVER:
+        raise ValidationError("Ein √ºbergebenes Delivery Package ist unver√§nderlich.")
+    findings = blocking_findings(package)
+    if findings:
+        raise ValidationError(
+            "F√ºr die √úbergabe bestehen noch Blocker: "
+            + " | ".join(finding.message for finding in findings)
+        )
+    package.status = DeliveryPackage.Status.READY
+    package.save(update_fields=["status", "updated_at"])
+
+
+@transaction.atomic
+def hand_over_package(package: DeliveryPackage, actor) -> None:
+    if package.status != DeliveryPackage.Status.READY:
+        raise ValidationError(
+            "Nur ein als bereit markiertes Delivery Package kann √ºbergeben werden."
+        )
+    findings = blocking_findings(package)
+    if findings:
+        raise ValidationError(
+            "Die Readiness-Pr√ºfung ist nicht mehr erf√ºllt: "
+            + " | ".join(finding.message for finding in findings)
+        )
+    package.status = DeliveryPackage.Status.HANDED_OVER
+    package.handed_over_by = actor
+    package.handed_over_at = timezone.now()
+    package.save(update_fields=["status", "handed_over_by", "handed_over_at", "updated_at"])
+
+
+__all__ = [
+    "APPROVED_STATUSES",
+    "build_initial_delivery_data",
+    "create_delivery_package",
+    "current_delivery_package",
+    "current_handed_over_package",
+    "delivery_eligibility",
+    "delivery_source_differences",
+    "hand_over_package",
+    "latest_final_approval",
+    "mark_package_ready",
+    "missing_ready_fields",
+    "refresh_technical_owner_source_snapshot",
+    "render_delivery_markdown",
+    "reset_section_reviews",
+    "resolve_technical_owner_source_change",
+    "review_delivery_section",
+    "technical_owner_source_state",
+]
