@@ -5,10 +5,25 @@ from datetime import date
 from typing import TYPE_CHECKING
 
 from .models import UseCase
-from .services import approval_check, check_go_live, check_pilot_start, intake_blockers
+from .services import (
+    approval_check,
+    check_go_live,
+    check_pilot_start,
+    current_decision_check,
+    intake_blockers,
+)
 
 if TYPE_CHECKING:
     from .journey import JourneyState
+
+
+@dataclass(frozen=True)
+class WorkCheck:
+    title: str
+    state: str
+    state_label: str
+    blockers: list[str]
+    warnings: list[str]
 
 
 @dataclass(frozen=True)
@@ -44,6 +59,92 @@ def _format_date(value: date) -> str:
     return value.strftime("%d.%m.%Y")
 
 
+def _from_lifecycle_check(use_case: UseCase) -> WorkCheck:
+    check = current_decision_check(use_case)
+    return WorkCheck(
+        title=check.title,
+        state=check.state,
+        state_label=check.state_label,
+        blockers=list(check.blockers),
+        warnings=list(check.warnings),
+    )
+
+
+def current_work_check(use_case: UseCase) -> WorkCheck:
+    final_decision = use_case.approval_decisions.filter(finalized_at__isnull=False).first()
+    if final_decision is not None:
+        if final_decision.decision_status in {
+            UseCase.DecisionStatus.DEFERRED,
+            UseCase.DecisionStatus.NOT_PURSUED,
+        }:
+            return WorkCheck(
+                title="Finale Entscheidung",
+                state="blocked",
+                state_label=final_decision.get_decision_status_display(),
+                blockers=[],
+                warnings=[],
+            )
+        if use_case.status in {UseCase.Status.IDEA, UseCase.Status.REVIEW}:
+            check = check_pilot_start(use_case)
+            return WorkCheck(
+                title=check.title,
+                state=check.state,
+                state_label=(
+                    "Pilotstart blockiert"
+                    if check.blockers
+                    else "Bereit für den Pilotstart"
+                ),
+                blockers=list(check.blockers),
+                warnings=list(check.warnings),
+            )
+        return _from_lifecycle_check(use_case)
+
+    pending = use_case.approval_decisions.filter(finalized_at__isnull=True).first()
+    if pending is not None:
+        return WorkCheck(
+            title="Zweitfreigabe abschließen",
+            state="blocked",
+            state_label="Zweitfreigabe offen",
+            blockers=["Unabhängige zweite Freigabe"],
+            warnings=[],
+        )
+
+    assessment = use_case.decision_assessments.first()
+    if assessment is None:
+        blockers = intake_blockers(use_case)
+        if blockers:
+            return WorkCheck(
+                title="Bewertung vorbereiten",
+                state="blocked",
+                state_label="Bewertung blockiert",
+                blockers=blockers,
+                warnings=[],
+            )
+        return WorkCheck(
+            title="Bewertung anlegen",
+            state="ready",
+            state_label="Bewertungsbereit",
+            blockers=[],
+            warnings=[],
+        )
+
+    check = approval_check(
+        use_case=use_case,
+        target_status=assessment.recommendation,
+        governance_confirmed=True,
+    )
+    blockers = list(check.blockers)
+    if use_case.coordinator_id is None:
+        blockers.append("KI-Koordination nicht zugewiesen")
+    return WorkCheck(
+        title="Freigabe vorbereiten" if blockers else "Freigabe entscheiden",
+        state="blocked" if blockers else ("review" if check.warnings else "ready"),
+        state_label="Freigabe blockiert" if blockers else "Entscheidungsbereit",
+        blockers=blockers,
+        warnings=list(check.warnings),
+    )
+
+
 def _process_dimension(journey: JourneyState) -> StatusDimension:
     action = journey.next_action
     if action is not None:
@@ -59,7 +160,8 @@ def _process_dimension(journey: JourneyState) -> StatusDimension:
         title="Arbeitsphase",
         label="Abgeschlossen",
         state="ready",
-        explanation=journey.completion_message or "Für diesen Pfad ist kein weiterer Pflichtschritt offen.",
+        explanation=journey.completion_message
+        or "Für diesen Pfad ist kein weiterer Pflichtschritt offen.",
     )
 
 
@@ -96,6 +198,7 @@ def _assessment_dimension(use_case: UseCase) -> StatusDimension:
 
 
 def _approval_dimension(use_case: UseCase) -> StatusDimension:
+    work_check = current_work_check(use_case)
     final_decision = use_case.approval_decisions.filter(finalized_at__isnull=False).first()
     if final_decision is not None:
         positive = final_decision.decision_status in {
@@ -120,8 +223,7 @@ def _approval_dimension(use_case: UseCase) -> StatusDimension:
             explanation="Die vorgeschlagene Freigabe ist noch nicht final bestätigt.",
         )
 
-    assessment = use_case.decision_assessments.first()
-    if assessment is None:
+    if use_case.decision_assessments.first() is None:
         return StatusDimension(
             key="approval",
             title="Freigabe",
@@ -130,27 +232,16 @@ def _approval_dimension(use_case: UseCase) -> StatusDimension:
             explanation="Eine Freigabeentscheidung ist erst nach einer strukturierten Bewertung möglich.",
         )
 
-    check = approval_check(
-        use_case=use_case,
-        target_status=assessment.recommendation,
-        governance_confirmed=True,
-    )
-    if use_case.coordinator_id is None:
-        check.blockers.append("KI-Koordination nicht zugewiesen")
-    if check.blockers:
-        return StatusDimension(
-            key="approval",
-            title="Freigabe",
-            label="Freigabe blockiert",
-            state="blocked",
-            explanation=f"Nächster offener Punkt: {check.blockers[0]}.",
-        )
     return StatusDimension(
         key="approval",
         title="Freigabe",
-        label="Entscheidungsbereit",
-        state="ready",
-        explanation="Bewertung und fachliche Voraussetzungen liegen für die Entscheidung vor.",
+        label=work_check.state_label,
+        state=work_check.state,
+        explanation=(
+            f"Nächster offener Punkt: {work_check.blockers[0]}."
+            if work_check.blockers
+            else "Bewertung und fachliche Voraussetzungen liegen für die Entscheidung vor."
+        ),
     )
 
 
@@ -203,23 +294,28 @@ def _lifecycle_dimension(use_case: UseCase) -> StatusDimension:
 
 def _next_lifecycle_decision(use_case: UseCase) -> str:
     if use_case.status == UseCase.Status.IDEA:
-        blockers = intake_blockers(use_case)
-        if blockers:
-            return f"Vor der Bewertung fehlt: {blockers[0]}."
+        work_check = current_work_check(use_case)
+        if work_check.blockers:
+            return f"Vor der Bewertung fehlt: {work_check.blockers[0]}."
+        if use_case.decision_assessments.exists():
+            return "Nächste Aktion: verbindliche Freigabeentscheidung vorbereiten."
         return "Nächste Aktion: strukturierte Bewertung anlegen."
 
     if use_case.status == UseCase.Status.REVIEW:
-        check = check_pilot_start(use_case)
-        if check.blockers:
-            return f"Pilotstart blockiert: {check.blockers[0]}."
-        return "Nächste Aktion: tatsächlichen Pilotstart bestätigen."
+        work_check = current_work_check(use_case)
+        if work_check.blockers:
+            return f"{work_check.title} blockiert: {work_check.blockers[0]}."
+        return f"Nächste Aktion: {work_check.title.lower()}."
 
     if use_case.status == UseCase.Status.PILOT:
         check = check_go_live(use_case)
         if check.blockers:
             return f"Go-live blockiert: {check.blockers[0]}."
         if use_case.planned_pilot_end:
-            return f"Go-live-Entscheidung zum geplanten Pilotende am {_format_date(use_case.planned_pilot_end)}."
+            return (
+                "Go-live-Entscheidung zum geplanten Pilotende am "
+                f"{_format_date(use_case.planned_pilot_end)}."
+            )
         return "Für die Go-live-Entscheidung fehlt das geplante Pilotende."
 
     if use_case.status == UseCase.Status.OPERATION:
