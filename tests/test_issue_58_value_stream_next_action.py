@@ -4,7 +4,7 @@ from django.urls import reverse
 
 from ki_radar.accounts.models import User
 from ki_radar.architecture.focus import ValueStreamFocus
-from ki_radar.architecture.models import ValueStream, ValueStreamStage
+from ki_radar.architecture.models import ProcessAnalysis, ValueStream, ValueStreamStage
 from ki_radar.core.demo_architecture_data import INVOICE_USE_CASE_KEY
 from ki_radar.core.taxonomy import BusinessDomain, ScreeningLevel
 from ki_radar.use_cases.models import UseCase
@@ -109,6 +109,24 @@ def test_value_stream_page_disables_deep_dive_while_phase_structure_is_draft(
     assert "Erst Phasenerfassung abschließen" in content
     assert "Als Fokusphase analysieren" not in content
     assert "Use Case direkt aus Phase ableiten" not in content
+
+
+@pytest.mark.django_db
+def test_direct_process_url_cannot_bypass_draft_phase_gate(client, coordinator):
+    value_stream = _selected_value_stream(coordinator, status=ValueStream.Status.DRAFT)
+    stage = value_stream.stages.get()
+    client.force_login(coordinator)
+
+    response = client.get(
+        reverse(
+            "architecture:process_analysis_create",
+            kwargs={"stage_id": stage.pk},
+        )
+    )
+
+    assert response.status_code == 302
+    assert response.url == value_stream.get_absolute_url()
+    assert ProcessAnalysis.objects.filter(stage=stage).exists() is False
 
 
 @pytest.mark.django_db
