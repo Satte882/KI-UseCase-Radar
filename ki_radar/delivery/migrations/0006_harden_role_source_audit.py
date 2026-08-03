@@ -1,4 +1,5 @@
-from django.db import migrations
+import django.db.models.deletion
+from django.db import migrations, models
 
 
 def _user_label(user):
@@ -58,29 +59,6 @@ def reconstruct_package_owners(apps, schema_editor):
             review.save(update_fields=["source_manifest"])
 
 
-CREATE_IMMUTABILITY_TRIGGER = """
-CREATE OR REPLACE FUNCTION delivery_prevent_role_source_decision_mutation()
-RETURNS trigger AS $$
-BEGIN
-    RAISE EXCEPTION 'Dokumentierte Quellenentscheidungen sind unveränderlich.';
-END;
-$$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS delivery_role_source_decision_immutable
-ON delivery_deliveryrolesourcedecision;
-
-CREATE TRIGGER delivery_role_source_decision_immutable
-BEFORE UPDATE OR DELETE ON delivery_deliveryrolesourcedecision
-FOR EACH ROW EXECUTE FUNCTION delivery_prevent_role_source_decision_mutation();
-"""
-
-DROP_IMMUTABILITY_TRIGGER = """
-DROP TRIGGER IF EXISTS delivery_role_source_decision_immutable
-ON delivery_deliveryrolesourcedecision;
-DROP FUNCTION IF EXISTS delivery_prevent_role_source_decision_mutation();
-"""
-
-
 class Migration(migrations.Migration):
     dependencies = [
         ("delivery", "0005_delivery_technical_owner_source"),
@@ -88,9 +66,14 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(reconstruct_package_owners, migrations.RunPython.noop),
-        migrations.RunSQL(
-            sql=CREATE_IMMUTABILITY_TRIGGER,
-            reverse_sql=DROP_IMMUTABILITY_TRIGGER,
+        migrations.AlterField(
+            model_name="deliveryrolesourcedecision",
+            name="delivery_package",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="role_source_decisions",
+                to="delivery.deliverypackage",
+            ),
         ),
+        migrations.RunPython(reconstruct_package_owners, migrations.RunPython.noop),
     ]
