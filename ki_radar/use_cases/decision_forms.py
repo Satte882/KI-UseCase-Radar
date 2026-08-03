@@ -105,6 +105,13 @@ class ApprovalDecisionForm(forms.ModelForm):
             "condition_owner": "Verantwortliche Person für die Auflage",
             "condition_due_date": "Fälligkeit der Auflage",
         }
+        help_texts = {
+            "governance_confirmed": (
+                "Diese Bestätigung dokumentiert die Prüfung der Governance-Grundlage. "
+                "Sie ersetzt weder offene Fachprüfungen noch die erforderliche "
+                "Personentrennung."
+            ),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

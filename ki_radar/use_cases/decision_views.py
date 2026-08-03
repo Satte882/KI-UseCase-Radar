@@ -1,3 +1,5 @@
+from urllib.parse import urlencode
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -20,6 +22,13 @@ from .services import (
 from .status_dimensions import build_use_case_status_dimensions
 from .workflow import build_use_case_journey
 
+DECISION_OPTIONS = (
+    UseCase.DecisionStatus.DEFERRED,
+    UseCase.DecisionStatus.APPROVED,
+    UseCase.DecisionStatus.APPROVED_WITH_CONDITIONS,
+    UseCase.DecisionStatus.NOT_PURSUED,
+)
+
 
 def _decision_use_case_queryset():
     return UseCase.objects.select_related(
@@ -33,10 +42,53 @@ def _decision_use_case_queryset():
         "architecture_origin__solution_option",
     ).prefetch_related(
         "governance_assessments",
+        "governance_reviews",
         "decision_assessments",
         "approval_decisions",
         "delivery_packages",
     )
+
+
+def _selected_decision_status(request, assessment) -> str:
+    selected = (
+        request.POST.get("decision_status")
+        if request.method == "POST"
+        else request.GET.get("decision_status")
+    )
+    return selected if selected in DECISION_OPTIONS else assessment.recommendation
+
+
+def _decision_choice_url(use_case: UseCase, status: str, return_to: str) -> str:
+    query = urlencode({"decision_status": status, "return_to": return_to})
+    return f"{reverse('use_cases:approval_decision_create', kwargs={'pk': use_case.pk})}?{query}"
+
+
+def _available_decision_alternatives(
+    *,
+    use_case: UseCase,
+    actor,
+    selected_status: str,
+    return_to: str,
+) -> list[dict[str, str]]:
+    alternatives = []
+    for status in DECISION_OPTIONS:
+        if status == selected_status:
+            continue
+        check = approval_check(
+            use_case=use_case,
+            target_status=status,
+            actor=actor,
+            governance_confirmed=True,
+        )
+        if not check.blockers:
+            alternatives.append(
+                {
+                    "status": status,
+                    "label": UseCase.DecisionStatus(status).label,
+                    "url": _decision_choice_url(use_case, status, return_to),
+                }
+            )
+    return alternatives
 
 
 @login_required
@@ -91,37 +143,55 @@ def approval_decision_create(request, pk):
             )
         )
 
+    selected_status = _selected_decision_status(request, assessment)
     if request.method == "POST":
         form = ApprovalDecisionForm(request.POST)
         if form.is_valid():
-            try:
-                decision = submit_approval_decision(
-                    use_case=use_case,
-                    actor=request.user,
-                    data=form.cleaned_data,
+            selected_status = form.cleaned_data["decision_status"]
+            hard_check = approval_check(
+                use_case=use_case,
+                target_status=selected_status,
+                actor=request.user,
+                governance_confirmed=True,
+            )
+            if hard_check.blockers:
+                form.add_error(
+                    None,
+                    "Die Entscheidung ist nicht ausführbar, solange harte "
+                    "Voraussetzungen offen sind.",
                 )
-            except ValidationError as exc:
-                form.add_error(None, exc)
             else:
-                if decision.is_pending_second_approval:
-                    messages.info(
-                        request,
-                        "Die Freigabe mit Auflagen wartet auf eine zweite unabhängige Bestätigung.",
+                try:
+                    decision = submit_approval_decision(
+                        use_case=use_case,
+                        actor=request.user,
+                        data=form.cleaned_data,
                     )
+                except ValidationError as exc:
+                    form.add_error(None, exc)
                 else:
-                    messages.success(request, "Die Entscheidung wurde verbindlich gespeichert.")
-                return redirect(return_to)
+                    if decision.is_pending_second_approval:
+                        messages.info(
+                            request,
+                            "Die Freigabe mit Auflagen wartet auf eine zweite unabhängige "
+                            "Bestätigung.",
+                        )
+                    else:
+                        messages.success(
+                            request,
+                            "Die Entscheidung wurde verbindlich gespeichert.",
+                        )
+                    return redirect(return_to)
     else:
-        form = ApprovalDecisionForm(initial={"decision_status": assessment.recommendation})
+        form = ApprovalDecisionForm(initial={"decision_status": selected_status})
 
-    selected_status = request.POST.get("decision_status", assessment.recommendation)
-    check = approval_check(
+    hard_check = approval_check(
         use_case=use_case,
         target_status=selected_status,
         actor=request.user,
-        governance_confirmed=request.POST.get("governance_confirmed") == "on",
+        governance_confirmed=True,
     )
-    blocker_details = build_blocker_details(use_case, check.blockers)
+    blocker_details = build_blocker_details(use_case, hard_check.blockers)
     journey = build_use_case_journey(use_case, request.user)
     return render(
         request,
@@ -132,9 +202,19 @@ def approval_decision_create(request, pk):
             "assessment": assessment,
             "journey": journey,
             "status_dimensions": build_use_case_status_dimensions(use_case, journey),
-            "approval_check": check,
+            "approval_check": hard_check,
             "approval_blocker_details": blocker_details,
             "first_approval_blocker": blocker_details[0] if blocker_details else None,
+            "decision_form_enabled": not hard_check.blockers,
+            "selected_status": selected_status,
+            "selected_status_label": UseCase.DecisionStatus(selected_status).label,
+            "decision_alternatives": _available_decision_alternatives(
+                use_case=use_case,
+                actor=request.user,
+                selected_status=selected_status,
+                return_to=return_to,
+            ),
+            "deciding_actor": request.user,
             "return_to": return_to,
         },
     )
