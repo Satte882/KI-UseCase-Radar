@@ -1,5 +1,6 @@
 from django.db import migrations, models
 
+# Temporary validation trigger; removed in the next commit.
 
 class Migration(migrations.Migration):
     dependencies = [
