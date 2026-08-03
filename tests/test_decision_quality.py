@@ -99,6 +99,7 @@ def test_go_live_compares_target_and_actual(decision_use_case, coordinator):
     decision_use_case.metric_measurement_period = "Pilotwochen 5 bis 8"
     decision_use_case.metric_measured_at = timezone.localdate()
     decision_use_case.metric_evidence_url = "https://example.invalid/evidence"
+    decision_use_case.planned_pilot_end = timezone.localdate()
     decision_use_case.save()
 
     check = check_go_live(decision_use_case)
