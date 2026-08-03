@@ -47,6 +47,7 @@ def test_invoice_demo_has_complete_discovery_chain_and_ready_delivery(seeded_dem
         "solution",
         "use_case",
         "assessment",
+        "governance",
         "approval",
         "delivery",
     ]
@@ -59,6 +60,7 @@ def test_invoice_demo_has_complete_discovery_chain_and_ready_delivery(seeded_dem
             "solution",
             "use_case",
             "assessment",
+            "governance",
             "approval",
         ]
     )

@@ -3,76 +3,113 @@ name: KI-Radar CI
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: ki-radar-ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  update-expectations:
+  validate:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout branch
-        uses: actions/checkout@v4
-        with:
-          ref: fix/issue-58-final-journey-order
-          fetch-depth: 0
 
-      - name: Update journey expectations and restore workflow
+    services:
+      postgres:
+        image: postgres:17.5-bookworm
+        env:
+          POSTGRES_DB: ki_radar_test
+          POSTGRES_USER: ki_radar
+          POSTGRES_PASSWORD: ki_radar_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ki_radar -d ki_radar_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings.test
+      DJANGO_SECRET_KEY: ci-only-secret-key-not-for-production
+      POSTGRES_DB: ki_radar_test
+      POSTGRES_USER: ki_radar
+      POSTGRES_PASSWORD: ki_radar_test_password
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "5432"
+      DATABASE_URL: postgresql://ki_radar:ki_radar_test_password@localhost:5432/ki_radar_test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.10.0"
+          enable-cache: true
+
+      - name: Verify lockfile
+        run: uv lock --check
+
+      - name: Install dependencies
+        run: uv sync --frozen --dev
+
+      - name: Ruff lint
+        run: uv run ruff check .
+
+      - name: Ruff format
+        run: uv run ruff format --check .
+
+      - name: Django system check
+        run: uv run python manage.py check
+
+      - name: Verify migrations
+        run: uv run python manage.py makemigrations --check --dry-run
+
+      - name: Apply migrations
+        run: uv run python manage.py migrate --noinput
+
+      - name: Run tests
+        run: uv run pytest -q
+
+      - name: Bandit
+        run: uv run bandit -q -r ki_radar config
+
+      - name: Dependency audit
+        run: uv run pip-audit
+
+      - name: Prepare Compose validation
         shell: bash
         run: |
-          python - <<'PY'
-          from pathlib import Path
+          set -euo pipefail
+          mkdir -p .ci-secrets/prod .ci-secrets/staging deploy/certs
+          for secret in django_secret_key db_password sentry_dsn monitoring_token; do
+            printf 'ci-placeholder\n' > ".ci-secrets/prod/${secret}"
+          done
+          for secret in django_secret_key db_password; do
+            printf 'ci-placeholder\n' > ".ci-secrets/staging/${secret}"
+          done
 
-          delivery_path = Path('tests/test_delivery_to_pilot.py')
-          delivery = delivery_path.read_text(encoding='utf-8')
-          replacements = [
-              (
-                  'assert [step.key for step in before.steps[:8]]',
-                  'assert [step.key for step in before.steps[:9]]',
-              ),
-              (
-                  '        "assessment",\n        "approval",\n        "delivery",',
-                  '        "assessment",\n        "governance",\n        "approval",\n        "delivery",',
-              ),
-              (
-                  '            "assessment",\n            "approval",\n        ]',
-                  '            "assessment",\n            "governance",\n            "approval",\n        ]',
-              ),
-          ]
-          for old, new in replacements:
-              if old not in delivery:
-                  raise SystemExit(f'Expected delivery snippet not found: {old!r}')
-              delivery = delivery.replace(old, new, 1)
-          delivery_path.write_text(delivery, encoding='utf-8')
+      - name: Validate local Compose
+        run: docker compose -f compose.local.yml config --quiet
 
-          guided_path = Path('tests/test_guided_journey.py')
-          guided = guided_path.read_text(encoding='utf-8')
-          replacements = [
-              (
-                  '        "assessment",\n        "approval",\n        "delivery",',
-                  '        "assessment",\n        "governance",\n        "approval",\n        "delivery",',
-              ),
-              (
-                  '            "assessment",\n            "approval",\n        ]',
-                  '            "assessment",\n            "governance",\n            "approval",\n        ]',
-              ),
-          ]
-          for old, new in replacements:
-              if old not in guided:
-                  raise SystemExit(f'Expected guided snippet not found: {old!r}')
-              guided = guided.replace(old, new, 1)
-          guided_path.write_text(guided, encoding='utf-8')
-          PY
-          rm -rf .ci-diagnostics
-          git checkout origin/main -- .github/workflows/ci.yml
-          git diff --check
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add tests/test_delivery_to_pilot.py tests/test_guided_journey.py .github/workflows/ci.yml
-          git add -A .ci-diagnostics
-          git commit -m "Update golden-path expectations for governance journey"
-          git push origin HEAD:fix/issue-58-final-journey-order
+      - name: Validate production Compose
+        run: SECRETS_DIR="$PWD/.ci-secrets/prod" docker compose --env-file .env.production.example -f compose.prod.yml config --quiet
+
+      - name: Validate staging Compose
+        run: STAGING_SECRETS_DIR="$PWD/.ci-secrets/staging" docker compose --env-file .env.staging.example -f compose.staging.yml config --quiet
+
+      - name: Build production image
+        run: docker build -t ki-radar:ci .
+
+      - name: Build development image
+        run: docker build -f Dockerfile.dev -t ki-radar-dev:ci .
