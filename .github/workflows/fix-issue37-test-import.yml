@@ -1,0 +1,31 @@
+name: Fix issue 37 test import
+
+on:
+  push:
+    branches:
+      - fix/issue-37-delivery-confirmation-roles
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/issue-37-delivery-confirmation-roles
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Remove unused test import
+        run: python scripts/fix_issue37_test_import.py
+      - name: Commit cleanup
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Remove unused issue 37 test import"
+          git push origin HEAD:fix/issue-37-delivery-confirmation-roles
