@@ -146,8 +146,7 @@ def create_review(*, use_case, actor, data) -> Review:
 
     early_exception_required = _early_go_live_required(use_case, review_data.get("decision"))
     early_exception_data = {
-        field_name: review_data.pop(field_name, None)
-        for field_name in EARLY_EXCEPTION_FIELDS
+        field_name: review_data.pop(field_name, None) for field_name in EARLY_EXCEPTION_FIELDS
     }
 
     for field in [
@@ -188,16 +187,12 @@ def create_review(*, use_case, actor, data) -> Review:
     if early_exception_required:
         EarlyGoLiveException.objects.create(
             review=review,
-            original_planned_pilot_end=early_exception_data[
-                "early_go_live_original_pilot_end"
-            ],
+            original_planned_pilot_end=early_exception_data["early_go_live_original_pilot_end"],
             decision_date=review.review_date,
             reason=review.rationale,
             evidence_basis=early_exception_data["early_go_live_evidence_basis"],
             unobserved_risks=early_exception_data["early_go_live_unobserved_risks"],
-            mitigation_measures=early_exception_data[
-                "early_go_live_mitigation_measures"
-            ],
+            mitigation_measures=early_exception_data["early_go_live_mitigation_measures"],
             confirmed_by=actor,
             confirmed_by_label=actor.get_display_name(),
             confirmed_role="KI-Koordinator",
