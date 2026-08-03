@@ -13,6 +13,12 @@
 <form method="post">
   {% csrf_token %}
   {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+  {% if form.assignment_warnings %}
+  <div class="alert alert-warning">
+    <strong>Bestehende Zuordnung prüfen</strong>
+    <ul class="mb-0 mt-2">{% for warning in form.assignment_warnings %}<li>{{ warning }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
   <section class="app-card mb-4">
     <div class="card-header"><strong>1. Architecture Vision und Value-Stream-Rahmen</strong><div class="small text-muted mt-1">Scope, Ziel, Stakeholder, Phasenrahmen und Leitplanken.</div></div>
     <div class="card-body"><div class="row g-3">

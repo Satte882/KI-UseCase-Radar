@@ -1,5 +1,12 @@
 from django import forms
+from django.db.models import Q
 
+from ki_radar.accounts.models import BusinessUnit, User
+from ki_radar.accounts.permissions import (
+    GROUP_BUSINESS_OWNER,
+    GROUP_COORDINATOR,
+    GROUP_TECH_ADMIN,
+)
 from ki_radar.core.taxonomy import BusinessDomain, ScreeningLevel
 
 from .focus import ValueStreamFocus, get_value_stream_focus
@@ -7,6 +14,28 @@ from .models import ProcessAnalysis, SolutionOption, ValueStream, ValueStreamSta
 
 FORM_CONTROL = "form-control"
 FORM_SELECT = "form-select"
+VALUE_STREAM_OWNER_GROUPS = (
+    GROUP_BUSINESS_OWNER,
+    GROUP_COORDINATOR,
+    GROUP_TECH_ADMIN,
+)
+
+
+def eligible_value_stream_owners():
+    return (
+        User.objects.filter(is_active=True, is_anonymized=False)
+        .filter(Q(is_superuser=True) | Q(groups__name__in=VALUE_STREAM_OWNER_GROUPS))
+        .distinct()
+        .order_by("last_name", "first_name", "username")
+    )
+
+
+def is_eligible_value_stream_owner(user) -> bool:
+    if user is None or not user.is_active or user.is_anonymized:
+        return False
+    return bool(
+        user.is_superuser or user.groups.filter(name__in=VALUE_STREAM_OWNER_GROUPS).exists()
+    )
 
 
 class StyledModelForm(forms.ModelForm):
@@ -93,6 +122,53 @@ class ValueStreamForm(StyledModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.assignment_warnings = []
+
+        business_units = BusinessUnit.objects.filter(is_active=True).order_by("name")
+        owners = eligible_value_stream_owners()
+
+        if self.instance.pk:
+            if self.instance.business_unit_id and not self.instance.business_unit.is_active:
+                business_units = BusinessUnit.objects.filter(
+                    Q(is_active=True) | Q(pk=self.instance.business_unit_id)
+                ).order_by("name")
+                self.assignment_warnings.append(
+                    "Die aktuell zugeordnete Organisationseinheit ist inaktiv. "
+                    "Bitte vor dem Speichern eine aktive Organisationseinheit auswählen."
+                )
+            if self.instance.owner_id and not is_eligible_value_stream_owner(self.instance.owner):
+                owners = (
+                    User.objects.filter(
+                        Q(
+                            is_active=True,
+                            is_anonymized=False,
+                            groups__name__in=VALUE_STREAM_OWNER_GROUPS,
+                        )
+                        | Q(is_active=True, is_anonymized=False, is_superuser=True)
+                        | Q(pk=self.instance.owner_id)
+                    )
+                    .distinct()
+                    .order_by("last_name", "first_name", "username")
+                )
+                self.assignment_warnings.append(
+                    "Die aktuell zugeordnete Person ist nicht mehr als Value-Stream-Owner "
+                    "geeignet. Bitte vor dem Speichern eine aktive berechtigte Person auswählen."
+                )
+
+        self.fields["business_unit"].queryset = business_units
+        self.fields["business_unit"].label = "Organisationseinheit"
+        self.fields["business_unit"].help_text = (
+            "Nur aktive Organisationseinheiten. Fehlende Einheiten können durch die "
+            "Administration gepflegt werden."
+        )
+        self.fields["owner"].queryset = owners
+        self.fields["owner"].label = "Value-Stream-Owner"
+        self.fields["owner"].help_text = (
+            "Aktive Business Owner, KI-Koordinatoren oder Technische Administratoren. "
+            "Die Rolle ist von Business Owner und Technical Owner "
+            "eines späteren Use Cases getrennt."
+        )
+
         focus = get_value_stream_focus(self.instance) if self.instance.pk else None
         if focus is not None and not self.is_bound:
             self.initial.update(
@@ -111,6 +187,23 @@ class ValueStreamForm(StyledModelForm):
         else:
             self.initial.setdefault("business_domain", BusinessDomain.OTHER)
             self.initial.setdefault("focus_status", ValueStreamFocus.Status.NOT_SCREENED)
+
+    def clean_business_unit(self):
+        business_unit = self.cleaned_data["business_unit"]
+        if not business_unit.is_active:
+            raise forms.ValidationError(
+                "Für einen Value Stream muss eine aktive Organisationseinheit gewählt werden."
+            )
+        return business_unit
+
+    def clean_owner(self):
+        owner = self.cleaned_data.get("owner")
+        if owner is not None and not is_eligible_value_stream_owner(owner):
+            raise forms.ValidationError(
+                "Der Value-Stream-Owner muss aktiv und als Business Owner, "
+                "KI-Koordinator oder Technischer Administrator berechtigt sein."
+            )
+        return owner
 
     def clean(self):
         cleaned = super().clean()
