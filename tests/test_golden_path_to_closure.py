@@ -58,17 +58,20 @@ def _record_measurement(use_case, *, actual=Decimal("2.8")):
     use_case.metric_measurement_period = "Pilot vom 01.07. bis 21.07.2026"
     use_case.metric_measured_at = timezone.localdate()
     use_case.metric_evidence_url = "https://example.invalid/evidence/supplier-pilot-result"
-    use_case.planned_pilot_end = timezone.localdate()
     use_case.save(
         update_fields=[
             "metric_actual",
             "metric_measurement_period",
             "metric_measured_at",
             "metric_evidence_url",
-            "planned_pilot_end",
             "updated_at",
         ]
     )
+
+
+def _complete_pilot_period(use_case):
+    use_case.planned_pilot_end = timezone.localdate()
+    use_case.save(update_fields=["planned_pilot_end", "updated_at"])
 
 
 def _go_live_data(use_case, *, exception=False, rationale="Pilotziel erreicht; produktiv setzen."):
@@ -130,6 +133,7 @@ def test_supplier_demo_runs_from_value_stream_to_closure(supplier_golden_path):
 
     _start_pilot(use_case, package, coordinator)
     _record_measurement(use_case)
+    _complete_pilot_period(use_case)
     go_live = create_review(
         use_case=use_case,
         actor=coordinator,
@@ -200,6 +204,7 @@ def test_go_live_requires_complete_measurement(
     use_case, package, coordinator, _owner = supplier_golden_path
     _start_pilot(use_case, package, coordinator)
     _record_measurement(use_case)
+    _complete_pilot_period(use_case)
     setattr(use_case, field_name, missing_value)
     use_case.save(update_fields=[field_name, "updated_at"])
 
@@ -219,6 +224,7 @@ def test_failed_target_exception_requires_exact_coordinator_role(
     use_case, package, coordinator, owner = supplier_golden_path
     _start_pilot(use_case, package, coordinator)
     _record_measurement(use_case, actual=Decimal("4"))
+    _complete_pilot_period(use_case)
     data = _go_live_data(
         use_case,
         exception=True,
@@ -242,6 +248,7 @@ def test_failed_target_exception_requires_concrete_rationale(supplier_golden_pat
     use_case, package, coordinator, _owner = supplier_golden_path
     _start_pilot(use_case, package, coordinator)
     _record_measurement(use_case, actual=Decimal("4"))
+    _complete_pilot_period(use_case)
 
     with pytest.raises(ValidationError, match="konkrete Entscheidungsbegründung"):
         create_review(
@@ -259,6 +266,7 @@ def test_service_rejects_manipulated_go_live_status_pair(supplier_golden_path):
     use_case, package, coordinator, _owner = supplier_golden_path
     _start_pilot(use_case, package, coordinator)
     _record_measurement(use_case)
+    _complete_pilot_period(use_case)
     data = _go_live_data(use_case)
     data["new_status"] = UseCase.Status.PILOT
 
@@ -286,6 +294,7 @@ def test_closure_requires_mandatory_information(
     use_case, package, coordinator, _owner = supplier_golden_path
     _start_pilot(use_case, package, coordinator)
     _record_measurement(use_case)
+    _complete_pilot_period(use_case)
     create_review(use_case=use_case, actor=coordinator, data=_go_live_data(use_case))
     use_case.refresh_from_db()
 
@@ -306,6 +315,7 @@ def test_service_rejects_manipulated_end_status_pair(supplier_golden_path):
     use_case, package, coordinator, _owner = supplier_golden_path
     _start_pilot(use_case, package, coordinator)
     _record_measurement(use_case)
+    _complete_pilot_period(use_case)
     create_review(use_case=use_case, actor=coordinator, data=_go_live_data(use_case))
     use_case.refresh_from_db()
     data = _end_data(new_status=UseCase.Status.OPERATION)
@@ -326,6 +336,7 @@ def test_manipulated_exception_post_is_rejected_for_technical_admin(
     use_case, package, coordinator, _owner = supplier_golden_path
     _start_pilot(use_case, package, coordinator)
     _record_measurement(use_case, actual=Decimal("4"))
+    _complete_pilot_period(use_case)
     client.force_login(technical_admin)
 
     response = client.post(
