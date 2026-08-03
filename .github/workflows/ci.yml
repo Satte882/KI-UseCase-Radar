@@ -63,10 +63,11 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen --dev
 
-      - name: Diagnose issue 58 journey tests
-        run: >-
-          uv run pytest -q --tb=short
-          tests/test_issue_58_value_stream_next_action.py
-          tests/test_issue_58_solution_next_action.py
-          tests/test_issue_58_decision_context.py
-          tests/test_issue_58_final_journey_order.py
+      - name: Diagnose full test suite
+        shell: bash
+        run: |
+          set +e
+          uv run pytest -q --tb=short --maxfail=10 > /tmp/pytest.log 2>&1
+          status=$?
+          tail -n 180 /tmp/pytest.log
+          exit "$status"
