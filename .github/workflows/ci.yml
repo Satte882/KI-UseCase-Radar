@@ -57,6 +57,7 @@ jobs:
         run: |
           python scripts/apply_issue60.py
           python scripts/fix_issue60_version.py
+          python scripts/fix_issue60_integration.py
       - name: Format and lint implementation
         run: |
           uv run ruff format ki_radar tests
@@ -69,7 +70,7 @@ jobs:
           uv run pytest -q tests/test_process_validation.py tests/test_process_analysis.py tests/test_architecture_discovery.py tests/test_issue_58_solution_next_action.py
       - name: Commit validated implementation and restore CI
         run: |
-          rm scripts/apply_issue60.py scripts/fix_issue60_version.py
+          rm scripts/apply_issue60.py scripts/fix_issue60_version.py scripts/fix_issue60_integration.py
           git show origin/main:.github/workflows/ci.yml > .github/workflows/ci.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
