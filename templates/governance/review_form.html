@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}{{ review_label }} – {{ use_case.short_id }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="eyebrow mb-2">{{ journey.path_label }} · Governance-Fachprüfung</div>
+    <h1 class="page-title">{{ review_label }}</h1>
+    <p class="page-subtitle">{{ use_case.short_id }} – {{ use_case.title }}</p>
+  </div>
+</div>
+{% include "includes/journey_stepper.html" %}
+{% include "includes/status_dimensions.html" %}
+<div class="row g-4">
+  <div class="col-xl-5">
+    <div class="app-card mb-4">
+      <div class="card-header"><strong>Herleitung aus dem Screening</strong></div>
+      <div class="card-body">
+        <dl class="row mb-0 small">
+          <dt class="col-5 text-muted">Screening</dt><dd class="col-7">{{ screening.assessment_date|date:"d.m.Y" }}</dd>
+          <dt class="col-5 text-muted">Grundlage</dt><dd class="col-7">{{ screening.basis_version }}</dd>
+          <dt class="col-5 text-muted">Erforderlich</dt><dd class="col-7">{% if review_required %}Ja{% else %}Nein{% endif %}</dd>
+          <dt class="col-5 text-muted">Screening-Ergebnis</dt><dd class="col-7">{{ screening.get_result_display }}</dd>
+        </dl>
+      </div>
+    </div>
+    {% if latest_review %}
+    <div class="app-card mb-4">
+      <div class="card-header"><strong>Letztes Prüfartefakt</strong></div>
+      <div class="card-body small">
+        <p class="mb-1"><strong>{{ latest_review.get_result_display }}</strong> vom {{ latest_review.reviewed_at|date:"d.m.Y" }}</p>
+        <p class="text-muted">{{ latest_review.rationale }}</p>
+        <a href="{{ latest_review.evidence_url }}" target="_blank" rel="noopener noreferrer">Nachweis öffnen</a>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  <div class="col-xl-7">
+    {% if review_required %}
+    <form method="post" class="app-card">
+      {% csrf_token %}
+      <div class="card-header"><strong>Neues Prüfartefakt dokumentieren</strong><div class="small text-muted mt-1">Eine neue Durchführung ergänzt die Historie und überschreibt frühere Nachweise nicht.</div></div>
+      <div class="card-body">
+        {{ form.non_field_errors }}
+        <div class="row g-3">
+          {% for field in form %}
+          <div class="col-12">
+            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+            {{ field }}
+            <div class="text-danger small">{{ field.errors }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="card-footer d-flex flex-wrap gap-2 justify-content-end">
+        <a class="btn btn-outline-secondary" href="{{ use_case.get_absolute_url }}">Abbrechen</a>
+        <button class="btn btn-primary" type="submit">Prüfung speichern und nächsten Schritt öffnen</button>
+      </div>
+    </form>
+    {% else %}
+    <div class="app-card">
+      <div class="card-header"><strong>Keine Fachprüfung erforderlich</strong></div>
+      <div class="card-body"><p class="mb-0 text-muted">Das aktuelle Governance-Screening leitet für diesen Bereich keine Prüfung ab. Es wird kein künstliches Abschlussartefakt erzeugt.</p></div>
+      <div class="card-footer"><a class="btn btn-primary" href="{{ use_case.get_absolute_url }}">Zum Use Case</a></div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
