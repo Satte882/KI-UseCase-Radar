@@ -50,3 +50,31 @@ class Review(TimeStampedModel):
 
     def __str__(self) -> str:
         return f"{self.use_case.short_id}: {self.get_decision_display()} ({self.review_date})"
+
+
+class EarlyGoLiveException(TimeStampedModel):
+    review = models.OneToOneField(
+        Review,
+        on_delete=models.CASCADE,
+        related_name="early_go_live_exception",
+    )
+    original_planned_pilot_end = models.DateField()
+    decision_date = models.DateField()
+    reason = models.TextField()
+    evidence_basis = models.TextField()
+    unobserved_risks = models.TextField()
+    mitigation_measures = models.TextField()
+    confirmed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="confirmed_early_go_live_exceptions",
+    )
+    confirmed_by_label = models.CharField(max_length=200)
+    confirmed_role = models.CharField(max_length=100)
+
+    class Meta:
+        ordering = ["-decision_date", "-created_at"]
+
+    def __str__(self) -> str:
+        return f"Vorzeitiges Go-live für {self.review.use_case.short_id} ({self.decision_date})"
