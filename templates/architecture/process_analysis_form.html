@@ -10,6 +10,14 @@
   <a class="btn btn-outline-secondary" href="{% if process_analysis %}{{ process_analysis.get_absolute_url }}{% else %}{{ stage.value_stream.get_absolute_url }}{% endif %}">Abbrechen</a>
 </div>
 
+<div class="app-card mb-4">
+  <div class="card-header"><strong>Quellkontext aus dem Value Stream</strong><div class="small text-muted mt-1">Referenziert, nicht in Prozessfelder kopiert. Änderungen bleiben am führenden Value Stream sichtbar.</div></div>
+  <div class="card-body"><div class="row g-4">
+    <div class="col-md-6"><div class="section-title">Im Scope</div><div class="text-preline">{{ stage.value_stream.scope_in }}</div></div>
+    <div class="col-md-6"><div class="section-title">Nicht im Scope</div><div class="text-preline">{{ stage.value_stream.scope_out|default:"Nicht ausdrücklich abgegrenzt" }}</div></div>
+  </div></div>
+</div>
+
 <form method="post" class="app-card">
   {% csrf_token %}
   <div class="card-header"><strong>Prozessanalyse · ADM Phase B</strong><div class="small text-muted mt-1">Der Fokus liegt auf dem fachlichen Ablauf und den Ursachen, nicht auf einer vorgezogenen Technologiewahl.</div></div>

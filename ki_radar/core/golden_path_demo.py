@@ -124,7 +124,8 @@ def seed_supplier_golden_path_demo() -> dict[str, int]:
             "created_by": coordinator,
             "trigger": "Ein beschaffungsrelevanter Bedarf wurde fachlich freigegeben.",
             "outcome": "Lieferant ist nachvollziehbar ausgewählt, Leistung erbracht und bezahlt.",
-            "scope": "Bedarf, Lieferantenauswahl, Bestellung, Lieferung, Leistung und Zahlung.",
+            "scope_in": "Bedarf, Lieferantenauswahl, Bestellung, Lieferung, Leistung und Zahlung.",
+            "scope_out": "Vertragsverhandlung und autonome Vergabeentscheidung.",
             "strategic_objective": "Beschaffungsentscheidungen beschleunigen und vereinheitlichen.",
             "stakeholders": "Einkauf, Fachbereich, Lieferanten, Compliance, IT und Buchhaltung.",
             "constraints": (

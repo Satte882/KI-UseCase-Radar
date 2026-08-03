@@ -24,7 +24,7 @@
       </div>
       {% if stream.focus %}<span class="badge {% if stream.focus.is_selected %}state-ready{% elif stream.focus.is_terminal %}state-blocked{% else %}state-review{% endif %}">{{ stream.focus.get_status_display }}</span>{% else %}<span class="badge state-blocked">Screening fehlt</span>{% endif %}
     </div>
-    <p class="text-muted mb-3">{{ stream.description|default:stream.scope|truncatechars:180 }}</p>
+    <p class="text-muted mb-3">{{ stream.description|default:stream.scope_in|truncatechars:180 }}</p>
     {% if stream.focus.capability %}<div class="small mb-3"><strong>Capability:</strong> {{ stream.focus.capability }}</div>{% endif %}
     <div class="architecture-card-meta">
       <span>{{ stream.stage_total }} Phasen</span>

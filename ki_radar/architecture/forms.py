@@ -105,7 +105,8 @@ class ValueStreamForm(StyledModelForm):
             "description",
             "trigger",
             "outcome",
-            "scope",
+            "scope_in",
+            "scope_out",
             "strategic_objective",
             "stakeholders",
             "constraints",
@@ -114,7 +115,8 @@ class ValueStreamForm(StyledModelForm):
             "description": forms.Textarea(attrs={"rows": 3}),
             "trigger": forms.Textarea(attrs={"rows": 3}),
             "outcome": forms.Textarea(attrs={"rows": 3}),
-            "scope": forms.Textarea(attrs={"rows": 3}),
+            "scope_in": forms.Textarea(attrs={"rows": 3}),
+            "scope_out": forms.Textarea(attrs={"rows": 3}),
             "strategic_objective": forms.Textarea(attrs={"rows": 3}),
             "stakeholders": forms.Textarea(attrs={"rows": 3}),
             "constraints": forms.Textarea(attrs={"rows": 3}),
@@ -161,6 +163,10 @@ class ValueStreamForm(StyledModelForm):
             "Nur aktive Organisationseinheiten. Fehlende Einheiten können durch die "
             "Administration gepflegt werden."
         )
+        self.fields["scope_in"].help_text = "Verbindlicher Umfang dieses Value Streams."
+        self.fields[
+            "scope_out"
+        ].help_text = "Optional, aber empfohlen: ausdrücklich ausgeschlossene Bereiche."
         self.fields["owner"].queryset = owners
         self.fields["owner"].label = "Value-Stream-Owner"
         self.fields["owner"].help_text = (

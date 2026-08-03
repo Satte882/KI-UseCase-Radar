@@ -19,7 +19,8 @@
 <div class="architecture-summary-grid mb-4">
   <section class="app-card card-body"><div class="section-title">Auslöser</div><p class="mb-0">{{ value_stream.trigger }}</p></section>
   <section class="app-card card-body"><div class="section-title">Ergebnis</div><p class="mb-0">{{ value_stream.outcome }}</p></section>
-  <section class="app-card card-body"><div class="section-title">Scope</div><p class="mb-0">{{ value_stream.scope }}</p></section>
+  <section class="app-card card-body"><div class="section-title">Im Scope</div><p class="mb-0">{{ value_stream.scope_in }}</p></section>
+  <section class="app-card card-body"><div class="section-title">Nicht im Scope</div><p class="mb-0">{{ value_stream.scope_out|default:"Nicht ausdrücklich abgegrenzt" }}</p></section>
   <section class="app-card card-body"><div class="section-title">Strategisches Ziel</div><p class="mb-0">{{ value_stream.strategic_objective|default:"Noch nicht dokumentiert" }}</p></section>
 </div>
 

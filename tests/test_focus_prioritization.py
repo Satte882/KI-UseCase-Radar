@@ -35,7 +35,7 @@ def test_selected_focus_requires_complete_screening():
             "description": "End-to-End-Test",
             "trigger": "Kundenbedarf",
             "outcome": "Erfüllter Bedarf",
-            "scope": "Vom Bedarf bis zum Ergebnis",
+            "scope_in": "Vom Bedarf bis zum Ergebnis",
             "business_domain": BusinessDomain.PROCUREMENT,
             "focus_status": ValueStreamFocus.Status.SELECTED,
         }
@@ -59,7 +59,7 @@ def test_value_stream_form_persists_selected_focus(seeded_demo):
             "description": "Fokusentscheidung testen",
             "trigger": "Bedarf entsteht",
             "outcome": "Bedarf gedeckt",
-            "scope": "Bedarf bis Bestellung",
+            "scope_in": "Bedarf bis Bestellung",
             "strategic_objective": "Durchlaufzeit senken",
             "stakeholders": "Einkauf",
             "constraints": "ERP bleibt führend",
@@ -94,7 +94,7 @@ def test_unselected_value_stream_cannot_start_deep_dive(client, seeded_demo):
         status=ValueStream.Status.ACTIVE,
         trigger="Auslöser",
         outcome="Ergebnis",
-        scope="Scope",
+        scope_in="Scope",
         created_by=seeded_demo,
     )
     stage = ValueStreamStage.objects.create(
