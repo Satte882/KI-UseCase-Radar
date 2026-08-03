@@ -1,3 +1,5 @@
+"""Focused tests for Technical-Owner source changes in Delivery Packages."""
+
 from types import SimpleNamespace
 
 from ki_radar.delivery.services import technical_owner_source_state
