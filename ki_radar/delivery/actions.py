@@ -7,7 +7,6 @@ from django.urls import reverse
 
 from ki_radar.accounts.permissions import is_coordinator
 from ki_radar.core.navigation import with_return_to
-from ki_radar.use_cases.models import UseCase
 from ki_radar.use_cases.permissions import can_edit_use_case
 
 from .models import DELIVERY_SECTION_DEFINITIONS, SECTION_REVIEW_REQUIREMENTS, DeliveryPackage
