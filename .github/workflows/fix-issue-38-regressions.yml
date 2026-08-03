@@ -1,11 +1,9 @@
 name: Fix issue 38 regressions
 
 on:
-  push:
+  pull_request:
     branches:
-      - fix/issue-38-delivery-role-source-diff
-    paths:
-      - .github/workflows/fix-issue-38-regressions.yml
+      - main
 
 permissions:
   contents: write
@@ -16,6 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: fix/issue-38-delivery-role-source-diff
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
@@ -68,4 +68,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "Fix issue #38 locking and pilot regressions"
-          git push
+          git push origin HEAD:fix/issue-38-delivery-role-source-diff
