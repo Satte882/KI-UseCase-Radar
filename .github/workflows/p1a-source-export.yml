@@ -1,0 +1,23 @@
+name: P1-A source export
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    if: github.head_ref == 'chore/p1a-source-export'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package repository
+        run: zip -qr source.zip . -x '.git/*'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p1a-source
+          path: source.zip
+          if-no-files-found: error
+          retention-days: 1
