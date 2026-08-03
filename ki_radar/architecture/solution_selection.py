@@ -76,11 +76,7 @@ def select_preferred_solution(
     rationale: str,
     actor,
 ) -> SolutionSelectionDecision:
-    process_analysis = (
-        ProcessAnalysis.objects.select_for_update()
-        .select_related("stage__value_stream__focus")
-        .get(pk=process_analysis.pk)
-    )
+    process_analysis = ProcessAnalysis.objects.select_for_update().get(pk=process_analysis.pk)
     if not can_edit_value_stream(actor, process_analysis.stage.value_stream):
         raise ValidationError("Für diese Lösungsentscheidung fehlt die Berechtigung.")
     focus = get_value_stream_focus(process_analysis.stage.value_stream)

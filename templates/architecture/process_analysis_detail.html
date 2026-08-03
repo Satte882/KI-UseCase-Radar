@@ -91,7 +91,7 @@
   </div>
   <div class="card-body">
     {% if not process_analysis.stage.value_stream.focus.is_selected %}<p class="text-muted">Lösungsoptionen können dokumentiert werden, eine bevorzugte Option und die Use-Case-Ableitung setzen jedoch eine positive Fokusentscheidung voraus.</p>{% endif %}
-    {% if journey.next_action.key == 'solution' and journey.next_action_label == 'Lösungsoptionen vergleichen' %}
+    {% if journey.next_action.key == 'solution' and journey.next_action.action_label == 'Lösungsoptionen vergleichen' %}
     <div class="alert alert-info"><strong>Lösungsentscheidung offen.</strong> Bewerten Sie die Optionen vollständig und wählen Sie die bevorzugte Lösung anschließend in der Vergleichsmatrix mit Begründung aus.</div>
     {% endif %}
     <div class="solution-option-grid">
@@ -99,7 +99,7 @@
       <section class="solution-option-card solution-option-{{ option.recommendation }}">
         <div class="d-flex justify-content-between align-items-start gap-2">
           <div><span class="badge badge-soft">{{ option.get_option_type_display }}</span><h2 class="h5 mt-2 mb-1">{{ option.name }}</h2></div>
-          <div class="text-end"><span class="badge {% if option.recommendation == 'preferred' %}state-ready{% elif option.recommendation == 'rejected' %}state-blocked%{% else %}state-review{% endif %}">{{ option.get_recommendation_display }}</span><div class="mt-1"><span class="badge badge-soft">{{ option.get_evaluation_status_display }}</span></div></div>
+          <div class="text-end"><span class="badge {% if option.recommendation == 'preferred' %}state-ready{% elif option.recommendation == 'rejected' %}state-blocked{% else %}state-review{% endif %}">{{ option.get_recommendation_display }}</span><div class="mt-1"><span class="badge badge-soft">{{ option.get_evaluation_status_display }}</span></div></div>
         </div>
         <p class="text-muted">{{ option.description }}</p>
         <dl class="stage-facts">
