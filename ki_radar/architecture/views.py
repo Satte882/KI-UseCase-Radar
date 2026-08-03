@@ -4,6 +4,11 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Max
 from django.shortcuts import get_object_or_404, redirect, render
 
+from ki_radar.accounts.permissions import (
+    GROUP_COORDINATOR,
+    in_group,
+    is_technical_admin,
+)
 from ki_radar.use_cases.intake_views import SESSION_KEY
 from ki_radar.use_cases.models import UseCase
 from ki_radar.use_cases.permissions import can_create_use_case
@@ -15,11 +20,18 @@ from ki_radar.use_cases.workflow import (
 from .focus import get_value_stream_focus
 from .forms import (
     ProcessAnalysisForm,
+    ProcessValidationForm,
     SolutionOptionForm,
     ValueStreamForm,
     ValueStreamStageForm,
 )
-from .models import ProcessAnalysis, SolutionOption, ValueStream, ValueStreamStage
+from .models import (
+    ProcessAnalysis,
+    ProcessValidation,
+    SolutionOption,
+    ValueStream,
+    ValueStreamStage,
+)
 from .permissions import can_edit_value_stream, can_manage_architecture
 
 SOLUTION_TYPE_MAP = {
@@ -46,6 +58,30 @@ PREFERRED_PREFILL_MESSAGE = (
 FOCUS_REQUIRED_MESSAGE = (
     "Der Value Stream muss zuerst vollständig bewertet und für einen Deep Dive ausgewählt werden."
 )
+PROCESS_VALIDATION_FIELDS = {
+    "name",
+    "scope_start",
+    "scope_end",
+    "trigger",
+    "outcome",
+    "current_flow",
+    "roles",
+    "systems",
+    "data_objects",
+    "business_rules",
+    "handoffs",
+    "bottlenecks",
+    "exceptions",
+    "baseline_metrics",
+}
+
+
+def _validator_role(user) -> str:
+    if is_technical_admin(user):
+        return "Technischer Administrator"
+    if in_group(user, GROUP_COORDINATOR):
+        return "KI-Koordinator"
+    return "Business Owner"
 
 
 def _can_edit_process(user, process_analysis: ProcessAnalysis) -> bool:
@@ -284,6 +320,7 @@ def process_analysis_detail(request, pk):
             "stage__value_stream__focus",
             "analyzed_by",
         ).prefetch_related(
+            "validations__validated_by",
             "solution_options",
             "use_case_origins__use_case",
         ),
@@ -296,6 +333,8 @@ def process_analysis_detail(request, pk):
             "process_analysis": process_analysis,
             "journey": build_process_analysis_journey(process_analysis, request.user),
             "can_edit": _can_edit_process(request.user, process_analysis),
+            "can_validate": _can_edit_process(request.user, process_analysis),
+            "latest_validation": process_analysis.validations.first(),
             "can_create_use_case": can_create_use_case(request.user),
         },
     )
@@ -314,9 +353,30 @@ def process_analysis_update(request, pk):
         return redirect(process_analysis.stage.value_stream)
     form = ProcessAnalysisForm(request.POST or None, instance=process_analysis)
     if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "Prozessanalyse wurde aktualisiert.")
-        return redirect(process_analysis)
+        validation_relevant_change = bool(
+            set(form.changed_data).intersection(PROCESS_VALIDATION_FIELDS)
+        )
+        had_validation = process_analysis.validations.filter(
+            process_version=process_analysis.version
+        ).exists()
+        updated_process = form.save(commit=False)
+        if validation_relevant_change:
+            updated_process.version += 1
+            if had_validation or process_analysis.status == ProcessAnalysis.Status.VALIDATED:
+                updated_process.status = ProcessAnalysis.Status.REVIEW_REQUIRED
+        updated_process.save()
+        if (
+            validation_relevant_change
+            and updated_process.status == ProcessAnalysis.Status.REVIEW_REQUIRED
+        ):
+            messages.warning(
+                request,
+                "Wesentliche Prozessinformationen wurden geändert. "
+                "Die aktuelle Version muss erneut validiert werden.",
+            )
+        else:
+            messages.success(request, "Prozessanalyse wurde aktualisiert.")
+        return redirect(updated_process)
     return render(
         request,
         "architecture/process_analysis_form.html",
@@ -326,6 +386,39 @@ def process_analysis_update(request, pk):
             "process_analysis": process_analysis,
             "title": "Prozessanalyse bearbeiten",
         },
+    )
+
+
+@login_required
+def process_analysis_validate(request, pk):
+    process_analysis = get_object_or_404(
+        ProcessAnalysis.objects.select_related("stage__value_stream"),
+        pk=pk,
+    )
+    if not _can_edit_process(request.user, process_analysis):
+        raise PermissionDenied
+    existing = process_analysis.validations.filter(process_version=process_analysis.version).first()
+    if existing is not None:
+        messages.info(request, "Diese Prozessversion ist bereits nachvollziehbar validiert.")
+        return redirect(process_analysis)
+    form = ProcessValidationForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        ProcessValidation.objects.create(
+            process_analysis=process_analysis,
+            process_version=process_analysis.version,
+            validated_by=request.user,
+            validator_role=_validator_role(request.user),
+            note=form.cleaned_data["note"],
+            evidence_url=form.cleaned_data["evidence_url"],
+        )
+        process_analysis.status = ProcessAnalysis.Status.VALIDATED
+        process_analysis.save(update_fields=["status", "updated_at"])
+        messages.success(request, "Die aktuelle Prozessversion wurde validiert.")
+        return redirect(process_analysis)
+    return render(
+        request,
+        "architecture/process_validation_form.html",
+        {"form": form, "process_analysis": process_analysis},
     )
 
 

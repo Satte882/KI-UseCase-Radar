@@ -272,6 +272,17 @@ class ValueStreamStageForm(StyledModelForm):
 
 
 class ProcessAnalysisForm(StyledModelForm):
+    def clean_status(self):
+        status = self.cleaned_data["status"]
+        if status == ProcessAnalysis.Status.VALIDATED and (
+            not self.instance.pk or self.instance.status != ProcessAnalysis.Status.VALIDATED
+        ):
+            raise forms.ValidationError(
+                "Der Status 'Ist-Prozess validiert' wird ausschließlich über die "
+                "eigenständige Validierungsaktion gesetzt."
+            )
+        return status
+
     class Meta:
         model = ProcessAnalysis
         fields = [
@@ -304,6 +315,22 @@ class ProcessAnalysisForm(StyledModelForm):
             "baseline_metrics": forms.Textarea(attrs={"rows": 4}),
             "target_state_principles": forms.Textarea(attrs={"rows": 5}),
         }
+
+
+class ProcessValidationForm(forms.Form):
+    note = forms.CharField(
+        required=False,
+        label="Validierungsnotiz",
+        widget=forms.Textarea(attrs={"rows": 4, "class": FORM_CONTROL}),
+        help_text="Optional: geprüfte Grundlage, Einschränkungen oder Hinweise.",
+    )
+    evidence_url = forms.URLField(
+        required=False,
+        assume_scheme="https",
+        label="Nachweis",
+        widget=forms.URLInput(attrs={"class": FORM_CONTROL}),
+        help_text="Optionaler Link auf Protokoll, Workshop-Ergebnis oder andere Evidenz.",
+    )
 
 
 class SolutionOptionForm(StyledModelForm):

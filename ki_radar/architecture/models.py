@@ -5,6 +5,7 @@ import uuid
 from django.conf import settings
 from django.db import models
 from django.urls import reverse
+from django.utils import timezone
 
 from ki_radar.accounts.models import BusinessUnit
 from ki_radar.core.models import TimeStampedModel
@@ -101,6 +102,7 @@ class ValueStreamStage(TimeStampedModel):
 class ProcessAnalysis(TimeStampedModel):
     class Status(models.TextChoices):
         DRAFT = "draft", "Entwurf"
+        REVIEW_REQUIRED = "review_required", "Prüfbedürftig"
         VALIDATED = "validated", "Ist-Prozess validiert"
         TARGET_DEFINED = "target_defined", "Zielbild beschrieben"
 
@@ -112,6 +114,7 @@ class ProcessAnalysis(TimeStampedModel):
     )
     name = models.CharField(max_length=200)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
+    version = models.PositiveIntegerField(default=1, editable=False)
     scope_start = models.TextField(verbose_name="Prozessstart")
     scope_end = models.TextField(verbose_name="Prozessende")
     trigger = models.TextField(verbose_name="Auslöser")
@@ -144,6 +147,37 @@ class ProcessAnalysis(TimeStampedModel):
 
     def get_absolute_url(self):
         return reverse("architecture:process_analysis_detail", kwargs={"pk": self.pk})
+
+
+class ProcessValidation(TimeStampedModel):
+    process_analysis = models.ForeignKey(
+        ProcessAnalysis,
+        on_delete=models.CASCADE,
+        related_name="validations",
+    )
+    process_version = models.PositiveIntegerField()
+    validated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="process_validations",
+    )
+    validator_role = models.CharField(max_length=100)
+    validated_at = models.DateTimeField(default=timezone.now, editable=False)
+    note = models.TextField(blank=True, verbose_name="Validierungsnotiz")
+    evidence_url = models.URLField(blank=True, verbose_name="Nachweis")
+
+    class Meta:
+        ordering = ["-validated_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["process_analysis", "process_version"],
+                name="unique_process_validation_version",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.process_analysis.name} · Validierung v{self.process_version}"
 
 
 class SolutionOption(TimeStampedModel):
