@@ -88,6 +88,12 @@ def assessment_create(request, use_case_id):
                 )
             use_case._history_user = request.user
             use_case.save(update_fields=update_fields)
+
+            decision_assessment = use_case.decision_assessments.first()
+            if decision_assessment is not None:
+                decision_assessment.governance_precheck_completed = True
+                decision_assessment.save(update_fields=["governance_precheck_completed"])
+
             messages.success(
                 request,
                 "Governance-Screening wurde gespeichert. Erforderliche Fachprüfungen sind neu geöffnet.",
