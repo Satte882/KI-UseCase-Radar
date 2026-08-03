@@ -37,7 +37,7 @@ def _complete_process(coordinator) -> ProcessAnalysis:
         created_by=coordinator,
         trigger="Ein Bedarf liegt vor.",
         outcome="Ein Ergebnis wurde erzeugt.",
-        scope="Vom Bedarf bis zum Ergebnis.",
+        scope_in="Vom Bedarf bis zum Ergebnis.",
         status=ValueStream.Status.ACTIVE,
     )
     ValueStreamFocus.objects.create(

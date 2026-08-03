@@ -26,7 +26,7 @@ def form_data(business_unit, owner):
         "description": "End-to-End-Ablauf",
         "trigger": "Kundenauftrag geht ein",
         "outcome": "Zahlung ist verbucht",
-        "scope": "Vom Auftragseingang bis zum Zahlungseingang",
+        "scope_in": "Vom Auftragseingang bis zum Zahlungseingang",
         "strategic_objective": "Durchlaufzeit reduzieren",
         "stakeholders": "Vertrieb und Finance",
         "constraints": "Bestehendes ERP",
@@ -102,7 +102,7 @@ def test_legacy_assignments_remain_visible_and_are_flagged():
         owner=legacy_owner,
         trigger="Alt",
         outcome="Alt",
-        scope="Alt",
+        scope_in="Alt",
     )
 
     form = ValueStreamForm(instance=value_stream)

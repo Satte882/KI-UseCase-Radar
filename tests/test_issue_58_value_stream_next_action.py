@@ -32,7 +32,7 @@ def _selected_value_stream(coordinator, *, status: str) -> ValueStream:
         created_by=coordinator,
         trigger="Ein Bedarf liegt vor.",
         outcome="Ein Ergebnis wurde erzeugt.",
-        scope="Vom Bedarf bis zum Ergebnis.",
+        scope_in="Vom Bedarf bis zum Ergebnis.",
         status=status,
     )
     ValueStreamFocus.objects.create(

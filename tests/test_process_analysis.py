@@ -24,7 +24,7 @@ def architecture_context(owner, business_unit):
         created_by=owner,
         trigger="Freigegebener Bedarf",
         outcome="Bezahlte Leistung",
-        scope="Bedarf bis Zahlung",
+        scope_in="Bedarf bis Zahlung",
         status=ValueStream.Status.ACTIVE,
     )
     ValueStreamFocus.objects.update_or_create(

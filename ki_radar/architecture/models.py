@@ -40,7 +40,8 @@ class ValueStream(TimeStampedModel):
     )
     trigger = models.TextField(verbose_name="Auslöser")
     outcome = models.TextField(verbose_name="Ergebnis für den Empfänger")
-    scope = models.TextField(verbose_name="Scope und Abgrenzung")
+    scope_in = models.TextField(verbose_name="Im Scope")
+    scope_out = models.TextField(blank=True, verbose_name="Nicht im Scope")
     strategic_objective = models.TextField(
         blank=True,
         verbose_name="Strategisches Ziel",

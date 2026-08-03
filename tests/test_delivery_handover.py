@@ -217,7 +217,7 @@ def test_delivery_package_uses_optional_architecture_origin(
         created_by=owner,
         trigger="Freigegebener Bedarf",
         outcome="Bezahlte Leistung",
-        scope="Bedarf bis Zahlung",
+        scope_in="Bedarf bis Zahlung",
         constraints="ERP bleibt führendes System.",
     )
     stage = ValueStreamStage.objects.create(
