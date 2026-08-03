@@ -17,7 +17,7 @@ from .models import (
     DeliverySectionReview,
 )
 from .permissions import (
-    can_transition_package,
+    can_resolve_role_source,
     can_use_admin_confirmation_override,
     confirmation_role_label,
     reviewer_roles,
@@ -565,7 +565,9 @@ def review_delivery_section(
             review.admin_override_confirmed = False
 
         assigned_owner_id = (
-            package.use_case.business_owner_id if role == "business" else package.technical_owner_id
+            package.use_case.business_owner_id
+            if role == "business"
+            else package.technical_owner_id
         )
         setattr(review, f"{role}_confirmed_by", actor)
         setattr(review, f"{role}_confirmed_at", now)
@@ -623,9 +625,9 @@ def resolve_technical_owner_source_change(
     rationale: str,
     actor,
 ) -> DeliveryRoleSourceDecision:
-    if not can_transition_package(actor):
+    if not can_resolve_role_source(actor, package):
         raise ValidationError(
-            "Nur die KI-Koordination darf Quellenänderungen im Delivery Package entscheiden."
+            "Für diese Entscheidung zur Rollenquelle fehlt die Berechtigung."
         )
     package = DeliveryPackage.objects.select_for_update().get(pk=package.pk)
     if package.status == DeliveryPackage.Status.HANDED_OVER:
@@ -663,7 +665,15 @@ def resolve_technical_owner_source_change(
     else:
         adoption = "kept"
     refresh_technical_owner_source_snapshot(package, adoption=adoption)
-    reset_section_reviews(package, {"architecture_and_data"})
+    reset_section_reviews(
+        package,
+        {
+            "solution_direction",
+            "architecture_and_data",
+            "requirements_and_governance",
+            "delivery_control",
+        },
+    )
     return decision
 
 
@@ -711,10 +721,10 @@ __all__ = [
     "latest_final_approval",
     "mark_package_ready",
     "missing_ready_fields",
-    "refresh_technical_owner_source_snapshot",
     "render_delivery_markdown",
+    "refresh_technical_owner_source_snapshot",
     "reset_section_reviews",
     "resolve_technical_owner_source_change",
-    "review_delivery_section",
     "technical_owner_source_state",
+    "review_delivery_section",
 ]
