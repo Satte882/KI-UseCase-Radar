@@ -2,8 +2,13 @@
 {% block title %}Entscheidung – {{ use_case.short_id }}{% endblock %}
 {% block content %}
 <div class="page-header">
-  <div><div class="eyebrow mb-2">{{ use_case.short_id }} · Verbindliche Entscheidung</div><h1 class="page-title">{{ use_case.title }}</h1><p class="page-subtitle">Bewertung und Entscheidung sind personell getrennt. Positive Entscheidungen werden zusätzlich gegen Pflicht-Evidenz und Governance-Prüfungen validiert.</p></div>
+  <div>
+    <div class="eyebrow mb-2">{{ journey.path_label }} · {{ use_case.short_id }} · Verbindliche Entscheidung</div>
+    <h1 class="page-title">{{ use_case.title }}</h1>
+    <p class="page-subtitle">Bewertung und Entscheidung sind personell getrennt. Positive Entscheidungen werden zusätzlich gegen Pflicht-Evidenz und Governance-Prüfungen validiert.</p>
+  </div>
 </div>
+{% include "includes/journey_stepper.html" %}
 <div class="row g-4">
   <div class="col-xl-5">
     <div class="app-card mb-4">
