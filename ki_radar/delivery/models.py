@@ -6,6 +6,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.urls import reverse
+from django.utils import timezone
 
 from ki_radar.core.models import TimeStampedModel
 
@@ -41,6 +42,13 @@ class DeliveryPackage(TimeStampedModel):
         "use_cases.UseCase",
         on_delete=models.CASCADE,
         related_name="delivery_packages",
+    )
+    technical_owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="technical_delivery_packages",
     )
     version = models.PositiveIntegerField()
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
@@ -239,3 +247,47 @@ class DeliverySectionReview(TimeStampedModel):
     @property
     def confirmations_complete(self) -> bool:
         return self.role_confirmations_complete
+
+
+class DeliveryRoleSourceDecision(TimeStampedModel):
+    class RoleKey(models.TextChoices):
+        TECHNICAL_OWNER = "technical_owner", "Technical Owner"
+
+    class Decision(models.TextChoices):
+        ADOPT_SOURCE = "adopt_source", "Neue Zuordnung übernehmen"
+        KEEP_PACKAGE = "keep_package", "Package-Zuordnung beibehalten"
+
+    delivery_package = models.ForeignKey(
+        DeliveryPackage,
+        on_delete=models.CASCADE,
+        related_name="role_source_decisions",
+    )
+    role_key = models.CharField(max_length=40, choices=RoleKey.choices)
+    old_value_id = models.CharField(max_length=64, blank=True)
+    old_value_label = models.CharField(max_length=255, blank=True)
+    new_value_id = models.CharField(max_length=64, blank=True)
+    new_value_label = models.CharField(max_length=255, blank=True)
+    decision = models.CharField(max_length=30, choices=Decision.choices)
+    rationale = models.TextField()
+    decided_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="delivery_role_source_decisions",
+    )
+    decided_at = models.DateTimeField(default=timezone.now, editable=False)
+    source_updated_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-decided_at", "-created_at"]
+
+    def __str__(self) -> str:
+        return f"{self.delivery_package} · {self.get_role_key_display()}"
+
+    def save(self, *args, **kwargs):
+        if self.pk and type(self).objects.filter(pk=self.pk).exists():
+            raise ValidationError("Eine dokumentierte Quellenentscheidung ist unveränderlich.")
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError("Eine dokumentierte Quellenentscheidung ist unveränderlich.")

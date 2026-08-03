@@ -32,7 +32,9 @@ from .services import (
     hand_over_package,
     mark_package_ready,
     render_delivery_markdown,
+    resolve_technical_owner_source_change,
     review_delivery_section,
+    technical_owner_source_state,
 )
 
 METHODOLOGY_PATH = Path(settings.BASE_DIR) / "docs" / "DELIVERY_METHODOLOGY.md"
@@ -48,6 +50,7 @@ def _package_queryset():
         "use_case__business_unit",
         "use_case__business_owner",
         "use_case__technical_owner",
+        "technical_owner",
         "use_case__classification",
         "generated_from_decision__assessment",
         "generated_from_decision__condition_owner",
@@ -58,6 +61,7 @@ def _package_queryset():
         "section_reviews__reviewed_by",
         "section_reviews__business_confirmed_by",
         "section_reviews__technical_confirmed_by",
+        "role_source_decisions__decided_by",
         "use_case__decision_assessments",
         "use_case__approval_decisions",
         "use_case__delivery_packages",
@@ -187,9 +191,10 @@ def package_detail(request, pk):
     finding_actions = build_actionable_findings(package, request.user)
     primary_finding = primary_delivery_action(package, request.user)
     role_collapse = bool(
-        package.use_case.technical_owner_id
-        and package.use_case.technical_owner_id == package.use_case.business_owner_id
+        package.technical_owner_id
+        and package.technical_owner_id == package.use_case.business_owner_id
     )
+    technical_owner_change = technical_owner_source_state(package)
     return render(
         request,
         "delivery/package_detail.html",
@@ -204,6 +209,12 @@ def package_detail(request, pk):
             "section_rows": section_rows,
             "owner_role_collapse": role_collapse,
             "delivery_source_rows": delivery_source_differences(package),
+            "technical_owner_source_change": (
+                technical_owner_change
+                if technical_owner_change and technical_owner_change["source_changed"]
+                else None
+            ),
+            "role_source_decisions": package.role_source_decisions.all(),
         },
     )
 
@@ -265,6 +276,26 @@ def package_section_review(request, pk, section_key):
     else:
         messages.success(request, "Sektionsprüfung wurde gespeichert.")
     return redirect(f"{package.get_absolute_url()}#section-{section_key}")
+
+
+@login_required
+@require_POST
+def package_resolve_technical_owner_source(request, pk):
+    package = get_object_or_404(_package_queryset(), pk=pk)
+    if not can_transition_package(request.user):
+        raise PermissionDenied
+    try:
+        resolve_technical_owner_source_change(
+            package=package,
+            action=request.POST.get("action", ""),
+            rationale=request.POST.get("rationale", ""),
+            actor=request.user,
+        )
+    except ValidationError as exc:
+        messages.error(request, _validation_message(exc))
+    else:
+        messages.success(request, "Die Änderung des Technical Owners wurde entschieden.")
+    return redirect(f"{package.get_absolute_url()}#technical-owner-source-change")
 
 
 @login_required

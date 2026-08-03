@@ -47,7 +47,7 @@ def can_confirm_business(user, package: DeliveryPackage, section_key: str) -> bo
 def can_confirm_technical(user, package: DeliveryPackage, section_key: str) -> bool:
     return bool(
         section_key in TECHNICAL_SECTIONS
-        and (package.use_case.technical_owner_id == user.id or is_coordinator(user))
+        and (package.technical_owner_id == user.id or is_coordinator(user))
     )
 
 
