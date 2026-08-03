@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from ki_radar.core.navigation import safe_internal_url, with_return_to
-from ki_radar.delivery.actions import build_actionable_findings, primary_delivery_action
+from ki_radar.delivery.actions import primary_delivery_action
 from ki_radar.delivery.forms import DeliveryPackageForm
 from ki_radar.delivery.services import create_delivery_package
 from ki_radar.reporting.templatetags.worklist_tags import worklist_rows
