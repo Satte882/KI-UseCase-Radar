@@ -26,6 +26,7 @@ from .governance_status import build_governance_statuses
 from .models import UseCase
 from .permissions import can_create_use_case, can_edit_use_case, can_view_use_case
 from .services import current_decision_check, decision_due_date
+from .status_dimensions import build_use_case_status_dimensions
 from .workflow import build_use_case_journey
 
 
@@ -112,6 +113,7 @@ def _detail_context(request, use_case: UseCase, *, copilot_analysis: str = "") -
     history = use_case.history.select_related("history_user").order_by("-history_date")[:50]
     decision_check = current_decision_check(use_case)
     blocker_details = build_blocker_details(use_case, decision_check.blockers)
+    journey = build_use_case_journey(use_case, request.user)
     try:
         architecture_origin = use_case.architecture_origin
     except ObjectDoesNotExist:
@@ -119,7 +121,8 @@ def _detail_context(request, use_case: UseCase, *, copilot_analysis: str = "") -
     return {
         "use_case": use_case,
         "architecture_origin": architecture_origin,
-        "journey": build_use_case_journey(use_case, request.user),
+        "journey": journey,
+        "status_dimensions": build_use_case_status_dimensions(use_case, journey),
         "history": history,
         "governance_statuses": build_governance_statuses(use_case),
         "can_edit": can_edit_use_case(request.user, use_case),
