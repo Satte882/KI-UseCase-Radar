@@ -138,8 +138,11 @@ def _guide_solution_choice(
         option_count = len(options)
         guided_solution = replace(
             solution_step,
-            url=f"{process_analysis.get_absolute_url()}#loesungsoptionen",
-            action_label="Lösungsoptionen prüfen",
+            url=reverse(
+                "architecture:solution_option_compare",
+                kwargs={"pk": process_analysis.pk},
+            ),
+            action_label="Lösungsoptionen vergleichen",
             reason=(
                 f"{option_count} Lösungsoption"
                 f"{'en liegen' if option_count != 1 else ' liegt'} vor; "
