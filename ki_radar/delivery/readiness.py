@@ -145,7 +145,7 @@ def _source_staleness_findings(
                 "warning",
                 (
                     f"Quelle für „{label}“ geändert: "
-                    f"„{snapshot_text or '–'}“ → „{current_text or '–'}“."
+                    f"„{snapshot_text or '-'}“ → „{current_text or '-'}“."
                 ),
             )
         )

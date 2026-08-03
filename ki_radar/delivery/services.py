@@ -608,11 +608,11 @@ def hand_over_package(package: DeliveryPackage, actor) -> None:
 __all__ = [
     "APPROVED_STATUSES",
     "build_initial_delivery_data",
-    "delivery_source_differences",
     "create_delivery_package",
     "current_delivery_package",
     "current_handed_over_package",
     "delivery_eligibility",
+    "delivery_source_differences",
     "hand_over_package",
     "latest_final_approval",
     "mark_package_ready",
