@@ -604,7 +604,7 @@ def test_technical_owner_source_change_can_be_kept_and_handover_version_is_immut
 
 
 @pytest.mark.django_db
-def test_technical_owner_source_change_requires_coordinator_permission(
+def test_directly_involved_owners_can_resolve_technical_owner_source_change(
     owner, other_owner, coordinator, business_unit
 ):
     use_case = make_approved_use_case(
@@ -617,12 +617,39 @@ def test_technical_owner_source_change_requires_coordinator_permission(
     use_case.technical_owner = owner
     use_case.save(update_fields=["technical_owner", "updated_at"])
 
-    with pytest.raises(ValidationError, match="Nur die KI-Koordination"):
+    decision = resolve_technical_owner_source_change(
+        package=package,
+        action=DeliveryRoleSourceDecision.Decision.ADOPT_SOURCE,
+        rationale="Der neue Technical Owner übernimmt die aktuelle Package-Version.",
+        actor=owner,
+    )
+
+    package.refresh_from_db()
+    assert package.technical_owner == owner
+    assert decision.decided_by == owner
+
+
+@pytest.mark.django_db
+def test_unrelated_user_cannot_resolve_technical_owner_source_change(
+    owner, other_owner, coordinator, business_unit, django_user_model
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    use_case.technical_owner = owner
+    use_case.save(update_fields=["technical_owner", "updated_at"])
+    unrelated = django_user_model.objects.create_user(username="unrelated-role-decider")
+
+    with pytest.raises(ValidationError, match="fehlt die Berechtigung"):
         resolve_technical_owner_source_change(
             package=package,
             action=DeliveryRoleSourceDecision.Decision.ADOPT_SOURCE,
             rationale="Unberechtigter Übernahmeversuch.",
-            actor=owner,
+            actor=unrelated,
         )
 
 

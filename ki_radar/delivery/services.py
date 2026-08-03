@@ -17,7 +17,7 @@ from .models import (
     DeliverySectionReview,
 )
 from .permissions import (
-    can_transition_package,
+    can_resolve_role_source,
     can_use_admin_confirmation_override,
     confirmation_role_label,
     reviewer_roles,
@@ -37,6 +37,13 @@ SECTION_ORIGINS = {
     "requirements_and_governance": DeliverySectionReview.ContentOrigin.NEW,
     "acceptance_and_measurement": DeliverySectionReview.ContentOrigin.MIXED,
     "delivery_control": DeliverySectionReview.ContentOrigin.MIXED,
+}
+
+TECHNICAL_OWNER_ADOPTION_RESET_SECTIONS = {
+    "solution_direction",
+    "architecture_and_data",
+    "requirements_and_governance",
+    "delivery_control",
 }
 
 
@@ -623,13 +630,11 @@ def resolve_technical_owner_source_change(
     rationale: str,
     actor,
 ) -> DeliveryRoleSourceDecision:
-    if not can_transition_package(actor):
-        raise ValidationError(
-            "Nur die KI-Koordination darf Quellenänderungen im Delivery Package entscheiden."
-        )
     package = DeliveryPackage.objects.select_for_update().get(pk=package.pk)
     if package.status == DeliveryPackage.Status.HANDED_OVER:
         raise ValidationError("Ein übergebenes Delivery Package ist unveränderlich.")
+    if not can_resolve_role_source(actor, package):
+        raise ValidationError("Für diese Entscheidung zur Rollenquelle fehlt die Berechtigung.")
     reason = rationale.strip()
     if not reason:
         raise ValidationError("Für die Übernahmeentscheidung ist eine Begründung erforderlich.")
@@ -663,7 +668,7 @@ def resolve_technical_owner_source_change(
     else:
         adoption = "kept"
     refresh_technical_owner_source_snapshot(package, adoption=adoption)
-    reset_section_reviews(package, {"architecture_and_data"})
+    reset_section_reviews(package, TECHNICAL_OWNER_ADOPTION_RESET_SECTIONS)
     return decision
 
 
