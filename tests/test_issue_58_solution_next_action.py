@@ -81,7 +81,9 @@ def _complete_process(coordinator) -> ProcessAnalysis:
         bottlenecks="Unvollständige Angaben verursachen Nacharbeit.",
         exceptions="Sonderfälle benötigen eine manuelle Prüfung.",
         baseline_metrics="Zwanzig Minuten je Vorgang.",
-        target_state_principles="Einfache Fälle standardisieren, Entscheidungen beim Menschen belassen.",
+        target_state_principles=(
+            "Einfache Fälle standardisieren, Entscheidungen beim Menschen belassen."
+        ),
         analyzed_by=coordinator,
     )
 
@@ -135,6 +137,22 @@ def test_candidate_option_keeps_solution_choice_current(coordinator):
     assert journey.next_action.url == f"{process.get_absolute_url()}#loesungsoptionen"
     assert "1 Lösungsoption liegt vor" in journey.next_action.reason
     assert steps["use_case"].state == "upcoming"
+
+
+@pytest.mark.django_db
+def test_preferred_ai_option_advances_to_use_case(coordinator):
+    process = _complete_process(coordinator)
+    option = _candidate_option(process, coordinator)
+    option.option_type = SolutionOption.OptionType.ASSISTANT
+    option.recommendation = SolutionOption.Recommendation.PREFERRED
+    option.save(update_fields=["option_type", "recommendation", "updated_at"])
+
+    journey = build_process_analysis_journey(process, coordinator)
+    steps = {step.key: step for step in journey.steps}
+
+    assert steps["solution"].state == "complete"
+    assert journey.next_action == steps["use_case"]
+    assert journey.next_action.state == "current"
 
 
 @pytest.mark.django_db
