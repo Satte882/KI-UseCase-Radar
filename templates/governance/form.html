@@ -3,12 +3,18 @@
 {% block content %}
 <div class="page-header">
   <div>
-    <div class="eyebrow mb-2">Governance</div>
+    <div class="eyebrow mb-2">{{ journey.path_label }} · Governance</div>
     <h1 class="page-title">Governance-Screening</h1>
     <p class="page-subtitle">{{ use_case.short_id }} – {{ use_case.title }}</p>
   </div>
 </div>
-<div class="alert alert-warning">Dieses Screening ist keine rechtliche AI-Act-Klassifizierung und ersetzt keine Fachprüfung.</div>
+{% include "includes/journey_stepper.html" %}
+{% include "includes/status_dimensions.html" %}
+<div class="alert alert-warning">Dieses Screening bestimmt die erforderlichen Fachprüfungen. Es ist keine rechtliche AI-Act-Klassifizierung und ersetzt keine Datenschutz-, Security- oder Rechtsprüfung.</div>
+<div class="app-card mb-4">
+  <div class="card-header"><strong>Geführter Prüfpfad</strong></div>
+  <div class="card-body small">Governance-Screening → erforderliche Datenschutzprüfung → Informationssicherheitsprüfung → Rechtsprüfung → Freigabeentscheidung</div>
+</div>
 <form method="post" class="app-card">
   {% csrf_token %}
   {{ form.non_field_errors }}
@@ -27,7 +33,7 @@
     </div>
   </div>
   <div class="card-footer d-flex flex-wrap gap-2">
-    <button class="btn btn-primary" type="submit">Screening speichern</button>
+    <button class="btn btn-primary" type="submit">Screening speichern und Prüfpfad fortsetzen</button>
     <a class="btn btn-outline-secondary" href="{{ use_case.get_absolute_url }}">Abbrechen</a>
   </div>
 </form>
