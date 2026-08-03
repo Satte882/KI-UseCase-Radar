@@ -24,9 +24,14 @@ from .copilot import CopilotUnavailable, analyze_use_case
 from .forms import UseCaseForm
 from .governance_status import build_governance_statuses
 from .models import UseCase
+from .outcome_workspace import build_outcome_workspace_journey
 from .permissions import can_create_use_case, can_edit_use_case, can_view_use_case
 from .services import decision_due_date
-from .status_dimensions import build_use_case_status_dimensions, current_work_check
+from .status_dimensions import (
+    WorkCheck,
+    build_use_case_status_dimensions,
+    current_work_check,
+)
 from .workflow import build_use_case_journey
 
 
@@ -109,11 +114,49 @@ def use_case_list(request):
     return render(request, "use_cases/list.html", context)
 
 
+def _detail_journey(use_case: UseCase, user):
+    if use_case.status in {
+        UseCase.Status.PILOT,
+        UseCase.Status.OPERATION,
+        UseCase.Status.ENDED,
+    }:
+        return build_outcome_workspace_journey(use_case, user)
+    return build_use_case_journey(use_case, user)
+
+
+def _detail_decision_check(use_case: UseCase, journey) -> tuple[WorkCheck, list]:
+    decision_check = current_work_check(use_case)
+    current_step = journey.next_action
+    pilot_work_is_current = bool(
+        use_case.status == UseCase.Status.PILOT
+        and current_step is not None
+        and current_step.key in {"pilot", "measurement"}
+    )
+    if not pilot_work_is_current:
+        return decision_check, build_blocker_details(use_case, decision_check.blockers)
+
+    later_requirements = [
+        f"Spätere Go-live-Voraussetzung: {blocker}" for blocker in decision_check.blockers
+    ]
+    later_requirements.extend(
+        f"Späterer Go-live-Hinweis: {warning}" for warning in decision_check.warnings
+    )
+    return (
+        WorkCheck(
+            title="Spätere Go-live-Voraussetzungen",
+            state="review",
+            state_label="Späteres Gate",
+            blockers=[],
+            warnings=later_requirements,
+        ),
+        [],
+    )
+
+
 def _detail_context(request, use_case: UseCase, *, copilot_analysis: str = "") -> dict:
     history = use_case.history.select_related("history_user").order_by("-history_date")[:50]
-    decision_check = current_work_check(use_case)
-    blocker_details = build_blocker_details(use_case, decision_check.blockers)
-    journey = build_use_case_journey(use_case, request.user)
+    journey = _detail_journey(use_case, request.user)
+    decision_check, blocker_details = _detail_decision_check(use_case, journey)
     try:
         architecture_origin = use_case.architecture_origin
     except ObjectDoesNotExist:
