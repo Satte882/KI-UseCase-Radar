@@ -12,7 +12,7 @@ from ki_radar.accounts.permissions import is_coordinator
 from ki_radar.delivery.services import current_delivery_package, current_handed_over_package
 
 from .models import ApprovalDecision, DecisionAssessment, UseCase
-from .permissions import can_start_pilot
+from .permissions import can_confirm_early_go_live_exception, can_start_pilot
 
 STATUS_ORDER = {
     UseCase.Status.IDEA: 0,
@@ -25,6 +25,7 @@ STATUS_ORDER = {
 PILOT_STATUS_BLOCKER = "Lifecycle-Status Prüfung"
 PILOT_PACKAGE_BLOCKER = "Aktuelles Delivery Package"
 PILOT_HANDOVER_BLOCKER = "Verbindliche Übergabe des aktuellen Delivery Packages"
+EARLY_GO_LIVE_BLOCKER = "Der geplante Pilotzeitraum ist noch nicht beendet"
 
 
 @dataclass(frozen=True)
@@ -229,7 +230,11 @@ def check_pilot_start(use_case: UseCase) -> DecisionCheck:
     )
 
 
-def check_go_live(use_case: UseCase) -> DecisionCheck:
+def check_go_live(
+    use_case: UseCase,
+    *,
+    allow_early_go_live_exception: bool = False,
+) -> DecisionCheck:
     blockers = _missing_fields(
         use_case,
         _combined_requirements(
@@ -262,8 +267,14 @@ def check_go_live(use_case: UseCase) -> DecisionCheck:
             "Das Pilotziel wurde nicht erreicht. Ein Go-live benötigt eine ausdrückliche "
             "Begründung."
         )
-    if use_case.planned_pilot_end and use_case.planned_pilot_end > timezone.localdate():
-        warnings.append("Der geplante Pilotzeitraum ist noch nicht beendet.")
+    pilot_still_running = bool(
+        use_case.planned_pilot_end and use_case.planned_pilot_end > timezone.localdate()
+    )
+    if pilot_still_running:
+        if allow_early_go_live_exception:
+            warnings.append("Der laufende Pilotzeitraum wird durch eine dokumentierte Ausnahme beendet.")
+        else:
+            blockers.append(EARLY_GO_LIVE_BLOCKER)
     state = "blocked" if blockers else ("review" if warnings else "ready")
     return DecisionCheck(
         target_status=UseCase.Status.OPERATION,
@@ -274,11 +285,19 @@ def check_go_live(use_case: UseCase) -> DecisionCheck:
     )
 
 
-def decision_check_for_status(use_case: UseCase, target_status: str) -> DecisionCheck:
+def decision_check_for_status(
+    use_case: UseCase,
+    target_status: str,
+    *,
+    allow_early_go_live_exception: bool = False,
+) -> DecisionCheck:
     if target_status == UseCase.Status.PILOT:
         return check_pilot_start(use_case)
     if target_status == UseCase.Status.OPERATION:
-        return check_go_live(use_case)
+        return check_go_live(
+            use_case,
+            allow_early_go_live_exception=allow_early_go_live_exception,
+        )
     blockers = _missing_fields(use_case, BASE_REQUIREMENTS.get(target_status, []))
     return DecisionCheck(
         target_status=target_status,
@@ -338,8 +357,17 @@ def decision_priority(use_case: UseCase) -> tuple[int, date, str]:
     return bucket, due or date.max, use_case.short_id
 
 
-def validate_target_status(use_case: UseCase, target_status: str) -> None:
-    check = decision_check_for_status(use_case, target_status)
+def validate_target_status(
+    use_case: UseCase,
+    target_status: str,
+    *,
+    allow_early_go_live_exception: bool = False,
+) -> None:
+    check = decision_check_for_status(
+        use_case,
+        target_status,
+        allow_early_go_live_exception=allow_early_go_live_exception,
+    )
     if check.blockers:
         raise ValidationError("Für den Zielstatus fehlen: " + ", ".join(check.blockers))
 
@@ -375,8 +403,18 @@ def apply_status_transition(
     target_status: str,
     actor,
     pilot_start: date | None = None,
+    allow_early_go_live_exception: bool = False,
 ) -> UseCase:
-    validate_target_status(use_case, target_status)
+    if allow_early_go_live_exception and not can_confirm_early_go_live_exception(actor):
+        raise PermissionDenied(
+            "Nur ein Mitglied der Gruppe KI-Koordinator darf eine vorzeitige "
+            "Go-live-Ausnahme bestätigen."
+        )
+    validate_target_status(
+        use_case,
+        target_status,
+        allow_early_go_live_exception=allow_early_go_live_exception,
+    )
     if target_status == UseCase.Status.PILOT:
         if not can_start_pilot(actor, use_case):
             raise PermissionDenied(
