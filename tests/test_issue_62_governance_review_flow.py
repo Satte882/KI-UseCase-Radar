@@ -94,9 +94,7 @@ def test_required_review_uses_dedicated_workspace(client, coordinator, use_case)
 
 
 @pytest.mark.django_db
-def test_not_required_review_does_not_create_artificial_completion(
-    client, coordinator, use_case
-):
+def test_not_required_review_does_not_create_artificial_completion(client, coordinator, use_case):
     _screening(use_case, coordinator)
     client.force_login(coordinator)
 
