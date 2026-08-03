@@ -60,10 +60,7 @@ def _selected_decision_status(request, assessment) -> str:
 
 def _decision_choice_url(use_case: UseCase, status: str, return_to: str) -> str:
     query = urlencode({"decision_status": status, "return_to": return_to})
-    return (
-        f"{reverse('use_cases:approval_decision_create', kwargs={'pk': use_case.pk})}"
-        f"?{query}"
-    )
+    return f"{reverse('use_cases:approval_decision_create', kwargs={'pk': use_case.pk})}?{query}"
 
 
 def _available_decision_alternatives(
