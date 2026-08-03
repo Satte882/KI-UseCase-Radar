@@ -17,6 +17,7 @@ from .services import (
     create_decision_assessment,
     submit_approval_decision,
 )
+from .status_dimensions import build_use_case_status_dimensions
 from .workflow import build_use_case_journey
 
 
@@ -31,6 +32,7 @@ def _decision_use_case_queryset():
         "architecture_origin__process_analysis",
         "architecture_origin__solution_option",
     ).prefetch_related(
+        "governance_assessments",
         "decision_assessments",
         "approval_decisions",
         "delivery_packages",
@@ -59,13 +61,15 @@ def assessment_create(request, pk):
             return redirect(return_to)
     else:
         form = DecisionAssessmentForm()
+    journey = build_use_case_journey(use_case, request.user)
     return render(
         request,
         "use_cases/assessment_form.html",
         {
             "form": form,
             "use_case": use_case,
-            "journey": build_use_case_journey(use_case, request.user),
+            "journey": journey,
+            "status_dimensions": build_use_case_status_dimensions(use_case, journey),
             "return_to": return_to,
         },
     )
@@ -118,6 +122,7 @@ def approval_decision_create(request, pk):
         governance_confirmed=request.POST.get("governance_confirmed") == "on",
     )
     blocker_details = build_blocker_details(use_case, check.blockers)
+    journey = build_use_case_journey(use_case, request.user)
     return render(
         request,
         "use_cases/decision_form.html",
@@ -125,7 +130,8 @@ def approval_decision_create(request, pk):
             "form": form,
             "use_case": use_case,
             "assessment": assessment,
-            "journey": build_use_case_journey(use_case, request.user),
+            "journey": journey,
+            "status_dimensions": build_use_case_status_dimensions(use_case, journey),
             "approval_check": check,
             "approval_blocker_details": blocker_details,
             "first_approval_blocker": blocker_details[0] if blocker_details else None,
