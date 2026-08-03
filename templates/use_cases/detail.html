@@ -77,13 +77,13 @@
   <div class="col-xl-8">
     <div class="app-card decision-panel mb-4">
       <div class="card-header d-flex justify-content-between align-items-center">
-        <div><strong>{{ decision_check.title }}</strong><div class="small text-muted mt-1">Bestehende Lifecycle-Prüfung inklusive positiver Freigabeentscheidung</div></div>
+        <div><strong>{{ decision_check.title }}</strong><div class="small text-muted mt-1">Voraussetzungen und Hinweise für das aktuell geprüfte Lifecycle-Gate.</div></div>
         <span class="badge state-{{ decision_check.state }}">{{ decision_check.state_label }}</span>
       </div>
       <div class="card-body">
         {% if blocker_details %}
           <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
-            <div><strong>Freigabe blockiert – {{ blocker_details|length }} Voraussetzungen offen</strong><div class="small text-muted">Datenblocker führen direkt zum Feld, Prozessblocker zur zuständigen Ansicht.</div></div>
+            <div><strong>{{ decision_check.title }}: {{ decision_check.state_label }} – {{ blocker_details|length }} Voraussetzungen offen</strong><div class="small text-muted">Datenblocker führen direkt zum Feld, Prozessblocker zur zuständigen Ansicht.</div></div>
             {% if first_blocker %}<a class="btn btn-outline-danger btn-sm" href="{{ first_blocker.target_href }}">Zum ersten offenen Punkt</a>{% endif %}
           </div>
           <div class="blocker-actions">
