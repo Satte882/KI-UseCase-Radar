@@ -222,18 +222,18 @@ def test_go_live_form_exposes_separate_early_exception_fields(
 ):
     use_case = _early_go_live_candidate(owner, coordinator, business_unit)
     client.force_login(coordinator)
+    base_url = reverse("reviews:create", kwargs={"use_case_id": use_case.pk})
 
-    response = client.get(
-        reverse("reviews:create", kwargs={"use_case_id": use_case.pk}) + "?action=go_live"
-    )
+    for url in [base_url, base_url + "?action=go_live"]:
+        response = client.get(url)
 
-    assert response.status_code == 200
-    form = response.context["form"]
-    assert isinstance(form, ReviewForm)
-    assert "early_go_live_exception_confirmed" in form.fields
-    assert "early_go_live_original_pilot_end" in form.fields
-    assert form.fields["early_go_live_original_pilot_end"].disabled is True
-    assert "early_go_live_evidence_basis" in form.fields
-    assert "early_go_live_unobserved_risks" in form.fields
-    assert "early_go_live_mitigation_measures" in form.fields
-    assert "Vorzeitige Produktivsetzung ausdrücklich bestätigen" in response.content.decode()
+        assert response.status_code == 200
+        form = response.context["form"]
+        assert isinstance(form, ReviewForm)
+        assert "early_go_live_exception_confirmed" in form.fields
+        assert "early_go_live_original_pilot_end" in form.fields
+        assert form.fields["early_go_live_original_pilot_end"].disabled is True
+        assert "early_go_live_evidence_basis" in form.fields
+        assert "early_go_live_unobserved_risks" in form.fields
+        assert "early_go_live_mitigation_measures" in form.fields
+        assert "Vorzeitige Produktivsetzung ausdrücklich bestätigen" in response.content.decode()
