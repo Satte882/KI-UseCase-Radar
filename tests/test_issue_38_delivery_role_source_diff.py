@@ -79,3 +79,11 @@ def test_technical_owner_source_state_reports_no_change_for_same_owner():
     assert state is not None
     assert state["source_changed"] is False
     assert state["adoption"] == "kept"
+
+
+def test_technical_owner_source_state_is_absent_without_role_manifest():
+    package = SimpleNamespace(
+        section_reviews=_SectionReviews(SimpleNamespace(source_manifest={})),
+    )
+
+    assert technical_owner_source_state(package) is None
