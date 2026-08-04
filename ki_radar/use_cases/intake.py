@@ -5,6 +5,7 @@ from django import forms
 from ki_radar.accounts.models import BusinessUnit
 from ki_radar.core.taxonomy import BusinessDomain
 
+from .form_fields import LocalizedDecimalField
 from .models import UseCase
 
 FORM_CONTROL = "form-control"
@@ -114,8 +115,16 @@ class BenefitStepForm(IntakeStepForm):
         label="Optimierungsrichtung",
     )
     metric_unit = forms.CharField(max_length=80, label="Einheit")
-    metric_baseline = forms.DecimalField(max_digits=14, decimal_places=4, label="Baseline-Wert")
-    metric_target = forms.DecimalField(max_digits=14, decimal_places=4, label="Zielwert")
+    metric_baseline = LocalizedDecimalField(
+        max_digits=14,
+        decimal_places=4,
+        label="Baseline-Wert",
+    )
+    metric_target = LocalizedDecimalField(
+        max_digits=14,
+        decimal_places=4,
+        label="Zielwert",
+    )
     metric_measurement_method = forms.CharField(
         label="Messmethode",
         widget=forms.Textarea(attrs={"rows": 3}),
