@@ -7,7 +7,6 @@ from ki_radar.core.taxonomy import ScreeningLevel
 from .models import ValueStreamStage
 from .stage_focus import CRITERIA_KEYS
 
-
 FORM_CONTROL = "form-control"
 FORM_SELECT = "form-select"
 CRITERIA_LABELS = {
