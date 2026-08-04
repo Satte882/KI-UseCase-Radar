@@ -38,10 +38,10 @@
       {% if journey and request.resolver_match.namespace == 'architecture' %}
       <div class="sidebar-local-depth" aria-label="Lokale Analysetiefe">
         {% for step in journey.steps %}{% if step.key == 'value_stream' or step.key == 'focus' or step.key == 'process' or step.key == 'solution' %}
-        {% if step.url %}<a href="{{ step.url }}" class="sidebar-local-step sidebar-local-{{ step.state }}">{% else %}<span class="sidebar-local-step sidebar-local-{{ step.state }}">{% endif %}
+        {% if step.url and step.action_method != 'post' %}<a href="{{ step.url }}" class="sidebar-local-step sidebar-local-{{ step.state }}">{% else %}<span class="sidebar-local-step sidebar-local-{{ step.state }}">{% endif %}
           <span aria-hidden="true">{% if step.state == 'complete' %}✓{% elif step.state == 'current' %}●{% elif step.state == 'blocked' %}!{% elif step.state == 'optional' %}–{% else %}○{% endif %}</span>
           <span>{{ step.label }}</span>
-        {% if step.url %}</a>{% else %}</span>{% endif %}
+        {% if step.url and step.action_method != 'post' %}</a>{% else %}</span>{% endif %}
         {% endif %}{% endfor %}
       </div>
       {% endif %}
@@ -58,10 +58,10 @@
       {% if request.resolver_match.namespace == 'use_cases' or request.resolver_match.namespace == 'governance' %}
       <div class="sidebar-local-depth" aria-label="Lokale Initiative">
         {% for step in journey.steps %}{% if step.key == 'use_case' or step.key == 'assessment' or step.key == 'governance' or step.key == 'approval' or step.key == 'delivery' %}
-        {% if step.url %}<a href="{{ step.url }}" class="sidebar-local-step sidebar-local-{{ step.state }}">{% else %}<span class="sidebar-local-step sidebar-local-{{ step.state }}">{% endif %}
+        {% if step.url and step.action_method != 'post' %}<a href="{{ step.url }}" class="sidebar-local-step sidebar-local-{{ step.state }}">{% else %}<span class="sidebar-local-step sidebar-local-{{ step.state }}">{% endif %}
           <span aria-hidden="true">{% if step.state == 'complete' %}✓{% elif step.state == 'current' %}●{% elif step.state == 'blocked' %}!{% elif step.state == 'optional' %}–{% else %}○{% endif %}</span>
           <span>{{ step.label }}</span>
-        {% if step.url %}</a>{% else %}</span>{% endif %}
+        {% if step.url and step.action_method != 'post' %}</a>{% else %}</span>{% endif %}
         {% endif %}{% endfor %}
       </div>
       {% endif %}
@@ -72,10 +72,10 @@
       {% if journey and request.resolver_match.namespace == 'delivery' %}
       <div class="sidebar-local-depth" aria-label="Lokale Delivery-Tiefe">
         {% for step in journey.steps %}{% if step.key == 'use_case' or step.key == 'assessment' or step.key == 'governance' or step.key == 'approval' or step.key == 'delivery' %}
-        {% if step.url %}<a href="{{ step.url }}" class="sidebar-local-step sidebar-local-{{ step.state }}">{% else %}<span class="sidebar-local-step sidebar-local-{{ step.state }}">{% endif %}
+        {% if step.url and step.action_method != 'post' %}<a href="{{ step.url }}" class="sidebar-local-step sidebar-local-{{ step.state }}">{% else %}<span class="sidebar-local-step sidebar-local-{{ step.state }}">{% endif %}
           <span aria-hidden="true">{% if step.state == 'complete' %}✓{% elif step.state == 'current' %}●{% elif step.state == 'blocked' %}!{% elif step.state == 'optional' %}–{% else %}○{% endif %}</span>
           <span>{{ step.label }}</span>
-        {% if step.url %}</a>{% else %}</span>{% endif %}
+        {% if step.url and step.action_method != 'post' %}</a>{% else %}</span>{% endif %}
         {% endif %}{% endfor %}
       </div>
       {% endif %}
