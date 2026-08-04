@@ -3,12 +3,19 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect
 
 from . import views
+from .focus import get_value_stream_focus
 from .models import ValueStream, ValueStreamStage
-from .stage_focus import get_stage_focus_decision
+from .stage_focus import (
+    ensure_single_stage_focus,
+    get_stage_focus_decision,
+)
 
 PHASE_COMPLETION_REQUIRED_MESSAGE = (
     "Der Value Stream ist noch im Entwurf. Ergänze zuerst die End-to-End-Phasen "
     "und setze den Status anschließend auf Aktiv."
+)
+STREAM_FOCUS_REQUIRED_MESSAGE = (
+    "Der Value Stream muss zuerst vollständig bewertet und für den Deep Dive ausgewählt werden."
 )
 FOCUS_STAGE_REQUIRED_MESSAGE = (
     "Wähle und begründe zuerst die Fokusphase anhand der gemeinsamen Kriterien."
@@ -31,7 +38,14 @@ def _active_stage_or_redirect(request, pk):
 
 
 def _selected_stage_or_redirect(request, stage):
+    focus = get_value_stream_focus(stage.value_stream)
+    if focus is None or not focus.is_selected:
+        messages.warning(request, STREAM_FOCUS_REQUIRED_MESSAGE)
+        return redirect(stage.value_stream)
+
     decision = get_stage_focus_decision(stage.value_stream)
+    if decision is None and ensure_single_stage_focus(stage=stage, actor=request.user):
+        decision = get_stage_focus_decision(stage.value_stream)
     if decision is None:
         messages.warning(request, FOCUS_STAGE_REQUIRED_MESSAGE)
         return redirect("architecture:stage_focus_select", pk=stage.value_stream_id)
