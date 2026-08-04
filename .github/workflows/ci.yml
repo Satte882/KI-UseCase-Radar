@@ -67,10 +67,7 @@ jobs:
         run: uv run ruff check .
 
       - name: Ruff format
-        run: |
-          uv run ruff format .
-          git diff -- ki_radar/delivery/actions.py ki_radar/delivery/views.py
-          git diff --exit-code
+        run: uv run ruff format --check .
 
       - name: Django system check
         run: uv run python manage.py check
