@@ -204,7 +204,7 @@ WIZARD_STEPS = {
     },
     6: {
         "title": "Vorprüfung",
-        "subtitle": "Prüfen Sie die Angaben, bevor der Use Case zur Bewertung übergeben wird.",
+        "subtitle": "Prüfen Sie die Angaben, bevor der Use Case zur Bewertung bereitgestellt wird.",
         "form": None,
     },
 }

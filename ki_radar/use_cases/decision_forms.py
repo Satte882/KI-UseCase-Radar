@@ -4,6 +4,13 @@ from django.contrib.auth import get_user_model
 from .models import ApprovalDecision, DecisionAssessment, UseCase
 from .services import eligible_second_approvers
 
+CONDITIONAL_APPROVAL_FIELDS = (
+    "conditions",
+    "condition_owner",
+    "condition_due_date",
+    "second_approval_assignee",
+)
+
 
 class DateInput(forms.DateInput):
     input_type = "date"
@@ -114,6 +121,17 @@ class ApprovalDecisionForm(forms.ModelForm):
                 "Sie ersetzt weder offene Fachprüfungen noch die erforderliche "
                 "Personentrennung."
             ),
+            "conditions": (
+                "Beschreiben Sie jede Auflage so, dass Erfüllung und Nachweis eindeutig "
+                "geprüft werden können."
+            ),
+            "condition_owner": (
+                "Diese Person verantwortet die fristgerechte Erfüllung und den Nachweis "
+                "der Auflage."
+            ),
+            "condition_due_date": (
+                "Bis zu diesem Datum müssen die Auflage erfüllt und der Nachweis verfügbar sein."
+            ),
             "second_approval_assignee": (
                 "Die Zuweisung benennt die bevorzugte prüfende Person. Andere ebenfalls "
                 "unabhängige und berechtigte Personen können die Aufgabe übernehmen."
@@ -147,9 +165,12 @@ class ApprovalDecisionForm(forms.ModelForm):
             if self.is_bound
             else self.initial.get("decision_status")
         )
-        self.fields["second_approval_assignee"].required = (
-            selected_status == UseCase.DecisionStatus.APPROVED_WITH_CONDITIONS
-        )
+        conditional_required = selected_status == UseCase.DecisionStatus.APPROVED_WITH_CONDITIONS
+        for field_name in CONDITIONAL_APPROVAL_FIELDS:
+            field = self.fields[field_name]
+            field.required = conditional_required
+            field.widget.attrs["data-conditional-required"] = "true"
+            field.widget.attrs["aria-required"] = "true" if conditional_required else "false"
         for field in self.fields.values():
             field.widget.attrs.setdefault("class", "form-control")
         self.fields["decision_status"].widget.attrs["class"] = "form-select"
@@ -160,12 +181,7 @@ class ApprovalDecisionForm(forms.ModelForm):
     def clean(self):
         cleaned = super().clean()
         if cleaned.get("decision_status") == UseCase.DecisionStatus.APPROVED_WITH_CONDITIONS:
-            for field_name in [
-                "conditions",
-                "condition_owner",
-                "condition_due_date",
-                "second_approval_assignee",
-            ]:
+            for field_name in CONDITIONAL_APPROVAL_FIELDS:
                 if not cleaned.get(field_name):
                     self.add_error(
                         field_name,
