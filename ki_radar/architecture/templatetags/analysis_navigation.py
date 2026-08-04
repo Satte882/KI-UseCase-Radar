@@ -1,4 +1,5 @@
 from django import template
+from django.core.exceptions import ObjectDoesNotExist
 
 from ki_radar.architecture.analysis_navigation import build_analysis_navigation
 
@@ -6,6 +7,16 @@ register = template.Library()
 
 
 def _first_process_analysis(value_stream):
+    try:
+        focus_decision = value_stream.stage_focus_decision
+    except ObjectDoesNotExist:
+        focus_decision = None
+
+    if focus_decision is not None:
+        analyses = list(focus_decision.selected_stage.process_analyses.all())
+        if analyses:
+            return analyses[0]
+
     for stage in value_stream.stages.all():
         analyses = list(stage.process_analyses.all())
         if analyses:
