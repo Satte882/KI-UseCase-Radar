@@ -76,9 +76,10 @@ def test_value_stream_renders_one_canonical_primary_action(
     assert content.count('data-testid="primary-next-action-control"') == 1
     assert f'href="{action.url}"' in content
     assert f"{action.action_label} →" in content
-    assert 'class="btn btn-primary" href="/architecture/value-streams/' not in content.split(
-        'id="end-to-end-phasen"', 1
-    )[0]
+    assert (
+        'class="btn btn-primary" href="/architecture/value-streams/'
+        not in content.split('id="end-to-end-phasen"', 1)[0]
+    )
 
 
 @pytest.mark.django_db
@@ -117,9 +118,7 @@ def test_use_case_detail_hides_duplicate_current_actions(
     architecture_use_case.save(update_fields=["status", "decision_status"])
     client.force_login(coordinator)
 
-    response = client.get(
-        reverse("use_cases:detail", kwargs={"pk": architecture_use_case.pk})
-    )
+    response = client.get(reverse("use_cases:detail", kwargs={"pk": architecture_use_case.pk}))
     content = response.content.decode()
     action = response.context["journey"].next_action
 
