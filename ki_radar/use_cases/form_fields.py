@@ -27,7 +27,7 @@ class LocalizedDecimalInput(forms.TextInput):
         super().__init__(attrs=default_attrs)
 
     def format_value(self, value):
-        if value in self.empty_values:
+        if value in (None, ""):
             return ""
         if isinstance(value, Decimal):
             return format_decimal_input(value)
