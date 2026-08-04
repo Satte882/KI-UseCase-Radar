@@ -104,7 +104,6 @@ Berücksichtigt werden unter anderem:
 * Datenreife
 * Risiko und Komplexität
 * Qualität und Aktualität der Evidenz
-* Abdeckung der Evidenz
 * unabhängige Prüfung
 * offene Annahmen
 * Governance- und Fachprüfungen
