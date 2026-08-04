@@ -122,7 +122,7 @@ class DeliveryPackageForm(forms.ModelForm):
         self.editable_sections: set[str] = set()
         super().__init__(*args, **kwargs)
         artifacts = get_delivery_architecture_artifacts(self.instance) if self.instance.pk else None
-        if artifacts is not None and not self.is_bound:
+        if artifacts is not None:
             self.initial.update(
                 {
                     "system_landscape": artifacts.system_landscape,
