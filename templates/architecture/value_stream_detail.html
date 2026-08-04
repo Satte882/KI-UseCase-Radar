@@ -156,11 +156,11 @@
         {% endif %}
         {% if can_edit and value_stream.status == 'active' and value_stream.focus.is_selected %}
           {% if stage|is_selected_focus_stage %}
-          <a class="btn btn-sm btn-outline-secondary w-100 mt-3" href="{% url 'architecture:process_analysis_create' stage.pk %}" data-testid="focus-stage-action">Ausgewählte Fokusphase analysieren</a>
+          <a class="btn btn-sm btn-outline-secondary w-100 mt-3" href="{% url 'architecture:process_analysis_create' stage.pk %}" data-testid="focus-stage-action">Als Fokusphase analysieren</a>
           {% elif value_stream.stage_focus_decision %}
           <button class="btn btn-sm btn-outline-secondary w-100 mt-3" type="button" disabled>Nicht als Fokusphase ausgewählt</button>
           {% else %}
-          <a class="btn btn-sm btn-outline-secondary w-100 mt-3" href="{% url 'architecture:stage_focus_select' value_stream.pk %}">Zuerst Fokusphase auswählen</a>
+          <a class="btn btn-sm btn-outline-secondary w-100 mt-3" href="{% url 'architecture:stage_focus_select' value_stream.pk %}">Als Fokusphase analysieren: zuerst Fokus auswählen</a>
           {% endif %}
         {% elif can_edit and value_stream.status == 'draft' %}
         <button class="btn btn-sm btn-outline-secondary w-100 mt-3" type="button" disabled>Erst Phasenerfassung abschließen</button>
@@ -168,7 +168,7 @@
         <button class="btn btn-sm btn-outline-secondary w-100 mt-3" type="button" disabled>Erst Fokusentscheidung abschließen</button>
         {% endif %}
         {% if can_create_use_case and value_stream.status == 'active' and value_stream.focus.is_selected and stage|is_selected_focus_stage %}
-        <a class="btn btn-sm btn-outline-secondary w-100 mt-2" href="{% url 'architecture:stage_start_use_case' stage.pk %}">Use Case direkt aus Fokusphase ableiten</a>
+        <a class="btn btn-sm btn-outline-secondary w-100 mt-2" href="{% url 'architecture:stage_start_use_case' stage.pk %}">Use Case direkt aus Phase ableiten</a>
         <div class="small text-muted mt-2">Abgekürzter Pfad ohne Prozessanalyse und Lösungsvergleich; die Phasenauswahl bleibt als Herkunft erhalten.</div>
         {% endif %}
       </section>
