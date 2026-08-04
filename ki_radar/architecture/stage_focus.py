@@ -8,7 +8,6 @@ from django.dispatch import receiver
 
 from ki_radar.core.models import TimeStampedModel
 
-
 CRITERIA_KEYS = ("impact", "pain_intensity", "data_accessibility", "change_effort")
 
 
