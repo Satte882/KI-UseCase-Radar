@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Protocol
 
 METRIC_NUMBER = "number"
@@ -10,6 +10,7 @@ METRIC_DURATION = "duration"
 METRIC_CURRENCY = "currency"
 METRIC_COUNT = "count"
 METRIC_RATING = "rating"
+MISSING_VALUE = "\N{EN DASH}"
 
 KNOWN_METRIC_TYPES = frozenset(
     {
@@ -110,7 +111,7 @@ def format_count_decimal(value: Decimal) -> str:
 
 def format_metric_value(value: Decimal | None, metric_type: str | None) -> str:
     if value is None:
-        return "–"
+        return MISSING_VALUE
     if metric_type == METRIC_CURRENCY:
         return format_currency_decimal(value)
     if metric_type == METRIC_COUNT:
