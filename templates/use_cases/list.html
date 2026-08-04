@@ -99,7 +99,10 @@
           </td>
           <td><span class="badge phase-badge">{{ item.get_status_display }}</span></td>
           <td class="decision-cell">{{ item.decision_check.title }}</td>
-          <td><span class="badge state-{{ item.decision_check.state }}">{{ item.decision_check.state_label }}</span></td>
+          <td>
+            <span class="badge state-{{ item.register_state }}">{{ item.register_state_label }}</span>
+            {% if item.register_state_detail %}<div class="row-meta mt-1">{{ item.register_state_detail }}</div>{% endif %}
+          </td>
           <td class="owner-cell">{{ item.business_owner.get_display_name }}</td>
           <td class="due-cell">{% if item.decision_due %}<time datetime="{{ item.decision_due|date:'Y-m-d' }}">{{ item.decision_due|date:"d.m.Y" }}</time>{% else %}–{% endif %}</td>
         </tr>
