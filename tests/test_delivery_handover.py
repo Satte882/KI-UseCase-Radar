@@ -2,8 +2,6 @@ from decimal import Decimal
 
 import pytest
 from django.core.exceptions import ValidationError
-from django.template.loader import render_to_string
-from django.test import RequestFactory
 from django.urls import reverse
 from django.utils import timezone
 
@@ -24,7 +22,6 @@ from ki_radar.delivery.services import (
     review_delivery_section,
 )
 from ki_radar.use_cases.models import ApprovalDecision, DecisionAssessment, UseCase
-from ki_radar.use_cases.workflow import build_use_case_journey
 
 
 def make_use_case(owner, business_unit, **overrides):
@@ -352,7 +349,8 @@ def test_delivery_views_require_post_for_creation_and_export_markdown(
 
 
 @pytest.mark.django_db
-def test_topbar_renders_delivery_package_creation_as_post_form(
+def test_use_case_detail_renders_delivery_package_creation_as_post_form(
+    client,
     owner,
     coordinator,
     business_unit,
@@ -360,24 +358,21 @@ def test_topbar_renders_delivery_package_creation_as_post_form(
     use_case = make_use_case(owner, business_unit)
     approve_use_case(use_case, coordinator)
     create_url = reverse("delivery:package_create", kwargs={"use_case_id": use_case.pk})
-    request = RequestFactory().get(use_case.get_absolute_url())
-    request.user = coordinator
-    journey = build_use_case_journey(use_case, coordinator)
+    client.force_login(coordinator)
 
-    rendered = render_to_string(
-        "includes/context_topbar.html",
-        {"journey": journey, "request": request},
-        request=request,
-    )
+    response = client.get(use_case.get_absolute_url())
+    rendered = response.content.decode()
 
+    assert response.status_code == 200
     assert f'<form method="post" action="{create_url}">' in rendered
     assert 'name="csrfmiddlewaretoken"' in rendered
     assert "Delivery Package erzeugen" in rendered
     assert f'href="{create_url}"' not in rendered
+    assert rendered.count('data-testid="primary-next-action-control"') == 1
 
 
 @pytest.mark.django_db
-def test_topbar_marks_ready_delivery_package_via_post(
+def test_delivery_detail_marks_ready_package_via_post(
     client,
     owner,
     coordinator,
@@ -388,22 +383,17 @@ def test_topbar_marks_ready_delivery_package_via_post(
     package = create_delivery_package(use_case=use_case, actor=coordinator)
     complete_delivery_readiness(package)
     ready_url = reverse("delivery:package_mark_ready", kwargs={"pk": package.pk})
-    request = RequestFactory().get(package.get_absolute_url())
-    request.user = coordinator
-    journey = build_use_case_journey(use_case, coordinator)
+    client.force_login(coordinator)
 
-    rendered = render_to_string(
-        "includes/context_topbar.html",
-        {"journey": journey, "request": request},
-        request=request,
-    )
+    detail = client.get(package.get_absolute_url())
+    rendered = detail.content.decode()
 
+    assert detail.status_code == 200
     assert f'<form method="post" action="{ready_url}">' in rendered
     assert 'name="csrfmiddlewaretoken"' in rendered
     assert "Als bereit markieren" in rendered
     assert f'href="{ready_url}"' not in rendered
 
-    client.force_login(coordinator)
     response = client.post(ready_url)
     package.refresh_from_db()
 
@@ -413,7 +403,7 @@ def test_topbar_marks_ready_delivery_package_via_post(
 
 
 @pytest.mark.django_db
-def test_topbar_hands_over_ready_delivery_package_via_post(
+def test_delivery_detail_hands_over_ready_package_via_post(
     client,
     owner,
     coordinator,
@@ -425,22 +415,17 @@ def test_topbar_hands_over_ready_delivery_package_via_post(
     complete_delivery_readiness(package)
     mark_package_ready(package)
     handover_url = reverse("delivery:package_handover", kwargs={"pk": package.pk})
-    request = RequestFactory().get(package.get_absolute_url())
-    request.user = coordinator
-    journey = build_use_case_journey(use_case, coordinator)
+    client.force_login(coordinator)
 
-    rendered = render_to_string(
-        "includes/context_topbar.html",
-        {"journey": journey, "request": request},
-        request=request,
-    )
+    detail = client.get(package.get_absolute_url())
+    rendered = detail.content.decode()
 
+    assert detail.status_code == 200
     assert f'<form method="post" action="{handover_url}">' in rendered
     assert 'name="csrfmiddlewaretoken"' in rendered
     assert "An Delivery übergeben" in rendered
     assert f'href="{handover_url}"' not in rendered
 
-    client.force_login(coordinator)
     response = client.post(handover_url)
     package.refresh_from_db()
 

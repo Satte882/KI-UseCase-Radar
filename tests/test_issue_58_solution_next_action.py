@@ -167,8 +167,8 @@ def test_first_option_action_is_visible_on_process_page(client, coordinator):
 
     assert response.status_code == 200
     assert 'id="loesungsoptionen"' in content
-    assert "Erste Lösungsoption ergänzen" in content
-    assert "Erste Option ergänzen" in content
+    assert content.count("Erste Lösungsoption ergänzen") == 1
+    assert "Erste Option ergänzen" not in content
     assert "Weitere Option ergänzen" not in content
 
 
