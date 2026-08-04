@@ -1,4 +1,5 @@
 from pathlib import Path
+from urllib.parse import urlencode
 
 from django.conf import settings
 from django.contrib import messages
@@ -6,6 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from ki_radar.core.navigation import requested_return_to
@@ -16,6 +18,7 @@ from .actions import build_actionable_findings, primary_delivery_action, section
 from .forms import DeliveryPackageForm
 from .models import DELIVERY_SECTION_DEFINITIONS, DeliveryPackage
 from .permissions import (
+    allowed_edit_sections,
     can_create_package,
     can_edit_package,
     can_review_section,
@@ -39,6 +42,7 @@ from .services import (
 
 METHODOLOGY_PATH = Path(settings.BASE_DIR) / "docs" / "DELIVERY_METHODOLOGY.md"
 METHODOLOGY_DOWNLOAD_NAME = "KI-Radar_Vorgehensmodell_CRISP-MLQ_ML-Test-Score_v2.0.md"
+SECTION_KEYS = tuple(key for key, _label in DELIVERY_SECTION_DEFINITIONS)
 
 
 def _validation_message(exc: ValidationError) -> str:
@@ -70,6 +74,106 @@ def _package_queryset():
         "use_case__architecture_origin__process_analysis",
         "use_case__architecture_origin__solution_option",
     )
+
+
+def _section_edit_url(package: DeliveryPackage, section_key: str, return_to: str) -> str:
+    base = reverse("delivery:package_update", kwargs={"pk": package.pk})
+    return f"{base}?{urlencode({'section': section_key, 'return_to': return_to})}"
+
+
+def _section_state(review, findings) -> tuple[str, str]:
+    blocker_count = sum(finding.severity == "blocker" for finding in findings)
+    if blocker_count or (review and review.review_status == "blocked"):
+        return "blocked", "Blockiert"
+    if review and review.review_status == "confirmed" and review.confirmations_complete:
+        return "confirmed", "Bestätigt"
+    return "open", "Offen"
+
+
+def _section_rows(
+    *,
+    package: DeliveryPackage,
+    user,
+    finding_actions,
+    return_to: str,
+    active_section: str = "",
+    primary_finding=None,
+) -> list[dict]:
+    reviews = {review.section_key: review for review in package.section_reviews.all()}
+    findings_by_section = {key: [] for key in SECTION_KEYS}
+    for finding in finding_actions:
+        findings_by_section.setdefault(finding.section_key, []).append(finding)
+    editable_sections = allowed_edit_sections(user, package)
+    rows = []
+    for section_key, section_label in DELIVERY_SECTION_DEFINITIONS:
+        responsible_role, responsible_person = section_responsibility(package, section_key)
+        review = reviews.get(section_key)
+        findings = findings_by_section.get(section_key, [])
+        state, state_label = _section_state(review, findings)
+        roles = reviewer_roles(user, package, section_key)
+        required = review.required_confirmations if review else frozenset()
+        shared_section = {"business", "technical"}.issubset(required)
+        source_manifest = review.source_manifest if review else {}
+        field_sources = source_manifest.get("field_sources") or {}
+        blockers = [finding for finding in findings if finding.severity == "blocker"]
+        field_blockers = {finding.field_name for finding in blockers if finding.field_name}
+        rows.append(
+            {
+                "key": section_key,
+                "label": section_label,
+                "review": review,
+                "findings": findings,
+                "blocker_count": len(blockers),
+                "finding_count": len(findings),
+                "open_field_count": len(field_blockers),
+                "source_count": len(field_sources),
+                "state": state,
+                "state_label": state_label,
+                "is_primary": bool(
+                    primary_finding and primary_finding.section_key == section_key
+                ),
+                "is_active": section_key == active_section,
+                "can_edit": section_key in editable_sections,
+                "edit_url": _section_edit_url(package, section_key, return_to),
+                "can_review": can_review_section(user, package, section_key),
+                "can_confirm_business": bool(
+                    review
+                    and "business" in roles
+                    and "business" in required
+                    and review.business_confirmed_at is None
+                ),
+                "can_confirm_technical": bool(
+                    review
+                    and "technical" in roles
+                    and "technical" in required
+                    and review.technical_confirmed_at is None
+                ),
+                "show_admin_override_reason": bool(
+                    shared_section and can_use_admin_confirmation_override(user)
+                ),
+                "requires_business": "business" in required,
+                "requires_technical": "technical" in required,
+                "business_complete": bool(review and review.business_confirmed_at),
+                "technical_complete": bool(review and review.technical_confirmed_at),
+                "responsible_role": responsible_role,
+                "responsible_person": responsible_person,
+            }
+        )
+    return rows
+
+
+def _active_edit_section(package: DeliveryPackage, user, requested: str, highlight: str) -> str:
+    editable_sections = allowed_edit_sections(user, package)
+    if requested in editable_sections:
+        return requested
+    highlight_section = DeliveryPackageForm.section_for_field(highlight)
+    if highlight_section in editable_sections:
+        return highlight_section
+    findings = build_actionable_findings(package, user)
+    for finding in findings:
+        if finding.severity == "blocker" and finding.section_key in editable_sections:
+            return finding.section_key
+    return next((key for key in SECTION_KEYS if key in editable_sections), "")
 
 
 @login_required
@@ -153,43 +257,16 @@ def package_detail(request, pk):
     if not can_view_package(request.user, package):
         raise PermissionDenied
 
-    reviews = {review.section_key: review for review in package.section_reviews.all()}
-    section_rows = []
-    for section_key, section_label in DELIVERY_SECTION_DEFINITIONS:
-        responsible_role, responsible_person = section_responsibility(package, section_key)
-        review = reviews.get(section_key)
-        roles = reviewer_roles(request.user, package, section_key)
-        shared_section = {"business", "technical"}.issubset(
-            review.required_confirmations if review else frozenset()
-        )
-        section_rows.append(
-            {
-                "key": section_key,
-                "label": section_label,
-                "review": review,
-                "can_review": can_review_section(request.user, package, section_key),
-                "can_confirm_business": bool(
-                    review
-                    and "business" in roles
-                    and "business" in review.required_confirmations
-                    and review.business_confirmed_at is None
-                ),
-                "can_confirm_technical": bool(
-                    review
-                    and "technical" in roles
-                    and "technical" in review.required_confirmations
-                    and review.technical_confirmed_at is None
-                ),
-                "show_admin_override_reason": bool(
-                    shared_section and can_use_admin_confirmation_override(request.user)
-                ),
-                "responsible_role": responsible_role,
-                "responsible_person": responsible_person,
-            }
-        )
-
     finding_actions = build_actionable_findings(package, request.user)
     primary_finding = primary_delivery_action(package, request.user)
+    section_rows = _section_rows(
+        package=package,
+        user=request.user,
+        finding_actions=finding_actions,
+        return_to=package.get_absolute_url(),
+        primary_finding=primary_finding,
+    )
+
     role_collapse = bool(
         package.technical_owner_id
         and package.technical_owner_id == package.use_case.business_owner_id
@@ -227,7 +304,19 @@ def package_update(request, pk):
 
     return_to = requested_return_to(request, package.get_absolute_url())
     requested_highlight = request.POST.get("highlight") or request.GET.get("highlight", "")
-    form = DeliveryPackageForm(request.POST or None, instance=package, actor=request.user)
+    requested_section = request.POST.get("section") or request.GET.get("section", "")
+    active_section = _active_edit_section(
+        package,
+        request.user,
+        requested_section,
+        requested_highlight,
+    )
+    form = DeliveryPackageForm(
+        request.POST or None,
+        instance=package,
+        actor=request.user,
+        active_section=active_section,
+    )
     highlight_field = requested_highlight if requested_highlight in form.fields else ""
     highlight_section = form.section_for_field(highlight_field)
 
@@ -236,11 +325,24 @@ def package_update(request, pk):
         messages.success(
             request,
             (
-                "Delivery Package wurde aktualisiert; geänderte Sektionen benötigen "
-                "eine neue Bestätigung."
+                "Delivery-Sektion wurde aktualisiert; die Readiness wurde vollständig neu "
+                "bewertet und die geänderte Sektion benötigt eine neue Bestätigung."
             ),
         )
         return redirect(return_to)
+
+    finding_actions = build_actionable_findings(package, request.user)
+    section_rows = _section_rows(
+        package=package,
+        user=request.user,
+        finding_actions=finding_actions,
+        return_to=return_to,
+        active_section=active_section,
+        primary_finding=next(
+            (finding for finding in finding_actions if finding.severity == "blocker"),
+            None,
+        ),
+    )
     return render(
         request,
         "delivery/package_form.html",
@@ -250,6 +352,8 @@ def package_update(request, pk):
             "return_to": return_to,
             "highlight_field": highlight_field,
             "highlight_section": highlight_section,
+            "active_section": active_section,
+            "section_rows": section_rows,
         },
     )
 
