@@ -21,8 +21,8 @@
     <ul class="dropdown-menu dropdown-menu-end">
       {% if can_edit %}<li><a class="dropdown-item" href="{% url 'use_cases:edit' use_case.pk %}">Stammdaten bearbeiten</a></li>{% endif %}
       {% if nav_is_coordinator %}<li><a class="dropdown-item" href="{% url 'reviews:create' use_case.pk %}">Lifecycle-Review</a></li>{% endif %}
-      {% if nav_is_coordinator %}<li><a class="dropdown-item" href="{% url 'use_cases:assessment_create' use_case.pk %}">{% if latest_assessment %}Neue Bewertungsversion{% else %}Bewertung anlegen{% endif %}</a></li>{% endif %}
-      {% if nav_is_coordinator and latest_assessment %}<li><a class="dropdown-item" href="{% url 'use_cases:approval_decision_create' use_case.pk %}">Freigabeentscheidung</a></li>{% endif %}
+      {% if nav_is_coordinator and journey.next_action.key != 'assessment' %}<li><a class="dropdown-item" href="{% url 'use_cases:assessment_create' use_case.pk %}">{% if latest_assessment %}Neue Bewertungsversion{% else %}Bewertung anlegen{% endif %}</a></li>{% endif %}
+      {% if nav_is_coordinator and latest_assessment and journey.next_action.key != 'approval' %}<li><a class="dropdown-item" href="{% url 'use_cases:approval_decision_create' use_case.pk %}">Freigabeentscheidung</a></li>{% endif %}
       {% if not can_edit and not nav_is_coordinator %}<li><span class="dropdown-item-text text-muted">Keine zusätzlichen Aktionen für deine Rolle.</span></li>{% endif %}
     </ul>
   </div>
@@ -72,7 +72,7 @@
     <div class="small">{{ approval.get_decision_status_display }} wurde von {% if approval.decided_by %}{{ approval.decided_by.get_display_name }}{% else %}einer berechtigten Person{% endif %} vorgeschlagen. Bevorzugt zugewiesen: {% if approval.second_approval_assignee %}{{ approval.second_approval_assignee.get_display_name }}{% else %}nicht dokumentiert{% endif %}. Der Entscheidungsstatus wurde noch nicht verändert.</div>
     {% if approval.second_approval_requested_at %}<div class="small text-muted">Prüfauftrag seit {{ approval.second_approval_requested_at|date:"d.m.Y H:i" }} · Andere unabhängige berechtigte Personen dürfen übernehmen.</div>{% endif %}
   </div>
-  <a class="btn btn-warning" href="{% url 'use_cases:second_approval_review' approval.pk %}">Zweitprüfung öffnen</a>
+  {% if journey.next_action.key != 'approval' %}<a class="btn btn-warning" href="{% url 'use_cases:second_approval_review' approval.pk %}">Zweitprüfung öffnen</a>{% endif %}
 </div>
 {% endif %}
 {% endfor %}
@@ -88,7 +88,7 @@
         {% if blocker_details %}
           <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
             <div><strong>{{ decision_check.title }}: {{ decision_check.state_label }} – {{ blocker_details|length }} Voraussetzungen offen</strong><div class="small text-muted">Datenblocker führen direkt zum Feld, Prozessblocker zur zuständigen Ansicht.</div></div>
-            {% if first_blocker %}<a class="btn btn-outline-danger btn-sm" href="{{ first_blocker.target_href }}">Zum ersten offenen Punkt</a>{% endif %}
+            {% if first_blocker and journey.next_action.key != 'use_case' %}<a class="btn btn-outline-danger btn-sm" href="{{ first_blocker.target_href }}">Zum ersten offenen Punkt</a>{% endif %}
           </div>
           <div class="blocker-actions">
             {% for blocker in blocker_details %}
@@ -226,7 +226,7 @@
           </div>
           {% endfor %}
         </div>
-        {% if nav_is_coordinator %}<a class="btn btn-outline-secondary w-100 mb-2" href="{% url 'governance:create' use_case.pk %}">Governance-Screening</a>{% endif %}
+        {% if nav_is_coordinator and journey.next_action.key != 'governance' %}<a class="btn btn-outline-secondary w-100 mb-2" href="{% url 'governance:create' use_case.pk %}">Governance-Screening</a>{% endif %}
         {% if can_edit %}<a class="btn btn-outline-secondary w-100" href="{% url 'notifications:evidence_create' use_case.pk %}">Nachweislink hinzufügen</a>{% endif %}
       </div>
       <div class="list-group list-group-flush">{% for evidence in use_case.evidence_links.all %}<a class="list-group-item list-group-item-action bg-transparent" href="{{ evidence.url }}" rel="noopener noreferrer" target="_blank">{{ evidence.label }}<div class="small text-muted">{{ evidence.get_document_type_display }}</div></a>{% endfor %}</div>
