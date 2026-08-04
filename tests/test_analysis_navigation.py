@@ -18,10 +18,7 @@ class AbsoluteUrlObject:
 
 def journey(*states):
     return SimpleNamespace(
-        steps=tuple(
-            SimpleNamespace(key=key, state=state)
-            for key, state in states
-        )
+        steps=tuple(SimpleNamespace(key=key, state=state) for key, state in states)
     )
 
 
@@ -58,15 +55,9 @@ def test_navigation_uses_canonical_targets_and_active_step():
     steps = {step.key: step for step in navigation.steps}
     assert navigation.active_key == "focus"
     assert steps["focus"].is_active is True
-    assert steps["focus"].url.endswith(
-        "?analysis_step=focus#fokus-priorisierung"
-    )
-    assert steps["process"].url.endswith(
-        "?analysis_step=process#prozessanalyse"
-    )
-    assert steps["solution"].url.endswith(
-        "?analysis_step=solution#loesungsoptionen"
-    )
+    assert steps["focus"].url.endswith("?analysis_step=focus#fokus-priorisierung")
+    assert steps["process"].url.endswith("?analysis_step=process#prozessanalyse")
+    assert steps["solution"].url.endswith("?analysis_step=solution#loesungsoptionen")
     assert navigation.previous.key == "value_stream"
     assert navigation.next.key == "process"
 
