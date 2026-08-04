@@ -29,28 +29,12 @@
   {% if request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'outcome_workspace' %}
   {% elif journey.next_action %}
   {% with action=journey.next_action %}
-  <div class="journey-topbar-next journey-topbar-next-{{ action.state }}">
+  <div class="journey-topbar-next journey-topbar-next-{{ action.state }}" data-testid="journey-next-action-context">
     <div class="journey-topbar-next-copy">
       <span class="journey-topbar-kicker">Nächster Schritt</span>
       <strong>{{ action.label }}</strong>
       {% if action.reason %}<span class="journey-topbar-next-reason">{{ action.reason }}</span>{% endif %}
     </div>
-    {% if action.url %}
-    {% if action.action_method == "post" %}
-    <form method="post" action="{{ action.url }}">
-      {% csrf_token %}
-      <button class="btn btn-sm {% if action.state == 'blocked' %}btn-outline-danger{% else %}btn-primary{% endif %}" type="submit">
-        {{ action.action_label|default:"Öffnen" }} →
-      </button>
-    </form>
-    {% else %}
-    <a class="btn btn-sm {% if action.state == 'blocked' %}btn-outline-danger{% else %}btn-primary{% endif %}" href="{{ action.url }}">
-      {{ action.action_label|default:"Öffnen" }} →
-    </a>
-    {% endif %}
-    {% else %}
-    <span class="badge badge-soft">Noch kein ausführbarer Schritt</span>
-    {% endif %}
   </div>
   {% endwith %}
   {% elif journey.completion_message %}
