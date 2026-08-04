@@ -82,6 +82,9 @@ class ActionableFinding:
     responsible_person: str
     can_execute: bool
     field_name: str = ""
+    field_label: str = ""
+    rule: str = ""
+    cause: str = ""
 
     @property
     def sort_key(self) -> tuple[int, int, int, str]:
@@ -139,6 +142,42 @@ def _field_label(package: DeliveryPackage, field_name: str) -> str:
     return str(package._meta.get_field(field_name).verbose_name)
 
 
+def _finding_rule(code: str, field_name: str) -> str:
+    if field_name and code.endswith("_MISSING"):
+        return "Pflichtangabe muss vollständig ausgefüllt sein."
+    if field_name and code.endswith("_GENERIC"):
+        return "Inhalt muss konkret und projektspezifisch sein; Vorlagentext reicht nicht aus."
+    rules = {
+        "TECHNICAL_OWNER_MISSING": "Vor der Übergabe muss ein aktiver Technical Owner benannt sein.",
+        "TECHNICAL_OWNER_INACTIVE": "Die technische Verantwortung muss einer aktiven Person zugeordnet sein.",
+        "TECHNICAL_OWNER_SOURCE_CHANGE_UNRESOLVED": (
+            "Eine geänderte Rollenzuordnung muss vor der Übergabe explizit entschieden werden."
+        ),
+        "SECTION_REVIEW_MISSING": "Jede Delivery-Sektion benötigt eine strukturierte Prüfung.",
+        "SOURCE_MANIFEST_MISSING": "Jede Delivery-Sektion benötigt einen nachvollziehbaren Quellenstand.",
+        "ARCHITECTURE_ARTIFACTS_MISSING": (
+            "Der Architektur- und Datenkontext muss als umsetzungsbezogenes Artefakt vorliegen."
+        ),
+        "SECTION_BLOCKED": "Eine blockierte Sektion verhindert die Delivery Readiness.",
+        "SECTION_NEEDS_REVIEW": "Jede Sektion muss vor der Übergabe vollständig geprüft sein.",
+        "REQUIRED_CONFIRMATION_MISSING": (
+            "Alle für die Sektion erforderlichen fachlichen und technischen Bestätigungen müssen vorliegen."
+        ),
+        "NOT_APPLICABLE_REASON_MISSING": (
+            "Nichtanwendbarkeit ist nur mit einer konkreten Begründung zulässig."
+        ),
+        "CONDITION_OWNER_MISSING": "Jede verbindliche Auflage benötigt eine verantwortliche Person.",
+        "CONDITION_DUE_DATE_MISSING": "Jede verbindliche Auflage benötigt eine Fälligkeit.",
+        "APPROVAL_CONDITIONS_NOT_TRANSFERRED": (
+            "Verbindliche Freigabeauflagen müssen vollständig in die Übergabehinweise übernommen werden."
+        ),
+        "SOURCE_CHANGED_AFTER_SNAPSHOT": (
+            "Quellenänderungen nach dem Package-Snapshot müssen sichtbar geprüft werden."
+        ),
+    }
+    return rules.get(code, "Die Delivery-Readiness-Regel für diesen Punkt ist noch nicht erfüllt.")
+
+
 def _package_edit_url(package: DeliveryPackage, field_name: str, return_to: str) -> str:
     base = reverse("delivery:package_update", kwargs={"pk": package.pk})
     target = f"{base}?{urlencode({'highlight': field_name})}#field-{field_name}"
@@ -186,10 +225,12 @@ def _build_action(
     url = ""
     can_execute = False
     field_name = FIELD_CODES.get(code, "")
+    field_label = _field_label(package, field_name) if field_name else ""
 
     if code == "TECHNICAL_OWNER_SOURCE_CHANGE_UNRESOLVED":
         title = "Änderung des Technical Owners entscheiden"
         action_label = "Abweichung auflösen"
+        field_label = "Technical Owner"
         responsible_role = "KI-Koordinator"
         responsible_person = "Berechtigte Koordination"
         can_execute = is_coordinator(user)
@@ -200,20 +241,21 @@ def _build_action(
             "Technical Owner benennen" if code.endswith("MISSING") else "Technical Owner ersetzen"
         )
         action_label = "Technical Owner zuordnen"
+        field_label = "Technical Owner"
         responsible_role = "Business Owner oder KI-Koordinator"
         responsible_person = _display_name(package.use_case.business_owner)
         can_execute = can_edit_use_case(user, package.use_case)
         if can_execute:
             url = _use_case_edit_url(package, "technical_owner", return_to)
     elif field_name:
-        label = _field_label(package, field_name)
-        title = f"{label} {'konkretisieren' if code.endswith('GENERIC') else 'ergänzen'}"
+        title = f"{field_label} {'konkretisieren' if code.endswith('GENERIC') else 'ergänzen'}"
         action_label = "Feld bearbeiten"
         can_execute = section_key in allowed_edit_sections(user, package)
         if can_execute:
             url = _package_edit_url(package, field_name, return_to)
     elif code in REVIEW_CODES:
         label = SECTION_LABELS.get(section_key, section_key)
+        field_label = "Sektionsprüfung"
         title = (
             f"Begründung für „{label}“ ergänzen"
             if code == "NOT_APPLICABLE_REASON_MISSING"
@@ -228,6 +270,7 @@ def _build_action(
     elif code == "ARCHITECTURE_ARTIFACTS_MISSING":
         title = "Architekturkontext anlegen"
         action_label = "Architekturkontext bearbeiten"
+        field_label = "Architektur- und Datenartefakte"
         responsible_role, responsible_person = section_responsibility(
             package, "architecture_and_data"
         )
@@ -236,6 +279,7 @@ def _build_action(
             url = _package_edit_url(package, "system_landscape", return_to)
     elif code in {"SECTION_REVIEW_MISSING", "SOURCE_MANIFEST_MISSING"}:
         label = SECTION_LABELS.get(section_key, section_key)
+        field_label = "Sektionsstruktur" if code == "SECTION_REVIEW_MISSING" else "Quellenstand"
         title = f"Struktur für „{label}“ wiederherstellen"
         action_label = "Readiness öffnen"
         responsible_role = "KI-Koordinator"
@@ -244,6 +288,7 @@ def _build_action(
         if can_execute:
             url = f"{package.get_absolute_url()}#section-{section_key}"
     elif code in {"CONDITION_OWNER_MISSING", "CONDITION_DUE_DATE_MISSING"}:
+        field_label = "Auflagenverantwortung" if code.endswith("OWNER_MISSING") else "Auflagenfälligkeit"
         title = "Freigabeauflage vervollständigen"
         action_label = "Freigabe prüfen"
         responsible_role = "KI-Koordinator"
@@ -252,12 +297,14 @@ def _build_action(
         if can_execute:
             url = f"{package.use_case.get_absolute_url()}#approval"
     elif code == "APPROVAL_CONDITIONS_NOT_TRANSFERRED":
+        field_label = "Übergabehinweise"
         title = "Freigabeauflagen in die Übergabe übernehmen"
         action_label = "Übergabehinweise bearbeiten"
         can_execute = "delivery_control" in allowed_edit_sections(user, package)
         if can_execute:
             url = _package_edit_url(package, "handover_notes", return_to)
     elif code == "SOURCE_CHANGED_AFTER_SNAPSHOT":
+        field_label = "Quellenstand"
         title = "Geänderte Quelle prüfen"
         action_label = "Use Case öffnen"
         responsible_role = "KI-Koordinator"
@@ -278,6 +325,9 @@ def _build_action(
         responsible_person=responsible_person,
         can_execute=can_execute,
         field_name=field_name,
+        field_label=field_label,
+        rule=_finding_rule(code, field_name),
+        cause=finding.message,
     )
 
 
