@@ -37,6 +37,13 @@
   color: var(--text);
 }
 
+#value-stream,
+#fokus-priorisierung,
+#prozessanalyse,
+#loesungsoptionen {
+  scroll-margin-top: 96px;
+}
+
 #value-stream:focus,
 #fokus-priorisierung:focus,
 #prozessanalyse:focus,
@@ -54,5 +61,14 @@
   .analysis-step-actions > div:last-child,
   .analysis-step-actions-current {
     text-align: left;
+  }
+}
+
+@media (max-width: 720px) {
+  #value-stream,
+  #fokus-priorisierung,
+  #prozessanalyse,
+  #loesungsoptionen {
+    scroll-margin-top: 16px;
   }
 }
