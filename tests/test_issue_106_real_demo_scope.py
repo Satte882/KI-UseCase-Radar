@@ -36,8 +36,8 @@ def _plan(target, reviewed_ids):
             "expected_updated_at": target.updated_at.isoformat(),
             "expected_scope_in": target.scope_in,
             "expected_scope_out": target.scope_out,
-            "new_scope_in": "Neuer eingeschlossener Umfang – exakt übernommen",
-            "new_scope_out": "Neue ausdrückliche Abgrenzung – exakt übernommen",
+            "new_scope_in": "Neuer eingeschlossener Umfang - exakt übernommen",
+            "new_scope_out": "Neue ausdrückliche Abgrenzung - exakt übernommen",
         },
         "real_demo_review": {
             "reviewed_ids": [str(value) for value in reviewed_ids],
