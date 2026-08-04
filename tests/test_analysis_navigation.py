@@ -29,8 +29,7 @@ def test_analysis_step_url_preserves_query_and_adds_fragment():
     )
 
     assert url == (
-        "/architecture/value-streams/7/"
-        "?source=portfolio&analysis_step=focus#fokus-priorisierung"
+        "/architecture/value-streams/7/?source=portfolio&analysis_step=focus#fokus-priorisierung"
     )
 
 
