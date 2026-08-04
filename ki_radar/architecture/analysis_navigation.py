@@ -94,9 +94,7 @@ def build_analysis_navigation(
     )
     previous_step = available_steps[active_index - 1] if active_index > 0 else None
     next_step = (
-        available_steps[active_index + 1]
-        if active_index + 1 < len(available_steps)
-        else None
+        available_steps[active_index + 1] if active_index + 1 < len(available_steps) else None
     )
     return AnalysisNavigation(
         steps=steps,
