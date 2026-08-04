@@ -31,17 +31,17 @@ Das Ergebnis wird als private Arbeitsnotiz oder über eine geeignete interne Ref
 
 ### 2. Zielumgebung nur lesen
 
-Beispiel für das lokale Docker-Setup:
+Im lokalen Docker-Setup heißt der Anwendungsservice `app`:
 
 ```powershell
-docker compose -f compose.local.yml exec web python manage.py correct_real_demo_scope --inspect
+docker compose -f compose.local.yml exec app python manage.py correct_real_demo_scope --inspect
 ```
 
 Der Befehl gibt den exakten Zieldatensatz und alle derzeit vorhandenen `[Real-DEMO]`-Value-Streams als JSON aus. Alle aufgeführten Datensätze müssen fachlich geprüft werden.
 
 ### 3. Privaten Korrekturplan erstellen
 
-Plan und Audit müssen über absolute Pfade **außerhalb des Repository-Verzeichnisses** liegen. Beispielstruktur:
+Der Plan wird zunächst außerhalb des Repository-Verzeichnisses auf dem Host erstellt, beispielsweise unter `C:\private\issue-106-plan.json`:
 
 ```json
 {
@@ -68,10 +68,17 @@ Plan und Audit müssen über absolute Pfade **außerhalb des Repository-Verzeich
 }
 ```
 
+Der lokale Compose-Stack bindet das persistente, nicht versionierte Volume `local_var` unter `/app/var` ein. Der Plan wird dorthin kopiert:
+
+```powershell
+docker compose -f compose.local.yml exec app mkdir -p /app/var/data-corrections
+docker compose -f compose.local.yml cp "C:\private\issue-106-plan.json" app:/app/var/data-corrections/issue-106-plan.json
+```
+
 ### 4. Plan ohne Änderung validieren
 
 ```powershell
-docker compose -f compose.local.yml exec web python manage.py correct_real_demo_scope --plan C:\private\issue-106-plan.json
+docker compose -f compose.local.yml exec app python manage.py correct_real_demo_scope --plan /app/var/data-corrections/issue-106-plan.json
 ```
 
 Der Dry Run prüft:
@@ -87,12 +94,18 @@ Die Ausgabe enthält nur SHA-256-Prüfsummen der Scope-Texte und keine fachliche
 ### 5. Änderung atomar anwenden
 
 ```powershell
-docker compose -f compose.local.yml exec web python manage.py correct_real_demo_scope --plan C:\private\issue-106-plan.json --apply --audit-path C:\private\issue-106-audit.md
+docker compose -f compose.local.yml exec app python manage.py correct_real_demo_scope --plan /app/var/data-corrections/issue-106-plan.json --apply --audit-path /app/var/data-corrections/issue-106-audit.md
 ```
 
 Die Änderung wird nur ausgeführt, wenn UUID, Name, `scope_in`, `scope_out`, `updated_at` und die vollständige Real-DEMO-Inventarliste weiterhin dem geprüften Plan entsprechen. Es muss exakt eine Datenbankzeile geändert werden.
 
-Der Audit wird zunächst mit Status `PREPARED` angelegt und nach erfolgreichem Commit atomar durch den Status `APPLIED` ersetzt. Bleibt `PREPARED` bestehen, muss vor einem erneuten Versuch geprüft werden, ob eine Änderung stattgefunden hat.
+Der Audit wird zunächst mit Status `PREPARED` angelegt und nach erfolgreichem Commit durch den Status `APPLIED` ersetzt. Bleibt `PREPARED` bestehen, muss vor einem erneuten Versuch geprüft werden, ob eine Änderung stattgefunden hat.
+
+Der private Audit kann anschließend auf den Host kopiert werden:
+
+```powershell
+docker compose -f compose.local.yml cp app:/app/var/data-corrections/issue-106-audit.md "C:\private\issue-106-audit.md"
+```
 
 ### 6. Abschlussnachweis
 
