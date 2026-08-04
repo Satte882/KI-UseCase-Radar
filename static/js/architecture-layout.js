@@ -45,7 +45,8 @@ const enhanceProcessArtifacts = () => {
     if (section.dataset.layoutEnhanced === "true") return;
 
     const title = section.querySelector(":scope > .section-title");
-    if (!title) return;
+    const contentLength = section.textContent.trim().length;
+    if (!title || contentLength < 180) return;
 
     const details = document.createElement("details");
     details.className = "architecture-disclosure artifact-disclosure";
