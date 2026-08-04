@@ -93,7 +93,10 @@ def _guide_focus_stage_selection(
                 state="current",
                 url=f"{value_stream.get_absolute_url()}#end-to-end-phasen",
                 action_label="Fokusphase auswählen",
-                reason="Wähle bewusst die Phase aus, deren Prozess im Detail analysiert werden soll.",
+                reason=(
+                    "Wähle bewusst die Phase aus, deren Prozess im Detail "
+                    "analysiert werden soll."
+                ),
             )
         )
     return _state(
