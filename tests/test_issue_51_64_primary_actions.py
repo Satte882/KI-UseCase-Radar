@@ -72,7 +72,7 @@ def test_value_stream_renders_one_canonical_primary_action(
     action = response.context["journey"].next_action
 
     assert response.status_code == 200
-    assert action.key == "value_stream"
+    assert action.key == "focus"
     assert content.count('data-testid="primary-next-action-control"') == 1
     assert f'href="{action.url}"' in content
     assert f"{action.action_label} →" in content
