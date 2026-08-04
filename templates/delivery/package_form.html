@@ -35,7 +35,7 @@
       <div class="mt-3">
         {% if row.is_active %}<span class="badge badge-soft">Aktive Sektion</span>
         {% elif row.can_edit %}<a class="btn btn-sm btn-outline-secondary" href="{{ row.edit_url }}">Sektion öffnen</a>
-        {% else %}<span class="small text-muted">Für deine Rolle nur lesbar</span>{% endif %}
+        {% else %}<span class="small text-muted">Nur lesen · Für deine Rolle nicht bearbeitbar</span>{% endif %}
       </div>
     </section>
     {% endfor %}
