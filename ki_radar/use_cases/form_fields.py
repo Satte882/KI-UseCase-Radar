@@ -9,8 +9,12 @@ from django.utils.formats import get_format
 def format_decimal_input(value: Decimal) -> str:
     """Format a Decimal for localized form input without grouping or rounding."""
 
-    normalized = format(value, "f").rstrip("0").rstrip(".")
-    if normalized in {"", "-0"}:
+    text = format(value, "f")
+    integer, separator, fraction = text.partition(".")
+    if separator:
+        fraction = fraction.rstrip("0")
+    normalized = f"{integer}.{fraction}" if fraction else integer
+    if normalized == "-0":
         normalized = "0"
     return normalized.replace(".", str(get_format("DECIMAL_SEPARATOR")))
 
