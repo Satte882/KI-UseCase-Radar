@@ -18,7 +18,7 @@ def stage_focus_item(decision, stage):
 
 @register.filter
 def screening_label(value):
-    return SCREENING_LABELS.get(value, "–")
+    return SCREENING_LABELS.get(value, "-")
 
 
 @register.filter
