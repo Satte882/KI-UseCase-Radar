@@ -4,10 +4,18 @@ from django.shortcuts import get_object_or_404, redirect
 
 from . import views
 from .models import ValueStream, ValueStreamStage
+from .stage_focus import get_stage_focus_decision
 
 PHASE_COMPLETION_REQUIRED_MESSAGE = (
     "Der Value Stream ist noch im Entwurf. Ergänze zuerst die End-to-End-Phasen "
     "und setze den Status anschließend auf Aktiv."
+)
+FOCUS_STAGE_REQUIRED_MESSAGE = (
+    "Wähle und begründe zuerst die Fokusphase anhand der gemeinsamen Kriterien."
+)
+OTHER_STAGE_MESSAGE = (
+    "Diese Phase ist nicht als Fokusphase ausgewählt. Öffne die gespeicherte Fokusphase "
+    "oder passe die Phasenentscheidung nachvollziehbar an."
 )
 
 
@@ -22,9 +30,23 @@ def _active_stage_or_redirect(request, pk):
     return stage, None
 
 
+def _selected_stage_or_redirect(request, stage):
+    decision = get_stage_focus_decision(stage.value_stream)
+    if decision is None:
+        messages.warning(request, FOCUS_STAGE_REQUIRED_MESSAGE)
+        return redirect("architecture:stage_focus_select", pk=stage.value_stream_id)
+    if decision.selected_stage_id != stage.pk:
+        messages.warning(request, OTHER_STAGE_MESSAGE)
+        return redirect(stage.value_stream)
+    return None
+
+
 @login_required
 def stage_start_use_case(request, pk):
-    _stage, blocked_response = _active_stage_or_redirect(request, pk)
+    stage, blocked_response = _active_stage_or_redirect(request, pk)
+    if blocked_response is not None:
+        return blocked_response
+    blocked_response = _selected_stage_or_redirect(request, stage)
     if blocked_response is not None:
         return blocked_response
     return views.stage_start_use_case(request, pk=pk)
@@ -32,7 +54,10 @@ def stage_start_use_case(request, pk):
 
 @login_required
 def process_analysis_create(request, stage_id):
-    _stage, blocked_response = _active_stage_or_redirect(request, stage_id)
+    stage, blocked_response = _active_stage_or_redirect(request, stage_id)
+    if blocked_response is not None:
+        return blocked_response
+    blocked_response = _selected_stage_or_redirect(request, stage)
     if blocked_response is not None:
         return blocked_response
     return views.process_analysis_create(request, stage_id=stage_id)
