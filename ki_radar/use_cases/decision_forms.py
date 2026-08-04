@@ -165,16 +165,12 @@ class ApprovalDecisionForm(forms.ModelForm):
             if self.is_bound
             else self.initial.get("decision_status")
         )
-        conditional_required = (
-            selected_status == UseCase.DecisionStatus.APPROVED_WITH_CONDITIONS
-        )
+        conditional_required = selected_status == UseCase.DecisionStatus.APPROVED_WITH_CONDITIONS
         for field_name in CONDITIONAL_APPROVAL_FIELDS:
             field = self.fields[field_name]
             field.required = conditional_required
             field.widget.attrs["data-conditional-required"] = "true"
-            field.widget.attrs["aria-required"] = (
-                "true" if conditional_required else "false"
-            )
+            field.widget.attrs["aria-required"] = "true" if conditional_required else "false"
         for field in self.fields.values():
             field.widget.attrs.setdefault("class", "form-control")
         self.fields["decision_status"].widget.attrs["class"] = "form-select"
