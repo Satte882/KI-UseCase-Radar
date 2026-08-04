@@ -212,5 +212,5 @@ def test_process_findings_are_prioritized_and_traceable_without_new_facts(
     source_link = 'Quelle: <a href="#analysis-bottlenecks">Bottlenecks und Ursachen</a>'
     assert source_link in body
     findings_index = body.index("Entscheidungsrelevante Befunde")
-    solutions_index = body.index("Lösungsoptionen · ADM Phase E")
+    solutions_index = body.index("Lösungsoptionen vergleichen")
     assert findings_index < solutions_index
