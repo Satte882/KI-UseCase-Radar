@@ -134,8 +134,7 @@ class Command(BaseCommand):
                 raise CommandError("Internal error: audit path missing in apply mode.")
             if audit_path.exists():
                 raise CommandError(
-                    "Audit path already exists and will not be overwritten: "
-                    f"{audit_path}"
+                    f"Audit path already exists and will not be overwritten: {audit_path}"
                 )
 
             prepared = self._audit_payload(
@@ -161,8 +160,7 @@ class Command(BaseCommand):
             )
             if changed_rows != 1:
                 raise CommandError(
-                    "Expected exactly one changed row, but the database reported "
-                    f"{changed_rows}."
+                    f"Expected exactly one changed row, but the database reported {changed_rows}."
                 )
 
             target.refresh_from_db()
@@ -213,9 +211,7 @@ class Command(BaseCommand):
 
     @staticmethod
     def _find_target(rows: list[ValueStream], target_id: str) -> ValueStream:
-        matches = [
-            item for item in rows if str(item.pk) == target_id and item.name == TARGET_NAME
-        ]
+        matches = [item for item in rows if str(item.pk) == target_id and item.name == TARGET_NAME]
         if len(matches) != 1:
             raise CommandError("The exact target UUID and name do not match one current record.")
         return matches[0]
@@ -319,9 +315,7 @@ class Command(BaseCommand):
         return value
 
     def _inventory(self) -> list[dict[str, Any]]:
-        rows = ValueStream.objects.filter(name__startswith=REAL_DEMO_PREFIX).order_by(
-            "name", "id"
-        )
+        rows = ValueStream.objects.filter(name__startswith=REAL_DEMO_PREFIX).order_by("name", "id")
         return [self._serialize(item) for item in rows]
 
     @staticmethod
