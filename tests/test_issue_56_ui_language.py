@@ -22,7 +22,10 @@ def test_primary_analysis_headings_are_task_oriented():
 
     assert "<strong>TOGAF-light: Architecture Vision</strong>" not in value_stream
     assert "<strong>Business Architecture · ADM Phase B</strong>" not in process_analysis
-    assert "<strong>Information Systems &amp; Technology · ADM Phasen C/D</strong>" not in process_analysis
+    assert (
+        "<strong>Information Systems &amp; Technology · ADM Phasen C/D</strong>"
+        not in process_analysis
+    )
     assert "<strong>Lösungsoptionen · ADM Phase E</strong>" not in process_analysis
     assert "<strong>Opportunities &amp; Solutions · ADM Phase E</strong>" not in solution_form
 
