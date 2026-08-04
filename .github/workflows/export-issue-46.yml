@@ -17,8 +17,7 @@ jobs:
           POSTGRES_DB: ki_radar_test
           POSTGRES_USER: ki_radar
           POSTGRES_PASSWORD: ki_radar_test_password
-        ports:
-          - 5432:5432
+        ports: ["5432:5432"]
         options: >-
           --health-cmd "pg_isready -U ki_radar -d ki_radar_test"
           --health-interval 10s
@@ -34,25 +33,17 @@ jobs:
       POSTGRES_PORT: "5432"
       DATABASE_URL: postgresql://ki_radar:ki_radar_test_password@localhost:5432/ki_radar_test
     steps:
-      - name: Checkout feature branch
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
-
-      - name: Install Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v6
         with:
           version: "0.10.0"
           enable-cache: true
-
-      - name: Install dependencies
-        run: uv sync --frozen --dev
-
+      - run: uv sync --frozen --dev
       - name: Apply validated implementation payload
         shell: bash
         run: |
@@ -63,13 +54,27 @@ jobs:
           base64 --decode /tmp/issue46.b64 > /tmp/issue46.tar.gz
           echo "d6c8ad0e05cbb40d7bf26b45de67d19b04fc70eba9e3667ef62146e27be0a625  /tmp/issue46.tar.gz" | sha256sum --check
           tar -xzf /tmp/issue46.tar.gz
+      - name: Apply confirmed fixes
+        shell: python
+        run: |
+          from pathlib import Path
 
+          old = '''{% if status.changed_at %}, {{ status.changed_at|date:"d.m.Y H:i" }}{% endif %}'''
+          new = '''{% if status.changed_at %}, {% if status.changed_at_has_time %}{{ status.changed_at|date:"d.m.Y H:i" }}{% else %}{{ status.changed_at|date:"d.m.Y" }}{% endif %}{% endif %}'''
+          for filename in (
+              "templates/use_cases/decision_form.html",
+              "templates/use_cases/second_approval_review.html",
+          ):
+              path = Path(filename)
+              text = path.read_text()
+              if old not in text:
+                  raise SystemExit(f"expected timestamp block missing in {filename}")
+              path.write_text(text.replace(old, new))
       - name: Format and migrate
         run: |
           uv run ruff format ki_radar tests
           uv run python manage.py makemigrations governance --name governance_review_artifacts
           uv run python manage.py migrate --noinput
-
       - name: Run first failing regression
         run: >-
           uv run pytest -q --tb=short -x
