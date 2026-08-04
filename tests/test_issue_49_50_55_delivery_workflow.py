@@ -95,7 +95,8 @@ def test_multiple_section_findings_explain_field_rule_and_cause(
         "MVP-Scope",
     }
     assert len(scope_findings) == 2
-    assert all(finding.rule == "Pflichtangabe muss vollständig ausgefüllt sein." for finding in scope_findings)
+    expected_rule = "Pflichtangabe muss vollständig ausgefüllt sein."
+    assert all(finding.rule == expected_rule for finding in scope_findings)
     assert all(finding.cause == finding.message for finding in scope_findings)
     assert all("highlight=" in finding.url for finding in scope_findings)
 
@@ -147,9 +148,17 @@ def test_section_states_and_role_confirmations_are_visually_distinct(
     response = client.get(package.get_absolute_url())
     content = response.content.decode()
 
+    confirmed_section = (
+        'class="app-card delivery-section-card delivery-section-confirmed" '
+        'id="section-problem_and_target"'
+    )
+    blocked_section = (
+        'class="app-card delivery-section-card delivery-section-blocked" '
+        'id="section-scope_and_users"'
+    )
     assert response.status_code == 200
-    assert 'class="app-card delivery-section-card delivery-section-confirmed" id="section-problem_and_target"' in content
-    assert 'class="app-card delivery-section-card delivery-section-blocked" id="section-scope_and_users"' in content
+    assert confirmed_section in content
+    assert blocked_section in content
     assert "Fachlich: bestätigt" in content
     assert "Technisch: nicht erforderlich" in content
     assert "Fachlich: offen" in content
