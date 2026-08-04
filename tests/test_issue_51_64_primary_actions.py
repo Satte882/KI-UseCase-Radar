@@ -151,7 +151,7 @@ def test_second_approval_action_points_to_actual_review():
     normalized = _normalize_second_approval_action(use_case, journey)
 
     assert normalized.next_action.url == reverse(
-        "use_cases:second_approval_review", kwargs={"pk": approval.pk}
+        "use_cases:second_approval_review", kwargs={"decision_id": approval.pk}
     )
     assert normalized.next_action.action_label == "Zweitprüfung öffnen"
     assert normalized.next_action.action_method == "get"
