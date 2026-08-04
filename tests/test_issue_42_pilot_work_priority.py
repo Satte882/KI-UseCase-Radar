@@ -47,7 +47,7 @@ def running_pilot(settings):
 
 
 @pytest.mark.django_db
-def test_running_pilot_is_primary_on_use_case_detail(client, running_pilot):
+def test_running_pilot_is_primary_and_next_gate_is_visible(client, running_pilot):
     coordinator, use_case, _pilot_start = running_pilot
     use_case.one_time_cost = None
     use_case.save(update_fields=["one_time_cost", "updated_at"])
@@ -55,16 +55,39 @@ def test_running_pilot_is_primary_on_use_case_detail(client, running_pilot):
 
     response = client.get(reverse("use_cases:detail", kwargs={"pk": use_case.pk}))
     content = response.content.decode()
+    gate_codes = {detail.code for detail in response.context["gate_blocker_details"]}
 
     assert response.status_code == 200
     assert response.context["journey"].next_action.key == "pilot"
     assert response.context["journey"].next_action.action_label == "Pilot öffnen"
-    assert response.context["decision_check"].title == "Spätere Go-live-Voraussetzungen"
-    assert response.context["decision_check"].state_label == "Späteres Gate"
+    assert response.context["decision_check"].title == "Nächstes Gate: Produktiv setzen"
+    assert response.context["decision_check"].state_label == "Pilot läuft"
     assert response.context["blocker_details"] == []
-    assert "Spätere Go-live-Voraussetzungen" in content
-    assert "Spätere Go-live-Voraussetzung:" in content
+    assert "missing_one_time_cost" in gate_codes
+    assert "Nächstes Gate" in content
+    assert "Produktiv setzen" in content
+    assert "Einmalige Kosten" in content
     assert "Produktiv setzen: Blockiert" not in content
+
+
+@pytest.mark.django_db
+def test_register_shows_running_pilot_instead_of_general_blocker(client, running_pilot):
+    coordinator, use_case, _pilot_start = running_pilot
+    use_case.recurring_cost = None
+    use_case.save(update_fields=["recurring_cost", "updated_at"])
+    client.force_login(coordinator)
+
+    response = client.get(reverse("use_cases:list"))
+    content = response.content.decode()
+    row = next(item for item in response.context["use_cases"] if item.pk == use_case.pk)
+
+    assert response.status_code == 200
+    assert row.decision_check.title == "Produktiv setzen"
+    assert row.register_state_label == "Pilot läuft"
+    assert row.register_state == "review"
+    assert row.register_state_detail.startswith("Produktivsetzung:")
+    assert "Pilot läuft" in content
+    assert "Produktivsetzung:" in content
 
 
 @pytest.mark.django_db

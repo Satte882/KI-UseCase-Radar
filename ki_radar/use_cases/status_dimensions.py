@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from .models import UseCase
 from .services import (
+    EARLY_GO_LIVE_BLOCKER,
     approval_check,
     check_go_live,
     check_pilot_start,
@@ -57,6 +58,12 @@ class UseCaseStatusDimensions:
 
 def _format_date(value: date) -> str:
     return value.strftime("%d.%m.%Y")
+
+
+def _requirements_open_text(count: int) -> str:
+    if count == 1:
+        return "Für die Produktivsetzung ist noch eine Voraussetzung offen."
+    return f"Für die Produktivsetzung sind noch {count} Voraussetzungen offen."
 
 
 def _from_lifecycle_check(use_case: UseCase) -> WorkCheck:
@@ -315,8 +322,18 @@ def _next_lifecycle_decision(use_case: UseCase) -> str:
 
     if use_case.status == UseCase.Status.PILOT:
         check = check_go_live(use_case)
+        temporal_requirement_open = EARLY_GO_LIVE_BLOCKER in check.blockers
+        actionable_count = len(check.blockers) - int(temporal_requirement_open)
+        if temporal_requirement_open and use_case.planned_pilot_end:
+            pilot_message = f"Pilot läuft planmäßig bis {_format_date(use_case.planned_pilot_end)}."
+            if actionable_count:
+                return f"{pilot_message} {_requirements_open_text(actionable_count)}"
+            return (
+                f"{pilot_message} Danach kann die Produktivsetzung entschieden werden; "
+                "eine vorzeitige Ausnahme ist möglich."
+            )
         if check.blockers:
-            return f"Go-live blockiert: {check.blockers[0]}."
+            return _requirements_open_text(len(check.blockers))
         if use_case.planned_pilot_end:
             return (
                 "Go-live-Entscheidung zum geplanten Pilotende am "

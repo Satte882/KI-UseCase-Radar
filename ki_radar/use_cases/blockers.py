@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from django.urls import reverse
 
 from .models import UseCase
+from .services import EARLY_GO_LIVE_BLOCKER
 
 
 @dataclass(frozen=True)
@@ -94,6 +95,21 @@ def build_blocker_details(use_case: UseCase, blockers: list[str]) -> list[Blocke
     details: list[BlockerDetail] = []
 
     for label in blockers:
+        if label == EARLY_GO_LIVE_BLOCKER:
+            details.append(
+                BlockerDetail(
+                    code="pilot_period_running",
+                    label=label,
+                    category="time",
+                    action_label="Ausnahme prüfen",
+                    target_url=(
+                        f"{reverse('reviews:create', kwargs={'use_case_id': use_case.pk})}"
+                        "?action=go_live"
+                    ),
+                )
+            )
+            continue
+
         if label in {"Governance-Screening", "Governance-Vorprüfung"}:
             details.append(
                 BlockerDetail(
