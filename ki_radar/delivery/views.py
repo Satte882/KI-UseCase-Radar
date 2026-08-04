@@ -167,10 +167,6 @@ def _active_edit_section(package: DeliveryPackage, user, requested: str, highlig
     highlight_section = DeliveryPackageForm.section_for_field(highlight)
     if highlight_section in editable_sections:
         return highlight_section
-    findings = build_actionable_findings(package, user)
-    for finding in findings:
-        if finding.severity == "blocker" and finding.section_key in editable_sections:
-            return finding.section_key
     return next((key for key in SECTION_KEYS if key in editable_sections), "")
 
 
