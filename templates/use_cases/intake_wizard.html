@@ -82,10 +82,30 @@
           </dl>
         </div>
       </div>
+      <div class="border rounded p-3 mt-4" data-testid="intake-handover-preview">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <div class="section-title">Wirkung der Aktion</div>
+            <strong>Zur Bewertung bereitstellen</strong>
+          </div>
+          <div class="col-md-4">
+            <div class="section-title">Nächste Bearbeitung</div>
+            <strong>KI-Koordination</strong>
+          </div>
+          <div class="col-md-4">
+            <div class="section-title">Rollenbasierter Arbeitsvorrat</div>
+            <a href="{% url 'reporting:dashboard' %}">Arbeitsvorrat → Meine Aufgaben</a>
+          </div>
+        </div>
+        <div class="small text-muted mt-3">
+          Es wird keine einzelne Person zugewiesen. Nach dem Speichern sehen berechtigte
+          KI-Koordinatoren den Use Case als ausführbare Bewertungsaufgabe in ihrem Arbeitsvorrat.
+        </div>
+      </div>
     </div>
     <div class="card-footer d-flex justify-content-between gap-2">
       <a class="btn btn-outline-secondary" href="{% url 'use_cases:intake_step' 5 %}">Zurück</a>
-      <button class="btn btn-primary" {% if blockers %}disabled{% endif %}>Use Case anlegen und zur Bewertung übergeben</button>
+      <button class="btn btn-primary" {% if blockers %}disabled{% endif %}>Use Case anlegen und zur Bewertung bereitstellen</button>
     </div>
   </form>
   {% endif %}
