@@ -116,12 +116,13 @@ class DeliveryPackageForm(forms.ModelForm):
             if name not in ARTIFACT_FIELDS | {"external_delivery_url"}
         }
 
-    def __init__(self, *args, actor=None, **kwargs):
+    def __init__(self, *args, actor=None, active_section="", **kwargs):
         self.actor = actor
+        self.active_section = active_section
         self.editable_sections: set[str] = set()
         super().__init__(*args, **kwargs)
         artifacts = get_delivery_architecture_artifacts(self.instance) if self.instance.pk else None
-        if artifacts is not None and not self.is_bound:
+        if artifacts is not None:
             self.initial.update(
                 {
                     "system_landscape": artifacts.system_landscape,
@@ -142,7 +143,10 @@ class DeliveryPackageForm(forms.ModelForm):
         if actor is not None and self.instance.pk:
             self.editable_sections = allowed_edit_sections(actor, self.instance)
             for section_key, field_names in SECTION_FIELDS.items():
-                if section_key in self.editable_sections:
+                section_enabled = section_key in self.editable_sections and (
+                    not self.active_section or section_key == self.active_section
+                )
+                if section_enabled:
                     continue
                 for field_name in field_names:
                     if field_name in self.fields:
@@ -160,6 +164,7 @@ class DeliveryPackageForm(forms.ModelForm):
                     "label": labels[section_key],
                     "fields": [self[field_name] for field_name in SECTION_FIELDS[section_key]],
                     "editable": section_key in self.editable_sections,
+                    "active": section_key == self.active_section,
                     "responsible_role": role,
                     "responsible_person": person,
                 }
