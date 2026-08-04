@@ -60,7 +60,9 @@ def build_analysis_navigation(
 ) -> AnalysisNavigation:
     journey_steps = {step.key: step for step in getattr(journey, "steps", ())}
     value_stream_url = value_stream.get_absolute_url()
-    process_url = process_analysis.get_absolute_url() if process_analysis is not None else None
+    process_url = (
+        process_analysis.get_absolute_url() if process_analysis is not None else None
+    )
 
     target_urls = {
         "value_stream": analysis_step_url(value_stream_url, "value_stream"),
