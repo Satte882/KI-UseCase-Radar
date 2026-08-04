@@ -71,7 +71,7 @@ def _guide_phase_completion(
             steps.append(
                 _upcoming_step(
                     step,
-                    "Der Deep Dive beginnt erst nach Abschluss der Phasenerfassung.",
+                    "Die Prozessdetailanalyse beginnt erst nach Abschluss der Phasenerfassung.",
                 )
             )
     return _state(path_label=journey.path_label, steps=steps)
@@ -94,8 +94,7 @@ def _guide_focus_stage_selection(
                 url=f"{value_stream.get_absolute_url()}#end-to-end-phasen",
                 action_label="Fokusphase auswählen",
                 reason=(
-                    "Wähle bewusst die Phase aus, deren Prozess im Deep Dive "
-                    "analysiert werden soll."
+                    "Wähle bewusst die Phase aus, deren Prozess im Detail analysiert werden soll."
                 ),
             )
         )
