@@ -325,9 +325,7 @@ def _next_lifecycle_decision(use_case: UseCase) -> str:
         temporal_requirement_open = EARLY_GO_LIVE_BLOCKER in check.blockers
         actionable_count = len(check.blockers) - int(temporal_requirement_open)
         if temporal_requirement_open and use_case.planned_pilot_end:
-            pilot_message = (
-                f"Pilot läuft planmäßig bis {_format_date(use_case.planned_pilot_end)}."
-            )
+            pilot_message = f"Pilot läuft planmäßig bis {_format_date(use_case.planned_pilot_end)}."
             if actionable_count:
                 return f"{pilot_message} {_requirements_open_text(actionable_count)}"
             return (
