@@ -129,9 +129,7 @@ def _section_rows(
                 "source_count": len(field_sources),
                 "state": state,
                 "state_label": state_label,
-                "is_primary": bool(
-                    primary_finding and primary_finding.section_key == section_key
-                ),
+                "is_primary": bool(primary_finding and primary_finding.section_key == section_key),
                 "is_active": section_key == active_section,
                 "can_edit": section_key in editable_sections,
                 "edit_url": _section_edit_url(package, section_key, return_to),
