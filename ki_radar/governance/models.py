@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from simple_history.models import HistoricalRecords
@@ -39,8 +40,11 @@ class GovernanceAssessment(TimeStampedModel):
     generated_external_content = models.BooleanField(default=False)
     human_oversight_planned = models.BooleanField(default=False)
     privacy_review_required = models.BooleanField(default=False)
+    privacy_review_rationale = models.TextField(blank=True)
     security_review_required = models.BooleanField(default=False)
+    security_review_rationale = models.TextField(blank=True)
     legal_review_required = models.BooleanField(default=False)
+    legal_review_rationale = models.TextField(blank=True)
     result = models.CharField(max_length=30, choices=Result.choices)
     rationale = models.TextField()
     evidence_url = models.URLField(blank=True)
@@ -49,6 +53,10 @@ class GovernanceAssessment(TimeStampedModel):
 
     class Meta:
         ordering = ["-assessment_date", "-created_at"]
+
+    def review_rationale(self, review_type: str) -> str:
+        field_name = f"{review_type}_review_rationale"
+        return (getattr(self, field_name, "") or self.rationale).strip()
 
     def __str__(self) -> str:
         return f"{self.use_case.short_id} - {self.assessment_date}"
@@ -60,6 +68,11 @@ class GovernanceReview(TimeStampedModel):
         SECURITY = "security", "Informationssicherheitsprüfung"
         LEGAL = "legal", "Rechtsprüfung"
 
+    class Status(models.TextChoices):
+        OPEN = "open", "Offen"
+        COMPLETED = "completed", "Abgeschlossen"
+        NOT_RELEVANT = "not_relevant", "Nicht relevant"
+
     class Result(models.TextChoices):
         PASSED = "passed", "Bestanden"
         PASSED_WITH_CONDITIONS = "passed_with_conditions", "Bestanden mit Auflagen"
@@ -70,7 +83,19 @@ class GovernanceReview(TimeStampedModel):
         on_delete=models.CASCADE,
         related_name="governance_reviews",
     )
+    screening = models.ForeignKey(
+        GovernanceAssessment,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="review_artifacts",
+    )
     review_type = models.CharField(max_length=20, choices=ReviewType.choices)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.COMPLETED,
+    )
     reviewed_at = models.DateField(default=timezone.localdate)
     reviewer = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -78,19 +103,79 @@ class GovernanceReview(TimeStampedModel):
         on_delete=models.SET_NULL,
         related_name="completed_governance_reviews",
     )
-    result = models.CharField(max_length=30, choices=Result.choices)
+    responsible_role = models.CharField(max_length=120, blank=True)
+    result = models.CharField(
+        max_length=30,
+        choices=Result.choices,
+        blank=True,
+        default="",
+    )
     rationale = models.TextField()
-    evidence_url = models.URLField()
+    risks = models.TextField(blank=True)
+    measures = models.TextField(blank=True)
+    conditions = models.TextField(blank=True)
+    evidence_url = models.URLField(blank=True)
+    history = HistoricalRecords(inherit=True)
 
     class Meta:
-        ordering = ["-reviewed_at", "-created_at"]
+        ordering = ["-created_at", "-reviewed_at"]
+
+    def clean(self):
+        super().clean()
+        errors = {}
+        rationale = self.rationale.strip()
+        result = self.result.strip()
+        evidence_url = self.evidence_url.strip()
+
+        if self.screening_id and self.screening.use_case_id != self.use_case_id:
+            errors["screening"] = "Screening und Prüfartefakt müssen zum selben Use Case gehören."
+
+        if not rationale:
+            errors["rationale"] = "Eine Begründung ist für jeden Prüfstatus erforderlich."
+
+        if self.status == self.Status.OPEN:
+            if result:
+                errors["result"] = "Eine offene Prüfung darf noch kein Prüfergebnis enthalten."
+        elif self.status == self.Status.NOT_RELEVANT:
+            if result:
+                errors["result"] = "Für 'Nicht relevant' darf kein Prüfergebnis gesetzt sein."
+            if self.screening_id:
+                required_field = f"{self.review_type}_review_required"
+                if getattr(self.screening, required_field):
+                    errors["status"] = (
+                        "Eine laut Screening erforderliche Prüfung kann nicht als "
+                        "'Nicht relevant' dokumentiert werden."
+                    )
+        elif self.status == self.Status.COMPLETED:
+            if not result:
+                errors["result"] = "Für eine abgeschlossene Prüfung ist ein Ergebnis erforderlich."
+            if not evidence_url:
+                errors["evidence_url"] = (
+                    "Für eine abgeschlossene formale Prüfung ist ein Nachweis erforderlich."
+                )
+            if result == self.Result.PASSED_WITH_CONDITIONS and not self.conditions.strip():
+                errors["conditions"] = "Auflagen müssen strukturiert dokumentiert werden."
+            if result == self.Result.FAILED:
+                if not self.risks.strip():
+                    errors["risks"] = "Bei 'Nicht bestanden' sind Risiken erforderlich."
+                if not self.measures.strip():
+                    errors["measures"] = "Bei 'Nicht bestanden' sind Maßnahmen erforderlich."
+
+        if errors:
+            raise ValidationError(errors)
 
     @property
     def is_completed(self) -> bool:
-        return self.result in {
+        return self.status == self.Status.COMPLETED and self.result in {
             self.Result.PASSED,
             self.Result.PASSED_WITH_CONDITIONS,
         }
+
+    @property
+    def display_status(self) -> str:
+        if self.status == self.Status.COMPLETED and self.result:
+            return f"{self.get_status_display()} · {self.get_result_display()}"
+        return self.get_status_display()
 
     def __str__(self) -> str:
         return f"{self.use_case.short_id} - {self.get_review_type_display()}"

@@ -15,6 +15,7 @@ from .decision_forms import (
     DecisionAssessmentForm,
     SecondApprovalReviewForm,
 )
+from .governance_status import build_governance_statuses
 from .models import ApprovalDecision, UseCase
 from .services import (
     approval_check,
@@ -212,6 +213,7 @@ def approval_decision_create(request, pk):
             "assessment": assessment,
             "journey": journey,
             "status_dimensions": build_use_case_status_dimensions(use_case, journey),
+            "governance_statuses": build_governance_statuses(use_case),
             "approval_check": hard_check,
             "approval_blocker_details": blocker_details,
             "first_approval_blocker": blocker_details[0] if blocker_details else None,
@@ -279,6 +281,7 @@ def second_approval_review(request, decision_id):
             "decision": decision,
             "use_case": decision.use_case,
             "assessment": decision.assessment,
+            "governance_statuses": build_governance_statuses(decision.use_case),
             "form": form,
             "can_act": can_act,
         },

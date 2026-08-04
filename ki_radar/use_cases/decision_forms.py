@@ -50,14 +50,14 @@ class DecisionAssessmentForm(forms.ModelForm):
             "assumptions_resolved": "Klärung offener Annahmen",
             "evidence_url": "Nachweislink",
             "rationale": "Bewertungsbegründung",
-            "governance_precheck_completed": "Governance-Vorprüfung durchgeführt",
+            "governance_precheck_completed": "Governance-Screening im Assessment dokumentiert",
             "recommendation": "Empfohlene Entscheidung",
         }
         help_texts = {
             "evidence_url": "Verbindlicher Link auf Analyse, Messung oder freigegebenen Nachweis.",
             "governance_precheck_completed": (
-                "Falls keine eigene Governance-Rolle existiert, führt die bewertende Person die "
-                "Vorprüfung durch. Die entscheidende Person muss sie separat bestätigen."
+                "Dieses Screening identifiziert nur Governance-Themen. Es ersetzt keine formale "
+                "Datenschutz-, Security- oder Rechtsprüfung und deren Nachweise."
             ),
         }
 

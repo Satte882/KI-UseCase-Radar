@@ -83,9 +83,6 @@ class UseCaseForm(forms.ModelForm):
             "technical_feasibility",
             "data_readiness",
             "risk_complexity",
-            "privacy_review_completed",
-            "security_review_completed",
-            "legal_review_completed",
             "human_oversight",
             "support_responsibility",
         ]
@@ -147,9 +144,6 @@ class UseCaseForm(forms.ModelForm):
             "technical_feasibility": "Technische Machbarkeit",
             "data_readiness": "Datenreife",
             "risk_complexity": "Risiko und Komplexität",
-            "privacy_review_completed": "Datenschutzprüfung abgeschlossen",
-            "security_review_completed": "Security-Prüfung abgeschlossen",
-            "legal_review_completed": "Rechtsprüfung abgeschlossen",
             "human_oversight": "Menschliche Aufsicht",
             "support_responsibility": "Support-Verantwortung",
         }
@@ -172,31 +166,7 @@ class UseCaseForm(forms.ModelForm):
         self.initial.setdefault("business_domain", BusinessDomain.OTHER)
         self.initial.setdefault("process_area", self.initial.get("affected_process", ""))
         self.governance_statuses = build_governance_statuses(self.instance)
-        editable_review_fields = {
-            status.kind.completed_field for status in self.governance_statuses if status.editable
-        }
-        for status in self.governance_statuses:
-            field_name = status.kind.completed_field
-            if field_name not in editable_review_fields:
-                self.fields.pop(field_name, None)
-            elif field_name in self.fields:
-                self.fields[field_name].label = {
-                    "privacy": "Datenschutzprüfung abgeschlossen",
-                    "security": "Security-Prüfung abgeschlossen",
-                    "legal": "Rechtsprüfung abgeschlossen",
-                }[status.kind.key]
-                self.fields[field_name].help_text = (
-                    "Laut aktuellem Governance-Screening erforderlich. "
-                    "Der Abschlussstatus wird in der Änderungshistorie protokolliert."
-                )
-        self.governance_boundary_field = next(
-            (
-                status.kind.completed_field
-                for status in self.governance_statuses
-                if status.kind.completed_field in self.fields
-            ),
-            "human_oversight",
-        )
+        self.governance_boundary_field = "human_oversight"
         for field in self.fields.values():
             field.widget.attrs.setdefault(
                 "class",

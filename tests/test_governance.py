@@ -4,7 +4,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from ki_radar.governance.forms import GovernanceAssessmentForm
-from ki_radar.governance.models import GovernanceAssessment
+from ki_radar.governance.models import GovernanceAssessment, GovernanceReview
 from ki_radar.use_cases.forms import UseCaseForm
 from ki_radar.use_cases.governance_status import build_governance_statuses
 from ki_radar.use_cases.models import UseCase
@@ -23,7 +23,9 @@ def use_case(owner, business_unit):
 
 
 @pytest.mark.django_db
-def test_governance_updates_required_flags(client, coordinator, use_case):
+def test_governance_updates_required_flags_and_creates_status_artifacts(
+    client, coordinator, use_case
+):
     client.force_login(coordinator)
     response = client.post(
         reverse("governance:create", args=[use_case.pk]),
@@ -32,6 +34,9 @@ def test_governance_updates_required_flags(client, coordinator, use_case):
             "basis_version": "2026-01",
             "personal_data": "on",
             "privacy_review_required": "on",
+            "privacy_review_rationale": "Personenbezogene Daten werden verarbeitet.",
+            "security_review_rationale": "Keine zusätzliche Security-Prüfung erforderlich.",
+            "legal_review_rationale": "Keine rechtliche Personenwirkung.",
             "result": GovernanceAssessment.Result.PRIVACY,
             "rationale": "Personenbezogene Daten",
         },
@@ -39,6 +44,15 @@ def test_governance_updates_required_flags(client, coordinator, use_case):
     assert response.status_code == 302
     use_case.refresh_from_db()
     assert use_case.privacy_review_required is True
+    statuses = {
+        artifact.review_type: artifact.status
+        for artifact in GovernanceReview.objects.filter(use_case=use_case)
+    }
+    assert statuses == {
+        GovernanceReview.ReviewType.PRIVACY: GovernanceReview.Status.OPEN,
+        GovernanceReview.ReviewType.SECURITY: GovernanceReview.Status.NOT_RELEVANT,
+        GovernanceReview.ReviewType.LEGAL: GovernanceReview.Status.NOT_RELEVANT,
+    }
 
 
 @pytest.mark.django_db
@@ -48,7 +62,8 @@ def test_governance_form_uses_german_labels():
     assert form.fields["assessment_date"].label == "Screening-Datum"
     assert form.fields["basis_version"].label == "Prüfgrundlage / Version"
     assert form.fields["personal_data"].label == "Personenbezogene Daten"
-    assert form.fields["result"].label == "Ergebnis"
+    assert form.fields["result"].label == "Screening-Ergebnis"
+    assert form.fields["privacy_review_rationale"].label == ("Begründung Datenschutz-Prüfbedarf")
 
 
 def _assessment(use_case, reviewer, **requirements):
@@ -104,76 +119,105 @@ def test_governance_status_distinguishes_all_four_states(coordinator, use_case):
     assert statuses["privacy"].state == "not_required"
     assert statuses["security"].state == "open"
     assert statuses["legal"].state == "completed"
+    assert statuses["privacy"].label == "Nicht relevant"
     assert statuses["privacy"].actor == coordinator.get_display_name()
     assert statuses["legal"].actor == "System"
 
 
 @pytest.mark.django_db
-def test_general_form_only_allows_required_reviews_to_be_completed(coordinator, use_case):
+def test_general_form_never_exposes_governance_completion_checkboxes(coordinator, use_case):
     _assessment(use_case, coordinator, privacy_review_required=True)
     use_case.privacy_review_required = True
     use_case.save(update_fields=["privacy_review_required", "updated_at"])
 
     form = UseCaseForm(instance=use_case, current_user=coordinator)
 
-    assert "privacy_review_completed" in form.fields
+    assert "privacy_review_completed" not in form.fields
     assert "security_review_completed" not in form.fields
     assert "legal_review_completed" not in form.fields
 
 
 @pytest.mark.django_db
-def test_manipulated_post_cannot_complete_unassessed_or_unrequired_review(client, owner, use_case):
+def test_manipulated_post_cannot_complete_review_from_master_data(client, owner, use_case):
+    _assessment(use_case, owner, privacy_review_required=True)
+    use_case.privacy_review_required = True
+    use_case.save(update_fields=["privacy_review_required", "updated_at"])
     client.force_login(owner)
-    response = client.post(
-        reverse("use_cases:edit", args=[use_case.pk]),
-        _edit_payload(use_case, privacy_review_completed="on"),
-    )
-    assert response.status_code == 302
-    use_case.refresh_from_db()
-    assert use_case.privacy_review_completed is False
 
-    _assessment(use_case, owner, privacy_review_required=False)
     response = client.post(
         reverse("use_cases:edit", args=[use_case.pk]),
         _edit_payload(use_case, privacy_review_completed="on"),
     )
+
     assert response.status_code == 302
     use_case.refresh_from_db()
     assert use_case.privacy_review_completed is False
 
 
 @pytest.mark.django_db
-def test_required_review_completion_and_reopening_use_existing_history(
-    client, owner, coordinator, use_case
-):
-    _assessment(use_case, coordinator, privacy_review_required=True)
-    use_case.privacy_review_required = True
-    use_case.save(update_fields=["privacy_review_required", "updated_at"])
-    client.force_login(owner)
-
-    completed = client.post(
-        reverse("use_cases:edit", args=[use_case.pk]),
-        _edit_payload(use_case, privacy_review_completed="on"),
+def test_formal_review_completion_and_new_screening_are_historized(client, coordinator, use_case):
+    client.force_login(coordinator)
+    screening_response = client.post(
+        reverse("governance:create", args=[use_case.pk]),
+        {
+            "assessment_date": timezone.localdate(),
+            "basis_version": "2026-07",
+            "privacy_review_required": "on",
+            "privacy_review_rationale": "Personenbezug erfordert formale Prüfung.",
+            "security_review_rationale": "Keine zusätzliche Security-Prüfung.",
+            "legal_review_rationale": "Keine rechtliche Personenwirkung.",
+            "result": GovernanceAssessment.Result.PRIVACY,
+            "rationale": "Erstes Screening",
+        },
     )
-    assert completed.status_code == 302
-    use_case.refresh_from_db()
-    status = build_governance_statuses(use_case)[0]
-    assert status.state == "completed"
-    assert status.actor == owner.get_display_name()
-    assert status.changed_at_has_time is True
+    assert screening_response.status_code == 302
 
-    reopened_payload = _edit_payload(use_case)
-    reopened_payload.pop("privacy_review_completed")
-    reopened = client.post(
-        reverse("use_cases:edit", args=[use_case.pk]),
-        reopened_payload,
+    review_response = client.post(
+        reverse(
+            "governance:review",
+            kwargs={"use_case_id": use_case.pk, "review_type": "privacy"},
+        ),
+        {
+            "reviewed_at": timezone.localdate(),
+            "responsible_role": "Datenschutz",
+            "result": GovernanceReview.Result.PASSED,
+            "rationale": "Datenschutzanforderungen wurden geprüft.",
+            "risks": "Keine verbleibenden hohen Risiken.",
+            "measures": "Zugriffsbeschränkung umgesetzt.",
+            "conditions": "",
+            "evidence_url": "https://example.invalid/privacy-proof",
+        },
     )
-    assert reopened.status_code == 302
+    assert review_response.status_code == 302
     use_case.refresh_from_db()
+    assert use_case.privacy_review_completed is True
+    completed = use_case.governance_reviews.filter(
+        review_type=GovernanceReview.ReviewType.PRIVACY,
+        status=GovernanceReview.Status.COMPLETED,
+    ).get()
+    assert completed.history.count() == 1
+    assert completed.history.first().history_user == coordinator
+
+    reopened_response = client.post(
+        reverse("governance:create", args=[use_case.pk]),
+        {
+            "assessment_date": timezone.localdate(),
+            "basis_version": "2026-08",
+            "privacy_review_required": "on",
+            "privacy_review_rationale": "Neue Datenquelle erfordert erneute Prüfung.",
+            "security_review_rationale": "Keine neue Security-Wirkung.",
+            "legal_review_rationale": "Keine neue Rechtswirkung.",
+            "result": GovernanceAssessment.Result.PRIVACY,
+            "rationale": "Neues Screening wegen Datenquellenänderung",
+        },
+    )
+    assert reopened_response.status_code == 302
+    use_case.refresh_from_db()
+    assert use_case.privacy_review_completed is False
     status = build_governance_statuses(use_case)[0]
     assert status.state == "open"
-    assert status.actor == owner.get_display_name()
-    assert status.attribution_note == "Zuletzt wieder geöffnet"
+    assert status.actor == coordinator.get_display_name()
+    assert status.changed_at_has_time is True
 
 
 @pytest.mark.django_db
@@ -189,8 +233,11 @@ def test_new_screening_normalizes_obsolete_completion_atomically(client, coordin
         {
             "assessment_date": timezone.localdate(),
             "basis_version": "2026-08",
+            "privacy_review_rationale": "Personenbezug entfällt vollständig.",
+            "security_review_rationale": "Keine sicherheitskritische Änderung.",
+            "legal_review_rationale": "Keine rechtliche Wirkung.",
             "result": GovernanceAssessment.Result.NO_FLAGS,
-            "rationale": "Datenschutzprüfung nicht mehr erforderlich",
+            "rationale": "Keine Fachprüfung mehr erforderlich",
         },
     )
 
@@ -199,11 +246,13 @@ def test_new_screening_normalizes_obsolete_completion_atomically(client, coordin
     assert use_case.privacy_review_required is False
     assert use_case.privacy_review_completed is False
     assert use_case.governance_assessments.count() == 2
-    assert build_governance_statuses(use_case)[0].state == "not_required"
+    status = build_governance_statuses(use_case)[0]
+    assert status.state == "not_required"
+    assert status.label == "Nicht relevant"
 
 
 @pytest.mark.django_db
-def test_detail_shows_semantic_status_reviewer_and_screening_date(
+def test_detail_shows_semantic_status_reviewer_and_artifact_link(
     client, owner, coordinator, use_case
 ):
     _assessment(use_case, coordinator, privacy_review_required=True)
@@ -215,9 +264,9 @@ def test_detail_shows_semantic_status_reviewer_and_screening_date(
 
     content = response.content.decode()
     assert response.status_code == 200
-    assert "Noch nicht bewertet" not in content
-    assert "Nicht erforderlich" in content
+    assert "Nicht relevant" in content
     assert "Offen" in content
+    assert "Prüfartefakt öffnen" in content
     assert coordinator.get_display_name() in content
     assert timezone.localdate().strftime("%d.%m.%Y") in content
 
@@ -233,3 +282,4 @@ def test_legacy_completion_without_user_has_honest_fallback(coordinator, use_cas
 
     assert status.state == "completed"
     assert status.actor == "System"
+    assert "Legacy" in status.attribution_note

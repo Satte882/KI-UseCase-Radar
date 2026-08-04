@@ -11,6 +11,13 @@
 {% include "includes/journey_stepper.html" %}
 {% include "includes/status_dimensions.html" %}
 
+<div class="app-card mb-4" id="governance-artifacts">
+  <div class="card-header"><strong>Governance-Prüfartefakte</strong><div class="small text-muted mt-1">Das Screening identifiziert den Prüfbedarf; formale Datenschutz-, Security- und Rechtsprüfungen bleiben eigenständige Nachweise.</div></div>
+  <div class="card-body"><div class="row g-3">
+    {% for status in governance_statuses %}<div class="col-md-4"><div class="border rounded p-3 h-100"><div class="d-flex justify-content-between gap-2"><strong>{{ status.kind.label }}</strong><span class="badge {{ status.badge_class }}">{{ status.label }}</span></div>{% if status.result %}<div class="small mt-2"><strong>Ergebnis:</strong> {{ status.result }}</div>{% endif %}<div class="small text-muted mt-2">{{ status.attribution_note }}{% if status.actor %}: {{ status.actor }}{% endif %}{% if status.changed_at %}, {% if status.changed_at_has_time %}{{ status.changed_at|date:"d.m.Y H:i" }}{% else %}{{ status.changed_at|date:"d.m.Y" }}{% endif %}{% endif %}</div>{% if status.target_url %}<a class="btn btn-sm btn-outline-secondary w-100 mt-3" href="{{ status.target_url }}">Prüfartefakt öffnen</a>{% endif %}</div></div>{% endfor %}
+  </div></div>
+</div>
+
 <div class="app-card mb-4" id="decision-roles">
   <div class="card-header"><strong>Rollen und Personentrennung</strong><div class="small text-muted mt-1">Eine Checkbox oder ein Rollenwechsel derselben Person ersetzt keine unabhängige Entscheidung.</div></div>
   <div class="card-body">

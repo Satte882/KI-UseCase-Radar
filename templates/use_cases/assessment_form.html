@@ -10,6 +10,7 @@
 </div>
 {% include "includes/journey_stepper.html" %}
 {% include "includes/status_dimensions.html" %}
+<div class="alert alert-info"><strong>Governance-Screening statt Fachprüfung.</strong> Die Bewertung kann Governance-Themen identifizieren, ersetzt aber keine formalen Datenschutz-, Security- oder Rechtsprüfungen. Diese werden anschließend in separaten Prüfartefakten dokumentiert.</div>
 <form method="post">{% csrf_token %}<input type="hidden" name="return_to" value="{{ return_to }}">
   <div class="app-card mb-4">
     <div class="card-header"><strong>Fachliche Bewertung</strong></div>

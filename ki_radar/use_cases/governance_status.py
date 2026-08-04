@@ -3,6 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, datetime
 
+from django.urls import reverse
+
+from ki_radar.governance.models import GovernanceReview
+
 from .models import UseCase
 
 
@@ -24,10 +28,13 @@ class GovernanceReviewStatus:
     changed_at: date | datetime | None
     changed_at_has_time: bool
     attribution_note: str
+    result: str = ""
+    rationale: str = ""
+    target_url: str = ""
 
     @property
     def editable(self) -> bool:
-        return self.state in {"open", "completed"}
+        return False
 
 
 REVIEW_KINDS = (
@@ -72,6 +79,61 @@ def _latest_completion_change(use_case: UseCase, field_name: str):
     return latest_change
 
 
+def _artifact_status(use_case: UseCase, kind: ReviewKind, assessment):
+    artifact = (
+        use_case.governance_reviews.filter(
+            review_type=kind.key,
+            screening=assessment,
+        )
+        .select_related("reviewer")
+        .first()
+    )
+    if artifact is None:
+        return None
+
+    target_url = reverse(
+        "governance:review",
+        kwargs={"use_case_id": use_case.pk, "review_type": kind.key},
+    )
+    common = {
+        "kind": kind,
+        "actor": _display_name(artifact.reviewer, fallback="unbekannt"),
+        "changed_at": artifact.created_at,
+        "changed_at_has_time": True,
+        "rationale": artifact.rationale,
+        "target_url": target_url,
+    }
+    if artifact.status == GovernanceReview.Status.NOT_RELEVANT:
+        return GovernanceReviewStatus(
+            state="not_required",
+            label="Nicht relevant",
+            badge_class="text-bg-light border text-dark",
+            attribution_note="Begründete Nicht-Relevanz",
+            **common,
+        )
+    if artifact.status == GovernanceReview.Status.OPEN:
+        return GovernanceReviewStatus(
+            state="open",
+            label="Offen",
+            badge_class="text-bg-warning",
+            attribution_note="Durch Screening als erforderlich geöffnet",
+            **common,
+        )
+
+    passed = artifact.result in {
+        GovernanceReview.Result.PASSED,
+        GovernanceReview.Result.PASSED_WITH_CONDITIONS,
+    }
+    return GovernanceReviewStatus(
+        state="completed",
+        label="Abgeschlossen",
+        badge_class="text-bg-success" if passed else "text-bg-danger",
+        attribution_note="Formales Prüfartefakt",
+        result=artifact.get_result_display(),
+        **common,
+    )
+
+
 def build_governance_statuses(use_case: UseCase) -> tuple[GovernanceReviewStatus, ...]:
     assessment = None
     if use_case.pk:
@@ -79,6 +141,14 @@ def build_governance_statuses(use_case: UseCase) -> tuple[GovernanceReviewStatus
 
     statuses = []
     for kind in REVIEW_KINDS:
+        review_url = (
+            reverse(
+                "governance:review",
+                kwargs={"use_case_id": use_case.pk, "review_type": kind.key},
+            )
+            if use_case.pk
+            else ""
+        )
         if assessment is None:
             statuses.append(
                 GovernanceReviewStatus(
@@ -90,8 +160,18 @@ def build_governance_statuses(use_case: UseCase) -> tuple[GovernanceReviewStatus
                     changed_at=None,
                     changed_at_has_time=False,
                     attribution_note="Noch kein Governance-Screening vorhanden.",
+                    target_url=(
+                        reverse("governance:create", kwargs={"use_case_id": use_case.pk})
+                        if use_case.pk
+                        else ""
+                    ),
                 )
             )
+            continue
+
+        artifact_status = _artifact_status(use_case, kind, assessment)
+        if artifact_status is not None:
+            statuses.append(artifact_status)
             continue
 
         required = getattr(assessment, kind.required_field)
@@ -101,12 +181,14 @@ def build_governance_statuses(use_case: UseCase) -> tuple[GovernanceReviewStatus
                 GovernanceReviewStatus(
                     kind=kind,
                     state="not_required",
-                    label="Nicht erforderlich",
+                    label="Nicht relevant",
                     badge_class="text-bg-light border text-dark",
                     actor=_display_name(assessment.reviewer, fallback="unbekannt"),
                     changed_at=assessment.assessment_date,
                     changed_at_has_time=False,
                     attribution_note="Maßgebliches Governance-Screening",
+                    rationale=assessment.review_rationale(kind.key),
+                    target_url=review_url,
                 )
             )
             continue
@@ -129,25 +211,8 @@ def build_governance_statuses(use_case: UseCase) -> tuple[GovernanceReviewStatus
                         else assessment.assessment_date
                     ),
                     changed_at_has_time=completion_change is not None,
-                    attribution_note="Letzter Abschlussstatus",
-                )
-            )
-            continue
-
-        if (
-            completion_change is not None
-            and getattr(completion_change, kind.completed_field) is False
-        ):
-            statuses.append(
-                GovernanceReviewStatus(
-                    kind=kind,
-                    state="open",
-                    label="Offen",
-                    badge_class="text-bg-warning",
-                    actor=_display_name(completion_change.history_user, fallback="System"),
-                    changed_at=completion_change.history_date,
-                    changed_at_has_time=True,
-                    attribution_note="Zuletzt wieder geöffnet",
+                    attribution_note="Legacy-Abschlussstatus ohne separates Prüfartefakt",
+                    target_url=review_url,
                 )
             )
             continue
@@ -162,6 +227,8 @@ def build_governance_statuses(use_case: UseCase) -> tuple[GovernanceReviewStatus
                 changed_at=assessment.assessment_date,
                 changed_at_has_time=False,
                 attribution_note="Als erforderlich bewertet",
+                rationale=assessment.review_rationale(kind.key),
+                target_url=review_url,
             )
         )
     return tuple(statuses)
