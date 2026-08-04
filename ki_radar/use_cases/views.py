@@ -99,6 +99,19 @@ def use_case_list(request):
         item.decision_check = current_work_check(item)
         item.blocker_details = build_blocker_details(item, item.decision_check.blockers)
         item.decision_due = decision_due_date(item)
+        if item.status == UseCase.Status.PILOT:
+            item.register_state = "review"
+            item.register_state_label = "Pilot läuft"
+            blocker_count = len(item.blocker_details)
+            item.register_state_detail = (
+                f"Produktivsetzung: {blocker_count} Voraussetzungen offen"
+                if blocker_count
+                else "Produktivsetzung vorbereitet"
+            )
+        else:
+            item.register_state = item.decision_check.state
+            item.register_state_label = item.decision_check.state_label
+            item.register_state_detail = ""
 
     user_model = get_user_model()
     active_users = user_model.objects.filter(is_active=True, is_anonymized=False).order_by(
@@ -126,8 +139,9 @@ def _detail_journey(use_case: UseCase, user):
     return build_use_case_journey(use_case, user)
 
 
-def _detail_decision_check(use_case: UseCase, journey) -> tuple[WorkCheck, list]:
+def _detail_decision_check(use_case: UseCase, journey) -> tuple[WorkCheck, list, list]:
     decision_check = current_work_check(use_case)
+    blocker_details = build_blocker_details(use_case, decision_check.blockers)
     current_step = journey.next_action
     pilot_work_is_current = bool(
         use_case.status == UseCase.Status.PILOT
@@ -135,30 +149,34 @@ def _detail_decision_check(use_case: UseCase, journey) -> tuple[WorkCheck, list]
         and current_step.key in {"pilot", "measurement"}
     )
     if not pilot_work_is_current:
-        return decision_check, build_blocker_details(use_case, decision_check.blockers)
+        return decision_check, blocker_details, []
 
-    later_requirements = [
-        f"Spätere Go-live-Voraussetzung: {blocker}" for blocker in decision_check.blockers
-    ]
-    later_requirements.extend(
-        f"Späterer Go-live-Hinweis: {warning}" for warning in decision_check.warnings
-    )
+    gate_summary = []
+    if blocker_details:
+        gate_summary.append(
+            f"{len(blocker_details)} Voraussetzungen für die spätere Produktivsetzung sind offen."
+        )
+    gate_summary.extend(decision_check.warnings)
     return (
         WorkCheck(
-            title="Spätere Go-live-Voraussetzungen",
+            title="Nächstes Gate: Produktiv setzen",
             state="review",
-            state_label="Späteres Gate",
+            state_label="Pilot läuft",
             blockers=[],
-            warnings=later_requirements,
+            warnings=gate_summary,
         ),
         [],
+        blocker_details,
     )
 
 
 def _detail_context(request, use_case: UseCase, *, copilot_analysis: str = "") -> dict:
     history = use_case.history.select_related("history_user").order_by("-history_date")[:50]
     journey = _detail_journey(use_case, request.user)
-    decision_check, blocker_details = _detail_decision_check(use_case, journey)
+    decision_check, blocker_details, gate_blocker_details = _detail_decision_check(
+        use_case,
+        journey,
+    )
     try:
         architecture_origin = use_case.architecture_origin
     except ObjectDoesNotExist:
@@ -183,6 +201,7 @@ def _detail_context(request, use_case: UseCase, *, copilot_analysis: str = "") -
         "can_edit": can_edit_use_case(request.user, use_case),
         "decision_check": decision_check,
         "blocker_details": blocker_details,
+        "gate_blocker_details": gate_blocker_details,
         "first_blocker": blocker_details[0] if blocker_details else None,
         "decision_due": decision_due_date(use_case),
         "copilot_analysis": copilot_analysis,
@@ -343,6 +362,9 @@ def export_csv(request):
     for use_case in queryset:
         decision = current_work_check(use_case)
         metric = build_metric_set_presentation(use_case)
+        decision_state_label = (
+            "Pilot läuft" if use_case.status == UseCase.Status.PILOT else decision.state_label
+        )
         writer.writerow(
             [
                 use_case.short_id,
@@ -354,7 +376,7 @@ def export_csv(request):
                 use_case.classification.process_area,
                 use_case.business_owner.get_display_name(),
                 decision.title,
-                decision.state_label,
+                decision_state_label,
                 use_case.metric_name,
                 "" if metric.baseline.is_missing else metric.baseline.formatted_value,
                 "" if metric.target.is_missing else metric.target.formatted_value,
