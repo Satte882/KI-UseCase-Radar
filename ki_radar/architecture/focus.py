@@ -14,7 +14,7 @@ class ValueStreamFocus(TimeStampedModel):
     class Status(models.TextChoices):
         NOT_SCREENED = "not_screened", "Noch nicht bewertet"
         CANDIDATE = "candidate", "Kandidat für Vertiefung"
-        SELECTED = "selected", "Für Deep Dive ausgewählt"
+        SELECTED = "selected", "Für Prozessanalyse ausgewählt"
         DEFERRED = "deferred", "Zurückgestellt"
         NOT_SELECTED = "not_selected", "Nicht ausgewählt"
 
@@ -129,7 +129,7 @@ DEMO_FOCUS_DEFAULTS = {
         "change_effort": ScreeningLevel.MEDIUM,
         "status": ValueStreamFocus.Status.SELECTED,
         "rationale": (
-            "Hoher manueller Aufwand, messbare Baseline und klar abgegrenzter End-to-End-Deep-Dive."
+            "Hoher manueller Aufwand, messbare Baseline und klar abgegrenzte Prozessanalyse."
         ),
     },
     "supplier-selection-incomplete": {
@@ -142,7 +142,7 @@ DEMO_FOCUS_DEFAULTS = {
         "change_effort": ScreeningLevel.MEDIUM,
         "status": ValueStreamFocus.Status.SELECTED,
         "rationale": (
-            "Der Angebotsvergleich wurde wegen hoher Reibung für einen Deep Dive ausgewählt."
+            "Der Angebotsvergleich wurde wegen hoher Reibung für die Prozessanalyse ausgewählt."
         ),
     },
     "order-approval-non-ai": {

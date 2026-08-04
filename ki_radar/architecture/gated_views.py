@@ -15,7 +15,8 @@ PHASE_COMPLETION_REQUIRED_MESSAGE = (
     "und setze den Status anschließend auf Aktiv."
 )
 STREAM_FOCUS_REQUIRED_MESSAGE = (
-    "Der Value Stream muss zuerst vollständig bewertet und für den Deep Dive ausgewählt werden."
+    "Der Value Stream muss zuerst vollständig bewertet und für die Prozessdetailanalyse "
+    "ausgewählt werden."
 )
 FOCUS_STAGE_REQUIRED_MESSAGE = (
     "Wähle und begründe zuerst die Fokusphase anhand der gemeinsamen Kriterien."

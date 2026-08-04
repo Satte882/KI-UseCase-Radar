@@ -30,7 +30,7 @@
         <tr><th scope="row">Integrationsaufwand</th>{% for option in options %}<td>{{ option.get_integration_effort_display }}</td>{% endfor %}</tr>
         <tr><th scope="row">Integrationen</th>{% for option in options %}<td class="text-preline">{{ option.integration_impact|default:"–" }}</td>{% endfor %}</tr>
         <tr><th scope="row">Risiken</th>{% for option in options %}<td class="text-preline">{{ option.risks|default:"–" }}</td>{% endfor %}</tr>
-        <tr><th scope="row">Architecture Fit</th>{% for option in options %}<td class="text-preline">{{ option.architecture_fit|default:"–" }}</td>{% endfor %}</tr>
+        <tr><th scope="row">Passung zu Zielbild und Leitplanken</th>{% for option in options %}<td class="text-preline">{{ option.architecture_fit|default:"–" }}</td>{% endfor %}</tr>
         <tr><th scope="row">Entscheidungsstatus</th>{% for option in options %}<td>{{ option.get_recommendation_display }}</td>{% endfor %}</tr>
       </tbody>
     </table>

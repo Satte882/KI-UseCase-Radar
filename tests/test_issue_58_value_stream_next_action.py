@@ -45,7 +45,7 @@ def _selected_value_stream(coordinator, *, status: str) -> ValueStream:
         data_accessibility=ScreeningLevel.MEDIUM,
         change_effort=ScreeningLevel.MEDIUM,
         status=ValueStreamFocus.Status.SELECTED,
-        rationale="Der Value Stream wurde für den Test-Deep-Dive ausgewählt.",
+        rationale="Der Value Stream wurde für die Prozessanalyse ausgewählt.",
         updated_by=coordinator,
     )
     ValueStreamStage.objects.create(
@@ -94,7 +94,7 @@ def test_active_value_stream_requires_explicit_focus_stage_selection(coordinator
 
 
 @pytest.mark.django_db
-def test_value_stream_page_disables_deep_dive_while_phase_structure_is_draft(
+def test_value_stream_page_disables_process_analysis_while_phase_structure_is_draft(
     client,
     coordinator,
 ):
@@ -107,7 +107,7 @@ def test_value_stream_page_disables_deep_dive_while_phase_structure_is_draft(
     assert response.status_code == 200
     assert "Phasenerfassung noch offen" in content
     assert "Erst Phasenerfassung abschließen" in content
-    assert "Als Fokusphase analysieren" not in content
+    assert "Prozess im Detail analysieren" not in content
     assert "Use Case direkt aus Phase ableiten" not in content
 
 
@@ -142,6 +142,6 @@ def test_active_value_stream_page_offers_stage_choice_without_preselecting_first
 
     assert response.status_code == 200
     assert "Fokusphase auswählen" in content
-    assert "Als Fokusphase analysieren" in content
+    assert "Prozess im Detail analysieren" in content
     assert "Value Stream bearbeiten" in content
     assert "Abgekürzter Pfad ohne Prozessanalyse und Lösungsvergleich" in content

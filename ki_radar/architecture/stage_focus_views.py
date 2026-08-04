@@ -31,7 +31,7 @@ def stage_focus_select(request, pk):
     if focus is None or not focus.is_selected:
         messages.warning(
             request,
-            "Der Value Stream muss zuerst für einen Deep Dive ausgewählt werden.",
+            "Der Value Stream muss zuerst für die Prozessdetailanalyse ausgewählt werden.",
         )
         return redirect(value_stream)
     if not value_stream.stages.exists():
