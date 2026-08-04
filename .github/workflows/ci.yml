@@ -116,9 +116,13 @@ jobs:
 
   patch-preview:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: fix/issues-51-64-primary-actions
 
       - name: Install Python
         uses: actions/setup-python@v5
@@ -143,13 +147,12 @@ jobs:
       - name: Lint patched tests
         run: uv run ruff check tests/test_actionable_blockers.py tests/test_issue_58_solution_next_action.py tests/test_delivery_handover.py
 
-      - name: Upload patched files
-        uses: actions/upload-artifact@v4
-        with:
-          name: issue-51-64-patched-files
-          path: |
-            tests/test_actionable_blockers.py
-            tests/test_issue_58_solution_next_action.py
-            tests/test_delivery_handover.py
-            templates/architecture/process_analysis_detail.html
-          if-no-files-found: error
+      - name: Commit patched files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/test_actionable_blockers.py tests/test_issue_58_solution_next_action.py tests/test_delivery_handover.py templates/architecture/process_analysis_detail.html
+          git commit -m "Align tests with canonical primary actions"
+          git push origin HEAD:fix/issues-51-64-primary-actions
