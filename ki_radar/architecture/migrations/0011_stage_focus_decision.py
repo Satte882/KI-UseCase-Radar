@@ -102,7 +102,7 @@ class Migration(migrations.Migration):
                 (
                     "selected_stage",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.PROTECT,
+                        on_delete=django.db.models.deletion.CASCADE,
                         related_name="focus_decisions",
                         to="architecture.valuestreamstage",
                         verbose_name="Fokusphase",
