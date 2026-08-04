@@ -19,7 +19,7 @@ class StageFocusDecision(TimeStampedModel):
     )
     selected_stage = models.ForeignKey(
         "architecture.ValueStreamStage",
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         related_name="focus_decisions",
         verbose_name="Fokusphase",
     )
@@ -91,6 +91,25 @@ def _legacy_snapshot(stage) -> dict:
             },
         }
     }
+
+
+def ensure_single_stage_focus(*, stage, actor=None) -> bool:
+    if get_stage_focus_decision(stage.value_stream) is not None:
+        return True
+    if stage.value_stream.stages.count() != 1:
+        return False
+    StageFocusDecision.objects.create(
+        value_stream=stage.value_stream,
+        selected_stage=stage,
+        criteria_snapshot=_legacy_snapshot(stage),
+        rationale="Die einzige erfasste Phase ist zugleich die eindeutige Fokusphase.",
+        is_short_path=True,
+        short_path_reason=(
+            "Ein-Phasen-Value-Stream: Ein Vergleich mit weiteren Phasen ist nicht möglich."
+        ),
+        selected_by=actor,
+    )
+    return True
 
 
 def ensure_stage_focus_for_existing_path(*, stage, actor=None, source_label: str) -> None:
