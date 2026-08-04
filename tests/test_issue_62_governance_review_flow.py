@@ -6,6 +6,7 @@ from django.utils import timezone
 from ki_radar.accounts.models import User
 from ki_radar.core.demo_architecture_data import INVOICE_USE_CASE_KEY
 from ki_radar.governance.models import GovernanceAssessment, GovernanceReview
+from ki_radar.governance.services import create_screening_review_artifacts
 from ki_radar.use_cases.blockers import build_blocker_details
 from ki_radar.use_cases.models import UseCase
 
@@ -50,11 +51,15 @@ def _screening(use_case, coordinator, **requirements):
         basis_version="Governance-Leitlinie 1.0",
         result=GovernanceAssessment.Result.CLARIFICATION,
         rationale="Screening für den geführten Prüfpfad.",
+        privacy_review_rationale="Datenschutz-Prüfbedarf wurde bewertet.",
+        security_review_rationale="Security-Prüfbedarf wurde bewertet.",
+        legal_review_rationale="Rechts-Prüfbedarf wurde bewertet.",
         **defaults,
     )
     for field_name, value in defaults.items():
         setattr(use_case, field_name, value)
     use_case.save()
+    create_screening_review_artifacts(assessment=assessment, actor=coordinator)
     return assessment
 
 
@@ -87,15 +92,20 @@ def test_required_review_uses_dedicated_workspace(client, coordinator, use_case)
 
     assert response.status_code == 200
     assert "Datenschutzprüfung" in content
-    assert "Neues Prüfartefakt dokumentieren" in content
+    assert "Formale Prüfung abschließen" in content
     assert "Prüfergebnis" in content
+    assert "Festgestellte Risiken" in content
+    assert "Maßnahmen" in content
+    assert "Auflagen" in content
     assert "Nachweislink" in content
+    assert "Screening, keine formale Fachprüfung" not in content
+    assert "Das Governance-Screening begründet nur den Prüfbedarf" in content
     assert "Stammdaten bearbeiten" not in content
 
 
 @pytest.mark.django_db
-def test_not_required_review_does_not_create_artificial_completion(client, coordinator, use_case):
-    _screening(use_case, coordinator)
+def test_not_relevant_review_is_a_reasoned_artifact(client, coordinator, use_case):
+    screening = _screening(use_case, coordinator)
     client.force_login(coordinator)
 
     response = client.get(
@@ -107,16 +117,24 @@ def test_not_required_review_does_not_create_artificial_completion(client, coord
     content = response.content.decode()
 
     assert response.status_code == 200
-    assert "Keine Fachprüfung erforderlich" in content
-    assert "Neues Prüfartefakt dokumentieren" not in content
-    assert not GovernanceReview.objects.filter(use_case=use_case).exists()
+    assert "Bewusste Nicht-Relevanz" in content
+    assert "Nicht relevant" in content
+    assert "Formale Prüfung abschließen" not in content
+    review = GovernanceReview.objects.get(
+        use_case=use_case,
+        screening=screening,
+        review_type=GovernanceReview.ReviewType.LEGAL,
+    )
+    assert review.status == GovernanceReview.Status.NOT_RELEVANT
+    assert review.rationale == "Rechts-Prüfbedarf wurde bewertet."
+    assert review.reviewer == coordinator
 
 
 @pytest.mark.django_db
 def test_completed_review_creates_artifact_and_opens_next_required_review(
     client, coordinator, use_case
 ):
-    _screening(
+    screening = _screening(
         use_case,
         coordinator,
         privacy_review_required=True,
@@ -132,8 +150,12 @@ def test_completed_review_creates_artifact_and_opens_next_required_review(
         privacy_url,
         {
             "reviewed_at": timezone.localdate().isoformat(),
+            "responsible_role": "Datenschutz",
             "result": GovernanceReview.Result.PASSED,
             "rationale": "Datenschutzanforderungen sind geprüft und erfüllt.",
+            "risks": "Restrisiko dokumentiert.",
+            "measures": "Berechtigungskonzept umgesetzt.",
+            "conditions": "",
             "evidence_url": "https://example.invalid/governance/privacy-proof",
         },
     )
@@ -144,11 +166,97 @@ def test_completed_review_creates_artifact_and_opens_next_required_review(
         kwargs={"use_case_id": use_case.pk, "review_type": "security"},
     )
     use_case.refresh_from_db()
-    review = GovernanceReview.objects.get(use_case=use_case)
-    assert review.review_type == GovernanceReview.ReviewType.PRIVACY
+    review = GovernanceReview.objects.get(
+        use_case=use_case,
+        screening=screening,
+        review_type=GovernanceReview.ReviewType.PRIVACY,
+        status=GovernanceReview.Status.COMPLETED,
+    )
     assert review.reviewer == coordinator
     assert review.is_completed is True
+    assert review.created_at is not None
+    assert review.history.count() == 1
     assert use_case.privacy_review_completed is True
+
+
+@pytest.mark.django_db
+def test_completed_review_requires_evidence_server_side(client, coordinator, use_case):
+    screening = _screening(use_case, coordinator, privacy_review_required=True)
+    client.force_login(coordinator)
+
+    response = client.post(
+        reverse(
+            "governance:review",
+            kwargs={"use_case_id": use_case.pk, "review_type": "privacy"},
+        ),
+        {
+            "reviewed_at": timezone.localdate().isoformat(),
+            "responsible_role": "Datenschutz",
+            "result": GovernanceReview.Result.PASSED,
+            "rationale": "Prüfung abgeschlossen.",
+            "risks": "Keine hohen Restrisiken.",
+            "measures": "Kontrollen dokumentiert.",
+            "conditions": "",
+            "evidence_url": "",
+        },
+    )
+
+    assert response.status_code == 200
+    assert "Für eine abgeschlossene formale Prüfung ist ein Nachweis erforderlich" in (
+        response.content.decode()
+    )
+    assert not GovernanceReview.objects.filter(
+        screening=screening,
+        status=GovernanceReview.Status.COMPLETED,
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_conditional_and_failed_results_require_structured_details(client, coordinator, use_case):
+    screening = _screening(use_case, coordinator, security_review_required=True)
+    client.force_login(coordinator)
+    url = reverse(
+        "governance:review",
+        kwargs={"use_case_id": use_case.pk, "review_type": "security"},
+    )
+
+    conditional = client.post(
+        url,
+        {
+            "reviewed_at": timezone.localdate().isoformat(),
+            "responsible_role": "Informationssicherheit",
+            "result": GovernanceReview.Result.PASSED_WITH_CONDITIONS,
+            "rationale": "Nur unter Auflagen vertretbar.",
+            "risks": "Externe Schnittstelle.",
+            "measures": "Monitoring vorgesehen.",
+            "conditions": "",
+            "evidence_url": "https://example.invalid/security-proof",
+        },
+    )
+    assert conditional.status_code == 200
+    assert "Auflagen müssen strukturiert dokumentiert werden" in conditional.content.decode()
+
+    failed = client.post(
+        url,
+        {
+            "reviewed_at": timezone.localdate().isoformat(),
+            "responsible_role": "Informationssicherheit",
+            "result": GovernanceReview.Result.FAILED,
+            "rationale": "Kontrollniveau nicht ausreichend.",
+            "risks": "",
+            "measures": "",
+            "conditions": "",
+            "evidence_url": "https://example.invalid/security-failed",
+        },
+    )
+    content = failed.content.decode()
+    assert failed.status_code == 200
+    assert "Bei &#x27;Nicht bestanden&#x27; sind Risiken erforderlich" in content
+    assert "Bei &#x27;Nicht bestanden&#x27; sind Maßnahmen erforderlich" in content
+    assert not GovernanceReview.objects.filter(
+        screening=screening,
+        status=GovernanceReview.Status.COMPLETED,
+    ).exists()
 
 
 @pytest.mark.django_db

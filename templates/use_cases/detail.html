@@ -217,9 +217,12 @@
               <strong>{{ status.kind.label }}</strong>
               <span class="badge {{ status.badge_class }}">{{ status.label }}</span>
             </div>
+            {% if status.result %}<div class="small mt-1"><strong>Ergebnis:</strong> {{ status.result }}</div>{% endif %}
             <div class="small text-muted mt-1">
               {{ status.attribution_note }}{% if status.actor %}: {{ status.actor }}{% endif %}{% if status.changed_at %}, {% if status.changed_at_has_time %}{{ status.changed_at|date:"d.m.Y H:i" }}{% else %}{{ status.changed_at|date:"d.m.Y" }}{% endif %}{% endif %}
             </div>
+            {% if status.rationale %}<div class="small mt-1">{{ status.rationale|truncatechars:140 }}</div>{% endif %}
+            {% if status.target_url %}<a class="btn btn-sm btn-outline-secondary w-100 mt-2" href="{{ status.target_url }}">Prüfartefakt öffnen</a>{% endif %}
           </div>
           {% endfor %}
         </div>

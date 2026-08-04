@@ -63,13 +63,12 @@
     <section class="app-card mb-4">
       <div class="card-header"><strong>Governance-Nachweise</strong></div>
       <div class="card-body">
-        <dl class="row small mb-0">
-          <dt class="col-sm-7 text-muted">Governance-Vorprüfung im Assessment</dt><dd class="col-sm-5">{% if assessment.governance_precheck_completed %}Durchgeführt{% else %}Offen{% endif %}</dd>
+        <dl class="row small mb-3">
+          <dt class="col-sm-7 text-muted">Governance-Screening im Assessment</dt><dd class="col-sm-5">{% if assessment.governance_precheck_completed %}Durchgeführt{% else %}Offen{% endif %}</dd>
           <dt class="col-sm-7 text-muted">Separate Bestätigung der Erstentscheidung</dt><dd class="col-sm-5">{% if decision.governance_confirmed %}Bestätigt{% else %}Offen{% endif %}</dd>
-          <dt class="col-sm-7 text-muted">Datenschutzprüfung</dt><dd class="col-sm-5">{% if not use_case.privacy_review_required %}Nicht erforderlich{% elif use_case.privacy_review_completed %}Abgeschlossen{% else %}Offen{% endif %}</dd>
-          <dt class="col-sm-7 text-muted">Informationssicherheit</dt><dd class="col-sm-5">{% if not use_case.security_review_required %}Nicht erforderlich{% elif use_case.security_review_completed %}Abgeschlossen{% else %}Offen{% endif %}</dd>
-          <dt class="col-sm-7 text-muted">Rechtsprüfung</dt><dd class="col-sm-5">{% if not use_case.legal_review_required %}Nicht erforderlich{% elif use_case.legal_review_completed %}Abgeschlossen{% else %}Offen{% endif %}</dd>
         </dl>
+        <p class="small text-muted">Das Screening ersetzt keine formale Fachprüfung. Maßgeblich sind die eigenständigen Prüfartefakte:</p>
+        <div class="d-grid gap-2">{% for status in governance_statuses %}<div class="border rounded p-2"><div class="d-flex justify-content-between gap-2"><strong>{{ status.kind.label }}</strong><span class="badge {{ status.badge_class }}">{{ status.label }}</span></div>{% if status.result %}<div class="small mt-1"><strong>Ergebnis:</strong> {{ status.result }}</div>{% endif %}<div class="small text-muted mt-1">{{ status.attribution_note }}{% if status.actor %}: {{ status.actor }}{% endif %}{% if status.changed_at %}, {% if status.changed_at_has_time %}{{ status.changed_at|date:"d.m.Y H:i" }}{% else %}{{ status.changed_at|date:"d.m.Y" }}{% endif %}{% endif %}</div>{% if status.target_url %}<a class="btn btn-sm btn-outline-secondary w-100 mt-2" href="{{ status.target_url }}">Prüfartefakt öffnen</a>{% endif %}</div>{% endfor %}</div>
       </div>
     </section>
   </div>
