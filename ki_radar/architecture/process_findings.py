@@ -5,7 +5,6 @@ from dataclasses import dataclass
 
 from .models import ProcessAnalysis
 
-
 SOURCE_LABELS = {
     "bottlenecks": "Bottlenecks und Ursachen",
     "baseline_metrics": "Baseline und Prozesskennzahlen",
