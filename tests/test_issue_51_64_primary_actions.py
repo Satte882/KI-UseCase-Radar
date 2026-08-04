@@ -82,10 +82,7 @@ def test_value_stream_renders_one_canonical_primary_action(
 
 
 @pytest.mark.django_db
-def test_process_page_uses_journey_action_and_shows_full_reason(
-    client,
-    coordinator,
-):
+def test_process_page_uses_journey_action_and_shows_full_reason(client, coordinator):
     value_stream = ValueStream.objects.get(name=INVOICE_STREAM_NAME)
     process = _complete_process(value_stream.stages.first(), coordinator)
     client.force_login(coordinator)
@@ -131,18 +128,13 @@ def test_use_case_detail_hides_duplicate_current_actions(
     assert content.count('data-testid="primary-next-action"') == 1
     assert content.count('data-testid="primary-next-action-control"') == 1
     assert f'href="{action.url}"' in content
-    assert (
-        f'class="dropdown-item" href="{action.url}">Bewertung anlegen</a>'
-        not in content
-    )
+    assert f'class="dropdown-item" href="{action.url}">Bewertung anlegen</a>' not in content
     assert 'data-testid="journey-next-action-context"' in content
 
 
 def test_second_approval_action_points_to_actual_review():
     approval = SimpleNamespace(pk=17, is_pending_second_approval=True)
-    use_case = SimpleNamespace(
-        approval_decisions=SimpleNamespace(first=lambda: approval)
-    )
+    use_case = SimpleNamespace(approval_decisions=SimpleNamespace(first=lambda: approval))
     old_step = JourneyStep(
         key="approval",
         label="Freigabe",
