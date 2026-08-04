@@ -50,7 +50,7 @@ def _split_entries(value: str, *, limit: int) -> tuple[str, ...]:
         return ()
 
     lines = [
-        re.sub(r"^[\s\-–—•*\d.)]+", "", line).strip()
+        re.sub(r"^[\s\-\u2013\u2014\u2022*\d.)]+", "", line).strip()
         for line in text.splitlines()
         if line.strip()
     ]
