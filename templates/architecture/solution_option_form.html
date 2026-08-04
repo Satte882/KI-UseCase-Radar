@@ -12,7 +12,7 @@
 
 <form method="post" class="app-card">
   {% csrf_token %}
-  <div class="card-header"><strong>Opportunities &amp; Solutions · ADM Phase E</strong><div class="small text-muted mt-1">Hier wird die Option bewertet. Die bevorzugte Lösung wird anschließend ausschließlich in der Vergleichsansicht ausgewählt.</div></div>
+  <div class="card-header"><strong>Lösungsoption bewerten</strong><div class="small text-muted mt-1">Hier wird die Option bewertet. Die bevorzugte Lösung wird anschließend ausschließlich in der Vergleichsansicht ausgewählt. Methodik: Opportunities &amp; Solutions (ADM Phase E).</div></div>
   <div class="card-body">
     {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
     <div class="row g-3">
