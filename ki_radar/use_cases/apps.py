@@ -8,9 +8,11 @@ class UseCasesConfig(AppConfig):
     def ready(self):
         from . import classification  # noqa: F401
         from .governance_journey import install as install_governance_journey
+        from .primary_actions import install as install_primary_actions
         from .value_stream_journey import install as install_value_stream_journey
         from .workflow import install
 
         install()
         install_value_stream_journey()
         install_governance_journey()
+        install_primary_actions()

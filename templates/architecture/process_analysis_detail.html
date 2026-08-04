@@ -9,8 +9,8 @@
   </div>
   <div class="d-flex gap-2 flex-wrap">
     <a class="btn btn-outline-secondary" href="{{ process_analysis.stage.value_stream.get_absolute_url }}">Zum Value Stream</a>
-    {% if can_validate and process_analysis.status != 'validated' %}<a class="btn btn-outline-primary" href="{% url 'architecture:process_analysis_validate' process_analysis.pk %}">Ist-Prozess validieren</a>{% endif %}
-    {% if can_edit %}<a class="btn btn-primary" href="{% url 'architecture:process_analysis_update' process_analysis.pk %}">Bearbeiten</a>{% endif %}
+    {% if can_validate and process_analysis.status != 'validated' %}<a class="btn btn-outline-secondary" href="{% url 'architecture:process_analysis_validate' process_analysis.pk %}">Ist-Prozess validieren</a>{% endif %}
+    {% if can_edit %}<a class="btn btn-outline-secondary" href="{% url 'architecture:process_analysis_update' process_analysis.pk %}">Bearbeiten</a>{% endif %}
   </div>
 </div>
 
@@ -84,8 +84,8 @@
     <div><strong>Lösungsoptionen · ADM Phase E</strong><div class="small text-muted mt-1">Alternativen anhand identischer Kriterien prüfen und die Auswahl getrennt auditieren.</div></div>
     {% if can_edit and process_analysis.stage.value_stream.focus.is_selected %}
       <div class="d-flex gap-2 flex-wrap">
-        {% if process_analysis.solution_options.all %}<a class="btn btn-sm btn-primary" href="{% url 'architecture:solution_option_compare' process_analysis.pk %}">Lösungsoptionen vergleichen</a>{% endif %}
-        <a class="btn btn-sm {% if process_analysis.solution_options.all %}btn-outline-secondary{% else %}btn-primary{% endif %}" href="{% url 'architecture:solution_option_create' process_analysis.pk %}">{% if process_analysis.solution_options.all %}Weitere Option ergänzen{% else %}Erste Option ergänzen{% endif %}</a>
+        {% if journey.next_action.key == 'solution' and journey.next_action.url %}<a class="btn btn-sm btn-primary" href="{{ journey.next_action.url }}" data-testid="primary-next-action-control">{{ journey.next_action.action_label|default:"Lösungsoptionen bearbeiten" }} →</a>{% endif %}
+        {% if process_analysis.solution_options.all %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'architecture:solution_option_create' process_analysis.pk %}">Weitere Option ergänzen</a>{% endif %}
       </div>
     {% endif %}
   </div>
@@ -115,7 +115,10 @@
           <dt>Begründung</dt><dd>{{ option.architecture_fit|default:"–" }}</dd>
         </dl>
         {% if can_edit %}<a class="btn btn-sm btn-outline-secondary w-100 mt-3" href="{% url 'architecture:solution_option_update' option.pk %}">Option bearbeiten</a>{% endif %}
-        {% if can_create_use_case and process_analysis.stage.value_stream.focus.is_selected and option.recommendation == 'preferred' and option.starts_ai_use_case %}<a class="btn btn-sm btn-primary w-100 mt-2" href="{% url 'architecture:solution_option_start_use_case' option.pk %}">Bevorzugte Option als Use Case prüfen</a>{% endif %}
+        {% if can_create_use_case and process_analysis.stage.value_stream.focus.is_selected and option.recommendation == 'preferred' and option.starts_ai_use_case %}
+        {% if journey.next_action.key == 'use_case' %}<a class="btn btn-sm btn-primary w-100 mt-2" href="{{ journey.next_action.url }}" data-testid="primary-next-action-control">{{ journey.next_action.action_label|default:"Bevorzugte Option als Use Case prüfen" }} →</a>
+        {% else %}<a class="btn btn-sm btn-outline-secondary w-100 mt-2" href="{% url 'architecture:solution_option_start_use_case' option.pk %}">Bevorzugte Option als Use Case prüfen</a>{% endif %}
+        {% endif %}
       </section>
       {% empty %}<p class="text-muted mb-0">Noch keine Lösungsoptionen dokumentiert. Prüfen Sie organisatorische und regelbasierte Alternativen ebenso wie KI.</p>{% endfor %}
     </div>

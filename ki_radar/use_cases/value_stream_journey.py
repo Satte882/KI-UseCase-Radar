@@ -112,7 +112,17 @@ def _guide_solution_choice(
 ) -> JourneyState:
     options = list(process_analysis.solution_options.all())
     if any(option.recommendation == SolutionOption.Recommendation.PREFERRED for option in options):
-        return journey
+        steps = [
+            replace(step, action_label="Bevorzugte Option als Use Case prüfen")
+            if step.key == "use_case" and step.state == "current"
+            else step
+            for step in journey.steps
+        ]
+        return _state(
+            path_label=journey.path_label,
+            steps=steps,
+            completion_message=journey.completion_message,
+        )
 
     solution_step = next(
         (step for step in journey.steps if step.key == "solution" and step.state == "current"),

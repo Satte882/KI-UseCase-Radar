@@ -9,7 +9,7 @@
   </div>
   <div class="d-flex gap-2">
     <a class="btn btn-outline-secondary" href="{% url 'architecture:value_stream_list' %}">Zur Übersicht</a>
-    {% if can_edit %}<a class="btn btn-primary" href="{% url 'architecture:value_stream_update' value_stream.pk %}">{% if value_stream.focus.is_selected and value_stream.status == 'active' %}Value Stream bearbeiten{% else %}Bearbeiten &amp; priorisieren{% endif %}</a>{% endif %}
+    {% if can_edit %}<a class="btn btn-outline-secondary" href="{% url 'architecture:value_stream_update' value_stream.pk %}">{% if value_stream.focus.is_selected and value_stream.status == 'active' %}Value Stream bearbeiten{% else %}Bearbeiten &amp; priorisieren{% endif %}</a>{% endif %}
   </div>
 </div>
 
@@ -27,7 +27,10 @@
 <section class="app-card decision-panel mb-4">
   <div class="card-header d-flex flex-wrap justify-content-between align-items-start gap-3">
     <div><strong>Fokus &amp; Priorisierung</strong><div class="small text-muted mt-1">Entscheidung, ob dieser End-to-End-Bereich einen Detail-Deep-Dive rechtfertigt.</div></div>
-    {% if value_stream.focus %}<span class="badge {% if value_stream.focus.is_selected %}state-ready{% elif value_stream.focus.is_terminal %}state-blocked{% else %}state-review{% endif %}">{{ value_stream.focus.get_status_display }}</span>{% else %}<span class="badge state-blocked">Screening fehlt</span>{% endif %}
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      {% if journey.next_action.key == 'focus' and journey.next_action.url %}<a class="btn btn-sm btn-primary" href="{{ journey.next_action.url }}" data-testid="primary-next-action-control">{{ journey.next_action.action_label|default:"Fokus bearbeiten" }} →</a>{% endif %}
+      {% if value_stream.focus %}<span class="badge {% if value_stream.focus.is_selected %}state-ready{% elif value_stream.focus.is_terminal %}state-blocked{% else %}state-review{% endif %}">{{ value_stream.focus.get_status_display }}</span>{% else %}<span class="badge state-blocked">Screening fehlt</span>{% endif %}
+    </div>
   </div>
   <div class="card-body">
     {% if value_stream.focus %}
@@ -64,7 +67,13 @@
 <div class="app-card" id="end-to-end-phasen">
   <div class="card-header d-flex justify-content-between align-items-start gap-3">
     <div><strong>End-to-End-Phasen</strong><div class="small text-muted mt-1">Wertschöpfung zuerst mit 5–10 groben Phasen strukturieren. Erst danach wird bewusst eine Fokusphase für den Prozess-Deep-Dive gewählt.</div></div>
-    {% if can_edit %}<a class="btn btn-sm btn-primary" href="{% url 'architecture:stage_create' value_stream.pk %}">Phase ergänzen</a>{% endif %}
+    {% if can_edit %}
+      {% if journey.next_action.key == 'value_stream' and journey.next_action.url %}
+      <a class="btn btn-sm btn-primary" href="{{ journey.next_action.url }}" data-testid="primary-next-action-control">{{ journey.next_action.action_label|default:"Phase ergänzen" }} →</a>
+      {% else %}
+      <a class="btn btn-sm btn-outline-secondary" href="{% url 'architecture:stage_create' value_stream.pk %}">Weitere Phase ergänzen</a>
+      {% endif %}
+    {% endif %}
   </div>
   <div class="card-body">
     {% if value_stream.status == 'draft' %}
@@ -102,7 +111,7 @@
         </div>
         {% endif %}
         {% if can_edit and value_stream.status == 'active' and value_stream.focus.is_selected %}
-        <a class="btn btn-sm btn-primary w-100 mt-3" href="{% url 'architecture:process_analysis_create' stage.pk %}">Als Fokusphase analysieren</a>
+        <a class="btn btn-sm btn-primary w-100 mt-3" href="{% url 'architecture:process_analysis_create' stage.pk %}" data-testid="focus-stage-action">Als Fokusphase analysieren</a>
         {% elif can_edit and value_stream.status == 'draft' %}
         <button class="btn btn-sm btn-outline-secondary w-100 mt-3" type="button" disabled>Erst Phasenerfassung abschließen</button>
         {% elif can_edit %}
