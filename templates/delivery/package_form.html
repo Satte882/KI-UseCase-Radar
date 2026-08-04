@@ -4,29 +4,55 @@
 <div class="page-header delivery-edit-header">
   <div class="delivery-edit-heading">
     <div class="eyebrow mb-2">{{ package.use_case.short_id }} · Version {{ package.version }}</div>
-    <h1 class="page-title">Delivery Package bearbeiten</h1>
-    <p class="page-subtitle">Übernommene Informationen prüfen und nur die Delivery-spezifischen Lücken konkretisieren.</p>
+    <h1 class="page-title">Delivery Package sektionsweise bearbeiten</h1>
+    <p class="page-subtitle">Eine Sektion fokussieren, vorhandene Quellen prüfen und nur die offenen Delivery-Lücken konkretisieren.</p>
   </div>
   <div class="delivery-edit-actions">
-    <a class="btn btn-outline-secondary" href="{{ return_to }}">Abbrechen</a>
+    <a class="btn btn-outline-secondary" href="{{ return_to }}">Zur Readiness</a>
   </div>
 </div>
 
 <div class="alert alert-secondary mb-4">
-  Änderungen setzen die betroffene Sektion wieder auf <strong>Prüfung erforderlich</strong>. Nicht bearbeitbare Bereiche bleiben sichtbar, werden aber nicht als deaktivierte Formularfelder dargestellt.
+  Änderungen setzen ausschließlich die bearbeitete Sektion wieder auf <strong>Prüfung erforderlich</strong>. Nach dem Speichern wird die vollständige Readiness-Liste serverseitig neu bewertet.
 </div>
 {% if highlight_field %}<div class="alert alert-warning"><strong>Offenen Readiness-Punkt bearbeiten:</strong> Das relevante Feld ist geöffnet und markiert.</div>{% endif %}
 
-<form method="post">
+<div class="app-card mb-4" data-testid="delivery-section-navigation">
+  <div class="card-header"><strong>Sektionsworkflow</strong><div class="small text-muted mt-1">Status, Zuständigkeit, offene Felder und übernommene Quellen sind vor dem Öffnen sichtbar.</div></div>
+  <div class="card-body delivery-section-navigation">
+    {% for row in section_rows %}
+    <section class="delivery-section-nav-item delivery-section-{{ row.state }}{% if row.is_active %} delivery-section-nav-active{% endif %}" data-section-key="{{ row.key }}">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+        <div><strong>{{ forloop.counter }}. {{ row.label }}</strong><div class="small text-muted mt-1">{{ row.responsible_role }} · {{ row.responsible_person }}</div></div>
+        <span class="delivery-section-status delivery-section-status-{{ row.state }}">{{ row.state_label }}</span>
+      </div>
+      <div class="delivery-section-nav-metrics small">
+        <span><strong>{{ row.open_field_count }}</strong> offene Felder</span>
+        <span><strong>{{ row.finding_count }}</strong> Findings</span>
+        <span><strong>{{ row.source_count }}</strong> Quellen</span>
+      </div>
+      {% if row.review %}<div class="small text-muted">{{ row.review.get_content_origin_display }} · {{ row.review.get_review_status_display }}</div>{% endif %}
+      <div class="mt-3">
+        {% if row.is_active %}<span class="badge badge-soft">Aktive Sektion</span>
+        {% elif row.can_edit %}<a class="btn btn-sm btn-outline-secondary" href="{{ row.edit_url }}">Sektion öffnen</a>
+        {% else %}<span class="small text-muted">Für deine Rolle nur lesbar</span>{% endif %}
+      </div>
+    </section>
+    {% endfor %}
+  </div>
+</div>
+
+<form method="post" data-testid="focused-delivery-section-form">
   {% csrf_token %}
   <input type="hidden" name="return_to" value="{{ return_to }}">
   <input type="hidden" name="highlight" value="{{ highlight_field }}">
+  <input type="hidden" name="section" value="{{ active_section }}">
   {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
   {% for group in form.section_groups %}
-    {% if group.editable %}
-    <section class="app-card mb-4{% if group.key == highlight_section %} field-attention{% endif %}" id="section-{{ group.key }}" data-editable-section>
+    {% if group.active %}
+    <section class="app-card mb-4{% if group.key == highlight_section %} field-attention{% endif %}" id="section-{{ group.key }}" data-editable-section data-active-section="{{ group.key }}">
       <div class="card-header">
-        <strong>{{ forloop.counter }}. {{ group.label }}</strong>
+        <strong>{{ group.label }}</strong>
         <div class="small text-muted mt-1">Zuständig: {{ group.responsible_role }} · {{ group.responsible_person }}</div>
       </div>
       <div class="card-body delivery-form-grid">
@@ -41,21 +67,9 @@
         {% endfor %}
       </div>
     </section>
-    {% else %}
-    <details class="app-card mb-4 delivery-readonly-section" id="section-{{ group.key }}">
-      <summary class="card-header">
-        <span><strong>{{ forloop.counter }}. {{ group.label }}</strong><span class="small text-muted d-block mt-1">Nur {{ group.responsible_role }} · {{ group.responsible_person }}</span></span>
-        <span class="badge badge-soft">Nur lesen</span>
-      </summary>
-      <div class="card-body architecture-artifact-grid">
-        {% for field in group.fields %}
-        <section><div class="section-title">{{ field.label }}</div><div class="text-preline">{{ field.value|default:"–" }}</div></section>
-        {% endfor %}
-      </div>
-    </details>
     {% endif %}
   {% endfor %}
-  <div class="app-card card-body d-flex justify-content-end gap-2"><a class="btn btn-outline-secondary" href="{{ return_to }}">Abbrechen</a><button class="btn btn-primary">Speichern und zur Readiness zurückkehren</button></div>
+  <div class="app-card card-body d-flex flex-wrap justify-content-end gap-2"><a class="btn btn-outline-secondary" href="{{ return_to }}">Abbrechen</a><button class="btn btn-primary">Sektion speichern und zur Readiness zurückkehren</button></div>
 </form>
 {% endblock %}
 {% block extra_js %}
