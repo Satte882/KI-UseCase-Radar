@@ -7,5 +7,7 @@ class ArchitectureConfig(AppConfig):
     verbose_name = "Discovery und Architektur"
 
     def ready(self):
-        from . import focus  # noqa: F401
-        from . import stage_focus  # noqa: F401
+        from . import (
+            focus,  # noqa: F401
+            stage_focus,  # noqa: F401
+        )
