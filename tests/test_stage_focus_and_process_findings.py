@@ -76,7 +76,11 @@ def test_process_analysis_requires_saved_focus_stage_and_uses_selected_stage(
         reverse("architecture:process_analysis_create", kwargs={"stage_id": stage_one.pk})
     )
     assert response.status_code == 302
-    assert response.url == reverse("architecture:stage_focus_select", kwargs={"pk": value_stream.pk})
+    focus_url = reverse(
+        "architecture:stage_focus_select",
+        kwargs={"pk": value_stream.pk},
+    )
+    assert response.url == focus_url
 
     payload = {
         "selected_stage": str(stage_two.pk),
@@ -94,10 +98,7 @@ def test_process_analysis_requires_saved_focus_stage_and_uses_selected_stage(
             }
         )
 
-    response = client.post(
-        reverse("architecture:stage_focus_select", kwargs={"pk": value_stream.pk}),
-        payload,
-    )
+    response = client.post(focus_url, payload)
     assert response.status_code == 302
     decision = StageFocusDecision.objects.get(value_stream=value_stream)
     assert decision.selected_stage == stage_two
@@ -142,7 +143,9 @@ def test_short_path_is_explicitly_justified_without_full_phase_scoring(
             "selected_stage": str(stage.pk),
             "rationale": "Nur diese Phase enthält den betrachteten Engpass.",
             "is_short_path": "on",
-            "short_path_reason": "Die übrige Wertschöpfung liegt außerhalb des dokumentierten Scopes.",
+            "short_path_reason": (
+                "Die übrige Wertschöpfung liegt außerhalb des dokumentierten Scopes."
+            ),
         },
     )
 
@@ -206,5 +209,10 @@ def test_process_findings_are_prioritized_and_traceable_without_new_facts(
     body = response.content.decode()
     assert response.status_code == 200
     assert "Entscheidungsrelevante Befunde" in body
-    assert "Quelle: <a href=\"#analysis-bottlenecks\">Bottlenecks und Ursachen</a>" in body
-    assert body.index("Entscheidungsrelevante Befunde") < body.index("Lösungsoptionen · ADM Phase E")
+    source_link = (
+        'Quelle: <a href="#analysis-bottlenecks">Bottlenecks und Ursachen</a>'
+    )
+    assert source_link in body
+    findings_index = body.index("Entscheidungsrelevante Befunde")
+    solutions_index = body.index("Lösungsoptionen · ADM Phase E")
+    assert findings_index < solutions_index
