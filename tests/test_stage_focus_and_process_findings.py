@@ -209,9 +209,7 @@ def test_process_findings_are_prioritized_and_traceable_without_new_facts(
     body = response.content.decode()
     assert response.status_code == 200
     assert "Entscheidungsrelevante Befunde" in body
-    source_link = (
-        'Quelle: <a href="#analysis-bottlenecks">Bottlenecks und Ursachen</a>'
-    )
+    source_link = 'Quelle: <a href="#analysis-bottlenecks">Bottlenecks und Ursachen</a>'
     assert source_link in body
     findings_index = body.index("Entscheidungsrelevante Befunde")
     solutions_index = body.index("Lösungsoptionen · ADM Phase E")
