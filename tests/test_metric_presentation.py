@@ -197,13 +197,16 @@ def test_csv_export_uses_localized_values_without_unit_duplication(
     assert "8.2500" not in content
 
 
-def test_delivery_snapshot_uses_localized_metric_values():
-    use_case = UseCase(
+@pytest.mark.django_db
+def test_delivery_snapshot_uses_localized_metric_values(owner, business_unit):
+    use_case = UseCase.objects.create(
         title="Delivery-Snapshot",
         summary="Messstand übernehmen",
         problem_statement="Messwerte werden technisch formatiert.",
+        business_unit=business_unit,
         affected_process="Delivery",
         target_users="Delivery-Team",
+        business_owner=owner,
         intended_users="Delivery-Team",
         intended_purpose="Messstand nachvollziehbar übergeben",
         expected_benefit="Lesbare Messwerte",
