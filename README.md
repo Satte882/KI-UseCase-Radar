@@ -104,6 +104,7 @@ Berücksichtigt werden unter anderem:
 * Datenreife
 * Risiko und Komplexität
 * Qualität und Aktualität der Evidenz
+* Abdeckung der Evidenz
 * unabhängige Prüfung
 * offene Annahmen
 * Governance- und Fachprüfungen
@@ -419,7 +420,6 @@ Ohne SSO sollte der Zugriff auf ein internes Netz oder VPN beschränkt bleiben.
 
 ## Dokumentation
 
-* [Marktvalidierung und Continue/Pivot/Stop](docs/VALIDATION_PLAN.md)
 * [Baseline-Abschluss und KI-beschleunigte Delivery](docs/AI_ACCELERATION_PLAN.md)
 * [Discovery & Architecture](docs/DISCOVERY_ARCHITECTURE.md)
 * [Lokales Setup](SETUP.md)
