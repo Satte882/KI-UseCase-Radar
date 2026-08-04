@@ -1,8 +1,8 @@
 name: Export Issue 46 Source
 
 on:
-  push:
-    branches: [fix/issue-46-governance-review-artifacts]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: read
