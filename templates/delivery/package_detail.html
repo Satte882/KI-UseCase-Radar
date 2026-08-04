@@ -167,8 +167,8 @@
           {% if row.can_edit and package.status != 'handed_over' %}<a class="btn btn-outline-secondary mb-3" href="{{ row.edit_url }}">Sektion fokussiert bearbeiten</a>{% endif %}
           {% if row.review %}
           <div class="small mb-3">
-            {% if row.requires_business %}<div><strong>Fachliche Bestätigung:</strong> {{ row.review.business_confirmed_by|default:"offen" }}{% if row.review.business_confirmation_role %} · {{ row.review.business_confirmation_role }}{% endif %}{% if row.review.business_confirmed_at %} · {{ row.review.business_confirmed_at|date:"d.m.Y H:i" }}{% endif %}</div>{% endif %}
-            {% if row.requires_technical %}<div><strong>Technische Bestätigung:</strong> {{ row.review.technical_confirmed_by|default:"offen" }}{% if row.review.technical_confirmation_role %} · {{ row.review.technical_confirmation_role }}{% endif %}{% if row.review.technical_confirmed_at %} · {{ row.review.technical_confirmed_at|date:"d.m.Y H:i" }}{% endif %}</div>{% endif %}
+            {% if row.requires_business %}<div>Fachlich: {{ row.review.business_confirmed_by|default:"offen" }}{% if row.review.business_confirmation_role %} · {{ row.review.business_confirmation_role }}{% endif %}{% if row.review.business_confirmed_at %} · {{ row.review.business_confirmed_at|date:"d.m.Y H:i" }}{% endif %}</div>{% endif %}
+            {% if row.requires_technical %}<div>Technisch: {{ row.review.technical_confirmed_by|default:"offen" }}{% if row.review.technical_confirmation_role %} · {{ row.review.technical_confirmation_role }}{% endif %}{% if row.review.technical_confirmed_at %} · {{ row.review.technical_confirmed_at|date:"d.m.Y H:i" }}{% endif %}</div>{% endif %}
           </div>
           {% if row.review.admin_override_confirmed %}
           <div class="alert alert-warning py-2 small mb-2">
