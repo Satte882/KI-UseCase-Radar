@@ -11,6 +11,7 @@ from ki_radar.use_cases.form_fields import LocalizedDecimalField, LocalizedDecim
 from ki_radar.use_cases.forms import UseCaseForm
 from ki_radar.use_cases.intake import BenefitStepForm
 from ki_radar.use_cases.metric_presentation import (
+    MISSING_VALUE,
     MetricPresentation,
     build_metric_presentation,
     format_count_decimal,
@@ -75,8 +76,8 @@ def test_missing_metric_value_does_not_append_unit():
         unit="Minuten",
     )
 
-    assert result.formatted_value == "–"
-    assert result.display == "–"
+    assert result.formatted_value == MISSING_VALUE
+    assert result.display == MISSING_VALUE
     assert result.is_missing is True
 
 
