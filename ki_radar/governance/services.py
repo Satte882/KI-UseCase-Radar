@@ -78,6 +78,7 @@ def create_screening_review_artifacts(
     assessment: GovernanceAssessment,
     actor,
 ) -> tuple[GovernanceReview, ...]:
+    """Create one explicit formal-review status artifact per review type and screening."""
     artifacts = []
     for definition in REVIEW_DEFINITIONS.values():
         required = getattr(assessment, definition.required_field)
