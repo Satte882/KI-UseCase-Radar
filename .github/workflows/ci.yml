@@ -113,3 +113,43 @@ jobs:
 
       - name: Build development image
         run: docker build -f Dockerfile.dev -t ki-radar-dev:ci .
+
+  patch-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.10.0"
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --frozen --dev
+
+      - name: Apply targeted patches
+        run: uv run python .github/patch_issue_51_64.py
+
+      - name: Format patched tests
+        run: uv run ruff format tests/test_actionable_blockers.py tests/test_issue_58_solution_next_action.py tests/test_delivery_handover.py
+
+      - name: Lint patched tests
+        run: uv run ruff check tests/test_actionable_blockers.py tests/test_issue_58_solution_next_action.py tests/test_delivery_handover.py
+
+      - name: Upload patched files
+        uses: actions/upload-artifact@v4
+        with:
+          name: issue-51-64-patched-files
+          path: |
+            tests/test_actionable_blockers.py
+            tests/test_issue_58_solution_next_action.py
+            tests/test_delivery_handover.py
+            templates/architecture/process_analysis_detail.html
+          if-no-files-found: error
