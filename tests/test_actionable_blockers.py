@@ -126,5 +126,5 @@ def test_dashboard_and_detail_show_actionable_blocker_summary(
     assert detail.status_code == 200
     detail_content = detail.content.decode()
     assert "Voraussetzungen offen" in detail_content
-    assert detail_content.count('data-testid="primary-next-action-control"') == 1
+    assert "Zum ersten offenen Punkt" not in detail_content
     assert "Messmethode ergänzen" in detail_content
