@@ -6,6 +6,7 @@ from ki_radar.accounts.models import BusinessUnit
 from ki_radar.accounts.permissions import is_coordinator
 from ki_radar.core.taxonomy import BusinessDomain
 
+from .form_fields import LocalizedDecimalInput
 from .governance_status import build_governance_statuses
 from .models import UseCase
 
@@ -86,10 +87,22 @@ class UseCaseForm(forms.ModelForm):
             "human_oversight",
             "support_responsibility",
         ]
+        localized_fields = (
+            "metric_baseline",
+            "metric_target",
+            "metric_actual",
+            "one_time_cost",
+            "recurring_cost",
+        )
         widgets = {
             "next_review_date": DateInput(),
             "planned_pilot_end": DateInput(),
             "metric_measured_at": DateInput(),
+            "metric_baseline": LocalizedDecimalInput(),
+            "metric_target": LocalizedDecimalInput(),
+            "metric_actual": LocalizedDecimalInput(),
+            "one_time_cost": LocalizedDecimalInput(),
+            "recurring_cost": LocalizedDecimalInput(),
             "problem_statement": forms.Textarea(attrs={"rows": 4}),
             "summary": forms.Textarea(attrs={"rows": 2}),
             "expected_benefit": forms.Textarea(attrs={"rows": 3}),

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load metric_tags %}
 
 {% block title %}Wirkung & Betrieb · KI-Radar{% endblock %}
 {% block content_class %}app-content-wide outcome-workspace-content{% endblock %}
@@ -14,6 +15,7 @@
 
 <section class="outcome-workbench">
   {% if selected_use_case %}
+  {% metric_set selected_use_case as metric %}
   <div class="app-card outcome-use-case-card">
     <div class="card-body">
       <div class="outcome-use-case-heading">
@@ -22,13 +24,13 @@
           <h2>{{ selected_use_case.title }}</h2>
           <p>{{ selected_use_case.summary|default:selected_use_case.problem_statement }}</p>
         </div>
-        <a class="btn btn-outline-secondary btn-sm" href="{{ selected_use_case.get_absolute_url }}">Use Case öffnen</a>
+        <a class="btn btn-outline-secondary btn-sm" href="{{ selected_use_case.get_absolute_url }}#use-case-overview">Vollständige Metrikdetails öffnen</a>
       </div>
 
       <div class="outcome-metric-grid">
-        <div><small>Baseline</small><strong>{{ selected_use_case.metric_baseline|default_if_none:"—" }} {{ selected_use_case.metric_unit }}</strong></div>
-        <div><small>Ziel</small><strong>{{ selected_use_case.metric_target|default_if_none:"—" }} {{ selected_use_case.metric_unit }}</strong></div>
-        <div><small>Ist</small><strong>{{ selected_use_case.metric_actual|default_if_none:"—" }} {{ selected_use_case.metric_unit }}</strong></div>
+        <div><small>Baseline</small><strong>{{ metric.baseline.display }}</strong></div>
+        <div><small>Ziel</small><strong>{{ metric.target.display }}</strong></div>
+        <div><small>Ist</small><strong>{{ metric.actual.display }}</strong></div>
         <div><small>Ergebnis</small><strong>{{ selected_use_case.metric_result_label }}</strong></div>
       </div>
 

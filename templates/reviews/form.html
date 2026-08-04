@@ -1,6 +1,8 @@
 {% extends "base.html" %}
+{% load metric_tags %}
 {% block title %}{% if pilot_start_only %}Pilot starten{% else %}Entscheidung{% endif %} – KI-Radar{% endblock %}
 {% block content %}
+{% metric_set use_case as metric %}
 <div class="page-header">
   <div><div class="eyebrow mb-2">{{ use_case.short_id }} · {{ use_case.get_status_display }}</div><h1 class="page-title">{% if pilot_start_only %}Pilot starten{% else %}Entscheidung dokumentieren{% endif %}</h1><p class="page-subtitle">{{ use_case.title }}</p></div>
   <a class="btn btn-outline-secondary" href="{{ use_case.get_absolute_url }}">Zurück zum Use Case</a>
@@ -19,7 +21,8 @@
       <div class="card-header"><strong>Ziel gegen Ergebnis</strong></div>
       <div class="card-body">
         <div class="section-title">{{ use_case.metric_name|default:"Keine Metrik definiert" }}</div>
-        <dl class="row mb-0 small"><dt class="col-5 text-muted">Baseline</dt><dd class="col-7">{{ use_case.metric_baseline|default_if_none:"–" }} {{ use_case.metric_unit }}</dd><dt class="col-5 text-muted">Ziel</dt><dd class="col-7">{{ use_case.metric_target|default_if_none:"–" }} {{ use_case.metric_unit }}</dd><dt class="col-5 text-muted">Ist</dt><dd class="col-7">{{ use_case.metric_actual|default_if_none:"–" }} {{ use_case.metric_unit }}</dd><dt class="col-5 text-muted">Bewertung</dt><dd class="col-7">{{ use_case.metric_result_label }}</dd></dl>
+        <dl class="row mb-0 small"><dt class="col-5 text-muted">Baseline</dt><dd class="col-7">{{ metric.baseline.display }}</dd><dt class="col-5 text-muted">Ziel</dt><dd class="col-7">{{ metric.target.display }}</dd><dt class="col-5 text-muted">Ist</dt><dd class="col-7">{{ metric.actual.display }}</dd><dt class="col-5 text-muted">Bewertung</dt><dd class="col-7">{{ use_case.metric_result_label }}</dd></dl>
+        <div class="small mt-3"><a href="{{ use_case.get_absolute_url }}#use-case-overview">Vollständige Metrikdetails am Use Case öffnen</a></div>
       </div>
     </div>
   </div>

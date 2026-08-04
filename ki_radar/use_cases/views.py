@@ -24,6 +24,7 @@ from .blockers import build_blocker_details
 from .copilot import CopilotUnavailable, analyze_use_case
 from .forms import UseCaseForm
 from .governance_status import build_governance_statuses
+from .metric_presentation import build_metric_set_presentation
 from .models import ApprovalDecision, UseCase
 from .outcome_workspace import build_outcome_workspace_journey
 from .permissions import can_create_use_case, can_edit_use_case, can_view_use_case
@@ -341,6 +342,7 @@ def export_csv(request):
     )
     for use_case in queryset:
         decision = current_work_check(use_case)
+        metric = build_metric_set_presentation(use_case)
         writer.writerow(
             [
                 use_case.short_id,
@@ -354,9 +356,9 @@ def export_csv(request):
                 decision.title,
                 decision.state_label,
                 use_case.metric_name,
-                use_case.metric_baseline if use_case.metric_baseline is not None else "",
-                use_case.metric_target if use_case.metric_target is not None else "",
-                use_case.metric_actual if use_case.metric_actual is not None else "",
+                "" if metric.baseline.is_missing else metric.baseline.formatted_value,
+                "" if metric.target.is_missing else metric.target.formatted_value,
+                "" if metric.actual.is_missing else metric.actual.formatted_value,
                 use_case.metric_unit,
                 use_case.metric_result_label,
             ]

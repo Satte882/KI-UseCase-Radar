@@ -7,6 +7,7 @@ from django.db import transaction
 from django.db.models import Max
 from django.utils import timezone
 
+from ki_radar.use_cases.metric_presentation import build_metric_set_presentation
 from ki_radar.use_cases.models import ApprovalDecision, UseCase
 
 from .exports import render_delivery_markdown
@@ -361,9 +362,10 @@ def build_initial_delivery_data(
     decision: ApprovalDecision,
 ) -> dict[str, str]:
     origin, _process, _option = _origin_context(use_case)
+    metric_values = build_metric_set_presentation(use_case)
     metric = (
-        f"{use_case.metric_name}: Baseline {use_case.metric_baseline} "
-        f"→ Ziel {use_case.metric_target} {use_case.metric_unit}.\n"
+        f"{use_case.metric_name}: Baseline {metric_values.baseline.display} "
+        f"→ Ziel {metric_values.target.display}.\n"
         f"Messmethode: {use_case.metric_measurement_method}\n"
         f"Messzeitraum: {use_case.metric_measurement_period or 'für den Pilot festlegen'}"
         if use_case.metric_name

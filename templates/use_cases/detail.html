@@ -1,7 +1,11 @@
 {% extends "base.html" %}
+{% load metric_tags %}
 {% block title %}{{ use_case.short_id }} – KI-Radar{% endblock %}
 {% block content %}
 {% with latest_assessment=use_case.decision_assessments.first %}
+{% metric_set use_case as metric %}
+{% metric_value use_case.one_time_cost 'currency' '€' as one_time_cost %}
+{% metric_value use_case.recurring_cost 'currency' '€' as recurring_cost %}
 <div class="page-header" id="use-case-overview">
   <div>
     <div class="eyebrow mb-2">{{ use_case.short_id }} · {{ use_case.business_unit }}</div>
@@ -112,13 +116,13 @@
       <div class="card-body">
         {% if use_case.metric_name %}
         <div class="d-flex justify-content-between gap-3 align-items-start mb-3">
-          <div><div class="section-title mb-1">Kennzahl</div><h3 class="h5 mb-1">{{ use_case.metric_name }}</h3><div class="text-muted small">{{ use_case.get_metric_type_display }} · {{ use_case.get_metric_direction_display }} · {{ use_case.metric_unit }}</div></div>
+          <div><div class="section-title mb-1">Kennzahl</div><h3 class="h5 mb-1">{{ use_case.metric_name }}</h3><div class="text-muted small">{{ use_case.get_metric_type_display }} · {{ use_case.get_metric_direction_display }} · {{ metric.baseline.unit }}</div></div>
           <span class="badge {% if use_case.metric_result == 'achieved' %}state-ready{% elif use_case.metric_result == 'not_achieved' %}state-blocked{% else %}state-review{% endif %}">{{ use_case.metric_result_label }}</span>
         </div>
         <div class="kpi-strip mb-3">
-          <div class="kpi-cell"><small>Baseline</small><strong>{{ use_case.metric_baseline|default_if_none:"–" }} {{ use_case.metric_unit }}</strong></div>
-          <div class="kpi-cell"><small>Ziel</small><strong>{{ use_case.metric_target|default_if_none:"–" }} {{ use_case.metric_unit }}</strong></div>
-          <div class="kpi-cell"><small>Ist</small><strong>{{ use_case.metric_actual|default_if_none:"–" }} {{ use_case.metric_unit }}</strong></div>
+          <div class="kpi-cell"><small>Baseline</small><strong>{{ metric.baseline.display }}</strong></div>
+          <div class="kpi-cell"><small>Ziel</small><strong>{{ metric.target.display }}</strong></div>
+          <div class="kpi-cell"><small>Ist</small><strong>{{ metric.actual.display }}</strong></div>
         </div>
         <dl class="row mb-0 small">
           <dt class="col-sm-3 text-muted">Messmethode</dt><dd class="col-sm-9">{{ use_case.metric_measurement_method|default:"–" }}</dd>
@@ -203,8 +207,8 @@
         <dt class="text-muted small">Fachlich verantwortlich</dt><dd>{{ use_case.business_owner.get_display_name }}</dd>
         <dt class="text-muted small">KI-Koordinator</dt><dd>{% if use_case.coordinator %}{{ use_case.coordinator.get_display_name }}{% else %}–{% endif %}</dd>
         <dt class="text-muted small">Technical Owner · Technik, Daten und KI</dt><dd>{% if use_case.technical_owner %}{{ use_case.technical_owner.get_display_name }}{% else %}–{% endif %}</dd>
-        <dt class="text-muted small">Einmalkosten</dt><dd>{{ use_case.one_time_cost|default_if_none:"–" }} €</dd>
-        <dt class="text-muted small">Laufende Kosten</dt><dd>{{ use_case.recurring_cost|default_if_none:"–" }} €</dd>
+        <dt class="text-muted small">Einmalkosten</dt><dd>{{ one_time_cost.display }}</dd>
+        <dt class="text-muted small">Laufende Kosten</dt><dd>{{ recurring_cost.display }}</dd>
       </dl></div>
     </div>
     <div class="app-card mb-4">

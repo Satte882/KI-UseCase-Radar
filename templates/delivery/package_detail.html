@@ -273,7 +273,7 @@
     <section><div class="section-title">MVP-Scope</div><div class="text-preline">{{ package.mvp_scope }}</div></section>
     <section><div class="section-title">Akzeptanzkriterien</div><div class="text-preline">{{ package.acceptance_criteria }}</div></section>
     <section><div class="section-title">Testfälle</div><div class="text-preline">{{ package.test_scenarios }}</div></section>
-    <section><div class="section-title">Erfolgsmessung</div><div class="text-preline">{{ package.measurement_plan }}</div></section>
+    <section><div class="section-title">Übernommener Messstand bei Erstellung von Delivery v{{ package.version }}</div><div class="text-preline">{{ package.measurement_plan }}</div></section>
     <section><div class="section-title">Initiales Backlog</div><div class="text-preline">{{ package.initial_backlog }}</div></section>
     <section><div class="section-title">Delivery-System</div>{% if package.external_delivery_url %}<a href="{{ package.external_delivery_url }}">Externes Delivery-Artefakt öffnen</a>{% else %}<span class="text-muted">Noch nicht verknüpft</span>{% endif %}</section>
   </div>

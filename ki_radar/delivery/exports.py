@@ -74,7 +74,10 @@ def render_delivery_markdown(package: DeliveryPackage) -> str:
         ("MVP-Scope", package.mvp_scope),
         ("Akzeptanzkriterien", package.acceptance_criteria),
         ("Testfälle", package.test_scenarios),
-        ("Erfolgsmessung", package.measurement_plan),
+        (
+            f"Übernommener Messstand bei Erstellung von Delivery v{package.version}",
+            package.measurement_plan,
+        ),
         ("Abhängigkeiten", package.dependencies),
         ("Risiken", package.risks),
         ("Annahmen", package.assumptions),
