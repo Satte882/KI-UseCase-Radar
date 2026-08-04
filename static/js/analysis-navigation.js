@@ -18,6 +18,29 @@
     },
   };
 
+  function elevateMethodologyLabels() {
+    const marker = " Methodik: ";
+
+    document.querySelectorAll(".card-header .small.text-muted").forEach((description) => {
+      const text = description.textContent.trim();
+      const markerIndex = text.indexOf(marker);
+      if (markerIndex === -1) return;
+
+      const heading = description.parentElement?.querySelector(":scope > strong");
+      if (!heading || heading.nextElementSibling?.dataset.methodologyLabel === "true") return;
+
+      const summary = text.slice(0, markerIndex);
+      const methodology = text.slice(markerIndex + marker.length).replace(/\.$/, "");
+      description.textContent = summary;
+
+      const label = document.createElement("span");
+      label.className = "small text-muted fw-normal ms-1";
+      label.dataset.methodologyLabel = "true";
+      label.textContent = `(${methodology})`;
+      heading.insertAdjacentElement("afterend", label);
+    });
+  }
+
   function prepareTargets() {
     Object.values(stepTargets).forEach(({ id, selector }) => {
       const target = document.querySelector(selector);
@@ -40,6 +63,7 @@
   }
 
   document.addEventListener("DOMContentLoaded", () => {
+    elevateMethodologyLabels();
     prepareTargets();
     focusRequestedStep();
   });
