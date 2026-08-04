@@ -3,10 +3,15 @@ from pathlib import Path
 from ki_radar.architecture.focus import ValueStreamFocus
 
 TEMPLATE_ROOT = Path("templates/architecture")
+STATIC_JS_ROOT = Path("static/js")
 
 
 def _template(name: str) -> str:
     return (TEMPLATE_ROOT / name).read_text(encoding="utf-8")
+
+
+def _static_js(name: str) -> str:
+    return (STATIC_JS_ROOT / name).read_text(encoding="utf-8")
 
 
 def test_primary_analysis_headings_are_task_oriented():
@@ -38,6 +43,15 @@ def test_methodology_remains_available_as_secondary_context():
     assert "Methodik: Business Architecture (ADM Phase B)." in process_analysis
     assert "Methodik: Information Systems &amp; Technology (ADM Phasen C/D)." in process_analysis
     assert "Methodik: Opportunities &amp; Solutions (ADM Phase E)." in process_analysis
+
+
+def test_methodology_is_promoted_next_to_the_heading():
+    navigation_js = _static_js("analysis-navigation.js")
+
+    assert 'const marker = " Methodik: ";' in navigation_js
+    assert 'label.className = "small text-muted fw-normal ms-1";' in navigation_js
+    assert "label.textContent = `(${methodology})`;" in navigation_js
+    assert 'heading.insertAdjacentElement("afterend", label);' in navigation_js
 
 
 def test_process_analysis_action_and_focus_status_use_consistent_language():
