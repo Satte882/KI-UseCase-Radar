@@ -54,13 +54,17 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen --dev
 
-      - name: Apply implementation payload
+      - name: Apply validated implementation payload
         shell: bash
         run: |
           set -euo pipefail
-          base64 --decode .issue46-payload.b64 > /tmp/issue46.tar.gz
+          cat .issue46-chunks/chunk-* > /tmp/issue46.b64
+          test "$(wc -c < /tmp/issue46.b64)" = "36756"
+          echo "a9d8dd1674980eaede3ba3edc7995e8e78d6434957f50d3dc974335bc1e316d1  /tmp/issue46.b64" | sha256sum --check
+          base64 --decode /tmp/issue46.b64 > /tmp/issue46.tar.gz
+          echo "d6c8ad0e05cbb40d7bf26b45de67d19b04fc70eba9e3667ef62146e27be0a625  /tmp/issue46.tar.gz" | sha256sum --check
           tar -xzf /tmp/issue46.tar.gz
-          rm -f /tmp/issue46.tar.gz
+          rm -f /tmp/issue46.b64 /tmp/issue46.tar.gz
 
       - name: Format implementation
         run: >-
@@ -219,7 +223,7 @@ jobs:
           tests/test_issue_61_blocked_decision_form.py
 
       - name: Remove transfer-only files
-        run: rm -f .issue46-payload.b64 .github/workflows/export-issue-46.yml
+        run: rm -rf .issue46-payload.b64 .issue46-chunks .github/workflows/export-issue-46.yml
 
       - name: Commit prepared implementation
         shell: bash
