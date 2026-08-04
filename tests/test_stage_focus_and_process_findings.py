@@ -1,0 +1,216 @@
+import pytest
+from django.urls import reverse
+
+from ki_radar.architecture.focus import ValueStreamFocus
+from ki_radar.architecture.models import ProcessAnalysis, ValueStream, ValueStreamStage
+from ki_radar.architecture.process_findings import build_process_findings
+from ki_radar.architecture.stage_focus import StageFocusDecision
+from ki_radar.core.taxonomy import BusinessDomain, ScreeningLevel
+
+
+def make_selected_stream(*, owner, business_unit):
+    value_stream = ValueStream.objects.create(
+        name="Lieferantenauswahl",
+        business_unit=business_unit,
+        owner=owner,
+        trigger="Bedarf ist freigegeben.",
+        outcome="Lieferant ist ausgewählt.",
+        scope_in="Angebotsvergleich und Auswahl.",
+        status=ValueStream.Status.ACTIVE,
+        created_by=owner,
+    )
+    ValueStreamFocus.objects.create(
+        value_stream=value_stream,
+        business_domain=BusinessDomain.PROCUREMENT,
+        capability="Supplier Sourcing",
+        strategic_impact=ScreeningLevel.HIGH,
+        economic_potential=ScreeningLevel.MEDIUM,
+        pain_intensity=ScreeningLevel.HIGH,
+        data_accessibility=ScreeningLevel.MEDIUM,
+        change_effort=ScreeningLevel.MEDIUM,
+        status=ValueStreamFocus.Status.SELECTED,
+        rationale="Hoher manueller Aufwand rechtfertigt den Deep Dive.",
+        updated_by=owner,
+    )
+    return value_stream
+
+
+def make_stage(value_stream, sequence, name, pain_points, baseline_metrics):
+    return ValueStreamStage.objects.create(
+        value_stream=value_stream,
+        sequence=sequence,
+        name=name,
+        description=f"Aktivitäten der Phase {name}.",
+        actors="Einkauf",
+        systems="ERP und E-Mail",
+        documents="Angebote",
+        pain_points=pain_points,
+        baseline_metrics=baseline_metrics,
+    )
+
+
+@pytest.mark.django_db
+def test_process_analysis_requires_saved_focus_stage_and_uses_selected_stage(
+    client,
+    owner,
+    business_unit,
+):
+    value_stream = make_selected_stream(owner=owner, business_unit=business_unit)
+    stage_one = make_stage(
+        value_stream,
+        1,
+        "Bedarf klären",
+        "Wenige Rückfragen",
+        "2 Minuten je Vorgang",
+    )
+    stage_two = make_stage(
+        value_stream,
+        2,
+        "Angebote vergleichen",
+        "Manuelle Prüfung\nMedienbruch",
+        "11 Minuten je Vorgang\n18 % Korrekturen",
+    )
+    client.force_login(owner)
+
+    response = client.get(
+        reverse("architecture:process_analysis_create", kwargs={"stage_id": stage_one.pk})
+    )
+    assert response.status_code == 302
+    focus_url = reverse(
+        "architecture:stage_focus_select",
+        kwargs={"pk": value_stream.pk},
+    )
+    assert response.url == focus_url
+
+    payload = {
+        "selected_stage": str(stage_two.pk),
+        "rationale": "Phase 2 bündelt den größten Aufwand und die stärksten Reibungsverluste.",
+    }
+    for stage in (stage_one, stage_two):
+        payload.update(
+            {
+                f"impact_{stage.pk.hex}": ScreeningLevel.HIGH,
+                f"pain_intensity_{stage.pk.hex}": (
+                    ScreeningLevel.HIGH if stage == stage_two else ScreeningLevel.LOW
+                ),
+                f"data_accessibility_{stage.pk.hex}": ScreeningLevel.MEDIUM,
+                f"change_effort_{stage.pk.hex}": ScreeningLevel.MEDIUM,
+            }
+        )
+
+    response = client.post(focus_url, payload)
+    assert response.status_code == 302
+    decision = StageFocusDecision.objects.get(value_stream=value_stream)
+    assert decision.selected_stage == stage_two
+    assert decision.criteria_for(stage_two)["pain_intensity"] == ScreeningLevel.HIGH
+    assert (
+        decision.criteria_for(stage_two)["indicators"]["baseline_metrics"]
+        == "11 Minuten je Vorgang\n18 % Korrekturen"
+    )
+
+    blocked = client.get(
+        reverse("architecture:process_analysis_create", kwargs={"stage_id": stage_one.pk})
+    )
+    assert blocked.status_code == 302
+    assert blocked.url == value_stream.get_absolute_url()
+
+    allowed = client.get(
+        reverse("architecture:process_analysis_create", kwargs={"stage_id": stage_two.pk})
+    )
+    assert allowed.status_code == 200
+    assert "Angebote vergleichen" in allowed.content.decode()
+
+
+@pytest.mark.django_db
+def test_short_path_is_explicitly_justified_without_full_phase_scoring(
+    client,
+    owner,
+    business_unit,
+):
+    value_stream = make_selected_stream(owner=owner, business_unit=business_unit)
+    stage = make_stage(
+        value_stream,
+        1,
+        "Einzige sinnvolle Fokusphase",
+        "Hoher manueller Aufwand",
+        "25 Minuten je Vorgang",
+    )
+    client.force_login(owner)
+
+    response = client.post(
+        reverse("architecture:stage_focus_select", kwargs={"pk": value_stream.pk}),
+        {
+            "selected_stage": str(stage.pk),
+            "rationale": "Nur diese Phase enthält den betrachteten Engpass.",
+            "is_short_path": "on",
+            "short_path_reason": (
+                "Die übrige Wertschöpfung liegt außerhalb des dokumentierten Scopes."
+            ),
+        },
+    )
+
+    assert response.status_code == 302
+    decision = StageFocusDecision.objects.get(value_stream=value_stream)
+    assert decision.is_short_path is True
+    assert decision.criteria_for(stage)["impact"] == ""
+    assert "außerhalb" in decision.short_path_reason
+
+
+@pytest.mark.django_db
+def test_process_findings_are_prioritized_and_traceable_without_new_facts(
+    client,
+    owner,
+    business_unit,
+):
+    value_stream = make_selected_stream(owner=owner, business_unit=business_unit)
+    stage = make_stage(
+        value_stream,
+        1,
+        "Angebote vergleichen",
+        "Manuelle Prüfung",
+        "11 Minuten je Vorgang",
+    )
+    process_analysis = ProcessAnalysis.objects.create(
+        stage=stage,
+        name="Angebotsvergleich analysieren",
+        status=ProcessAnalysis.Status.DRAFT,
+        scope_start="Angebote liegen vor.",
+        scope_end="Vergleich ist freigegeben.",
+        trigger="Angebotsfrist endet.",
+        outcome="Nachvollziehbarer Vergleich.",
+        current_flow="Angebote werden manuell übertragen und geprüft.",
+        roles="Sachbearbeitung\nEinkauf",
+        systems="ERP\nE-Mail",
+        data_objects="Angebote\nBewertungsmatrix",
+        business_rules="Annahme: Freigabegrenze bleibt unverändert.",
+        handoffs="Übergabe an den Einkauf.",
+        bottlenecks="Manuelle Prüfung\nMedienbruch\nWiederholte Rückfragen",
+        exceptions="Offen: Umgang mit unvollständigen Angeboten.",
+        baseline_metrics="11 Minuten je Vorgang\n18 % Korrekturen",
+        target_state_principles="Nachvollziehbare Bewertung.",
+        analyzed_by=owner,
+    )
+
+    groups = build_process_findings(process_analysis)
+    by_key = {group.key: group for group in groups}
+    assert [item.text for item in by_key["bottlenecks"].items] == [
+        "Manuelle Prüfung",
+        "Medienbruch",
+        "Wiederholte Rückfragen",
+    ]
+    assert by_key["metrics"].items[0].source_field == "baseline_metrics"
+    assert by_key["context"].items[0].text == "Sachbearbeitung"
+    assert all(item.is_assumption for item in by_key["assumptions"].items)
+    assert any("Freigabegrenze" in item.text for item in by_key["assumptions"].items)
+    assert not any("Automatisierung" in item.text for group in groups for item in group.items)
+
+    client.force_login(owner)
+    response = client.get(process_analysis.get_absolute_url())
+    body = response.content.decode()
+    assert response.status_code == 200
+    assert "Entscheidungsrelevante Befunde" in body
+    source_link = 'Quelle: <a href="#analysis-bottlenecks">Bottlenecks und Ursachen</a>'
+    assert source_link in body
+    findings_index = body.index("Entscheidungsrelevante Befunde")
+    solutions_index = body.index("Lösungsoptionen · ADM Phase E")
+    assert findings_index < solutions_index

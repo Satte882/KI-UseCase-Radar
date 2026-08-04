@@ -54,4 +54,9 @@
 </section>
 {% endwith %}
 {% endif %}
+{% if request.resolver_match.namespace == 'architecture' and request.resolver_match.url_name == 'value_stream_detail' and value_stream.status == 'active' and value_stream.focus.is_selected and not value_stream.stage_focus_decision %}
+<div class="small text-muted mb-4">
+  Abgekürzter Pfad ohne Prozessanalyse und Lösungsvergleich: Nach dokumentierter Auswahl der Fokusphase kann ein Use Case weiterhin direkt aus der Phase abgeleitet werden.
+</div>
+{% endif %}
 {% include "includes/status_dimensions.html" %}

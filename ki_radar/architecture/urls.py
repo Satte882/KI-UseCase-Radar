@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import gated_views, solution_views, views
+from . import gated_views, solution_views, stage_focus_views, views
 
 app_name = "architecture"
 
@@ -22,6 +22,11 @@ urlpatterns = [
     path("new/", views.value_stream_create, name="value_stream_create"),
     path("<uuid:pk>/", views.value_stream_detail, name="value_stream_detail"),
     path("<uuid:pk>/edit/", views.value_stream_update, name="value_stream_update"),
+    path(
+        "<uuid:pk>/stages/focus/",
+        stage_focus_views.stage_focus_select,
+        name="stage_focus_select",
+    ),
     path(
         "<uuid:value_stream_id>/stages/new/",
         views.stage_create,

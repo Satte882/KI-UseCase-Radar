@@ -1,0 +1,32 @@
+<section class="app-card mb-4" id="entscheidungsrelevante-befunde" data-testid="process-findings-summary">
+  <div class="card-header d-flex flex-wrap justify-content-between align-items-start gap-3">
+    <div>
+      <strong>Entscheidungsrelevante Befunde</strong>
+      <div class="small text-muted mt-1">Deterministisch aus den dokumentierten Analysefeldern abgeleitet. Die Übersicht erzeugt keine neuen Tatsachen.</div>
+    </div>
+    <a class="btn btn-sm btn-outline-secondary" href="#prozessdetails">Detailanalyse prüfen</a>
+  </div>
+  <div class="card-body">
+    {% if finding_groups %}
+    <div class="architecture-artifact-grid">
+      {% for group in finding_groups %}
+      <section>
+        <div class="section-title">{{ group.label }}</div>
+        <ol class="mb-0 ps-3">
+          {% for item in group.items %}
+          <li class="mb-2">
+            {% if item.context_label %}<span class="badge badge-soft me-1">{{ item.context_label }}</span>{% endif %}
+            {% if item.is_assumption %}<span class="badge state-review me-1">Annahme / Prüfbedarf</span>{% endif %}
+            <span>{{ item.text }}</span>
+            <div class="small text-muted mt-1">Quelle: <a href="#{{ item.source_anchor }}">{{ item.source_label }}</a></div>
+          </li>
+          {% endfor %}
+        </ol>
+      </section>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-muted mb-0">Noch keine Analysefelder vorhanden, aus denen entscheidungsrelevante Befunde verdichtet werden können.</p>
+    {% endif %}
+  </div>
+</section>
