@@ -148,28 +148,43 @@ def _finding_rule(code: str, field_name: str) -> str:
     if field_name and code.endswith("_GENERIC"):
         return "Inhalt muss konkret und projektspezifisch sein; Vorlagentext reicht nicht aus."
     rules = {
-        "TECHNICAL_OWNER_MISSING": "Vor der Übergabe muss ein aktiver Technical Owner benannt sein.",
-        "TECHNICAL_OWNER_INACTIVE": "Die technische Verantwortung muss einer aktiven Person zugeordnet sein.",
+        "TECHNICAL_OWNER_MISSING": (
+            "Vor der Übergabe muss ein aktiver Technical Owner benannt sein."
+        ),
+        "TECHNICAL_OWNER_INACTIVE": (
+            "Die technische Verantwortung muss einer aktiven Person zugeordnet sein."
+        ),
         "TECHNICAL_OWNER_SOURCE_CHANGE_UNRESOLVED": (
             "Eine geänderte Rollenzuordnung muss vor der Übergabe explizit entschieden werden."
         ),
-        "SECTION_REVIEW_MISSING": "Jede Delivery-Sektion benötigt eine strukturierte Prüfung.",
-        "SOURCE_MANIFEST_MISSING": "Jede Delivery-Sektion benötigt einen nachvollziehbaren Quellenstand.",
+        "SECTION_REVIEW_MISSING": (
+            "Jede Delivery-Sektion benötigt eine strukturierte Prüfung."
+        ),
+        "SOURCE_MANIFEST_MISSING": (
+            "Jede Delivery-Sektion benötigt einen nachvollziehbaren Quellenstand."
+        ),
         "ARCHITECTURE_ARTIFACTS_MISSING": (
             "Der Architektur- und Datenkontext muss als umsetzungsbezogenes Artefakt vorliegen."
         ),
         "SECTION_BLOCKED": "Eine blockierte Sektion verhindert die Delivery Readiness.",
-        "SECTION_NEEDS_REVIEW": "Jede Sektion muss vor der Übergabe vollständig geprüft sein.",
+        "SECTION_NEEDS_REVIEW": (
+            "Jede Sektion muss vor der Übergabe vollständig geprüft sein."
+        ),
         "REQUIRED_CONFIRMATION_MISSING": (
-            "Alle für die Sektion erforderlichen fachlichen und technischen Bestätigungen müssen vorliegen."
+            "Alle erforderlichen fachlichen und technischen Bestätigungen müssen vorliegen."
         ),
         "NOT_APPLICABLE_REASON_MISSING": (
             "Nichtanwendbarkeit ist nur mit einer konkreten Begründung zulässig."
         ),
-        "CONDITION_OWNER_MISSING": "Jede verbindliche Auflage benötigt eine verantwortliche Person.",
-        "CONDITION_DUE_DATE_MISSING": "Jede verbindliche Auflage benötigt eine Fälligkeit.",
+        "CONDITION_OWNER_MISSING": (
+            "Jede verbindliche Auflage benötigt eine verantwortliche Person."
+        ),
+        "CONDITION_DUE_DATE_MISSING": (
+            "Jede verbindliche Auflage benötigt eine Fälligkeit."
+        ),
         "APPROVAL_CONDITIONS_NOT_TRANSFERRED": (
-            "Verbindliche Freigabeauflagen müssen vollständig in die Übergabehinweise übernommen werden."
+            "Verbindliche Freigabeauflagen müssen vollständig in die Übergabehinweise "
+            "übernommen werden."
         ),
         "SOURCE_CHANGED_AFTER_SNAPSHOT": (
             "Quellenänderungen nach dem Package-Snapshot müssen sichtbar geprüft werden."
@@ -279,7 +294,9 @@ def _build_action(
             url = _package_edit_url(package, "system_landscape", return_to)
     elif code in {"SECTION_REVIEW_MISSING", "SOURCE_MANIFEST_MISSING"}:
         label = SECTION_LABELS.get(section_key, section_key)
-        field_label = "Sektionsstruktur" if code == "SECTION_REVIEW_MISSING" else "Quellenstand"
+        field_label = (
+            "Sektionsstruktur" if code == "SECTION_REVIEW_MISSING" else "Quellenstand"
+        )
         title = f"Struktur für „{label}“ wiederherstellen"
         action_label = "Readiness öffnen"
         responsible_role = "KI-Koordinator"
@@ -288,7 +305,11 @@ def _build_action(
         if can_execute:
             url = f"{package.get_absolute_url()}#section-{section_key}"
     elif code in {"CONDITION_OWNER_MISSING", "CONDITION_DUE_DATE_MISSING"}:
-        field_label = "Auflagenverantwortung" if code.endswith("OWNER_MISSING") else "Auflagenfälligkeit"
+        field_label = (
+            "Auflagenverantwortung"
+            if code.endswith("OWNER_MISSING")
+            else "Auflagenfälligkeit"
+        )
         title = "Freigabeauflage vervollständigen"
         action_label = "Freigabe prüfen"
         responsible_role = "KI-Koordinator"
