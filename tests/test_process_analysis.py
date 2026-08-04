@@ -292,7 +292,7 @@ def test_process_and_solution_origin_is_traceable(
 
 
 @pytest.mark.django_db
-def test_process_detail_renders_togaf_artifacts_and_options(
+def test_process_detail_renders_task_oriented_headings_and_methodology(
     client,
     owner,
     architecture_context,
@@ -305,8 +305,11 @@ def test_process_detail_renders_togaf_artifacts_and_options(
 
     assert response.status_code == 200
     content = response.content.decode()
-    assert "Business Architecture · ADM Phase B" in content
-    assert "Information Systems &amp; Technology · ADM Phasen C/D" in content
-    assert "Lösungsoptionen · ADM Phase E" in content
+    assert "Ist-Prozess und Ursachen" in content
+    assert "Methodik: Business Architecture (ADM Phase B)." in content
+    assert "Systeme, Daten und Integrationen" in content
+    assert "Methodik: Information Systems &amp; Technology (ADM Phasen C/D)." in content
+    assert "Lösungsoptionen vergleichen" in content
+    assert "Methodik: Opportunities &amp; Solutions (ADM Phase E)." in content
     assert preferred_option.name in content
     assert "Bevorzugte Option als Use Case prüfen" in content
