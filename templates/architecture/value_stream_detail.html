@@ -27,7 +27,7 @@
 
 <section class="app-card decision-panel mb-4">
   <div class="card-header d-flex flex-wrap justify-content-between align-items-start gap-3">
-    <div><strong>Fokus &amp; Priorisierung</strong><div class="small text-muted mt-1">Entscheidung, ob dieser End-to-End-Bereich einen Detail-Deep-Dive rechtfertigt.</div></div>
+    <div><strong>Fokus &amp; Priorisierung</strong><div class="small text-muted mt-1">Entscheidung, ob dieser End-to-End-Bereich eine Prozessdetailanalyse rechtfertigt.</div></div>
     <div class="d-flex flex-wrap align-items-center gap-2">
       {% if journey.next_action.key == 'focus' and journey.next_action.url %}<a class="btn btn-sm btn-primary" href="{{ journey.next_action.url }}" data-testid="primary-next-action-control">{{ journey.next_action.action_label|default:"Fokus bearbeiten" }} →</a>{% endif %}
       {% if value_stream.focus %}<span class="badge {% if value_stream.focus.is_selected %}state-ready{% elif value_stream.focus.is_terminal %}state-blocked{% else %}state-review{% endif %}">{{ value_stream.focus.get_status_display }}</span>{% else %}<span class="badge state-blocked">Screening fehlt</span>{% endif %}
@@ -56,7 +56,7 @@
 </section>
 
 <div class="app-card mb-4">
-  <div class="card-header"><strong>TOGAF-light: Architecture Vision</strong><div class="small text-muted mt-1">Konkrete Artefakte aus ADM Phase A; kein vollständiger ADM-Zyklus.</div></div>
+  <div class="card-header"><strong>Zielbild und Leitplanken</strong><div class="small text-muted mt-1">Stakeholder sowie verbindliche Einschränkungen für die weitere Analyse. Methodik: TOGAF-light, Architecture Vision (ADM Phase A).</div></div>
   <div class="card-body">
     <div class="row g-4">
       <div class="col-md-6"><div class="section-title">Stakeholder</div><div class="text-preline">{{ value_stream.stakeholders|default:"Noch offen" }}</div></div>
@@ -69,7 +69,7 @@
 <section class="app-card decision-panel mb-4" id="fokusphase" data-testid="stage-focus-decision">
   <div class="card-header d-flex flex-wrap justify-content-between align-items-start gap-3">
     <div>
-      <strong>Fokusphase für den Prozess-Deep-Dive</strong>
+      <strong>Fokusphase für die Prozessdetailanalyse</strong>
       <div class="small text-muted mt-1">Kompakter Vergleich der Phasen vor der Detailanalyse.</div>
     </div>
     {% if can_edit %}<a class="btn btn-sm {% if value_stream.stage_focus_decision %}btn-outline-secondary{% else %}btn-primary{% endif %}" href="{% url 'architecture:stage_focus_select' value_stream.pk %}" data-testid="stage-focus-select-action">{% if value_stream.stage_focus_decision %}Phasenentscheidung prüfen{% else %}Phasen vergleichen und Fokus auswählen{% endif %}</a>{% endif %}
@@ -110,7 +110,7 @@
 
 <div class="app-card" id="end-to-end-phasen">
   <div class="card-header d-flex justify-content-between align-items-start gap-3">
-    <div><strong>End-to-End-Phasen</strong><div class="small text-muted mt-1">Wertschöpfung zuerst mit 5–10 groben Phasen strukturieren. Erst danach wird bewusst eine Fokusphase für den Prozess-Deep-Dive gewählt.</div></div>
+    <div><strong>End-to-End-Phasen</strong><div class="small text-muted mt-1">Wertschöpfung zuerst mit 5–10 groben Phasen strukturieren. Erst danach wird bewusst eine Fokusphase für die Prozessdetailanalyse gewählt.</div></div>
     {% if can_edit %}
       {% if journey.next_action.key == 'value_stream' and journey.next_action.url %}
       <a class="btn btn-sm btn-primary" href="{{ journey.next_action.url }}" data-testid="primary-next-action-control">{{ journey.next_action.action_label|default:"Phase ergänzen" }} →</a>
@@ -123,7 +123,7 @@
     {% if value_stream.status == 'draft' %}
     <div class="alert alert-secondary"><strong>Phasenerfassung noch offen.</strong> Ergänze die vollständige grobe End-to-End-Struktur und setze den Value Stream anschließend über „Bearbeiten &amp; priorisieren“ auf „Aktiv“.</div>
     {% elif not value_stream.focus.is_selected %}
-    <div class="alert alert-secondary"><strong>Deep Dive noch nicht freigegeben.</strong> Vervollständige das Screening und setze die Fokusentscheidung auf „Für Deep Dive ausgewählt“.</div>
+    <div class="alert alert-secondary"><strong>Prozessdetailanalyse noch nicht freigegeben.</strong> Vervollständige das Screening und triff eine positive Fokusentscheidung.</div>
     {% elif not value_stream.stage_focus_decision %}
     <div class="alert alert-info"><strong>Fokusphase auswählen.</strong> Vergleiche die Phasen kompakt oder dokumentiere für einen eindeutigen Fall bewusst den Kurzpfad.</div>
     {% endif %}
@@ -156,11 +156,11 @@
         {% endif %}
         {% if can_edit and value_stream.status == 'active' and value_stream.focus.is_selected %}
           {% if stage|is_selected_focus_stage %}
-          <a class="btn btn-sm btn-outline-secondary w-100 mt-3" href="{% url 'architecture:process_analysis_create' stage.pk %}" data-testid="focus-stage-action">Als Fokusphase analysieren</a>
+          <a class="btn btn-sm btn-outline-secondary w-100 mt-3" href="{% url 'architecture:process_analysis_create' stage.pk %}" data-testid="focus-stage-action">Prozess im Detail analysieren</a>
           {% elif value_stream.stage_focus_decision %}
           <button class="btn btn-sm btn-outline-secondary w-100 mt-3" type="button" disabled>Nicht als Fokusphase ausgewählt</button>
           {% else %}
-          <a class="btn btn-sm btn-outline-secondary w-100 mt-3" href="{% url 'architecture:stage_focus_select' value_stream.pk %}">Als Fokusphase analysieren: zuerst Fokus auswählen</a>
+          <a class="btn btn-sm btn-outline-secondary w-100 mt-3" href="{% url 'architecture:stage_focus_select' value_stream.pk %}">Prozess im Detail analysieren: zuerst Fokus auswählen</a>
           {% endif %}
         {% elif can_edit and value_stream.status == 'draft' %}
         <button class="btn btn-sm btn-outline-secondary w-100 mt-3" type="button" disabled>Erst Phasenerfassung abschließen</button>
