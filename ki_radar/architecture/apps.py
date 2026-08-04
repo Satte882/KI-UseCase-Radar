@@ -8,3 +8,4 @@ class ArchitectureConfig(AppConfig):
 
     def ready(self):
         from . import focus  # noqa: F401
+        from . import stage_focus  # noqa: F401
