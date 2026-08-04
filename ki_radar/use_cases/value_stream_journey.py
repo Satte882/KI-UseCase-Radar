@@ -13,6 +13,7 @@ JourneyState = workflow.JourneyState
 JourneyStep = workflow.JourneyStep
 ORIGINAL_BUILD_PROCESS = workflow.build_process_analysis_journey
 ORIGINAL_BUILD_VALUE_STREAM = workflow.build_value_stream_journey
+FOCUS_STAGE_REASON = "Wähle bewusst die Phase aus, deren Prozess im Detail analysiert werden soll."
 
 
 def _state(
@@ -93,10 +94,7 @@ def _guide_focus_stage_selection(
                 state="current",
                 url=f"{value_stream.get_absolute_url()}#end-to-end-phasen",
                 action_label="Fokusphase auswählen",
-                reason=(
-                    "Wähle bewusst die Phase aus, deren Prozess im Detail "
-                    "analysiert werden soll."
-                ),
+                reason=FOCUS_STAGE_REASON,
             )
         )
     return _state(
