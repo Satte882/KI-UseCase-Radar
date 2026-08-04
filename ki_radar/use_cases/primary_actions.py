@@ -39,7 +39,7 @@ def _normalize_second_approval_action(use_case, journey: JourneyState) -> Journe
                     step,
                     url=reverse(
                         "use_cases:second_approval_review",
-                        kwargs={"pk": approval.pk},
+                        kwargs={"decision_id": approval.pk},
                     ),
                     action_label="Zweitprüfung öffnen",
                     action_method="get",
