@@ -66,7 +66,12 @@ def _group_integer(value: str) -> str:
     return sign + ".".join(reversed(groups or ["0"]))
 
 
-def _localize_decimal(value: Decimal, *, min_places: int = 0, max_places: int | None = None) -> str:
+def _localize_decimal(
+    value: Decimal,
+    *,
+    min_places: int = 0,
+    max_places: int | None = None,
+) -> str:
     displayed = value
     if max_places is not None:
         quantum = Decimal(1).scaleb(-max_places)
