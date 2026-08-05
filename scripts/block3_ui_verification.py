@@ -89,7 +89,9 @@ def wait_for_server(timeout_seconds: int = 30) -> None:
     deadline = time.time() + timeout_seconds
     while time.time() < deadline:
         try:
-            with urllib.request.urlopen(f"{BASE_URL}{reverse('accounts:login')}", timeout=1) as response:
+            with urllib.request.urlopen(
+                f"{BASE_URL}{reverse('accounts:login')}", timeout=1
+            ) as response:
                 if response.status == 200:
                     return
         except Exception:
@@ -119,7 +121,9 @@ def inspect_page(
 ) -> dict:
     response = page.goto(f"{BASE_URL}{path}", wait_until="networkidle")
     if response is None or response.status >= 400:
-        raise AssertionError(f"{name} lieferte HTTP {response.status if response else 'unbekannt'}.")
+        raise AssertionError(
+            f"{name} lieferte HTTP {response.status if response else 'unbekannt'}."
+        )
 
     metrics = page.evaluate(
         """
@@ -183,7 +187,9 @@ def native_textarea_input_probe(page: Page, session: CaptureSession) -> dict:
 
     textarea = page.locator("textarea").first
     textarea.focus()
-    probe_text = "Diktatkompatibilitätsprobe: nativer Text wird ohne Custom-Eingabesteuerung übernommen."
+    probe_text = (
+        "Diktatkompatibilitätsprobe: nativer Text wird ohne Custom-Eingabesteuerung übernommen."
+    )
     textarea.fill("")
     page.keyboard.insert_text(probe_text)
     before_save = textarea.input_value()
@@ -193,7 +199,9 @@ def native_textarea_input_probe(page: Page, session: CaptureSession) -> dict:
     after_reload = page.locator("textarea").first.input_value()
 
     if before_save != probe_text or after_reload != probe_text:
-        raise AssertionError("Native Texteingabe wurde nicht korrekt gespeichert und wieder geladen.")
+        raise AssertionError(
+            "Native Texteingabe wurde nicht korrekt gespeichert und wieder geladen."
+        )
 
     return {
         "nativeTextareaFocused": True,
@@ -287,7 +295,9 @@ def run_verification() -> None:
             finally:
                 browser.close()
 
-        overflow_pages = [item["screenshot"] for item in report["pages"] if item["horizontalOverflow"]]
+        overflow_pages = [
+            item["screenshot"] for item in report["pages"] if item["horizontalOverflow"]
+        ]
         viewport_mismatches = [
             item["screenshot"] for item in report["pages"] if item["layoutViewportMismatch"]
         ]
@@ -316,11 +326,15 @@ def run_verification() -> None:
         if overflow_pages:
             raise AssertionError(f"Dokumentweiter horizontaler Überlauf: {overflow_pages}")
         if viewport_mismatches:
-            raise AssertionError(f"Layout vergrößert den konfigurierten Viewport: {viewport_mismatches}")
+            raise AssertionError(
+                f"Layout vergrößert den konfigurierten Viewport: {viewport_mismatches}"
+            )
         if unlabeled_pages:
             raise AssertionError(f"Textareas ohne sichtbare Label-Zuordnung: {unlabeled_pages}")
         if off_viewport_actions:
-            raise AssertionError(f"Primäraktionen liegen außerhalb des Viewports: {off_viewport_actions}")
+            raise AssertionError(
+                f"Primäraktionen liegen außerhalb des Viewports: {off_viewport_actions}"
+            )
     finally:
         server.terminate()
         try:
