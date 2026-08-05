@@ -321,7 +321,7 @@ def inspect_page(
         () => {
           const root = document.documentElement;
           const body = document.body;
-          const interactive = [...document.querySelectorAll('a, button, input, select, textarea')];
+          const interactive = [...document.querySelectorAll('main a, main button, main input, main select, main textarea')];
           const offViewport = interactive.filter((element) => {
             const rect = element.getBoundingClientRect();
             const style = window.getComputedStyle(element);

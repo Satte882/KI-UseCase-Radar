@@ -77,7 +77,7 @@ Je Viewport werden geprüft und als vollständige Screenshots gespeichert:
 6. fehlgeschlagene Vorschau,
 7. erfolgreiche Use-Case-Vorschau.
 
-Automatisch geprüft werden HTTP 200, unveränderte Viewportbreite, fehlender horizontaler Überlauf, keine interaktiven Elemente außerhalb des Viewports, erwartete Inhalte und das Fehlen von Übernahme-, Verwerf- oder Sammelaktionen. Die Screenshots und der JSON-Bericht werden als GitHub-Actions-Artefakt gespeichert und zusätzlich visuell geprüft.
+Automatisch geprüft werden HTTP 200, unveränderte Viewportbreite, fehlender horizontaler Überlauf, keine interaktiven Elemente des Block-4-Hauptinhalts außerhalb des Viewports, erwartete Inhalte und das Fehlen von Übernahme-, Verwerf- oder Sammelaktionen. Die Screenshots und der JSON-Bericht werden als GitHub-Actions-Artefakt gespeichert und zusätzlich visuell geprüft.
 
 **Finaler UI-Lauf und Sichtprüfung:** nach erfolgreichem PR-Lauf einzutragen.
 
