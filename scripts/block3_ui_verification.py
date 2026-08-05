@@ -1,3 +1,4 @@
+# ruff: noqa: E402
 from __future__ import annotations
 
 import json
@@ -8,6 +9,10 @@ import sys
 import time
 import urllib.request
 from pathlib import Path
+
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.test")
 os.environ.setdefault("USE_SQLITE_FOR_TESTS", "1")
