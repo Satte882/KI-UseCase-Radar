@@ -1,28 +1,13 @@
 from pathlib import Path
 
 
-command_path = Path(
-    "ki_radar/accelerator/management/commands/purge_capture_sessions.py"
-)
-command_text = command_path.read_text(encoding="utf-8")
-current_help = '''    help = (
-        "Lässt überfällige Capture-Entwürfe ablaufen und bereinigt alte "
-        "Terminalzustände."
-    )'''
-expected_help = (
-    '    help = "Lässt überfällige Capture-Entwürfe ablaufen und bereinigt '
-    'terminale Sessions."'
-)
-if current_help not in command_text:
-    raise SystemExit("Expected current purge command help text not found")
-command_path.write_text(
-    command_text.replace(current_help, expected_help, 1),
-    encoding="utf-8",
-)
-
-
 patch_path = Path("scripts/ap8_prepare.py")
 patch_text = patch_path.read_text(encoding="utf-8")
+patch_text = patch_text.replace(
+    'help = "Lässt überfällige Capture-Entwürfe ablaufen und bereinigt terminale Sessions."',
+    'help = "Lässt überfällige Capture-Entwürfe ablaufen und bereinigt alte Terminalzustände."',
+    1,
+)
 old_query = '''def _expirable_sessions(*, checked_now):
     return CaptureSession.objects.filter(
         status__in=[CaptureSession.Status.DRAFT, CaptureSession.Status.COMPLETED],
