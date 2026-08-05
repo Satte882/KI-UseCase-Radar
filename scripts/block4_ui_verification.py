@@ -396,7 +396,7 @@ def run_verification() -> None:
                     "accelerator:capture_review",
                     kwargs={"session_id": data["use_case"].pk},
                 ),
-                ("Antworten analysieren", "Geführte Use-Case-Erfassung"),
+                ("Antworten analysieren", "Assistierter Angebotsvergleich – Block-4-Abnahme"),
             ),
             "grouped-preview": (
                 reverse(
