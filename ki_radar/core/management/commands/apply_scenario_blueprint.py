@@ -45,8 +45,7 @@ class Command(BaseCommand):
             "--apply",
             action="store_true",
             help=(
-                "Apply the fully validated graph atomically. "
-                "Without this flag no graph is changed."
+                "Apply the fully validated graph atomically. Without this flag no graph is changed."
             ),
         )
         parser.add_argument(
@@ -94,7 +93,7 @@ class Command(BaseCommand):
         if resolved.suffix.lower() != ".json":
             raise CommandError("Blueprint-Dateien müssen die Endung .json besitzen.", returncode=2)
         if not resolved.is_file():
-            message = "Blueprint-Datei wurde nicht gefunden: " f"{resolved}"
+            message = f"Blueprint-Datei wurde nicht gefunden: {resolved}"
             raise CommandError(message, returncode=2)
         return resolved
 
@@ -133,9 +132,7 @@ class Command(BaseCommand):
 
     def _write_objects(self, objects: list[dict[str, Any]]) -> None:
         for item in objects:
-            self.stdout.write(
-                f"- {item['object_type']}:{item['key']} — {item['status']}"
-            )
+            self.stdout.write(f"- {item['object_type']}:{item['key']} — {item['status']}")
             for difference in item["differences"]:
                 self.stdout.write(
                     "  "
