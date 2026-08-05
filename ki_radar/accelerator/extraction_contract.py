@@ -8,6 +8,7 @@ from .catalogs import CaptureCatalog, allowed_blueprint_target_paths
 
 EXTRACTION_SCHEMA_VERSION = "1.0"
 EXTRACTION_PROMPT_VERSION = "1.0"
+MAX_EXTRACTION_SUGGESTIONS = 100
 
 ALLOWED_FIELD_TYPES = frozenset(
     {
@@ -229,7 +230,12 @@ def parse_extraction_document(
     question_keys = frozenset(question_map)
     allowed_paths = allowed_extraction_target_paths(catalog)
     suggestions: list[ExtractionSuggestion] = []
-    for index, item in enumerate(_as_list(root.get("suggestions"), "suggestions", errors)):
+    raw_suggestions = _as_list(root.get("suggestions"), "suggestions", errors)
+    if len(raw_suggestions) > MAX_EXTRACTION_SUGGESTIONS:
+        errors.append(
+            f"suggestions: Höchstens {MAX_EXTRACTION_SUGGESTIONS} Vorschläge pro Analyse erlaubt."
+        )
+    for index, item in enumerate(raw_suggestions):
         path = f"suggestions[{index}]"
         before = len(errors)
         suggestion = _as_dict(item, path, errors)
