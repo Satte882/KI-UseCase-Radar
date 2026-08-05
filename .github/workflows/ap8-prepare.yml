@@ -23,6 +23,16 @@ jobs:
         with:
           version: '0.10.0'
       - run: uv sync --frozen --dev
+      - name: Align temporary patch script
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("scripts/ap8_prepare.py")
+          text = path.read_text(encoding="utf-8")
+          old = 'help = "Lässt überfällige Capture-Entwürfe ablaufen und bereinigt terminale Sessions."'
+          new = 'help = "Lässt überfällige Capture-Entwürfe ablaufen und bereinigt alte Terminalzustände."'
+          path.write_text(text.replace(old, new, 1), encoding="utf-8")
+          PY
       - run: python scripts/ap8_prepare.py
       - name: Lint and format
         run: |
