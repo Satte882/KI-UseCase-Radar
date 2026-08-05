@@ -39,6 +39,9 @@ jobs:
       - name: Install project dependencies
         run: uv sync --frozen --dev
 
+      - name: Format one-time verification script
+        run: uv run ruff format scripts/block3_ui_verification.py
+
       - name: Install Playwright for one-time UI verification
         run: |
           uv pip install playwright==1.54.0
@@ -51,6 +54,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p artifacts/block3-ui-verification
+          cp scripts/block3_ui_verification.py artifacts/block3-ui-verification/formatted-script.py
           set +e
           uv run python scripts/block3_ui_verification.py > artifacts/block3-ui-verification/verification.log 2>&1
           status=$?
