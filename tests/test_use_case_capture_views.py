@@ -89,9 +89,7 @@ def test_use_case_wizard_saves_and_moves_to_next_section(client, owner):
         "accelerator:capture_step",
         kwargs={"session_id": session.pk, "step": 2},
     )
-    assert session.answers[first_question.key] == (
-        "Manueller Angebotsvergleich dauert zu lange."
-    )
+    assert session.answers[first_question.key] == "Manueller Angebotsvergleich dauert zu lange."
     assert session.revision == 1
 
 
