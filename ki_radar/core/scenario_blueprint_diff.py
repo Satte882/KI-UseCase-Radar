@@ -405,9 +405,7 @@ def _append_stage_diffs(
     stream: ValueStream | None,
     stream_data: dict[str, Any],
 ) -> dict[str, ValueStreamStage | None]:
-    current = (
-        {stage.sequence: stage for stage in stream.stages.all()} if stream is not None else {}
-    )
+    current = {stage.sequence: stage for stage in stream.stages.all()} if stream is not None else {}
     by_key: dict[str, ValueStreamStage | None] = {}
     for data in sorted(stream_data["stages"], key=lambda item: item["sequence"]):
         stage = current.get(data["sequence"])
@@ -521,9 +519,7 @@ def build_blueprint_diff(resolved: ResolvedBlueprint) -> BlueprintGraphDiff:
     objects.append(_classification_diff(use_case, resolved))
 
     origin = (
-        UseCaseOrigin.objects.filter(use_case=use_case).first()
-        if use_case is not None
-        else None
+        UseCaseOrigin.objects.filter(use_case=use_case).first() if use_case is not None else None
     )
     expected_origin = {
         "stage": process_stage.pk if process_stage is not None else None,
