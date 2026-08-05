@@ -16,11 +16,18 @@ class CaptureStartForm(forms.Form):
 
 class CaptureSectionForm(forms.Form):
     revision = forms.IntegerField(widget=forms.HiddenInput)
+    active_entry_seconds = forms.IntegerField(
+        required=False,
+        min_value=0,
+        initial=0,
+        widget=forms.HiddenInput(attrs={"data-active-entry-seconds": ""}),
+    )
 
     def __init__(self, *args, section: CaptureSection, initial_answers=None, revision=0, **kwargs):
         self.capture_section = section
         initial = dict(kwargs.pop("initial", {}) or {})
         initial["revision"] = revision
+        initial["active_entry_seconds"] = 0
         for question in section.questions:
             initial[question.key] = (initial_answers or {}).get(question.key, "")
         kwargs["initial"] = initial
@@ -55,7 +62,8 @@ class CaptureSectionForm(forms.Form):
 
     @property
     def answer_fields(self):
-        return [self[name] for name in self.fields if name != "revision"]
+        technical_fields = {"revision", "active_entry_seconds"}
+        return [self[name] for name in self.fields if name not in technical_fields]
 
     def cleaned_answer_updates(self) -> dict[str, str]:
         return {

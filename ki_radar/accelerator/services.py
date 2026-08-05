@@ -21,6 +21,7 @@ from .models import CaptureSession
 from .retention import expire_capture_session_if_due
 
 CAPTURE_DRAFT_RETENTION_DAYS = 30
+MAX_ACTIVE_ENTRY_SECONDS_PER_SAVE = 900
 
 
 class CaptureRevisionConflict(RuntimeError):
@@ -56,6 +57,20 @@ def _normalize_working_title(value: str | None) -> str:
     if len(normalized) > 200:
         raise ValidationError({"working_title": "Die Arbeitsbezeichnung ist zu lang."})
     return normalized
+
+
+def _bounded_active_entry_seconds(value: object) -> int:
+    try:
+        seconds = int(value or 0)
+    except (TypeError, ValueError) as exc:
+        raise ValidationError(
+            {"active_entry_seconds": "Die aktive Eingabezeit ist ungültig."}
+        ) from exc
+    if seconds < 0:
+        raise ValidationError(
+            {"active_entry_seconds": "Die aktive Eingabezeit ist ungültig."}
+        )
+    return min(seconds, MAX_ACTIVE_ENTRY_SECONDS_PER_SAVE)
 
 
 def _draft_expiry(now=None):
@@ -122,11 +137,13 @@ def save_capture_session(
     expected_revision: int,
     answer_updates: object,
     working_title: str | None = None,
+    active_entry_seconds_delta: object = 0,
 ) -> CaptureSession:
     session = _locked_owned_session(actor=actor, session_id=session_id)
     _assert_editable(session)
     _assert_revision(session, expected_revision)
     catalog = _stored_catalog(session)
+    bounded_active_seconds = _bounded_active_entry_seconds(active_entry_seconds_delta)
 
     current_answers = validate_answer_document(catalog, session.answers)
     if not isinstance(answer_updates, dict):
@@ -138,6 +155,7 @@ def save_capture_session(
     session.answers = normalized_answers
     session.answered_required_count = completed_count
     session.required_question_count = required_count
+    session.active_entry_seconds += bounded_active_seconds
     if working_title is not None:
         session.working_title = _normalize_working_title(working_title)
     session.revision += 1
@@ -148,6 +166,7 @@ def save_capture_session(
             "answers",
             "answered_required_count",
             "required_question_count",
+            "active_entry_seconds",
             "working_title",
             "revision",
             "save_count",
