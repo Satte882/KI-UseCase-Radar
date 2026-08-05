@@ -23,6 +23,7 @@ from ki_radar.use_cases.forms import UseCaseForm
 from ki_radar.use_cases.models import UseCase
 
 from .scenario_blueprint_diff import BlueprintGraphDiff, DiffStatus, build_blueprint_diff
+from .scenario_blueprint_provenance import origin_source_snapshot, process_source_snapshot
 from .scenario_blueprint_validation import ResolvedBlueprint, validate_blueprint
 
 
@@ -158,9 +159,11 @@ def _save_process(
     form = ProcessAnalysisForm(data=_pick(payload, fields))
     if not form.is_valid():
         raise _form_failure("process_analysis", form)
+    stage = stages[payload["stage_key"]]
     process = form.save(commit=False)
-    process.stage = stages[payload["stage_key"]]
+    process.stage = stage
     process.analyzed_by = resolved.actors["creator"]
+    process.source_snapshot = process_source_snapshot(resolved, stage=stage)
     process.save()
     return process
 
@@ -322,11 +325,19 @@ def apply_blueprint(resolved: ResolvedBlueprint) -> BlueprintApplyResult:
             options = _save_options(current, process)
             use_case = _save_use_case(current)
             origin_data = current.payload["origin"]
+            origin_stage = stages[origin_data["stage_key"]]
+            origin_option = options[origin_data["solution_option_key"]]
             origin = UseCaseOrigin.objects.create(
                 use_case=use_case,
-                stage=stages[origin_data["stage_key"]],
+                stage=origin_stage,
                 process_analysis=process,
-                solution_option=options[origin_data["solution_option_key"]],
+                solution_option=origin_option,
+                source_snapshot=origin_source_snapshot(
+                    current,
+                    stage=origin_stage,
+                    process_analysis=process,
+                    solution_option=origin_option,
+                ),
             )
 
             post_diff = build_blueprint_diff(current)
