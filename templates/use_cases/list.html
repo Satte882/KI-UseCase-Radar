@@ -115,7 +115,7 @@
             {% if item.register_state_detail %}<div class="row-meta mt-1">{{ item.register_state_detail }}</div>{% endif %}
           </td>
           <td class="owner-cell">{{ item.business_owner.get_display_name }}</td>
-          <td class="due-cell">{% if item.decision_due %}<time datetime="{{ item.decision_due|date:'Y-m-d' %}">{{ item.decision_due|date:"d.m.Y" }}</time>{% else %}–{% endif %}</td>
+          <td class="due-cell">{% if item.decision_due %}<time datetime="{{ item.decision_due|date:'Y-m-d' }}">{{ item.decision_due|date:"d.m.Y" }}</time>{% else %}–{% endif %}</td>
         </tr>
         {% empty %}
         <tr class="empty-row"><td colspan="7">Keine Use Cases gefunden.<span>Filter zurücksetzen oder Suchbegriff anpassen.</span></td></tr>
