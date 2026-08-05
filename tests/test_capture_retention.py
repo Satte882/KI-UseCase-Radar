@@ -91,9 +91,7 @@ def test_retention_command_expires_due_drafts_and_purges_only_old_terminal_sessi
         working_title="Abgeschlossen",
     )
 
-    CaptureSession.objects.filter(pk=due_draft.pk).update(
-        expires_at=now - timedelta(seconds=1)
-    )
+    CaptureSession.objects.filter(pk=due_draft.pk).update(expires_at=now - timedelta(seconds=1))
     CaptureSession.objects.filter(pk=old_expired.pk).update(
         status=CaptureSession.Status.EXPIRED,
         expired_at=now - timedelta(days=8),
