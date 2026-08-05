@@ -23,36 +23,38 @@ jobs:
 
           path = Path("scripts/block4_ui_verification.py")
           text = path.read_text(encoding="utf-8")
-          old = """          const offViewport = interactive.filter((element) => {
-            const rect = element.getBoundingClientRect();
-            const style = window.getComputedStyle(element);
-            if (style.display === 'none' || style.visibility === 'hidden') return false;
-            return rect.left < -1 || rect.right > window.innerWidth + 1;
-          });
-"""
-          new = """          const isInsideHorizontalScroller = (element) => {
-            let ancestor = element.parentElement;
-            while (ancestor && ancestor !== document.body) {
-              const ancestorStyle = window.getComputedStyle(ancestor);
-              const overflowX = ancestorStyle.overflowX;
-              if (
-                (overflowX === 'auto' || overflowX === 'scroll') &&
-                ancestor.scrollWidth > ancestor.clientWidth + 1
-              ) {
-                return true;
-              }
-              ancestor = ancestor.parentElement;
-            }
-            return false;
-          };
-          const offViewport = interactive.filter((element) => {
-            const rect = element.getBoundingClientRect();
-            const style = window.getComputedStyle(element);
-            if (style.display === 'none' || style.visibility === 'hidden') return false;
-            const outsideViewport = rect.left < -1 || rect.right > window.innerWidth + 1;
-            return outsideViewport && !isInsideHorizontalScroller(element);
-          });
-"""
+          old = (
+              "          const offViewport = interactive.filter((element) => {\n"
+              "            const rect = element.getBoundingClientRect();\n"
+              "            const style = window.getComputedStyle(element);\n"
+              "            if (style.display === 'none' || style.visibility === 'hidden') return false;\n"
+              "            return rect.left < -1 || rect.right > window.innerWidth + 1;\n"
+              "          });\n"
+          )
+          new = (
+              "          const isInsideHorizontalScroller = (element) => {\n"
+              "            let ancestor = element.parentElement;\n"
+              "            while (ancestor && ancestor !== document.body) {\n"
+              "              const ancestorStyle = window.getComputedStyle(ancestor);\n"
+              "              const overflowX = ancestorStyle.overflowX;\n"
+              "              if (\n"
+              "                (overflowX === 'auto' || overflowX === 'scroll') &&\n"
+              "                ancestor.scrollWidth > ancestor.clientWidth + 1\n"
+              "              ) {\n"
+              "                return true;\n"
+              "              }\n"
+              "              ancestor = ancestor.parentElement;\n"
+              "            }\n"
+              "            return false;\n"
+              "          };\n"
+              "          const offViewport = interactive.filter((element) => {\n"
+              "            const rect = element.getBoundingClientRect();\n"
+              "            const style = window.getComputedStyle(element);\n"
+              "            if (style.display === 'none' || style.visibility === 'hidden') return false;\n"
+              "            const outsideViewport = rect.left < -1 || rect.right > window.innerWidth + 1;\n"
+              "            return outsideViewport && !isInsideHorizontalScroller(element);\n"
+              "          });\n"
+          )
           if old not in text:
               raise SystemExit("viewport filter anchor not found")
           path.write_text(text.replace(old, new, 1), encoding="utf-8")
