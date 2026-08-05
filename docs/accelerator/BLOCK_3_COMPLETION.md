@@ -53,7 +53,7 @@ Die Block-3-Regressionsabdeckung liegt insbesondere in:
 - `tests/test_capture_session_services.py`,
 - `tests/test_value_stream_capture_views.py`,
 - `tests/test_use_case_capture_views.py`,
-- `tests/test_capture_overview.py`,
+- `tests/test_capture_overview_views.py`,
 - `tests/test_capture_retention.py`,
 - `tests/test_capture_measurement_privacy.py`,
 - `tests/test_block3_real_demo_acceptance.py`.
@@ -89,4 +89,4 @@ Diese Grenzen entsprechen Issue #119 und lassen Issue #116 unverändert.
 
 ## UI-Prüfung
 
-Die automatisierten Tests sichern native Formularelemente, semantische Labels, Navigation, Ownership, Konfliktverhalten und No-JavaScript-Fallback. Eine visuelle manuelle Desktop-/Mobile-Prüfung wird durch die GitHub-Schnittstelle nicht simuliert oder als durchgeführt ausgegeben; sie ist kein Abnahmekriterium von Issue #119.
+Die automatisierten Tests sichern native Formularelemente, semantische Labels, Navigation, Ownership, Konfliktverhalten und No-JavaScript-Fallback. Die nachträgliche Desktop-/Mobile-Sichtprüfung wird in einem separaten Verifikationslauf durchgeführt und nach Sichtung der erzeugten Browsernachweise hier ergänzt.
