@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Analyse – KI-Radar{% endblock %}
 {% block content %}
 <div class="page-header">
@@ -10,7 +11,14 @@
   {% if can_create %}
   <div class="d-flex gap-2 flex-wrap">
     {% if capture_draft_count %}<a class="btn btn-outline-secondary" href="{% url 'accelerator:capture_list' %}">Meine Erfassungen ({{ capture_draft_count }})</a>{% endif %}
-    <a class="btn btn-outline-secondary" href="{% url 'accelerator:value_stream_start' %}">Geführt erfassen</a>
+    <a
+      class="btn btn-outline-secondary"
+      href="{% url 'accelerator:value_stream_start' %}"
+      data-bs-toggle="tooltip"
+      data-bs-trigger="hover focus"
+      data-bs-placement="bottom"
+      data-bs-title="Fragen schrittweise beantworten oder per WIN + H diktieren. Es entsteht zunächst ein Entwurf."
+    >Geführt erfassen <span class="ms-1" aria-hidden="true">ⓘ</span></a>
     <a class="btn btn-primary" href="{% url 'architecture:value_stream_create' %}">Value Stream anlegen</a>
   </div>
   {% endif %}
@@ -49,3 +57,4 @@
   {% endfor %}
 </div>
 {% endblock %}
+{% block extra_js %}<script src="{% static 'js/guided-capture-tooltip.js' %}" defer></script>{% endblock %}
