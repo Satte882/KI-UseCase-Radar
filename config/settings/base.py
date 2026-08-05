@@ -74,6 +74,7 @@ INSTALLED_APPS = [
     "axes",
     "simple_history",
     "ki_radar.core",
+    "ki_radar.accelerator",
     "ki_radar.accounts",
     "ki_radar.architecture",
     "ki_radar.use_cases",
