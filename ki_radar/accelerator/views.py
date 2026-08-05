@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from collections import OrderedDict
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_POST
@@ -12,13 +14,15 @@ from django.views.decorators.http import require_POST
 from ki_radar.architecture.permissions import can_manage_architecture
 from ki_radar.use_cases.permissions import can_create_use_case
 
+from .analysis_service import CaptureAnalysisError
 from .catalogs import (
     CaptureAnswerValidationError,
     UnsupportedCaptureCatalog,
     get_capture_catalog,
 )
+from .extraction_validation import execute_capture_analysis
 from .forms import CaptureSectionForm, CaptureStartForm
-from .models import CaptureSession
+from .models import CaptureAnalysis, CaptureSession
 from .services import (
     CaptureRevisionConflict,
     CaptureStateError,
@@ -106,6 +110,51 @@ def _allowed_capture_types(actor) -> list[str]:
         for capture_type in SUPPORTED_UI_CAPTURE_TYPES
         if _can_start_capture(actor, capture_type)
     ]
+
+
+def _display_suggested_value(value) -> str:
+    if isinstance(value, dict) and set(value) >= {"value", "unit"}:
+        return " ".join(part for part in (str(value["value"]), str(value["unit"])) if part)
+    if isinstance(value, list):
+        return " · ".join(str(item) for item in value)
+    if isinstance(value, bool):
+        return "Ja" if value else "Nein"
+    return str(value)
+
+
+def _suggestion_groups(analysis: CaptureAnalysis, catalog=None) -> list[dict]:
+    groups: OrderedDict[tuple[str, str], dict] = OrderedDict()
+    for suggestion in analysis.suggestions.all():
+        key = (suggestion.target_object_type, suggestion.target_group_key)
+        group = groups.setdefault(
+            key,
+            {
+                "object_label": suggestion.get_target_object_type_display(),
+                "group_key": suggestion.target_group_key,
+                "suggestions": [],
+            },
+        )
+        group["suggestions"].append(
+            {
+                "target_field": suggestion.target_field,
+                "field_type": suggestion.get_field_type_display(),
+                "display_value": _display_suggested_value(suggestion.suggested_value),
+                "source_question": (
+                    catalog.question_map[suggestion.source_question].label
+                    if catalog is not None and suggestion.source_question in catalog.question_map
+                    else suggestion.source_question
+                ),
+                "source_excerpt": suggestion.source_excerpt,
+                "uncertainty": suggestion.get_uncertainty_display(),
+                "uncertainty_class": {
+                    "low": "state-ready",
+                    "medium": "state-review",
+                    "high": "state-blocked",
+                }[suggestion.uncertainty],
+                "uncertainty_reason": suggestion.uncertainty_reason,
+            }
+        )
+    return list(groups.values())
 
 
 @login_required
@@ -287,9 +336,54 @@ def capture_review(request, session_id):
             "sections": _review_sections(catalog, session) if catalog else [],
             "completion_errors": completion_errors,
             "conflict_message": conflict_message,
+            "analysis_runs": session.analyses.select_related("requested_by").all()[:10],
+            "can_analyze": (
+                session.status == CaptureSession.Status.COMPLETED and catalog is not None
+            ),
             **_capture_ui(session.capture_type),
         },
         status=response_status,
+    )
+
+
+@login_required
+@require_POST
+def capture_analyze(request, session_id):
+    session = _load_ui_session(actor=request.user, session_id=session_id)
+    try:
+        analysis = execute_capture_analysis(actor=request.user, session_id=session.pk)
+    except (
+        CaptureAnalysisError,
+        CaptureAnswerValidationError,
+        UnsupportedCaptureCatalog,
+    ) as exc:
+        messages.error(request, str(exc))
+        return redirect("accelerator:capture_review", session_id=session.pk)
+    messages.success(request, "Die Antworten wurden strukturiert analysiert.")
+    return redirect("accelerator:analysis_detail", analysis_id=analysis.pk)
+
+
+@login_required
+def analysis_detail(request, analysis_id):
+    analysis = get_object_or_404(
+        CaptureAnalysis.objects.select_related("session", "requested_by"),
+        pk=analysis_id,
+        session__owner=request.user,
+    )
+    _load_ui_session(actor=request.user, session_id=analysis.session_id)
+    try:
+        catalog = get_capture_catalog(analysis.capture_type, analysis.catalog_version)
+    except UnsupportedCaptureCatalog:
+        catalog = None
+    return render(
+        request,
+        "accelerator/analysis_detail.html",
+        {
+            "analysis": analysis,
+            "session": analysis.session,
+            "suggestion_groups": _suggestion_groups(analysis, catalog),
+            **_capture_ui(analysis.capture_type),
+        },
     )
 
 

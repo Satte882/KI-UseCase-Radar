@@ -62,4 +62,47 @@
     {% endif %}
   </div>
 </div>
+
+{% if session.status == 'completed' %}
+<section class="app-card mb-4" aria-labelledby="analysis-heading">
+  <div class="card-body">
+    <div class="eyebrow mb-2">Strukturierte Extraktionsvorschau</div>
+    <h2 class="h5" id="analysis-heading">Antworten als Feldvorschläge prüfen</h2>
+    <p class="text-muted mb-0">Die Analyse ordnet ausschließlich vorhandene Antworten erlaubten Zielfeldern zu. Sie legt keine Fachobjekte an und übernimmt keine Werte.</p>
+  </div>
+  <div class="card-footer d-flex justify-content-between gap-2 flex-wrap align-items-center">
+    <span class="text-muted small">Jeder Aufruf verbraucht eine begrenzte Analyseanfrage.</span>
+    {% if can_analyze %}
+    <form method="post" action="{% url 'accelerator:capture_analyze' session.pk %}">
+      {% csrf_token %}
+      <button class="btn btn-primary" type="submit">Antworten analysieren</button>
+    </form>
+    {% endif %}
+  </div>
+</section>
+
+{% if analysis_runs %}
+<section class="app-card" aria-labelledby="analysis-history-heading">
+  <div class="card-body">
+    <h2 class="h5" id="analysis-history-heading">Bisherige Analyseläufe</h2>
+    <div class="table-responsive mt-3">
+      <table class="table align-middle mb-0">
+        <thead><tr><th>Zeitpunkt</th><th>Status</th><th>Modell</th><th>Version</th><th><span class="visually-hidden">Aktion</span></th></tr></thead>
+        <tbody>
+          {% for analysis in analysis_runs %}
+          <tr>
+            <td>{{ analysis.created_at|date:"d.m.Y H:i" }}</td>
+            <td><span class="badge {% if analysis.status == 'success' %}state-ready{% elif analysis.status == 'running' %}state-review{% else %}state-blocked{% endif %}">{{ analysis.get_status_display }}</span></td>
+            <td>{{ analysis.model_name|default:"Provider-Standard" }}</td>
+            <td>Prompt {{ analysis.prompt_version }} · Schema {{ analysis.extraction_schema_version }}</td>
+            <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="{% url 'accelerator:analysis_detail' analysis.pk %}">Vorschau öffnen</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endif %}
 {% endblock %}
