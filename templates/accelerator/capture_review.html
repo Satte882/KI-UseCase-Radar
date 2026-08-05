@@ -3,9 +3,9 @@
 {% block content %}
 <div class="page-header">
   <div>
-    <div class="eyebrow mb-2">Geführte Value-Stream-Erfassung · Version {{ session.catalog_version }}</div>
-    <h1 class="page-title">{{ session.working_title|default:"Value-Stream-Entwurf" }}</h1>
-    <p class="page-subtitle">Prüfen Sie den gespeicherten Arbeitsstand. Es wurde noch kein regulärer Value Stream angelegt.</p>
+    <div class="eyebrow mb-2">Geführte {{ capture_label }}-Erfassung · Version {{ session.catalog_version }}</div>
+    <h1 class="page-title">{{ session.working_title|default:capture_label }}</h1>
+    <p class="page-subtitle">Prüfen Sie den gespeicherten Arbeitsstand. Es wurde noch kein reguläres Fachobjekt angelegt.</p>
   </div>
   <span class="badge {% if session.status == 'completed' %}state-ready{% elif session.status == 'draft' %}state-review{% else %}state-blocked{% endif %}">{{ session.get_status_display }}</span>
 </div>
@@ -44,7 +44,7 @@
   </div>
   <div class="card-footer d-flex justify-content-between gap-2 flex-wrap">
     <div>
-      {% if session.status == 'draft' and catalog %}<a class="btn btn-outline-secondary" href="{% url 'accelerator:capture_step' session.pk 1 %}">Weiter bearbeiten</a>{% else %}<a class="btn btn-outline-secondary" href="{% url 'architecture:value_stream_list' %}">Zur Value-Stream-Übersicht</a>{% endif %}
+      {% if session.status == 'draft' and catalog %}<a class="btn btn-outline-secondary" href="{% url 'accelerator:capture_step' session.pk 1 %}">Weiter bearbeiten</a>{% else %}<a class="btn btn-outline-secondary" href="{{ overview_url }}">Zur Übersicht</a>{% endif %}
     </div>
     {% if session.status == 'draft' %}
     <div class="d-flex gap-2 flex-wrap">

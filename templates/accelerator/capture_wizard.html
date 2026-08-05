@@ -3,14 +3,14 @@
 {% block content %}
 <div class="page-header">
   <div>
-    <div class="eyebrow mb-2">Geführte Value-Stream-Erfassung · Schritt {{ step }} von {{ total_steps }}</div>
+    <div class="eyebrow mb-2">Geführte {{ capture_label }}-Erfassung · Schritt {{ step }} von {{ total_steps }}</div>
     <h1 class="page-title">{{ section.title }}</h1>
     <p class="page-subtitle">{{ section.description }}</p>
   </div>
   <a class="btn btn-outline-secondary" href="{% url 'accelerator:capture_review' session.pk %}">Entwurf prüfen</a>
 </div>
 
-<nav class="wizard-stepper mb-3" aria-label="Schritte der geführten Value-Stream-Erfassung">
+<nav class="wizard-stepper mb-3" aria-label="Schritte der geführten {{ capture_label }}-Erfassung">
   {% for item in step_states %}
   <a class="wizard-step {% if item.complete %}wizard-step-complete{% else %}wizard-step-pending{% endif %}{% if item.current %} wizard-step-current{% endif %}" href="{% url 'accelerator:capture_step' session.pk item.number %}"{% if item.current %} aria-current="step"{% endif %}>
     <span class="wizard-step-symbol" aria-hidden="true">{% if item.complete %}✓{% else %}{{ item.number }}{% endif %}</span>
@@ -52,7 +52,7 @@
     </div>
     <div class="card-footer d-flex justify-content-between gap-2 flex-wrap">
       <div>
-        {% if previous_step %}<a class="btn btn-outline-secondary" href="{% url 'accelerator:capture_step' session.pk previous_step %}">Zurück</a>{% else %}<a class="btn btn-outline-secondary" href="{% url 'architecture:value_stream_list' %}">Zur Übersicht</a>{% endif %}
+        {% if previous_step %}<a class="btn btn-outline-secondary" href="{% url 'accelerator:capture_step' session.pk previous_step %}">Zurück</a>{% else %}<a class="btn btn-outline-secondary" href="{{ overview_url }}">Zur Übersicht</a>{% endif %}
       </div>
       <div class="d-flex gap-2">
         <button class="btn btn-outline-secondary" type="submit" name="action" value="save"{% if conflict_message %} disabled{% endif %}>Zwischenspeichern</button>
