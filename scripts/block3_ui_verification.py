@@ -109,7 +109,14 @@ def login(page: Page) -> None:
         raise AssertionError("Browser-Login ist fehlgeschlagen.")
 
 
-def inspect_page(page: Page, *, name: str, path: str, viewport_name: str) -> dict:
+def inspect_page(
+    page: Page,
+    *,
+    name: str,
+    path: str,
+    viewport_name: str,
+    configured_width: int,
+) -> dict:
     response = page.goto(f"{BASE_URL}{path}", wait_until="networkidle")
     if response is None or response.status >= 400:
         raise AssertionError(f"{name} lieferte HTTP {response.status if response else 'unbekannt'}.")
@@ -125,6 +132,10 @@ def inspect_page(page: Page, *, name: str, path: str, viewport_name: str) -> dic
             const style = window.getComputedStyle(element);
             return style.display === 'none' || style.visibility === 'hidden' || rect.width === 0 || rect.height === 0;
           });
+          const outsideViewport = (selector) => [...document.querySelectorAll(selector)].filter((element) => {
+            const rect = element.getBoundingClientRect();
+            return rect.left < -1 || rect.right > window.innerWidth + 1;
+          }).length;
           return {
             title: document.title,
             h1: document.querySelector('h1')?.innerText?.trim() || '',
@@ -140,11 +151,21 @@ def inspect_page(page: Page, *, name: str, path: str, viewport_name: str) -> dic
               return !document.querySelector(`label[for="${CSS.escape(element.id)}"]`);
             }).length,
             invisibleInteractiveCount: invisibleInteractive.length,
+            registerActionOffViewportCount: outsideViewport('.register-actions .btn'),
+            captureActionOffViewportCount: outsideViewport('.capture-session-table td:last-child .btn'),
           };
         }
         """
     )
-    metrics.update({"name": name, "path": path, "httpStatus": response.status})
+    metrics.update(
+        {
+            "name": name,
+            "path": path,
+            "httpStatus": response.status,
+            "configuredViewportWidth": configured_width,
+            "layoutViewportMismatch": metrics["viewportWidth"] != configured_width,
+        }
+    )
     screenshot_path = OUTPUT_DIR / f"{viewport_name}-{name}.png"
     page.screenshot(path=str(screenshot_path), full_page=True)
     metrics["screenshot"] = str(screenshot_path)
@@ -254,6 +275,7 @@ def run_verification() -> None:
                                 name=page_name,
                                 path=path,
                                 viewport_name=viewport_name,
+                                configured_width=viewport["width"],
                             )
                         )
                     if viewport_name == "desktop":
@@ -266,13 +288,23 @@ def run_verification() -> None:
                 browser.close()
 
         overflow_pages = [item["screenshot"] for item in report["pages"] if item["horizontalOverflow"]]
+        viewport_mismatches = [
+            item["screenshot"] for item in report["pages"] if item["layoutViewportMismatch"]
+        ]
         unlabeled_pages = [
             item["screenshot"] for item in report["pages"] if item["unlabeledTextareaCount"]
+        ]
+        off_viewport_actions = [
+            item["screenshot"]
+            for item in report["pages"]
+            if item["registerActionOffViewportCount"] or item["captureActionOffViewportCount"]
         ]
         report["automatedSummary"] = {
             "pageCount": len(report["pages"]),
             "horizontalOverflowPages": overflow_pages,
+            "layoutViewportMismatchPages": viewport_mismatches,
             "unlabeledTextareaPages": unlabeled_pages,
+            "offViewportActionPages": off_viewport_actions,
             "allPagesHttp200": all(item["httpStatus"] == 200 for item in report["pages"]),
         }
 
@@ -283,8 +315,12 @@ def run_verification() -> None:
 
         if overflow_pages:
             raise AssertionError(f"Dokumentweiter horizontaler Überlauf: {overflow_pages}")
+        if viewport_mismatches:
+            raise AssertionError(f"Layout vergrößert den konfigurierten Viewport: {viewport_mismatches}")
         if unlabeled_pages:
             raise AssertionError(f"Textareas ohne sichtbare Label-Zuordnung: {unlabeled_pages}")
+        if off_viewport_actions:
+            raise AssertionError(f"Primäraktionen liegen außerhalb des Viewports: {off_viewport_actions}")
     finally:
         server.terminate()
         try:
@@ -295,7 +331,6 @@ def run_verification() -> None:
 
 
 if __name__ == "__main__":
-    # Fail early if the expected port is already occupied by an unrelated process.
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         if sock.connect_ex(("127.0.0.1", 8000)) == 0:
             raise RuntimeError("Port 8000 ist bereits belegt.")
