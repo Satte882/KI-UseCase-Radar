@@ -122,7 +122,9 @@ Ein Backup ist erst belastbar, wenn Restore-Tests erfolgreich durchgeführt werd
 - RPO: höchstens 24 Stunden,
 - RTO: vier Stunden.
 
-Lösch- und Aufbewahrungsregeln müssen vor einem realen Produktivbetrieb organisationsspezifisch festgelegt werden. Das Repository definiert noch keine vollständige unternehmensweite Retention Policy für alle fachlichen Daten.
+Lösch- und Aufbewahrungsregeln müssen vor einem realen Produktivbetrieb organisationsspezifisch festgelegt und dokumentiert werden. Das Repository definiert noch keine vollständige unternehmensweite Retention Policy für alle fachlichen Daten.
+
+Für Accelerator-Capture-Sessions, strukturierte LLM-Vorschläge und bereinigte LLM-Betriebsmetadaten gelten zusätzlich die verbindlichen Zielregeln aus [`accelerator/BLOCK_1_FOUNDATION.md`](accelerator/BLOCK_1_FOUNDATION.md). Die automatische technische Umsetzung erfolgt erst in den Blocks, die diese persistenten Objekte einführen.
 
 ## Optionale externe Übertragungen
 
@@ -139,6 +141,10 @@ Wird der optionale Review-Copilot ausdrücklich gestartet, sendet die Anwendung 
 - Ergebnis der deterministischen Entscheidungsprüfung.
 
 Die Copilot-Ausgabe ist nur ein semantischer Hinweis und keine Freigabeinstanz. Nach aktuellem Stand wird die Antwort für die aufgerufene Seite dargestellt und nicht als eigener fachlicher Entscheidungsdatensatz gespeichert.
+
+Für Accelerator-LLM-Aufrufe gelten gemeinsame Eingabe-, Ausgabe- und Timeoutgrenzen mit dem Präfix `ACCELERATOR_LLM_*`. Vollständige Prompts, Capture-Antworten und rohe Providerantworten werden nicht in Standardlogs geschrieben. Zulässig sind ausschließlich bereinigte technische Metadaten wie Zweck, Provider, Modell, interner Zielobjektbezug, Laufzeit, Größen, Ergebnisstatus sowie Token- und Kostenwerte, soweit verfügbar.
+
+Die vollständigen Provider-, Datenfluss-, Logging- und Retention-Regeln stehen in [`accelerator/BLOCK_1_FOUNDATION.md`](accelerator/BLOCK_1_FOUNDATION.md).
 
 ### Sentry
 

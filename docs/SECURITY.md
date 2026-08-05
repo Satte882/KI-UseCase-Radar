@@ -37,6 +37,12 @@ Nicht protokollieren:
 - Secret-Werte
 - vollständige vertrauliche Formularinhalte
 - unnötige personenbezogene Daten
+- vollständige LLM-Prompts oder Capture-Antworten
+- vollständige rohe LLM-Antworten
+
+Für LLM-Aufrufe sind ausschließlich bereinigte technische Metadaten zulässig, beispielsweise Aufrufzweck, Provider, Modell, interner Zielobjektbezug, Laufzeit, Eingabe-/Ausgabegröße, Ergebnisstatus, Fehlercode sowie Token- und Kostenwerte, soweit verfügbar.
+
+Die verbindlichen Accelerator-Datenfluss-, Logging- und Retention-Regeln stehen in [`accelerator/BLOCK_1_FOUNDATION.md`](accelerator/BLOCK_1_FOUNDATION.md).
 
 ## Datenschutz
 
