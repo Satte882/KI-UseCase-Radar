@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Meine Erfassungen – KI-Radar{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="eyebrow mb-2">Accelerator · Persönlicher Arbeitsbereich</div>
+    <h1 class="page-title">Meine Erfassungen</h1>
+    <p class="page-subtitle">Eigene Entwürfe fortsetzen und abgeschlossene Arbeitsstände nachvollziehen.</p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    {% if can_start_value_stream %}<a class="btn btn-outline-secondary" href="{% url 'accelerator:value_stream_start' %}">Value Stream geführt erfassen</a>{% endif %}
+    {% if can_start_use_case %}<a class="btn btn-primary" href="{% url 'accelerator:use_case_start' %}">Use Case geführt erfassen</a>{% endif %}
+  </div>
+</div>
+
+<div class="app-card">
+  <div class="table-responsive">
+    <table class="table align-middle mb-0">
+      <thead>
+        <tr>
+          <th scope="col">Erfassung</th>
+          <th scope="col">Art</th>
+          <th scope="col">Status</th>
+          <th scope="col">Fortschritt</th>
+          <th scope="col">Letzte Änderung</th>
+          <th scope="col">Ablauf</th>
+          <th scope="col" class="text-end">Nächste Aktion</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for session in capture_sessions %}
+        <tr>
+          <td>
+            <strong>{{ session.working_title|default:session.get_capture_type_display }}</strong>
+            <div class="text-muted small">{{ session.pk|stringformat:"s"|slice:":8" }}</div>
+          </td>
+          <td>{{ session.get_capture_type_display }}</td>
+          <td><span class="badge {% if session.status == 'completed' %}state-ready{% elif session.status == 'draft' %}state-review{% else %}state-blocked{% endif %}">{{ session.get_status_display }}</span></td>
+          <td>{{ session.answered_required_count }} / {{ session.required_question_count }} Pflichtantworten · {{ session.progress_percent }} %</td>
+          <td><time datetime="{{ session.updated_at|date:'c' }}">{{ session.updated_at|date:"d.m.Y H:i" }}</time></td>
+          <td><time datetime="{{ session.expires_at|date:'c' }}">{{ session.expires_at|date:"d.m.Y" }}</time></td>
+          <td class="text-end">
+            {% if session.status == 'draft' %}
+            <a class="btn btn-sm btn-primary" href="{% url 'accelerator:capture_step' session.pk 1 %}">Fortsetzen</a>
+            {% else %}
+            <a class="btn btn-sm btn-outline-secondary" href="{% url 'accelerator:capture_review' session.pk %}">Ansehen</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-muted">Noch keine eigenen Erfassungen vorhanden.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

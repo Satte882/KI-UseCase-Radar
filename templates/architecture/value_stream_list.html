@@ -7,12 +7,25 @@
     <h1 class="page-title">Value Streams und Fokusfelder</h1>
     <p class="page-subtitle">End-to-End-Wertschöpfung erfassen, anhand einheitlicher Kriterien priorisieren und nur ausgewählte Bereiche vertiefen.</p>
   </div>
-  {% if can_create %}<a class="btn btn-primary" href="{% url 'architecture:value_stream_create' %}">Value Stream anlegen</a>{% endif %}
+  {% if can_create %}
+  <div class="d-flex gap-2 flex-wrap">
+    {% if capture_draft_count %}<a class="btn btn-outline-secondary" href="{% url 'accelerator:capture_list' %}">Meine Erfassungen ({{ capture_draft_count }})</a>{% endif %}
+    <a class="btn btn-outline-secondary" href="{% url 'accelerator:value_stream_start' %}">Geführt erfassen</a>
+    <a class="btn btn-primary" href="{% url 'architecture:value_stream_create' %}">Value Stream anlegen</a>
+  </div>
+  {% endif %}
 </div>
 
+{% if can_create and capture_value_stream_draft_count %}
+<div class="alert alert-secondary mb-4">
+  <strong>{{ capture_value_stream_draft_count }} offener Value-Stream-Entwurf{% if capture_value_stream_draft_count != 1 %}e{% endif %}:</strong>
+  <a href="{% url 'accelerator:capture_list' %}">Erfassungen fortsetzen</a>.
+</div>
+{% else %}
 <div class="alert alert-secondary mb-4">
   <strong>Optionaler Discovery-Pfad:</strong> Erst Discovery und Fokusentscheidung, danach Prozess-Deep-Dive und Use-Case-Ableitung. Bereits bekannte Einzelvorhaben können weiterhin direkt aufgenommen werden.
 </div>
+{% endif %}
 
 <div class="architecture-grid">
   {% for stream in value_streams %}
