@@ -255,7 +255,7 @@ def _save_use_case(resolved: ResolvedBlueprint) -> UseCase:
             "metric_measurement_method": metric["measurement_method"],
         }
     )
-    form = UseCaseForm(data=data, current_user=resolved.actors["creator"])
+    form = UseCaseForm(data=data)
     if not form.is_valid():
         raise _form_failure("use_case", form)
     use_case = form.save(commit=False)
@@ -360,5 +360,6 @@ def apply_blueprint(resolved: ResolvedBlueprint) -> BlueprintApplyResult:
         raise
     except IntegrityError as exc:
         raise BlueprintApplyError(
-            "Blueprint konnte wegen eines konkurrierenden Datenbankkonflikts nicht angewendet werden."
+            "Blueprint konnte wegen eines konkurrierenden "
+            "Datenbankkonflikts nicht angewendet werden."
         ) from exc
