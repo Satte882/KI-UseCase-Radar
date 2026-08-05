@@ -19,6 +19,7 @@ from .catalogs import (
 )
 from .models import CaptureSession
 from .retention import expire_capture_session_if_due
+from .retention_policy import completed_capture_expiry
 
 CAPTURE_DRAFT_RETENTION_DAYS = 30
 MAX_ACTIVE_ENTRY_SECONDS_PER_SAVE = 900
@@ -194,6 +195,7 @@ def complete_capture_session(*, actor, session_id, expected_revision: int) -> Ca
     session.required_question_count = required_count
     session.status = CaptureSession.Status.COMPLETED
     session.completed_at = now
+    session.expires_at = completed_capture_expiry(now=now)
     session.revision += 1
     session.save(
         update_fields=[
@@ -202,6 +204,7 @@ def complete_capture_session(*, actor, session_id, expected_revision: int) -> Ca
             "required_question_count",
             "status",
             "completed_at",
+            "expires_at",
             "revision",
             "updated_at",
         ]

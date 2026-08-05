@@ -8,7 +8,7 @@ from ki_radar.accelerator.retention import (
 
 
 class Command(BaseCommand):
-    help = "Lässt überfällige Capture-Entwürfe ablaufen und bereinigt alte Terminalzustände."
+    help = "Lässt überfällige Capture Sessions ablaufen und bereinigt terminale Sessions."
 
     def add_arguments(self, parser):
         parser.add_argument(

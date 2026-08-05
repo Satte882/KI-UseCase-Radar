@@ -17,6 +17,7 @@ from .analysis_service import (
     CaptureAnalysisError,
     CaptureProviderPayload,
     PreparedCaptureAnalysis,
+    log_capture_analysis,
     mark_capture_analysis_failed,
     prepare_capture_analysis,
     request_capture_provider,
@@ -353,6 +354,7 @@ def store_validated_extraction(
             "updated_at",
         ]
     )
+    log_capture_analysis(analysis)
     return analysis
 
 
