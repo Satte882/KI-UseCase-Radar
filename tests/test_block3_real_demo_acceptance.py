@@ -10,11 +10,7 @@ from ki_radar.accelerator.catalogs import (
 )
 
 REAL_DEMO_PATH = (
-    Path(settings.BASE_DIR)
-    / "ki_radar"
-    / "core"
-    / "scenario_blueprints"
-    / "real_demo.v1.json"
+    Path(settings.BASE_DIR) / "ki_radar" / "core" / "scenario_blueprints" / "real_demo.v1.json"
 )
 SYSTEM_MANAGED_PATHS = {
     "value_stream.key",
