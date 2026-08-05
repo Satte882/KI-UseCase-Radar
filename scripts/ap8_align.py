@@ -15,9 +15,11 @@ old_query = '''def _expirable_sessions(*, checked_now):
     ).exclude(analyses__status=CaptureAnalysis.Status.RUNNING)
 '''
 new_query = '''def _expirable_sessions(*, checked_now):
-    running_session_ids = CaptureAnalysis.objects.filter(
-        status=CaptureAnalysis.Status.RUNNING
-    ).values("session_id")
+    running_session_ids = list(
+        CaptureAnalysis.objects.filter(status=CaptureAnalysis.Status.RUNNING).values_list(
+            "session_id", flat=True
+        )
+    )
     return CaptureSession.objects.filter(
         status__in=[CaptureSession.Status.DRAFT, CaptureSession.Status.COMPLETED],
         expires_at__lte=checked_now,
