@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import io
 import json
 import logging
 from pathlib import Path
 from types import SimpleNamespace
-from urllib import error as urllib_error
 
 import pytest
 from django.test import override_settings
@@ -159,12 +157,12 @@ def test_copilot_uses_shared_timeout_and_output_limit(monkeypatch):
     **VALID_LIMITS,
 )
 def test_copilot_classifies_rate_limit(monkeypatch):
-    http_error = urllib_error.HTTPError(
+    http_error = copilot.urllib.error.HTTPError(
         "https://openrouter.example/v1/chat/completions",
         429,
         "Too Many Requests",
         {},
-        io.BytesIO(b"{}"),
+        None,
     )
 
     def raise_rate_limit(*args, **kwargs):
