@@ -91,10 +91,8 @@ class Command(BaseCommand):
         if resolved.suffix.lower() != ".json":
             raise CommandError("Blueprint-Dateien müssen die Endung .json besitzen.", returncode=2)
         if not resolved.is_file():
-            raise CommandError(
-                f"Blueprint-Datei wurde nicht gefunden: {resolved}",
-                returncode=2,
-            )
+            message = "Blueprint-Datei wurde nicht gefunden: " f"{resolved}"
+            raise CommandError(message, returncode=2)
         return resolved
 
     def _write_conflict(
