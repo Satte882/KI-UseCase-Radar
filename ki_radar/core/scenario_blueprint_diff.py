@@ -520,7 +520,11 @@ def build_blueprint_diff(resolved: ResolvedBlueprint) -> BlueprintGraphDiff:
         )
     objects.append(_classification_diff(use_case, resolved))
 
-    origin = UseCaseOrigin.objects.filter(use_case=use_case).first() if use_case is not None else None
+    origin = (
+        UseCaseOrigin.objects.filter(use_case=use_case).first()
+        if use_case is not None
+        else None
+    )
     expected_origin = {
         "stage": process_stage.pk if process_stage is not None else None,
         "process_analysis": process.pk if process is not None else None,
