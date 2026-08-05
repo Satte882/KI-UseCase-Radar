@@ -338,7 +338,7 @@ class SolutionOptionForm(StyledModelForm):
         super().__init__(*args, **kwargs)
         if process_analysis is not None:
             self.process_analysis = process_analysis
-        elif self.instance.pk:
+        elif not self.instance._state.adding:
             self.process_analysis = self.instance.process_analysis
         else:
             self.process_analysis = None
