@@ -6,6 +6,7 @@ from ki_radar.core import health
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("accounts/", include("ki_radar.accounts.urls")),
+    path("accelerator/", include("ki_radar.accelerator.urls")),
     path("architecture/", include("ki_radar.architecture.urls")),
     path("use-cases/", include("ki_radar.use_cases.urls")),
     path("governance/", include("ki_radar.governance.urls")),

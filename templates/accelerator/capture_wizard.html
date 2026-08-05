@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}{{ section.title }} – KI-Radar{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="eyebrow mb-2">Geführte Value-Stream-Erfassung · Schritt {{ step }} von {{ total_steps }}</div>
+    <h1 class="page-title">{{ section.title }}</h1>
+    <p class="page-subtitle">{{ section.description }}</p>
+  </div>
+  <a class="btn btn-outline-secondary" href="{% url 'accelerator:capture_review' session.pk %}">Entwurf prüfen</a>
+</div>
+
+<nav class="wizard-stepper mb-3" aria-label="Schritte der geführten Value-Stream-Erfassung">
+  {% for item in step_states %}
+  <a class="wizard-step {% if item.complete %}wizard-step-complete{% else %}wizard-step-pending{% endif %}{% if item.current %} wizard-step-current{% endif %}" href="{% url 'accelerator:capture_step' session.pk item.number %}"{% if item.current %} aria-current="step"{% endif %}>
+    <span class="wizard-step-symbol" aria-hidden="true">{% if item.complete %}✓{% else %}{{ item.number }}{% endif %}</span>
+    <span class="wizard-step-label">{{ item.title }}</span>
+    <span class="visually-hidden">{% if item.complete %}vollständig{% else %}noch offen{% endif %}{% if item.current %}, aktueller Schritt{% endif %}</span>
+  </a>
+  {% endfor %}
+</nav>
+
+<div class="progress mb-4" role="progressbar" aria-label="Fortschritt" aria-valuenow="{{ step }}" aria-valuemin="1" aria-valuemax="{{ total_steps }}">
+  <div class="progress-bar" style="width: {% widthratio step total_steps 100 %}%"></div>
+</div>
+
+<div class="app-card mb-4">
+  <form method="post">
+    {% csrf_token %}
+    {{ form.revision }}
+    <div class="card-body">
+      {% if conflict_message %}
+      <div class="alert alert-danger" role="alert">
+        <strong>Zwischenzeitliche Änderung erkannt.</strong> {{ conflict_message }}
+        <a href="{% url 'accelerator:capture_step' session.pk step %}">Aktuellen Stand neu laden</a>.
+      </div>
+      {% endif %}
+      {% if form.non_field_errors %}<div class="alert alert-danger" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+      <div class="alert alert-secondary">
+        Sie können unvollständige Antworten zwischenspeichern. Pflichtlücken werden erst beim Abschluss blockierend geprüft.
+      </div>
+      <div class="row g-4">
+        {% for field in form.answer_fields %}
+        <div class="col-12{% if field.errors %} field-attention field-error{% endif %}">
+          <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.capture_required %} *{% endif %}</label>
+          {{ field }}
+          {% if field.errors %}<div class="field-attention-message" role="alert">{{ field.errors }}</div>{% endif %}
+          {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="card-footer d-flex justify-content-between gap-2 flex-wrap">
+      <div>
+        {% if previous_step %}<a class="btn btn-outline-secondary" href="{% url 'accelerator:capture_step' session.pk previous_step %}">Zurück</a>{% else %}<a class="btn btn-outline-secondary" href="{% url 'architecture:value_stream_list' %}">Zur Übersicht</a>{% endif %}
+      </div>
+      <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary" type="submit" name="action" value="save"{% if conflict_message %} disabled{% endif %}>Zwischenspeichern</button>
+        <button class="btn btn-primary" type="submit" name="action" value="next"{% if conflict_message %} disabled{% endif %}>{% if is_last_step %}Zur Prüfung{% else %}Speichern und weiter{% endif %}</button>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}
