@@ -138,7 +138,7 @@ def test_wizard_marks_post_data_sensitive_and_persists_only_aggregate_time(
         capture_type=CaptureSession.CaptureType.USE_CASE,
     )
     question_key = get_capture_catalog("use_case").sections[0].questions[0].key
-    secret_answer = "Streng vertrauliche Rohantwort 4711"
+    sensitive_answer_text = "Streng vertrauliche Rohantwort 4711"
     client.force_login(owner)
 
     response = client.post(
@@ -149,7 +149,7 @@ def test_wizard_marks_post_data_sensitive_and_persists_only_aggregate_time(
         {
             "revision": 0,
             "active_entry_seconds": 42,
-            question_key: secret_answer,
+            question_key: sensitive_answer_text,
             "action": "save",
         },
     )
@@ -158,7 +158,7 @@ def test_wizard_marks_post_data_sensitive_and_persists_only_aggregate_time(
     assert response.status_code == 302
     assert response.wsgi_request.sensitive_post_parameters == "__ALL__"
     assert session.active_entry_seconds == 42
-    assert secret_answer not in caplog.text
+    assert sensitive_answer_text not in caplog.text
 
 
 def test_active_time_script_collects_no_detailed_user_telemetry():
