@@ -17,7 +17,7 @@
 | AP 7 | #159 | Serverseitige Review-Aktion und Vorschau mit Quellen, Unsicherheit, Findings, Fehlerzuständen und Laufhistorie integriert. | #934 |
 | AP 8 | #160 | Metadaten-only-Logging, sensible Fehlerpfade und konfigurierbare 90-Tage-Retention mit siebentägiger Löschkarenz abgeschlossen. | #936 |
 | AP 9 | #161 | Anonymisierte `[Real-DEMO]`-Golden-Fixture mit SHA-256-Driftschutz und Erfolgs-, Provider-, Quoten- und Ablehnungsregressionen eingeführt. | #948 |
-| AP 10 | #162 | Vollständige Regression, ergänzende Randfallnachweise, Desktop-/Mobile-Abnahme und Abschlussdokumentation. | nach Merge einzutragen |
+| AP 10 | #162 | Vollständige Regression, ergänzende Randfallnachweise, Desktop-/Mobile-Abnahme und Abschlussdokumentation. | CI #966 · UI #17 |
 
 ## Inhaltsprüfung AP 6 bis AP 9
 
@@ -28,7 +28,7 @@ Die verspätete Pflege der Issue-Checkliste wurde nicht als fachlicher Nachweis 
 - AP 8 enthält konfigurierbare 30- bis 365-Tage-Retention mit Standard 90, Verlängerung je Analyseversuch, Ablauf abgeschlossener Sessions, siebentägige Karenz, Kaskadenlöschung sowie technische Logs ohne Prompt- oder Antwortinhalt.
 - AP 9 enthält deterministische Value-Stream- und Use-Case-Golden-Pfade, Fixture-Driftschutz, JSON-/Schema-/Evidenz-/Taxonomieablehnung, Rate-Limit-/Timeout-/Provider-/Größenfehler, alle drei Quotentypen mit Tageswechsel, Ergebnis-Wiederanzeige und maximale Vorschlagsanzahl. AP 10 ergänzt Prompt-Injection, echte HTTP-401-/403-/500- und Netzwerkpfade sowie den Erhalt früherer erfolgreicher Vorschläge nach leerer Providerantwort.
 
-Damit werden AP 6 bis AP 9 erst gemeinsam mit dem grünen AP-10-Nachweis als vollständig abgenommen.
+Damit werden AP 6 bis AP 9 gemeinsam mit dem grünen AP-10-Nachweis als vollständig abgenommen.
 
 ## Abnahmematrix für Issue #120
 
@@ -46,7 +46,7 @@ Damit werden AP 6 bis AP 9 erst gemeinsam mit dem grünen AP-10-Nachweis als vol
 
 ## Vollständige Regression
 
-Der finale AP-10-PR wird nur nach vollständig grüner, unveränderter Repository-CI gemergt. Die CI umfasst:
+Die unveränderte Repository-CI #966 ist vollständig grün. Sie umfasst:
 
 1. Lockfile-Prüfung und Installation,
 2. repo-weites Ruff-Linting,
@@ -77,9 +77,9 @@ Je Viewport werden geprüft und als vollständige Screenshots gespeichert:
 6. fehlgeschlagene Vorschau,
 7. erfolgreiche Use-Case-Vorschau.
 
-Automatisch geprüft werden HTTP 200, unveränderte Viewportbreite, fehlender horizontaler Überlauf, keine interaktiven Elemente des Block-4-Hauptinhalts außerhalb des Viewports, erwartete Inhalte und das Fehlen von Übernahme-, Verwerf- oder Sammelaktionen. Die Screenshots und der JSON-Bericht werden als GitHub-Actions-Artefakt gespeichert und zusätzlich visuell geprüft.
+Automatisch geprüft werden HTTP 200, unveränderte Viewportbreite, fehlender horizontaler Überlauf, keine unzugänglichen interaktiven Elemente des Block-4-Hauptinhalts außerhalb des Viewports, erwartete Inhalte und das Fehlen von Übernahme-, Verwerf- oder Sammelaktionen. Bedienelemente in responsiven Tabellen bleiben über deren eigenen horizontalen Scrollcontainer erreichbar. Die Screenshots und der JSON-Bericht werden als GitHub-Actions-Artefakt gespeichert und zusätzlich visuell geprüft.
 
-**Finaler UI-Lauf und Sichtprüfung:** nach erfolgreichem PR-Lauf einzutragen.
+**Finaler UI-Lauf und Sichtprüfung:** UI #17 vollständig grün. 38 fokussierte Regressionen und 14 Seitenzustände wurden geprüft. Alle Seiten lieferten HTTP 200; es gab keinen Dokumentüberlauf, keine Viewportabweichung, keine unzugänglichen Bedienelemente und keine Block-5-Aktionen. Der Artefaktbericht und repräsentative Desktop-/Mobile-Screenshots wurden visuell geprüft; lange, gruppierte und fehlerhafte Vorschauen blieben lesbar und vollständig bedienbar.
 
 ## Migrationen und Datenhaltung
 
