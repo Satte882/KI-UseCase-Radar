@@ -494,8 +494,10 @@
 
 .ui-vnext .login-shell {
   position: relative;
-  isolation: isolate;
+  display: grid;
+  min-height: 100vh;
   padding: 32px;
+  place-items: center;
   background:
     radial-gradient(circle at 20% 12%, color-mix(in srgb, var(--ice) 14%, transparent), transparent 30rem),
     radial-gradient(circle at 82% 86%, color-mix(in srgb, var(--ice-deep) 9%, transparent), transparent 34rem),
@@ -599,12 +601,20 @@
     align-items: stretch;
   }
 
+  .ui-vnext .register-heading {
+    min-width: 0;
+  }
+
   .ui-vnext .register-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     width: 100%;
   }
 
   .ui-vnext .register-actions .btn {
-    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    white-space: normal;
     text-align: center;
   }
 
@@ -646,6 +656,93 @@
 
   .ui-vnext .register-table-wrap {
     max-height: 62vh;
+  }
+
+  .ui-vnext .capture-session-table-wrap {
+    overflow: visible;
+  }
+
+  .ui-vnext .capture-session-table,
+  .ui-vnext .capture-session-table tbody,
+  .ui-vnext .capture-session-table tr,
+  .ui-vnext .capture-session-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .ui-vnext .capture-session-table {
+    min-width: 0;
+  }
+
+  .ui-vnext .capture-session-table thead {
+    display: none;
+  }
+
+  .ui-vnext .capture-session-table tbody {
+    padding: 12px;
+  }
+
+  .ui-vnext .capture-session-table tr {
+    margin-bottom: 12px;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--surface-1) 90%, transparent);
+  }
+
+  .ui-vnext .capture-session-table tr:last-child {
+    margin-bottom: 0;
+  }
+
+  .ui-vnext .capture-session-table td {
+    display: grid;
+    grid-template-columns: minmax(7rem, .7fr) minmax(0, 1fr);
+    gap: 10px;
+    padding: 8px 0;
+    border: 0;
+    text-align: left !important;
+  }
+
+  .ui-vnext .capture-session-table td::before {
+    color: var(--muted);
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    content: attr(data-label);
+  }
+
+  .ui-vnext .capture-session-table td:first-child {
+    display: block;
+    padding-top: 0;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .ui-vnext .capture-session-table td:first-child::before {
+    display: none;
+  }
+
+  .ui-vnext .capture-session-table td:last-child {
+    display: block;
+    padding-top: 12px;
+  }
+
+  .ui-vnext .capture-session-table td:last-child::before {
+    display: none;
+  }
+
+  .ui-vnext .capture-session-table td:last-child .btn {
+    width: 100%;
+  }
+
+  .ui-vnext .capture-session-table .capture-session-empty {
+    display: block;
+    padding: 18px;
+  }
+
+  .ui-vnext .capture-session-table .capture-session-empty::before {
+    display: none;
   }
 
   .ui-vnext .login-shell {
