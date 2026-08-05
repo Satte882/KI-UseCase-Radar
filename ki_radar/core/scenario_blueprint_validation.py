@@ -116,9 +116,7 @@ def _validate_references(
     contract: dict[str, Any],
     errors: list[str],
 ) -> None:
-    references = _section(
-        payload.get("references"), "references", contract, "references", errors
-    )
+    references = _section(payload.get("references"), "references", contract, "references", errors)
     unit = _section(
         references.get("business_unit"),
         "references.business_unit",
@@ -242,9 +240,7 @@ def _validate_process_and_options(
 
     options = _as_list(payload.get("solution_options"), "solution_options", errors)
     limits = contract["cardinality"]
-    if not limits["solution_options_min"] <= len(options) <= limits[
-        "solution_options_max"
-    ]:
+    if not limits["solution_options_min"] <= len(options) <= limits["solution_options_max"]:
         errors.append("solution_options: Unzulässige Anzahl von Lösungsoptionen.")
     option_keys: set[str] = set()
     for index, value in enumerate(options):
@@ -287,9 +283,7 @@ def _validate_use_case(
     max_length: int,
     errors: list[str],
 ) -> None:
-    use_case = _section(
-        payload.get("use_case"), "use_case", contract, "use_case", errors
-    )
+    use_case = _section(payload.get("use_case"), "use_case", contract, "use_case", errors)
     _key(use_case.get("key"), "use_case.key", pattern, max_length, errors)
     for field, state_key in (
         ("status", "use_case.status"),
@@ -348,9 +342,7 @@ def _validate_use_case(
     )
 
 
-def _validate_structure(
-    payload: dict[str, Any], contract: dict[str, Any]
-) -> list[str]:
+def _validate_structure(payload: dict[str, Any], contract: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     expected = set(contract["required_top_level"])
     unknown = sorted(set(payload) - expected)
@@ -360,18 +352,13 @@ def _validate_structure(
     if missing:
         errors.append(f"root: Pflichtfelder fehlen: {', '.join(missing)}.")
     if payload.get("schema_version") != contract["schema_version"]:
-        errors.append(
-            "schema_version: Nur Version "
-            f"{contract['schema_version']} wird unterstützt."
-        )
+        errors.append(f"schema_version: Nur Version {contract['schema_version']} wird unterstützt.")
     pattern = re.compile(contract["keys"]["pattern"])
     max_length = int(contract["keys"]["max_length"])
     _key(payload.get("scenario_key"), "scenario_key", pattern, max_length, errors)
     _nonempty(payload.get("scenario_name"), "scenario_name", errors)
     _validate_references(payload, contract, errors)
-    stage_keys = _validate_value_stream(
-        payload, contract, pattern, max_length, errors
-    )
+    stage_keys = _validate_value_stream(payload, contract, pattern, max_length, errors)
     process, option_keys = _validate_process_and_options(
         payload,
         contract,
@@ -400,8 +387,7 @@ def _resolve_references(
     unit = units.first() if units.count() == 1 else None
     if unit is None:
         errors.append(
-            "references.business_unit.name: "
-            "Organisationseinheit fehlt oder ist nicht eindeutig."
+            "references.business_unit.name: Organisationseinheit fehlt oder ist nicht eindeutig."
         )
     elif not unit.is_active:
         errors.append("references.business_unit.name: Organisationseinheit ist inaktiv.")
@@ -412,13 +398,11 @@ def _resolve_references(
         user = users.first() if users.count() == 1 else None
         if user is None:
             errors.append(
-                f"references.actors.{role}.username: "
-                "Benutzer fehlt oder ist nicht eindeutig."
+                f"references.actors.{role}.username: Benutzer fehlt oder ist nicht eindeutig."
             )
         elif not user.is_active or user.is_anonymized:
             errors.append(
-                f"references.actors.{role}.username: "
-                "Benutzer ist inaktiv oder anonymisiert."
+                f"references.actors.{role}.username: Benutzer ist inaktiv oder anonymisiert."
             )
         else:
             actors[role] = user
