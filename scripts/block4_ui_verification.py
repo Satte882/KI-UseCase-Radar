@@ -403,7 +403,7 @@ def run_verification() -> None:
                     "accelerator:analysis_detail",
                     kwargs={"analysis_id": data["grouped"].pk},
                 ),
-                ("Feldvorschläge", "angebot-prufen", "Offene Fragen", "Widersprüche"),
+                ("Feldvorschläge", "Angebot prüfen", "Offene Fragen", "Widersprüche"),
             ),
             "empty-preview": (
                 reverse(
