@@ -99,6 +99,34 @@ def _review_sections(catalog, session: CaptureSession) -> list[dict]:
     ]
 
 
+def _allowed_capture_types(actor) -> list[str]:
+    return [
+        capture_type
+        for capture_type in SUPPORTED_UI_CAPTURE_TYPES
+        if _can_start_capture(actor, capture_type)
+    ]
+
+
+@login_required
+def capture_session_list(request):
+    allowed_types = _allowed_capture_types(request.user)
+    if not allowed_types:
+        raise PermissionDenied
+    sessions = CaptureSession.objects.filter(
+        owner=request.user,
+        capture_type__in=allowed_types,
+    ).order_by("-updated_at")
+    return render(
+        request,
+        "accelerator/capture_list.html",
+        {
+            "capture_sessions": sessions,
+            "can_start_value_stream": (CaptureSession.CaptureType.VALUE_STREAM in allowed_types),
+            "can_start_use_case": CaptureSession.CaptureType.USE_CASE in allowed_types,
+        },
+    )
+
+
 @login_required
 def start_capture(request, capture_type: str):
     if capture_type not in SUPPORTED_UI_CAPTURE_TYPES:

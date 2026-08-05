@@ -6,6 +6,7 @@ from .models import CaptureSession
 app_name = "accelerator"
 
 urlpatterns = [
+    path("my-captures/", views.capture_session_list, name="capture_list"),
     path(
         "value-stream/start/",
         views.start_capture,

@@ -11,9 +11,20 @@
   </div>
   <div class="register-actions">
     <a class="btn btn-outline-secondary register-export" href="{% url 'use_cases:export_csv' %}">CSV exportieren</a>
-    {% if can_create %}<a class="btn btn-primary" href="{% url 'use_cases:create' %}">Use Case anlegen <span aria-hidden="true">＋</span></a>{% endif %}
+    {% if can_create %}
+    {% if capture_draft_count %}<a class="btn btn-outline-secondary" href="{% url 'accelerator:capture_list' %}">Meine Erfassungen ({{ capture_draft_count }})</a>{% endif %}
+    <a class="btn btn-outline-secondary" href="{% url 'accelerator:use_case_start' %}">Geführt erfassen</a>
+    <a class="btn btn-primary" href="{% url 'use_cases:create' %}">Use Case anlegen <span aria-hidden="true">＋</span></a>
+    {% endif %}
   </div>
 </section>
+
+{% if can_create and capture_use_case_draft_count %}
+<div class="alert alert-secondary mb-4">
+  <strong>{% if capture_use_case_draft_count == 1 %}1 offener Use-Case-Entwurf{% else %}{{ capture_use_case_draft_count }} offene Use-Case-Entwürfe{% endif %}:</strong>
+  <a href="{% url 'accelerator:capture_list' %}">Erfassungen fortsetzen</a>.
+</div>
+{% endif %}
 
 <section class="filter-deck" aria-label="Use Cases filtern">
   <form method="get" class="register-filters">
