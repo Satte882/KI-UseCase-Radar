@@ -13,7 +13,14 @@
     <a class="btn btn-outline-secondary register-export" href="{% url 'use_cases:export_csv' %}">CSV exportieren</a>
     {% if can_create %}
     {% if capture_draft_count %}<a class="btn btn-outline-secondary" href="{% url 'accelerator:capture_list' %}">Meine Erfassungen ({{ capture_draft_count }})</a>{% endif %}
-    <a class="btn btn-outline-secondary" href="{% url 'accelerator:use_case_start' %}">Geführt erfassen</a>
+    <a
+      class="btn btn-outline-secondary"
+      href="{% url 'accelerator:use_case_start' %}"
+      data-bs-toggle="tooltip"
+      data-bs-trigger="hover focus"
+      data-bs-placement="bottom"
+      data-bs-title="Fragen schrittweise beantworten oder per WIN + H diktieren. Es entsteht zunächst ein Entwurf."
+    >Geführt erfassen <span class="ms-1" aria-hidden="true">ⓘ</span></a>
     <a class="btn btn-primary" href="{% url 'use_cases:create' %}">Use Case anlegen <span aria-hidden="true">＋</span></a>
     {% endif %}
   </div>
@@ -125,4 +132,7 @@
   </div>
 </section>
 {% endblock %}
-{% block extra_js %}<script src="{% static 'js/ui-vnext.js' %}" defer></script>{% endblock %}
+{% block extra_js %}
+<script src="{% static 'js/ui-vnext.js' %}" defer></script>
+<script src="{% static 'js/guided-capture-tooltip.js' %}" defer></script>
+{% endblock %}
