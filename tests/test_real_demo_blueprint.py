@@ -7,6 +7,7 @@ import pytest
 from django.core.management import call_command
 from django.test import override_settings
 
+from ki_radar.architecture.focus import ValueStreamFocus, get_value_stream_focus
 from ki_radar.architecture.models import (
     ProcessAnalysis,
     SolutionOption,
@@ -97,9 +98,10 @@ def test_real_demo_dry_run_apply_and_repeat_are_reproducible(real_demo_payload):
     process = ProcessAnalysis.objects.get(stage__value_stream=stream)
     options = SolutionOption.objects.filter(process_analysis=process)
     origin = UseCaseOrigin.objects.get(use_case=use_case)
+    focus = get_value_stream_focus(stream)
 
     assert stream.status == ValueStream.Status.DRAFT
-    assert stream.focus_status == ValueStream.FocusStatus.NOT_SCREENED
+    assert focus.status == ValueStreamFocus.Status.NOT_SCREENED
     assert process.status == ProcessAnalysis.Status.DRAFT
     assert options.count() == 3
     assert set(options.values_list("recommendation", flat=True)) == {
