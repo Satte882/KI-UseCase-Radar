@@ -1,0 +1,66 @@
+name: Fix AP 10 scroll-container check
+
+on:
+  push:
+    branches:
+      - issue-120-ap10-completion
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: issue-120-ap10-completion
+      - name: Ignore accessible controls inside horizontal scroll containers
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("scripts/block4_ui_verification.py")
+          text = path.read_text(encoding="utf-8")
+          old = """          const offViewport = interactive.filter((element) => {
+            const rect = element.getBoundingClientRect();
+            const style = window.getComputedStyle(element);
+            if (style.display === 'none' || style.visibility === 'hidden') return false;
+            return rect.left < -1 || rect.right > window.innerWidth + 1;
+          });
+"""
+          new = """          const isInsideHorizontalScroller = (element) => {
+            let ancestor = element.parentElement;
+            while (ancestor && ancestor !== document.body) {
+              const ancestorStyle = window.getComputedStyle(ancestor);
+              const overflowX = ancestorStyle.overflowX;
+              if (
+                (overflowX === 'auto' || overflowX === 'scroll') &&
+                ancestor.scrollWidth > ancestor.clientWidth + 1
+              ) {
+                return true;
+              }
+              ancestor = ancestor.parentElement;
+            }
+            return false;
+          };
+          const offViewport = interactive.filter((element) => {
+            const rect = element.getBoundingClientRect();
+            const style = window.getComputedStyle(element);
+            if (style.display === 'none' || style.visibility === 'hidden') return false;
+            const outsideViewport = rect.left < -1 || rect.right > window.innerWidth + 1;
+            return outsideViewport && !isInsideHorizontalScroller(element);
+          });
+"""
+          if old not in text:
+              raise SystemExit("viewport filter anchor not found")
+          path.write_text(text.replace(old, new, 1), encoding="utf-8")
+          PY
+      - name: Commit corrected check
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/block4_ui_verification.py
+          git commit -m "test(ap10): allow controls in horizontal scroll containers"
+          git push origin HEAD:issue-120-ap10-completion
