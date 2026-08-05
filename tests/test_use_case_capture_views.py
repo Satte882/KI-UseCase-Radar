@@ -120,9 +120,7 @@ def test_use_case_capture_completes_without_creating_domain_objects(client, owne
     assert UseCase.objects.count() == 0
     assert ValueStream.objects.count() == 0
 
-    review = client.get(
-        reverse("accelerator:capture_review", kwargs={"session_id": session.pk})
-    )
+    review = client.get(reverse("accelerator:capture_review", kwargs={"session_id": session.pk}))
     content = review.content.decode()
     assert "Geführte Use-Case-Erfassung" in content
     assert "keine Fachobjekte" in content
