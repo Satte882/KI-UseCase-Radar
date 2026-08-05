@@ -16,6 +16,7 @@ SYSTEM_MANAGED_PATHS = {
     "value_stream.key",
     "value_stream.status",
     "value_stream.focus.status",
+    "value_stream.stages[].key",
     "process_analysis.key",
     "process_analysis.stage_key",
     "process_analysis.status",
