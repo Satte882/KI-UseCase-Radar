@@ -18,7 +18,7 @@
 
 {% if can_create and capture_value_stream_draft_count %}
 <div class="alert alert-secondary mb-4">
-  <strong>{{ capture_value_stream_draft_count }} offener Value-Stream-Entwurf{% if capture_value_stream_draft_count != 1 %}e{% endif %}:</strong>
+  <strong>{% if capture_value_stream_draft_count == 1 %}1 offener Value-Stream-Entwurf{% else %}{{ capture_value_stream_draft_count }} offene Value-Stream-Entwürfe{% endif %}:</strong>
   <a href="{% url 'accelerator:capture_list' %}">Erfassungen fortsetzen</a>.
 </div>
 {% else %}
