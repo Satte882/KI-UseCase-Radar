@@ -9,7 +9,6 @@ from django.test import override_settings
 from ki_radar.core.llm_policy import LLMConfigurationError, get_accelerator_llm_policy
 from ki_radar.use_cases import copilot
 
-
 VALID_LIMITS = {
     "ACCELERATOR_LLM_TIMEOUT_SECONDS": "15",
     "ACCELERATOR_LLM_MAX_INPUT_CHARS": "5000",
