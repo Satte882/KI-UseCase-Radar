@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Erfassung prüfen – KI-Radar{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="eyebrow mb-2">Geführte Value-Stream-Erfassung · Version {{ session.catalog_version }}</div>
+    <h1 class="page-title">{{ session.working_title|default:"Value-Stream-Entwurf" }}</h1>
+    <p class="page-subtitle">Prüfen Sie den gespeicherten Arbeitsstand. Es wurde noch kein regulärer Value Stream angelegt.</p>
+  </div>
+  <span class="badge {% if session.status == 'completed' %}state-ready{% elif session.status == 'draft' %}state-review{% else %}state-blocked{% endif %}">{{ session.get_status_display }}</span>
+</div>
+
+{% if catalog_error %}<div class="alert alert-danger" role="alert"><strong>Katalogversion nicht verfügbar.</strong> {{ catalog_error }} Die Antworten bleiben schreibgeschützt erhalten.</div>{% endif %}
+{% if conflict_message %}<div class="alert alert-danger" role="alert"><strong>Zwischenzeitliche Änderung erkannt.</strong> {{ conflict_message }} Laden Sie den aktuellen Stand neu.</div>{% endif %}
+{% if completion_errors %}
+<div class="alert alert-danger" role="alert">
+  <strong>Die Erfassung kann noch nicht abgeschlossen werden.</strong>
+  <ul class="mb-0 mt-2">{% for error in completion_errors %}<li>{{ error }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+{% if catalog %}
+<div class="d-grid gap-3 mb-4">
+  {% for section in sections %}
+  <section class="app-card" aria-labelledby="review-section-{{ forloop.counter }}">
+    <div class="card-body">
+      <h2 class="h5" id="review-section-{{ forloop.counter }}">{{ section.title }}</h2>
+      <dl class="mb-0">
+        {% for question in section.questions %}
+        <dt class="mt-3">{{ question.label }}{% if question.required %} *{% endif %}</dt>
+        <dd class="text-muted mb-0">{{ question.answer|default:"Noch offen"|linebreaksbr }}</dd>
+        {% endfor %}
+      </dl>
+    </div>
+  </section>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="app-card mb-4">
+  <div class="card-body">
+    <div class="section-title">Wirkung des Abschlusses</div>
+    <p class="mb-0">Der Antwortstand wird unveränderlich abgeschlossen. Es werden keine Fachobjekte, Entscheidungen, Validierungen oder Freigaben erzeugt.</p>
+  </div>
+  <div class="card-footer d-flex justify-content-between gap-2 flex-wrap">
+    <div>
+      {% if session.status == 'draft' and catalog %}<a class="btn btn-outline-secondary" href="{% url 'accelerator:capture_step' session.pk 1 %}">Weiter bearbeiten</a>{% else %}<a class="btn btn-outline-secondary" href="{% url 'architecture:value_stream_list' %}">Zur Value-Stream-Übersicht</a>{% endif %}
+    </div>
+    {% if session.status == 'draft' %}
+    <div class="d-flex gap-2 flex-wrap">
+      <form method="post" action="{% url 'accelerator:capture_discard' session.pk %}">
+        {% csrf_token %}<input type="hidden" name="revision" value="{{ session.revision }}">
+        <button class="btn btn-outline-danger" type="submit">Entwurf verwerfen</button>
+      </form>
+      {% if catalog %}
+      <form method="post">
+        {% csrf_token %}<input type="hidden" name="revision" value="{{ session.revision }}"><input type="hidden" name="action" value="complete">
+        <button class="btn btn-primary" type="submit">Erfassung abschließen</button>
+      </form>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
