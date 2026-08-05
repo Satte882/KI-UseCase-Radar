@@ -57,9 +57,7 @@ class BlueprintGraphDiff:
 
     @property
     def is_create(self) -> bool:
-        return bool(self.objects) and all(
-            item.status == DiffStatus.CREATE for item in self.objects
-        )
+        return bool(self.objects) and all(item.status == DiffStatus.CREATE for item in self.objects)
 
     @property
     def is_no_change(self) -> bool:
@@ -97,28 +95,121 @@ class BlueprintGraphDiff:
         return result
 
 
+STREAM_FIELDS = (
+    "name",
+    "status",
+    "description",
+    "trigger",
+    "outcome",
+    "scope_in",
+    "scope_out",
+    "strategic_objective",
+    "stakeholders",
+    "constraints",
+)
+STAGE_FIELDS = (
+    "sequence",
+    "name",
+    "description",
+    "actors",
+    "systems",
+    "documents",
+    "pain_points",
+    "baseline_metrics",
+)
+PROCESS_FIELDS = (
+    "name",
+    "status",
+    "scope_start",
+    "scope_end",
+    "trigger",
+    "outcome",
+    "current_flow",
+    "roles",
+    "systems",
+    "data_objects",
+    "business_rules",
+    "handoffs",
+    "bottlenecks",
+    "exceptions",
+    "baseline_metrics",
+    "target_state_principles",
+)
+OPTION_FIELDS = (
+    "name",
+    "option_type",
+    "recommendation",
+    "evaluation_status",
+    "description",
+    "expected_value",
+    "bottleneck_coverage",
+    "feasibility",
+    "data_requirements",
+    "application_impact",
+    "integration_effort",
+    "integration_impact",
+    "technology_constraints",
+    "risks",
+    "architecture_fit",
+)
+USE_CASE_FIELDS = (
+    "title",
+    "status",
+    "decision_status",
+    "summary",
+    "problem_statement",
+    "affected_process",
+    "target_users",
+    "priority",
+    "solution_type",
+    "hosting_type",
+    "provider",
+    "product_name",
+    "model_name",
+    "source_systems",
+    "data_sources",
+    "interface_description",
+    "intended_users",
+    "intended_purpose",
+    "expected_benefit",
+    "benefit_category",
+    "one_time_cost",
+    "recurring_cost",
+    "business_value",
+    "technical_feasibility",
+    "data_readiness",
+    "risk_complexity",
+    "human_oversight",
+    "support_responsibility",
+)
+
+
 def _display(value: Any) -> Any:
     if hasattr(value, "pk"):
         return str(value.pk)
     return value
 
 
-def _field_differences(
+def _model_values(instance: Any, fields: tuple[str, ...]) -> dict[str, Any]:
+    return {field: getattr(instance, field) for field in fields}
+
+
+def _payload_values(payload: dict[str, Any], fields: tuple[str, ...]) -> dict[str, Any]:
+    return {field: payload[field] for field in fields}
+
+
+def _compare_values(
     current: dict[str, Any], expected: dict[str, Any]
 ) -> tuple[FieldDifference, ...]:
-    result = []
-    for field in sorted(expected):
-        current_value = current.get(field)
-        expected_value = expected[field]
-        if current_value != expected_value:
-            result.append(
-                FieldDifference(
-                    field=field,
-                    current=_display(current_value),
-                    expected=_display(expected_value),
-                )
-            )
-    return tuple(result)
+    return tuple(
+        FieldDifference(
+            field=field,
+            current=_display(current.get(field)),
+            expected=_display(expected[field]),
+        )
+        for field in sorted(expected)
+        if current.get(field) != expected[field]
+    )
 
 
 def _object_diff(
@@ -130,70 +221,45 @@ def _object_diff(
 ) -> ObjectDifference:
     if instance is None:
         return ObjectDifference(object_type, key, DiffStatus.CREATE)
-    differences = _field_differences(current or {}, expected)
+    differences = _compare_values(current or {}, expected)
     status = DiffStatus.CONFLICT if differences else DiffStatus.NO_CHANGE
     return ObjectDifference(object_type, key, status, differences)
 
 
-def _stream_values(stream: ValueStream) -> dict[str, Any]:
-    return {
-        "name": stream.name,
-        "status": stream.status,
-        "description": stream.description,
-        "business_unit": stream.business_unit_id,
-        "owner": stream.owner_id,
-        "trigger": stream.trigger,
-        "outcome": stream.outcome,
-        "scope_in": stream.scope_in,
-        "scope_out": stream.scope_out,
-        "strategic_objective": stream.strategic_objective,
-        "stakeholders": stream.stakeholders,
-        "constraints": stream.constraints,
-    }
-
-
 def _expected_stream(resolved: ResolvedBlueprint) -> dict[str, Any]:
     data = resolved.payload["value_stream"]
-    return {
-        "name": data["name"],
-        "status": data["status"],
-        "description": data["description"],
-        "business_unit": resolved.business_unit.pk,
-        "owner": resolved.actors["value_stream_owner"].pk,
-        "trigger": data["trigger"],
-        "outcome": data["outcome"],
-        "scope_in": data["scope_in"],
-        "scope_out": data["scope_out"],
-        "strategic_objective": data["strategic_objective"],
-        "stakeholders": data["stakeholders"],
-        "constraints": data["constraints"],
-    }
+    expected = _payload_values(data, STREAM_FIELDS)
+    expected.update(
+        {
+            "business_unit": resolved.business_unit.pk,
+            "owner": resolved.actors["value_stream_owner"].pk,
+        }
+    )
+    return expected
 
 
-def _focus_diff(
-    stream: ValueStream | None, resolved: ResolvedBlueprint
-) -> ObjectDifference:
-    expected = resolved.payload["value_stream"]["focus"]
+def _current_stream(stream: ValueStream) -> dict[str, Any]:
+    current = _model_values(stream, STREAM_FIELDS)
+    current.update(
+        {
+            "business_unit": stream.business_unit_id,
+            "owner": stream.owner_id,
+        }
+    )
+    return current
+
+
+def _focus_diff(stream: ValueStream | None, resolved: ResolvedBlueprint) -> ObjectDifference:
     if stream is None:
         return ObjectDifference("value_stream_focus", "focus", DiffStatus.CREATE)
     focus = get_value_stream_focus(stream)
     if focus is None:
         return ObjectDifference("value_stream_focus", "focus", DiffStatus.CONFLICT)
-    current = {
-        "business_domain": focus.business_domain,
-        "capability": focus.capability,
-        "status": focus.status,
-        "strategic_impact": focus.strategic_impact,
-        "economic_potential": focus.economic_potential,
-        "pain_intensity": focus.pain_intensity,
-        "data_accessibility": focus.data_accessibility,
-        "change_effort": focus.change_effort,
-        "rationale": focus.rationale,
-    }
-    expected_values = {
-        "business_domain": expected["business_domain"],
-        "capability": expected["capability"],
-        "status": expected["status"],
+    source = resolved.payload["value_stream"]["focus"]
+    expected = {
+        "business_domain": source["business_domain"],
+        "capability": source["capability"],
+        "status": source["status"],
         "strategic_impact": "",
         "economic_potential": "",
         "pain_intensity": "",
@@ -201,165 +267,55 @@ def _focus_diff(
         "change_effort": "",
         "rationale": "",
     }
-    return _object_diff(
-        "value_stream_focus",
-        "focus",
-        focus,
-        current,
-        expected_values,
-    )
-
-
-def _stage_values(stage: ValueStreamStage) -> dict[str, Any]:
-    return {
-        "sequence": stage.sequence,
-        "name": stage.name,
-        "description": stage.description,
-        "actors": stage.actors,
-        "systems": stage.systems,
-        "documents": stage.documents,
-        "pain_points": stage.pain_points,
-        "baseline_metrics": stage.baseline_metrics,
-    }
-
-
-def _process_values(process: ProcessAnalysis) -> dict[str, Any]:
-    return {
-        "name": process.name,
-        "status": process.status,
-        "scope_start": process.scope_start,
-        "scope_end": process.scope_end,
-        "trigger": process.trigger,
-        "outcome": process.outcome,
-        "current_flow": process.current_flow,
-        "roles": process.roles,
-        "systems": process.systems,
-        "data_objects": process.data_objects,
-        "business_rules": process.business_rules,
-        "handoffs": process.handoffs,
-        "bottlenecks": process.bottlenecks,
-        "exceptions": process.exceptions,
-        "baseline_metrics": process.baseline_metrics,
-        "target_state_principles": process.target_state_principles,
-    }
-
-
-def _option_values(option: SolutionOption) -> dict[str, Any]:
-    return {
-        "name": option.name,
-        "option_type": option.option_type,
-        "recommendation": option.recommendation,
-        "evaluation_status": option.evaluation_status,
-        "description": option.description,
-        "expected_value": option.expected_value,
-        "bottleneck_coverage": option.bottleneck_coverage,
-        "feasibility": option.feasibility,
-        "data_requirements": option.data_requirements,
-        "application_impact": option.application_impact,
-        "integration_effort": option.integration_effort,
-        "integration_impact": option.integration_impact,
-        "technology_constraints": option.technology_constraints,
-        "risks": option.risks,
-        "architecture_fit": option.architecture_fit,
-    }
-
-
-def _use_case_values(use_case: UseCase) -> dict[str, Any]:
-    return {
-        "title": use_case.title,
-        "status": use_case.status,
-        "decision_status": use_case.decision_status,
-        "summary": use_case.summary,
-        "problem_statement": use_case.problem_statement,
-        "business_unit": use_case.business_unit_id,
-        "affected_process": use_case.affected_process,
-        "target_users": use_case.target_users,
-        "submitter": use_case.submitter_id,
-        "business_owner": use_case.business_owner_id,
-        "coordinator": use_case.coordinator_id,
-        "technical_owner": use_case.technical_owner_id,
-        "priority": use_case.priority,
-        "solution_type": use_case.solution_type,
-        "hosting_type": use_case.hosting_type,
-        "provider": use_case.provider,
-        "product_name": use_case.product_name,
-        "model_name": use_case.model_name,
-        "source_systems": use_case.source_systems,
-        "data_sources": use_case.data_sources,
-        "interface_description": use_case.interface_description,
-        "intended_users": use_case.intended_users,
-        "intended_purpose": use_case.intended_purpose,
-        "expected_benefit": use_case.expected_benefit,
-        "benefit_category": use_case.benefit_category,
-        "metric_name": use_case.metric_name,
-        "metric_type": use_case.metric_type,
-        "metric_direction": use_case.metric_direction,
-        "metric_unit": use_case.metric_unit,
-        "metric_baseline": use_case.metric_baseline,
-        "metric_target": use_case.metric_target,
-        "metric_measurement_method": use_case.metric_measurement_method,
-        "one_time_cost": use_case.one_time_cost,
-        "recurring_cost": use_case.recurring_cost,
-        "business_value": use_case.business_value,
-        "technical_feasibility": use_case.technical_feasibility,
-        "data_readiness": use_case.data_readiness,
-        "risk_complexity": use_case.risk_complexity,
-        "human_oversight": use_case.human_oversight,
-        "support_responsibility": use_case.support_responsibility,
-    }
+    current = {field: getattr(focus, field) for field in expected}
+    return _object_diff("value_stream_focus", "focus", focus, current, expected)
 
 
 def _expected_use_case(resolved: ResolvedBlueprint) -> dict[str, Any]:
     data = resolved.payload["use_case"]
     metric = data["metric"]
-    return {
-        "title": data["title"],
-        "status": data["status"],
-        "decision_status": data["decision_status"],
-        "summary": data["summary"],
-        "problem_statement": data["problem_statement"],
-        "business_unit": resolved.business_unit.pk,
-        "affected_process": data["affected_process"],
-        "target_users": data["target_users"],
-        "submitter": resolved.actors["creator"].pk,
-        "business_owner": resolved.actors["business_owner"].pk,
-        "coordinator": resolved.actors["coordinator"].pk,
-        "technical_owner": resolved.actors["technical_owner"].pk,
-        "priority": data["priority"],
-        "solution_type": data["solution_type"],
-        "hosting_type": data["hosting_type"],
-        "provider": data["provider"],
-        "product_name": data["product_name"],
-        "model_name": data["model_name"],
-        "source_systems": data["source_systems"],
-        "data_sources": data["data_sources"],
-        "interface_description": data["interface_description"],
-        "intended_users": data["intended_users"],
-        "intended_purpose": data["intended_purpose"],
-        "expected_benefit": data["expected_benefit"],
-        "benefit_category": data["benefit_category"],
-        "metric_name": metric["name"],
-        "metric_type": metric["type"],
-        "metric_direction": metric["direction"],
-        "metric_unit": metric["unit"],
-        "metric_baseline": metric["baseline"],
-        "metric_target": metric["target"],
-        "metric_measurement_method": metric["measurement_method"],
-        "one_time_cost": data["one_time_cost"],
-        "recurring_cost": data["recurring_cost"],
-        "business_value": data["business_value"],
-        "technical_feasibility": data["technical_feasibility"],
-        "data_readiness": data["data_readiness"],
-        "risk_complexity": data["risk_complexity"],
-        "human_oversight": data["human_oversight"],
-        "support_responsibility": data["support_responsibility"],
-    }
+    expected = _payload_values(data, USE_CASE_FIELDS)
+    expected.update(
+        {
+            "business_unit": resolved.business_unit.pk,
+            "submitter": resolved.actors["creator"].pk,
+            "business_owner": resolved.actors["business_owner"].pk,
+            "coordinator": resolved.actors["coordinator"].pk,
+            "technical_owner": resolved.actors["technical_owner"].pk,
+            "metric_name": metric["name"],
+            "metric_type": metric["type"],
+            "metric_direction": metric["direction"],
+            "metric_unit": metric["unit"],
+            "metric_baseline": metric["baseline"],
+            "metric_target": metric["target"],
+            "metric_measurement_method": metric["measurement_method"],
+        }
+    )
+    return expected
 
 
-def _classification_diff(
-    use_case: UseCase | None, resolved: ResolvedBlueprint
-) -> ObjectDifference:
-    expected = resolved.payload["use_case"]["classification"]
+def _current_use_case(use_case: UseCase) -> dict[str, Any]:
+    current = _model_values(use_case, USE_CASE_FIELDS)
+    current.update(
+        {
+            "business_unit": use_case.business_unit_id,
+            "submitter": use_case.submitter_id,
+            "business_owner": use_case.business_owner_id,
+            "coordinator": use_case.coordinator_id,
+            "technical_owner": use_case.technical_owner_id,
+            "metric_name": use_case.metric_name,
+            "metric_type": use_case.metric_type,
+            "metric_direction": use_case.metric_direction,
+            "metric_unit": use_case.metric_unit,
+            "metric_baseline": use_case.metric_baseline,
+            "metric_target": use_case.metric_target,
+            "metric_measurement_method": use_case.metric_measurement_method,
+        }
+    )
+    return current
+
+
+def _classification_diff(use_case: UseCase | None, resolved: ResolvedBlueprint) -> ObjectDifference:
     if use_case is None:
         return ObjectDifference("use_case_classification", "classification", DiffStatus.CREATE)
     try:
@@ -370,36 +326,29 @@ def _classification_diff(
             "classification",
             DiffStatus.CONFLICT,
         )
-    current = {
-        "business_domain": classification.business_domain,
-        "capability": classification.capability,
-        "process_area": classification.process_area,
-    }
+    fields = ("business_domain", "capability", "process_area")
     return _object_diff(
         "use_case_classification",
         "classification",
         classification,
-        current,
-        expected,
+        _model_values(classification, fields),
+        _payload_values(resolved.payload["use_case"]["classification"], fields),
     )
 
 
-def _red_state_differences(
+def _forbidden_state_differences(
     stream: ValueStream | None,
     process: ProcessAnalysis | None,
     options: list[SolutionOption],
     use_case: UseCase | None,
 ) -> list[ObjectDifference]:
-    result = []
-    if process is not None and ProcessValidation.objects.filter(
-        process_analysis=process
-    ).exists():
-        result.append(
-            ObjectDifference("process_validation", "forbidden", DiffStatus.CONFLICT)
-        )
-    if process is not None and SolutionSelectionDecision.objects.filter(
-        process_analysis=process
-    ).exists():
+    result: list[ObjectDifference] = []
+    if process is not None and ProcessValidation.objects.filter(process_analysis=process).exists():
+        result.append(ObjectDifference("process_validation", "forbidden", DiffStatus.CONFLICT))
+    if (
+        process is not None
+        and SolutionSelectionDecision.objects.filter(process_analysis=process).exists()
+    ):
         result.append(
             ObjectDifference(
                 "solution_selection_decision",
@@ -408,53 +357,100 @@ def _red_state_differences(
             )
         )
     if any(option.recommendation != SolutionOption.Recommendation.CANDIDATE for option in options):
-        result.append(
-            ObjectDifference("solution_preference", "forbidden", DiffStatus.CONFLICT)
-        )
-    if use_case is not None:
-        forbidden_counts = {
-            "decision_assessment": DecisionAssessment.objects.filter(
-                use_case=use_case
-            ).count(),
-            "approval_decision": ApprovalDecision.objects.filter(use_case=use_case).count(),
-            "governance_assessment": GovernanceAssessment.objects.filter(
-                use_case=use_case
-            ).count(),
-            "delivery_package": DeliveryPackage.objects.filter(use_case=use_case).count(),
-        }
-        for object_type, count in sorted(forbidden_counts.items()):
-            if count:
-                result.append(
-                    ObjectDifference(object_type, "forbidden", DiffStatus.CONFLICT)
-                )
-        lifecycle_fields = {
-            "pilot_start": use_case.pilot_start,
-            "actual_end_date": use_case.actual_end_date,
-            "metric_actual": use_case.metric_actual,
-            "metric_measured_at": use_case.metric_measured_at,
-            "realized_result": use_case.realized_result,
-            "ending_reason": use_case.ending_reason,
-            "is_archived": use_case.is_archived,
-        }
-        differences = tuple(
-            FieldDifference(field, _display(value), None)
-            for field, value in sorted(lifecycle_fields.items())
-            if value not in (None, "", False)
-        )
-        if differences:
-            result.append(
-                ObjectDifference(
-                    "use_case_lifecycle",
-                    "forbidden",
-                    DiffStatus.CONFLICT,
-                    differences,
-                )
-            )
+        result.append(ObjectDifference("solution_preference", "forbidden", DiffStatus.CONFLICT))
     if stream is not None and stream.status != ValueStream.Status.DRAFT:
+        result.append(ObjectDifference("value_stream_state", "forbidden", DiffStatus.CONFLICT))
+    if use_case is None:
+        return result
+
+    forbidden_counts = {
+        "decision_assessment": DecisionAssessment.objects.filter(use_case=use_case).count(),
+        "approval_decision": ApprovalDecision.objects.filter(use_case=use_case).count(),
+        "governance_assessment": GovernanceAssessment.objects.filter(use_case=use_case).count(),
+        "delivery_package": DeliveryPackage.objects.filter(use_case=use_case).count(),
+    }
+    result.extend(
+        ObjectDifference(object_type, "forbidden", DiffStatus.CONFLICT)
+        for object_type, count in sorted(forbidden_counts.items())
+        if count
+    )
+    lifecycle = {
+        "pilot_start": use_case.pilot_start,
+        "actual_end_date": use_case.actual_end_date,
+        "metric_actual": use_case.metric_actual,
+        "metric_measured_at": use_case.metric_measured_at,
+        "realized_result": use_case.realized_result,
+        "ending_reason": use_case.ending_reason,
+        "is_archived": use_case.is_archived,
+    }
+    differences = tuple(
+        FieldDifference(field, _display(value), None)
+        for field, value in sorted(lifecycle.items())
+        if value not in (None, "", False)
+    )
+    if differences:
         result.append(
-            ObjectDifference("value_stream_state", "forbidden", DiffStatus.CONFLICT)
+            ObjectDifference(
+                "use_case_lifecycle",
+                "forbidden",
+                DiffStatus.CONFLICT,
+                differences,
+            )
         )
     return result
+
+
+def _append_stage_diffs(
+    objects: list[ObjectDifference],
+    stream: ValueStream | None,
+    stream_data: dict[str, Any],
+) -> dict[str, ValueStreamStage | None]:
+    current = (
+        {stage.sequence: stage for stage in stream.stages.all()} if stream is not None else {}
+    )
+    by_key: dict[str, ValueStreamStage | None] = {}
+    for data in sorted(stream_data["stages"], key=lambda item: item["sequence"]):
+        stage = current.get(data["sequence"])
+        by_key[data["key"]] = stage
+        objects.append(
+            _object_diff(
+                "value_stream_stage",
+                data["key"],
+                stage,
+                _model_values(stage, STAGE_FIELDS) if stage is not None else None,
+                _payload_values(data, STAGE_FIELDS),
+            )
+        )
+    if stream is not None and len(current) != len(stream_data["stages"]):
+        objects.append(ObjectDifference("value_stream_stages", "cardinality", DiffStatus.CONFLICT))
+    return by_key
+
+
+def _append_option_diffs(
+    objects: list[ObjectDifference],
+    process: ProcessAnalysis | None,
+    option_payloads: list[dict[str, Any]],
+    origin_key: str,
+) -> tuple[list[SolutionOption], SolutionOption | None]:
+    current = list(process.solution_options.all()) if process is not None else []
+    by_name = {option.name: option for option in current}
+    selected = None
+    for data in sorted(option_payloads, key=lambda item: item["key"]):
+        option = by_name.get(data["name"])
+        if data["key"] == origin_key:
+            selected = option
+        objects.append(
+            _object_diff(
+                "solution_option",
+                data["key"],
+                option,
+                _model_values(option, OPTION_FIELDS) if option is not None else None,
+                _payload_values(data, OPTION_FIELDS),
+            )
+        )
+    if process is not None and len(current) != len(option_payloads):
+        objects.append(ObjectDifference("solution_options", "cardinality", DiffStatus.CONFLICT))
+    return current, selected
 
 
 def build_blueprint_diff(resolved: ResolvedBlueprint) -> BlueprintGraphDiff:
@@ -463,62 +459,28 @@ def build_blueprint_diff(resolved: ResolvedBlueprint) -> BlueprintGraphDiff:
     use_case_data = payload["use_case"]
     stream = ValueStream.objects.filter(demo_key=stream_data["key"]).first()
     use_case = UseCase.objects.filter(demo_key=use_case_data["key"]).first()
-
     objects: list[ObjectDifference] = []
-    stream_name_collision = ValueStream.objects.filter(name=stream_data["name"]).exclude(
+
+    stream_collision = ValueStream.objects.filter(name=stream_data["name"]).exclude(
         demo_key=stream_data["key"]
     )
-    if stream is None and stream_name_collision.exists():
-        objects.append(
-            ObjectDifference("value_stream", stream_data["key"], DiffStatus.CONFLICT)
-        )
+    if stream is None and stream_collision.exists():
+        objects.append(ObjectDifference("value_stream", stream_data["key"], DiffStatus.CONFLICT))
     else:
         objects.append(
             _object_diff(
                 "value_stream",
                 stream_data["key"],
                 stream,
-                _stream_values(stream) if stream is not None else None,
+                _current_stream(stream) if stream is not None else None,
                 _expected_stream(resolved),
             )
         )
     objects.append(_focus_diff(stream, resolved))
-
-    stages_by_sequence = {
-        stage.sequence: stage for stage in stream.stages.all()
-    } if stream is not None else {}
-    stage_by_key: dict[str, ValueStreamStage | None] = {}
-    for stage_data in sorted(stream_data["stages"], key=lambda item: item["sequence"]):
-        stage = stages_by_sequence.get(stage_data["sequence"])
-        stage_by_key[stage_data["key"]] = stage
-        objects.append(
-            _object_diff(
-                "value_stream_stage",
-                stage_data["key"],
-                stage,
-                _stage_values(stage) if stage is not None else None,
-                {
-                    key: stage_data[key]
-                    for key in (
-                        "sequence",
-                        "name",
-                        "description",
-                        "actors",
-                        "systems",
-                        "documents",
-                        "pain_points",
-                        "baseline_metrics",
-                    )
-                },
-            )
-        )
-    if stream is not None and len(stages_by_sequence) != len(stream_data["stages"]):
-        objects.append(
-            ObjectDifference("value_stream_stages", "cardinality", DiffStatus.CONFLICT)
-        )
+    stages = _append_stage_diffs(objects, stream, stream_data)
 
     process_data = payload["process_analysis"]
-    process_stage = stage_by_key.get(process_data["stage_key"])
+    process_stage = stages.get(process_data["stage_key"])
     process = None
     if process_stage is not None:
         process = ProcessAnalysis.objects.filter(
@@ -530,93 +492,35 @@ def build_blueprint_diff(resolved: ResolvedBlueprint) -> BlueprintGraphDiff:
             "process_analysis",
             process_data["key"],
             process,
-            _process_values(process) if process is not None else None,
-            {
-                key: process_data[key]
-                for key in (
-                    "name",
-                    "status",
-                    "scope_start",
-                    "scope_end",
-                    "trigger",
-                    "outcome",
-                    "current_flow",
-                    "roles",
-                    "systems",
-                    "data_objects",
-                    "business_rules",
-                    "handoffs",
-                    "bottlenecks",
-                    "exceptions",
-                    "baseline_metrics",
-                    "target_state_principles",
-                )
-            },
+            _model_values(process, PROCESS_FIELDS) if process is not None else None,
+            _payload_values(process_data, PROCESS_FIELDS),
         )
     )
+    current_options, selected_option = _append_option_diffs(
+        objects,
+        process,
+        payload["solution_options"],
+        payload["origin"]["solution_option_key"],
+    )
 
-    current_options = list(process.solution_options.all()) if process is not None else []
-    options_by_name = {option.name: option for option in current_options}
-    selected_option: SolutionOption | None = None
-    for option_data in sorted(payload["solution_options"], key=lambda item: item["key"]):
-        option = options_by_name.get(option_data["name"])
-        if option_data["key"] == payload["origin"]["solution_option_key"]:
-            selected_option = option
-        objects.append(
-            _object_diff(
-                "solution_option",
-                option_data["key"],
-                option,
-                _option_values(option) if option is not None else None,
-                {
-                    key: option_data[key]
-                    for key in (
-                        "name",
-                        "option_type",
-                        "recommendation",
-                        "evaluation_status",
-                        "description",
-                        "expected_value",
-                        "bottleneck_coverage",
-                        "feasibility",
-                        "data_requirements",
-                        "application_impact",
-                        "integration_effort",
-                        "integration_impact",
-                        "technology_constraints",
-                        "risks",
-                        "architecture_fit",
-                    )
-                },
-            )
-        )
-    if process is not None and len(current_options) != len(payload["solution_options"]):
-        objects.append(
-            ObjectDifference("solution_options", "cardinality", DiffStatus.CONFLICT)
-        )
-
-    use_case_title_collision = UseCase.objects.filter(title=use_case_data["title"]).exclude(
+    use_case_collision = UseCase.objects.filter(title=use_case_data["title"]).exclude(
         demo_key=use_case_data["key"]
     )
-    if use_case is None and use_case_title_collision.exists():
-        objects.append(
-            ObjectDifference("use_case", use_case_data["key"], DiffStatus.CONFLICT)
-        )
+    if use_case is None and use_case_collision.exists():
+        objects.append(ObjectDifference("use_case", use_case_data["key"], DiffStatus.CONFLICT))
     else:
         objects.append(
             _object_diff(
                 "use_case",
                 use_case_data["key"],
                 use_case,
-                _use_case_values(use_case) if use_case is not None else None,
+                _current_use_case(use_case) if use_case is not None else None,
                 _expected_use_case(resolved),
             )
         )
     objects.append(_classification_diff(use_case, resolved))
 
-    origin = None
-    if use_case is not None:
-        origin = UseCaseOrigin.objects.filter(use_case=use_case).first()
+    origin = UseCaseOrigin.objects.filter(use_case=use_case).first() if use_case is not None else None
     expected_origin = {
         "stage": process_stage.pk if process_stage is not None else None,
         "process_analysis": process.pk if process is not None else None,
@@ -638,13 +542,11 @@ def build_blueprint_diff(resolved: ResolvedBlueprint) -> BlueprintGraphDiff:
             expected_origin,
         )
     )
-    objects.extend(_red_state_differences(stream, process, current_options, use_case))
+    objects.extend(_forbidden_state_differences(stream, process, current_options, use_case))
 
     statuses = {item.status for item in objects}
     if DiffStatus.CREATE in statuses and DiffStatus.NO_CHANGE in statuses:
-        objects.append(
-            ObjectDifference("scenario_graph", "partial", DiffStatus.CONFLICT)
-        )
+        objects.append(ObjectDifference("scenario_graph", "partial", DiffStatus.CONFLICT))
     return BlueprintGraphDiff(
         scenario_key=payload["scenario_key"],
         schema_version=payload["schema_version"],
