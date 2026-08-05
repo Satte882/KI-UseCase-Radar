@@ -170,7 +170,7 @@ Abgeschlossene Capture Sessions erhalten eine konfigurierbare Retention von 30 b
 
 ## Nachtrag: Reale Structured-Output-Integration
 
-Nach dem formalen Block-4-Abschluss zeigte ein realer OpenRouter-Aufruf eine Integrationslücke, die von den vollständig simulierten Providerantworten der ursprünglichen Regression nicht erkannt wurde. Die Nachverfolgung erfolgt transparent in Issue #163 und einem separaten Fix-PR.
+Nach dem formalen Block-4-Abschluss zeigte ein realer OpenRouter-Aufruf eine Integrationslücke, die von den vollständig simulierten Providerantworten der ursprünglichen Regression nicht erkannt wurde. Die Nachverfolgung erfolgt transparent in Issue #163 und dem separaten Fix-PR #164.
 
 Der Nachtrag korrigiert keine fachliche Scope-Entscheidung aus Block 4, sondern den realen Providervertrag:
 
