@@ -27,8 +27,24 @@ jobs:
       - run: python scripts/ap8_prepare.py
       - name: Lint and format
         run: |
-          uv run ruff check --fix config/settings/base.py ki_radar/accelerator tests/test_capture_analysis_retention_privacy.py
-          uv run ruff format config/settings/base.py ki_radar/accelerator tests/test_capture_analysis_retention_privacy.py
+          uv run ruff check --fix \
+            config/settings/base.py \
+            ki_radar/accelerator/services.py \
+            ki_radar/accelerator/retention.py \
+            ki_radar/accelerator/retention_policy.py \
+            ki_radar/accelerator/analysis_service.py \
+            ki_radar/accelerator/extraction_validation.py \
+            ki_radar/accelerator/management/commands/purge_capture_sessions.py \
+            tests/test_capture_analysis_retention_privacy.py
+          uv run ruff format \
+            config/settings/base.py \
+            ki_radar/accelerator/services.py \
+            ki_radar/accelerator/retention.py \
+            ki_radar/accelerator/retention_policy.py \
+            ki_radar/accelerator/analysis_service.py \
+            ki_radar/accelerator/extraction_validation.py \
+            ki_radar/accelerator/management/commands/purge_capture_sessions.py \
+            tests/test_capture_analysis_retention_privacy.py
       - name: Targeted tests
         env:
           DJANGO_SETTINGS_MODULE: config.settings.test
