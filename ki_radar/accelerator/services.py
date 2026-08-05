@@ -18,6 +18,7 @@ from .catalogs import (
     validate_answer_document,
 )
 from .models import CaptureSession
+from .retention import expire_capture_session_if_due
 
 CAPTURE_DRAFT_RETENTION_DAYS = 30
 
@@ -80,13 +81,13 @@ def create_capture_session(*, actor, capture_type: str, working_title: str = "")
 def get_owned_capture_session(*, actor, session_id) -> CaptureSession:
     session = CaptureSession.objects.get(pk=session_id, owner=actor)
     _assert_capture_permission(actor, session.capture_type)
-    return session
+    return expire_capture_session_if_due(session)
 
 
 def _locked_owned_session(*, actor, session_id) -> CaptureSession:
     session = CaptureSession.objects.select_for_update().get(pk=session_id, owner=actor)
     _assert_capture_permission(actor, session.capture_type)
-    return session
+    return expire_capture_session_if_due(session)
 
 
 def _assert_editable(session: CaptureSession) -> None:
