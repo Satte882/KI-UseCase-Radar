@@ -21,7 +21,7 @@
 
 {% if can_create and capture_use_case_draft_count %}
 <div class="alert alert-secondary mb-4">
-  <strong>{{ capture_use_case_draft_count }} offener Use-Case-Entwurf{% if capture_use_case_draft_count != 1 %}e{% endif %}:</strong>
+  <strong>{% if capture_use_case_draft_count == 1 %}1 offener Use-Case-Entwurf{% else %}{{ capture_use_case_draft_count }} offene Use-Case-Entwürfe{% endif %}:</strong>
   <a href="{% url 'accelerator:capture_list' %}">Erfassungen fortsetzen</a>.
 </div>
 {% endif %}
@@ -115,7 +115,7 @@
             {% if item.register_state_detail %}<div class="row-meta mt-1">{{ item.register_state_detail }}</div>{% endif %}
           </td>
           <td class="owner-cell">{{ item.business_owner.get_display_name }}</td>
-          <td class="due-cell">{% if item.decision_due %}<time datetime="{{ item.decision_due|date:'Y-m-d' }}">{{ item.decision_due|date:"d.m.Y" }}</time>{% else %}–{% endif %}</td>
+          <td class="due-cell">{% if item.decision_due %}<time datetime="{{ item.decision_due|date:'Y-m-d' %}">{{ item.decision_due|date:"d.m.Y" }}</time>{% else %}–{% endif %}</td>
         </tr>
         {% empty %}
         <tr class="empty-row"><td colspan="7">Keine Use Cases gefunden.<span>Filter zurücksetzen oder Suchbegriff anpassen.</span></td></tr>
