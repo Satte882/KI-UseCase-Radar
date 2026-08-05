@@ -3,7 +3,11 @@ from pathlib import Path
 
 from django.conf import settings
 
-from ki_radar.accelerator.catalogs import CATALOGS, get_capture_catalog, validate_answer_document
+from ki_radar.accelerator.catalogs import (
+    CATALOGS,
+    get_capture_catalog,
+    validate_answer_document,
+)
 
 REAL_DEMO_PATH = (
     Path(settings.BASE_DIR)
@@ -126,4 +130,6 @@ def test_real_demo_can_be_expressed_as_complete_value_stream_and_use_case_answer
     assert "Assistierter Angebotsvergleich" in value_stream_answers["solution_candidates"]
     assert "Bearbeitungszeit je Angebotsvergleich" in use_case_answers["uc_metric"]
     assert "8.25" in use_case_answers["uc_metric"]
-    assert "finale Lieferantenauswahl" in use_case_answers["uc_oversight_support"]
+    assert (
+        "finale Lieferantenauswahl" in use_case_answers["uc_oversight_support"]
+    )
