@@ -42,11 +42,14 @@ def test_multiple_parallel_drafts_per_owner_and_capture_type_are_allowed(owner):
     second = CaptureSession.objects.create(working_title="Zweiter Entwurf", **common)
 
     assert first.pk != second.pk
-    assert CaptureSession.objects.filter(
-        owner=owner,
-        capture_type=CaptureSession.CaptureType.USE_CASE,
-        status=CaptureSession.Status.DRAFT,
-    ).count() == 2
+    assert (
+        CaptureSession.objects.filter(
+            owner=owner,
+            capture_type=CaptureSession.CaptureType.USE_CASE,
+            status=CaptureSession.Status.DRAFT,
+        ).count()
+        == 2
+    )
 
 
 @pytest.mark.django_db
