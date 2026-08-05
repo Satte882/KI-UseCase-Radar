@@ -46,10 +46,30 @@ jobs:
             ki_radar/accelerator/management/commands/purge_capture_sessions.py \
             tests/test_capture_analysis_retention_privacy.py
       - name: Targeted tests
+        id: targeted
+        continue-on-error: true
         env:
           DJANGO_SETTINGS_MODULE: config.settings.test
-        run: uv run pytest tests/test_capture_analysis_retention_privacy.py tests/test_capture_retention.py tests/test_capture_analysis_service.py tests/test_extraction_validation.py --no-cov
+        run: |
+          set -o pipefail
+          uv run pytest \
+            tests/test_capture_analysis_retention_privacy.py \
+            tests/test_capture_retention.py \
+            tests/test_capture_analysis_service.py \
+            tests/test_extraction_validation.py \
+            --no-cov -vv --tb=long 2>&1 | tee ap8-test-output.txt
+      - name: Upload diagnostic output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ap8-test-output
+          path: ap8-test-output.txt
+          if-no-files-found: error
+      - name: Fail after diagnostics
+        if: steps.targeted.outcome == 'failure'
+        run: exit 1
       - name: Commit prepared changes
+        if: steps.targeted.outcome == 'success'
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
