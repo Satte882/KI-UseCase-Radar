@@ -1,0 +1,104 @@
+name: Apply structured-output fix
+
+on:
+  push:
+    branches:
+      - fix/accelerator-structured-output
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-test:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17.5-bookworm
+        env:
+          POSTGRES_DB: ki_radar_test
+          POSTGRES_USER: ki_radar
+          POSTGRES_PASSWORD: ki_radar_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ki_radar -d ki_radar_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings.test
+      DJANGO_SECRET_KEY: ci-only-secret-key-not-for-production
+      POSTGRES_DB: ki_radar_test
+      POSTGRES_USER: ki_radar
+      POSTGRES_PASSWORD: ki_radar_test_password
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "5432"
+      DATABASE_URL: postgresql://ki_radar:ki_radar_test_password@localhost:5432/ki_radar_test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: fix/accelerator-structured-output
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.10.0"
+          enable-cache: true
+
+      - name: Apply fix
+        run: python scripts/fix_structured_output.py
+
+      - name: Install dependencies
+        run: uv sync --frozen --dev
+
+      - name: Format changed Python files
+        run: >-
+          uv run ruff format
+          ki_radar/core/openrouter.py
+          ki_radar/accelerator/extraction_contract.py
+          ki_radar/accelerator/analysis_service.py
+          tests/test_accelerator_llm.py
+          tests/test_extraction_contract.py
+          tests/test_capture_analysis_service.py
+
+      - name: Lint changed Python files
+        run: >-
+          uv run ruff check
+          ki_radar/core/openrouter.py
+          ki_radar/accelerator/extraction_contract.py
+          ki_radar/accelerator/analysis_service.py
+          tests/test_accelerator_llm.py
+          tests/test_extraction_contract.py
+          tests/test_capture_analysis_service.py
+
+      - name: Apply migrations
+        run: uv run python manage.py migrate --noinput
+
+      - name: Run targeted regressions
+        run: >-
+          uv run pytest -q
+          tests/test_accelerator_llm.py
+          tests/test_extraction_contract.py
+          tests/test_capture_analysis_service.py
+          tests/test_extraction_validation.py
+
+      - name: Remove temporary patch artifacts
+        run: rm scripts/fix_structured_output.py .github/workflows/fix-structured-output.yml
+
+      - name: Commit verified fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix(accelerator): enforce structured OpenRouter output"
+          git push origin HEAD:fix/accelerator-structured-output
