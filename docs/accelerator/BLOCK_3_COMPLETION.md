@@ -30,7 +30,7 @@ Capture Sessions bleiben eine temporäre Eingangs- und Herkunftsschicht. Sie erz
 | Fragenkataloge versioniert | `ki_radar/accelerator/catalogs.py` und Vertragsregression in `tests/test_capture_catalogs.py` |
 | Nur Berechtigte sehen und bearbeiten Sessions | Eigentümerfilter, erneute Rollenprüfung bei jeder Aktion und Direkt-UUID-Regression |
 | Keine Änderung regulärer Fachobjekte | Abschlussregressionen prüfen unveränderte `ValueStream`- und `UseCase`-Bestände |
-| `WIN + H` ohne Anwendungsintegration | native `<textarea>`-Elemente ohne eigene Tastatur- oder Eingabesteuerung |
+| `WIN + H` ohne Anwendungsintegration | native `<textarea>`-Elemente ohne eigene Tastatur- oder Eingabesteuerung; technische Eingabe- und Persistenzprobe bestanden, Betriebssystemtest siehe UI-Prüfung |
 | Retention und Löschung getestet | `tests/test_capture_retention.py` und `purge_capture_sessions` |
 | Lösung schlank und zweckgebunden | keine Survey-Plattform, keine LLM-Pfade, keine Extraktion und keine zweite fachlich führende Datenquelle |
 
@@ -87,6 +87,58 @@ Nicht Bestandteil von Block 3 sind:
 
 Diese Grenzen entsprechen Issue #119 und lassen Issue #116 unverändert.
 
-## UI-Prüfung
+## Nachträgliche Desktop-/Mobile-Sichtprüfung
 
-Die automatisierten Tests sichern native Formularelemente, semantische Labels, Navigation, Ownership, Konfliktverhalten und No-JavaScript-Fallback. Die nachträgliche Desktop-/Mobile-Sichtprüfung wird in einem separaten Verifikationslauf durchgeführt und nach Sichtung der erzeugten Browsernachweise hier ergänzt.
+Die Sichtprüfung wurde am 5. August 2026 im Rahmen von PR #150 auf einer real gestarteten Django-Anwendung mit Chromium durchgeführt. Der reproduzierbare Nachweislauf ist GitHub Actions Run `31021258615`, Run-Nummer 6, auf Commit `eb0c3e91e6a3b83dcbbba960176cf94382f96fae`.
+
+Geprüfte Viewports:
+
+- Desktop: `1440 × 1000` Pixel,
+- Mobile: `390 × 844` Pixel mit Touch- und Mobile-Kontext.
+
+In beiden Viewports wurden jeweils folgende Seiten gerendert und visuell geprüft:
+
+1. „Meine Erfassungen“,
+2. Value-Stream-Liste,
+3. Use-Case-Liste,
+4. Startseite der Value-Stream-Erfassung,
+5. Startseite der Use-Case-Erfassung,
+6. Value-Stream-Wizard,
+7. Use-Case-Wizard,
+8. Review-Seite einer Value-Stream-Erfassung.
+
+Damit wurden 16 konkrete Browserdarstellungen geprüft. Der finale Lauf bestätigt:
+
+- alle Seiten antworten mit HTTP 200,
+- die konfigurierte Mobile-Breite bleibt exakt 390 Pixel,
+- kein dokumentweiter horizontaler Überlauf,
+- keine Start-, Fortsetzungs- oder Abschlussaktion außerhalb des Viewports,
+- keine Textarea ohne zugeordnetes Label,
+- keine `contenteditable`-Ersatzfelder,
+- keine Inline-Handler für Tastatur- oder Texteingaben,
+- Desktop- und Mobile-Darstellung sind visuell lesbar und bedienbar.
+
+Die erste Sichtung hatte zwei mobile Mängel aufgedeckt:
+
+- Die Use-Case-Liste verbreiterte einen konfigurierten 390-Pixel-Viewport auf 461 Pixel, weil vier Aktionsschaltflächen nicht responsiv umbrachen.
+- Die Übersicht „Meine Erfassungen“ stellte die Desktop-Tabelle mobil nur über horizontales Scrollen vollständig bereit; die Fortsetzungsaktion lag dadurch nicht unmittelbar im sichtbaren Kartenkontext.
+
+Beide Befunde wurden vor der finalen Abnahme korrigiert:
+
+- Die Use-Case-Aktionen werden mobil in einem zweispaltigen Raster dargestellt und bleiben innerhalb des Viewports.
+- Die Capture-Tabelle wird mobil als vertikale Kartenstruktur mit direkt sichtbarer Fortsetzungs- beziehungsweise Ansehen-Aktion dargestellt.
+
+Die nach der Korrektur erzeugten 16 Screenshots wurden zusätzlich manuell visuell gesichtet. Es wurden keine weiteren blockierenden Darstellungs- oder Bedienfehler festgestellt.
+
+## Diktat- und `WIN + H`-Prüfung
+
+Technisch tatsächlich durchgeführt und bestanden wurde:
+
+- Fokus auf einem nativen semantischen `<textarea>`,
+- Einfügen eines zusammenhängenden deutschen Testtextes über die Browser-Eingabeschnittstelle,
+- Speichern des Wizard-Schritts,
+- erneutes Laden der Seite,
+- unveränderte Wiederherstellung des eingegebenen Textes,
+- Prüfung, dass keine Custom-Eingabesteuerung, keine Tastaturereignis-Abfanglogik und kein `contenteditable` verwendet werden.
+
+Ein echter Betriebssystemtest durch Auslösen von Windows `WIN + H` und Spracheingabe über ein Mikrofon wurde nicht durchgeführt und wird nicht als bestanden ausgegeben. Der verfügbare GitHub-Runner ist eine nicht interaktive Linux-Umgebung ohne Windows-Desktop, Mikrofon und Betriebssystem-Diktat. Die technische Voraussetzung für `WIN + H` ist bestätigt; die reale Windows-Betriebssystemabnahme bleibt als lokaler manueller Einzelschritt offen.
