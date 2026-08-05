@@ -67,9 +67,7 @@ def _bounded_active_entry_seconds(value: object) -> int:
             {"active_entry_seconds": "Die aktive Eingabezeit ist ungültig."}
         ) from exc
     if seconds < 0:
-        raise ValidationError(
-            {"active_entry_seconds": "Die aktive Eingabezeit ist ungültig."}
-        )
+        raise ValidationError({"active_entry_seconds": "Die aktive Eingabezeit ist ungültig."})
     return min(seconds, MAX_ACTIVE_ENTRY_SECONDS_PER_SAVE)
 
 
