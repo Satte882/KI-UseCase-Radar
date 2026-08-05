@@ -322,11 +322,27 @@ def inspect_page(
           const root = document.documentElement;
           const body = document.body;
           const interactive = [...document.querySelectorAll('main a, main button, main input, main select, main textarea')];
+          const isInsideHorizontalScroller = (element) => {
+            let ancestor = element.parentElement;
+            while (ancestor && ancestor !== document.body) {
+              const ancestorStyle = window.getComputedStyle(ancestor);
+              const overflowX = ancestorStyle.overflowX;
+              if (
+                (overflowX === 'auto' || overflowX === 'scroll') &&
+                ancestor.scrollWidth > ancestor.clientWidth + 1
+              ) {
+                return true;
+              }
+              ancestor = ancestor.parentElement;
+            }
+            return false;
+          };
           const offViewport = interactive.filter((element) => {
             const rect = element.getBoundingClientRect();
             const style = window.getComputedStyle(element);
             if (style.display === 'none' || style.visibility === 'hidden') return false;
-            return rect.left < -1 || rect.right > window.innerWidth + 1;
+            const outsideViewport = rect.left < -1 || rect.right > window.innerWidth + 1;
+            return outsideViewport && !isInsideHorizontalScroller(element);
           });
           return {
             title: document.title,
