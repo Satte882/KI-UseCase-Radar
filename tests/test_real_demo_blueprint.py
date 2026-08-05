@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 from django.core.management import call_command
+from django.test import override_settings
 
 from ki_radar.architecture.models import (
     ProcessAnalysis,
@@ -30,7 +31,8 @@ USE_CASE_KEY = "real-demo-assisted-offer-comparison"
 
 @pytest.fixture
 def real_demo_payload(db):
-    call_command("seed_demo_data", verbosity=0)
+    with override_settings(DEBUG=True):
+        call_command("seed_demo_data", verbosity=0)
     return load_blueprint_json(BLUEPRINT_PATH)
 
 
