@@ -1,4 +1,3 @@
-import logging
 from datetime import timedelta
 
 import pytest
@@ -169,7 +168,7 @@ def test_physical_purge_cascades_analyses_and_suggestions(owner):
 
 
 @pytest.mark.django_db
-def test_analysis_technical_log_contains_no_capture_or_suggestion_text(owner, caplog):
+def test_analysis_technical_log_contains_no_capture_or_suggestion_text(owner, monkeypatch):
     session = _complete(owner)
     analysis = CaptureAnalysis.objects.create(
         session=session,
@@ -185,11 +184,16 @@ def test_analysis_technical_log_contains_no_capture_or_suggestion_text(owner, ca
         finished_at=timezone.now(),
         error_code="timeout",
     )
-    caplog.set_level(logging.INFO, logger="ki_radar.accelerator.analysis_service")
+    logged = []
 
+    def capture_log(message, *args):
+        logged.append(message % args)
+
+    monkeypatch.setattr(analysis_service.logger, "info", capture_log)
     analysis_service.log_capture_analysis(analysis)
+    log_text = " ".join(logged)
 
-    assert "purpose=capture_extraction" in caplog.text
-    assert "status=failed" in caplog.text
-    assert "SENSIBEL" not in caplog.text
-    assert "Beschaffung" not in caplog.text
+    assert "purpose=capture_extraction" in log_text
+    assert "status=failed" in log_text
+    assert "SENSIBEL" not in log_text
+    assert "Beschaffung" not in log_text

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 from typing import Any
@@ -9,6 +10,7 @@ from typing import Any
 from django.db import IntegrityError, transaction
 from django.db.models import F
 from django.utils import timezone
+from django.views.decorators.debug import sensitive_variables
 
 from ki_radar.core.llm_policy import (
     AcceleratorLLMPolicy,
@@ -20,7 +22,14 @@ from ki_radar.core.openrouter import OpenRouterResult, OpenRouterUnavailable, re
 from .catalogs import CaptureCatalog, get_capture_catalog, validate_answer_document
 from .extraction_contract import EXTRACTION_PROMPT_VERSION, EXTRACTION_SCHEMA_VERSION
 from .models import AcceleratorLLMQuota, CaptureAnalysis, CaptureSession
+from .retention_policy import (
+    CaptureRetentionConfigurationError,
+    completed_capture_expiry,
+)
 from .services import get_owned_capture_session
+
+logger = logging.getLogger(__name__)
+
 
 EXTRACTION_SYSTEM_PROMPT = (
     "Du extrahierst ausschließlich vorhandene Nutzerangaben in das vorgegebene JSON-Schema. "
@@ -58,6 +67,28 @@ class PreparedCaptureAnalysis:
 class CaptureProviderPayload:
     result: OpenRouterResult
     payload: dict[str, Any]
+
+
+def log_capture_analysis(analysis: CaptureAnalysis) -> None:
+    logger.info(
+        "llm_request purpose=capture_extraction provider=%s model=%s "
+        "object_type=capture_session object_id=%s analysis_id=%s status=%s "
+        "error_code=%s duration_ms=%s input_chars=%s output_chars=%s "
+        "prompt_tokens=%s completion_tokens=%s total_tokens=%s cost=%s",
+        analysis.provider,
+        analysis.model_name or "provider-default",
+        analysis.session_id,
+        analysis.pk,
+        analysis.status,
+        analysis.error_code or "none",
+        analysis.duration_ms if analysis.duration_ms is not None else "",
+        analysis.input_chars,
+        analysis.output_chars,
+        analysis.prompt_tokens if analysis.prompt_tokens is not None else "",
+        analysis.completion_tokens if analysis.completion_tokens is not None else "",
+        analysis.total_tokens if analysis.total_tokens is not None else "",
+        analysis.cost if analysis.cost is not None else "",
+    )
 
 
 def canonical_answer_hash(answers: dict[str, str]) -> str:
@@ -181,6 +212,7 @@ def _cost(value: object) -> Decimal | None:
         return None
 
 
+@sensitive_variables("answers", "input_document", "user_content", "messages")
 @transaction.atomic
 def prepare_capture_analysis(*, actor, session_id) -> PreparedCaptureAnalysis:
     owned = get_owned_capture_session(actor=actor, session_id=session_id)
@@ -201,7 +233,8 @@ def prepare_capture_analysis(*, actor, session_id) -> PreparedCaptureAnalysis:
     source_hash = canonical_answer_hash(answers)
     try:
         policy = get_accelerator_llm_policy()
-    except LLMConfigurationError as exc:
+        completed_expiry = completed_capture_expiry()
+    except (LLMConfigurationError, CaptureRetentionConfigurationError) as exc:
         raise CaptureAnalysisError(
             f"Die LLM-Konfiguration ist ungültig: {exc}",
             code="invalid_configuration",
@@ -245,6 +278,8 @@ def prepare_capture_analysis(*, actor, session_id) -> PreparedCaptureAnalysis:
             code="analysis_already_running",
         ) from exc
 
+    session.expires_at = completed_expiry
+    session.save(update_fields=["expires_at", "updated_at"])
     return PreparedCaptureAnalysis(
         analysis=analysis,
         catalog=catalog,
@@ -288,9 +323,11 @@ def mark_capture_analysis_failed(
             "updated_at",
         ]
     )
+    log_capture_analysis(analysis)
     return analysis
 
 
+@sensitive_variables("prepared", "result", "payload")
 def request_capture_provider(prepared: PreparedCaptureAnalysis) -> CaptureProviderPayload:
     try:
         result = request_openrouter(

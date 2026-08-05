@@ -5,18 +5,30 @@ from datetime import timedelta
 from django.db.models import Q
 from django.utils import timezone
 
-from .models import CaptureSession
+from .models import CaptureAnalysis, CaptureSession
 
 CAPTURE_PURGE_GRACE_DAYS = 7
 
 
-def expire_due_capture_sessions(*, now=None, owner=None) -> int:
-    """Move overdue drafts to the terminal expired state without exposing answers."""
-    checked_now = now or timezone.now()
+def _expirable_sessions(*, checked_now):
+    running_session_ids = list(
+        CaptureAnalysis.objects.filter(status=CaptureAnalysis.Status.RUNNING).values_list(
+            "session_id", flat=True
+        )
+    )
     sessions = CaptureSession.objects.filter(
-        status=CaptureSession.Status.DRAFT,
+        status__in=[CaptureSession.Status.DRAFT, CaptureSession.Status.COMPLETED],
         expires_at__lte=checked_now,
     )
+    if running_session_ids:
+        sessions = sessions.exclude(pk__in=running_session_ids)
+    return sessions
+
+
+def expire_due_capture_sessions(*, now=None, owner=None) -> int:
+    """Move overdue editable or completed captures to the terminal expired state."""
+    checked_now = now or timezone.now()
+    sessions = _expirable_sessions(checked_now=checked_now)
     if owner is not None:
         sessions = sessions.filter(owner=owner)
     return sessions.update(
@@ -28,17 +40,20 @@ def expire_due_capture_sessions(*, now=None, owner=None) -> int:
 
 def expire_capture_session_if_due(session: CaptureSession, *, now=None) -> CaptureSession:
     checked_now = now or timezone.now()
-    if session.status != CaptureSession.Status.DRAFT or session.expires_at > checked_now:
+    expirable_states = {CaptureSession.Status.DRAFT, CaptureSession.Status.COMPLETED}
+    if session.status not in expirable_states or session.expires_at > checked_now:
+        return session
+    if session.analyses.filter(status=CaptureAnalysis.Status.RUNNING).exists():
         return session
 
-    updated = CaptureSession.objects.filter(
-        pk=session.pk,
-        status=CaptureSession.Status.DRAFT,
-        expires_at__lte=checked_now,
-    ).update(
-        status=CaptureSession.Status.EXPIRED,
-        expired_at=checked_now,
-        updated_at=checked_now,
+    updated = (
+        _expirable_sessions(checked_now=checked_now)
+        .filter(pk=session.pk)
+        .update(
+            status=CaptureSession.Status.EXPIRED,
+            expired_at=checked_now,
+            updated_at=checked_now,
+        )
     )
     if updated:
         session.status = CaptureSession.Status.EXPIRED
