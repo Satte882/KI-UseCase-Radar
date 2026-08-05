@@ -20,10 +20,13 @@ new_query = '''def _expirable_sessions(*, checked_now):
             "session_id", flat=True
         )
     )
-    return CaptureSession.objects.filter(
+    sessions = CaptureSession.objects.filter(
         status__in=[CaptureSession.Status.DRAFT, CaptureSession.Status.COMPLETED],
         expires_at__lte=checked_now,
-    ).exclude(pk__in=running_session_ids)
+    )
+    if running_session_ids:
+        sessions = sessions.exclude(pk__in=running_session_ids)
+    return sessions
 '''
 if old_query not in patch_text:
     raise SystemExit("Expected retention query not found")
