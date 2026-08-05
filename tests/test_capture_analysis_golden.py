@@ -22,9 +22,7 @@ from ki_radar.accelerator.models import (
 )
 from ki_radar.core.openrouter import OpenRouterResult, OpenRouterUnavailable
 
-FIXTURE_PATH = (
-    Path(__file__).parent / "fixtures" / "accelerator" / "real_demo_capture.v1.json"
-)
+FIXTURE_PATH = Path(__file__).parent / "fixtures" / "accelerator" / "real_demo_capture.v1.json"
 CHECKSUM_PATH = FIXTURE_PATH.with_suffix(".sha256")
 LIMITS = {
     "ACCELERATOR_LLM_TIMEOUT_SECONDS": "15",
