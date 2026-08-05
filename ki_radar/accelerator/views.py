@@ -50,7 +50,7 @@ def _capture_ui(capture_type: str) -> dict[str, str]:
         }
     if capture_type == CaptureSession.CaptureType.USE_CASE:
         return {
-            "capture_label": "Use Case",
+            "capture_label": "Use-Case",
             "overview_url": reverse("use_cases:list"),
         }
     raise Http404
