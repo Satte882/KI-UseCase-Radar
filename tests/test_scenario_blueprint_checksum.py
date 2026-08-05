@@ -11,10 +11,15 @@ from ki_radar.core.scenario_blueprint import (
 )
 
 
-def test_canonical_checksum_ignores_object_order_and_decimal_format(tmp_path: Path):
+def test_canonical_checksum_ignores_object_order_and_decimal_format(
+    tmp_path: Path,
+):
     first_path = tmp_path / "first.json"
     second_path = tmp_path / "second.json"
-    first_path.write_text('{"b":11.0,"a":{"x":1,"y":true}}', encoding="utf-8")
+    first_path.write_text(
+        '{"b":11.0,"a":{"x":1,"y":true}}',
+        encoding="utf-8",
+    )
     second_path.write_text(
         '{\n  "a": {"y": true, "x": 1},\n  "b": 11.00\n}',
         encoding="utf-8",
@@ -29,7 +34,7 @@ def test_canonical_checksum_ignores_object_order_and_decimal_format(tmp_path: Pa
 
 def test_canonical_checksum_preserves_array_order():
     assert blueprint_checksum({"items": [1, 2]}) != blueprint_checksum(
-        {"items": [2, 1]}
+        {"items": [2, 1]},
     )
 
 
