@@ -18,9 +18,7 @@ from ki_radar.core import openrouter
 from ki_radar.core.openrouter import OpenRouterResult, OpenRouterUnavailable
 from ki_radar.use_cases.models import UseCase
 
-FIXTURE_PATH = (
-    Path(__file__).parent / "fixtures" / "accelerator" / "real_demo_capture.v1.json"
-)
+FIXTURE_PATH = Path(__file__).parent / "fixtures" / "accelerator" / "real_demo_capture.v1.json"
 LIMITS = {
     "ACCELERATOR_LLM_TIMEOUT_SECONDS": "15",
     "ACCELERATOR_LLM_MAX_INPUT_CHARS": "50000",

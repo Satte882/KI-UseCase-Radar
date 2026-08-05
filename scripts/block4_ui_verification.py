@@ -311,9 +311,7 @@ def inspect_page(
     if missing_text:
         raise AssertionError(f"{name}: Erwartete Inhalte fehlen: {missing_text}")
     forbidden_actions = [
-        action
-        for action in ("Übernehmen", "Verwerfen", "Sammelübernahme")
-        if action in content
+        action for action in ("Übernehmen", "Verwerfen", "Sammelübernahme") if action in content
     ]
     if forbidden_actions:
         raise AssertionError(f"{name}: Block-5-Aktionen sichtbar: {forbidden_actions}")
@@ -471,9 +469,7 @@ def run_verification() -> None:
             item["screenshot"] for item in report["pages"] if item["layoutViewportMismatch"]
         ]
         off_viewport_actions = [
-            item["screenshot"]
-            for item in report["pages"]
-            if item["offViewportInteractiveCount"]
+            item["screenshot"] for item in report["pages"] if item["offViewportInteractiveCount"]
         ]
         report["automatedSummary"] = {
             "pageCount": len(report["pages"]),
