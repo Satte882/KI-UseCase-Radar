@@ -1,0 +1,38 @@
+name: Format AP 10
+
+on:
+  push:
+    branches:
+      - issue-120-ap10-completion
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: issue-120-ap10-completion
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.10.0"
+      - run: uv sync --frozen --dev
+      - run: uv run ruff format scripts/block4_ui_verification.py tests/test_block4_completion.py
+      - run: uv run ruff check scripts/block4_ui_verification.py tests/test_block4_completion.py
+      - name: Commit formatting
+        run: |
+          if git diff --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/block4_ui_verification.py tests/test_block4_completion.py
+          git commit -m "style(ap10): apply repository formatter"
+          git push origin HEAD:issue-120-ap10-completion
