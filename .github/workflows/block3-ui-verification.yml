@@ -48,7 +48,14 @@ jobs:
         run: uv run python manage.py migrate --noinput
 
       - name: Capture desktop and mobile evidence
-        run: uv run python scripts/block3_ui_verification.py
+        shell: bash
+        run: |
+          mkdir -p artifacts/block3-ui-verification
+          set +e
+          uv run python scripts/block3_ui_verification.py > artifacts/block3-ui-verification/verification.log 2>&1
+          status=$?
+          cat artifacts/block3-ui-verification/verification.log
+          exit "$status"
 
       - name: Upload verification evidence
         if: always()
