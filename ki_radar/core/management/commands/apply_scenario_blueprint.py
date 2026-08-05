@@ -44,7 +44,10 @@ class Command(BaseCommand):
         parser.add_argument(
             "--apply",
             action="store_true",
-            help="Apply the fully validated graph atomically. Without this flag no graph is changed.",
+            help=(
+                "Apply the fully validated graph atomically. "
+                "Without this flag no graph is changed."
+            ),
         )
         parser.add_argument(
             "--json",
