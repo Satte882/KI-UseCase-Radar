@@ -1,6 +1,7 @@
 from django.db.models import Count, Q
 
 from ki_radar.accelerator.models import CaptureSession
+from ki_radar.accelerator.retention import expire_due_capture_sessions
 from ki_radar.accounts.permissions import is_coordinator, is_technical_admin
 
 
@@ -8,6 +9,7 @@ def navigation_context(request):
     if not request.user.is_authenticated:
         return {}
 
+    expire_due_capture_sessions(owner=request.user)
     draft_summary = CaptureSession.objects.filter(
         owner=request.user,
         status=CaptureSession.Status.DRAFT,
