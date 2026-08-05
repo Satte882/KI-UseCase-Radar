@@ -33,9 +33,7 @@ class BlueprintApplyError(RuntimeError):
 class BlueprintConflictError(BlueprintApplyError):
     def __init__(self, diff: BlueprintGraphDiff):
         self.diff = diff
-        super().__init__(
-            "Blueprint-Apply blockiert: Der Szenariograph ist nicht vollständig neu."
-        )
+        super().__init__("Blueprint-Apply blockiert: Der Szenariograph ist nicht vollständig neu.")
 
 
 @dataclass(frozen=True)
