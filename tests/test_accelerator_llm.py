@@ -6,6 +6,7 @@ from types import SimpleNamespace
 import pytest
 from django.test import override_settings
 
+from ki_radar.core import openrouter
 from ki_radar.core.llm_policy import LLMConfigurationError, get_accelerator_llm_policy
 from ki_radar.use_cases import copilot
 
@@ -29,10 +30,11 @@ class FakeResponse:
     def __exit__(self, exc_type, exc, traceback):
         return False
 
-    def read(self) -> bytes:
+    def read(self, size=-1) -> bytes:
         if isinstance(self.payload, bytes):
-            return self.payload
-        return json.dumps(self.payload).encode("utf-8")
+            return self.payload[:size] if size >= 0 else self.payload
+        encoded = json.dumps(self.payload).encode("utf-8")
+        return encoded[:size] if size >= 0 else encoded
 
 
 def _use_case():
@@ -41,6 +43,7 @@ def _use_case():
 
 def _success_payload(content: str = "Konsistenz\nPlausibel") -> dict:
     return {
+        "model": "provider/returned-model",
         "choices": [{"message": {"content": content}}],
         "usage": {
             "prompt_tokens": 20,
@@ -117,7 +120,7 @@ def test_copilot_rejects_oversized_input_without_network_call(monkeypatch):
         return FakeResponse(_success_payload())
 
     monkeypatch.setattr(copilot, "_payload_for_use_case", lambda use_case: {"text": "vertraulich"})
-    monkeypatch.setattr(copilot.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(openrouter.urllib.request, "urlopen", fake_urlopen)
 
     with pytest.raises(copilot.CopilotUnavailable) as exc_info:
         copilot.analyze_use_case(_use_case())
@@ -132,7 +135,7 @@ def test_copilot_rejects_oversized_input_without_network_call(monkeypatch):
     OPENROUTER_MODEL="test/model",
     **VALID_LIMITS,
 )
-def test_copilot_uses_shared_timeout_and_output_limit(monkeypatch):
+def test_copilot_uses_shared_timeout_output_limit_and_returned_model(monkeypatch):
     captured = {}
 
     def fake_urlopen(request, timeout):
@@ -141,7 +144,7 @@ def test_copilot_uses_shared_timeout_and_output_limit(monkeypatch):
         return FakeResponse(_success_payload())
 
     monkeypatch.setattr(copilot, "_payload_for_use_case", lambda use_case: {"problem": "klar"})
-    monkeypatch.setattr(copilot.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(openrouter.urllib.request, "urlopen", fake_urlopen)
 
     result = copilot.analyze_use_case(_use_case())
 
@@ -157,7 +160,7 @@ def test_copilot_uses_shared_timeout_and_output_limit(monkeypatch):
     **VALID_LIMITS,
 )
 def test_copilot_classifies_rate_limit(monkeypatch):
-    http_error = copilot.urllib.error.HTTPError(
+    http_error = openrouter.urllib.error.HTTPError(
         "https://openrouter.example/v1/chat/completions",
         429,
         "Too Many Requests",
@@ -169,7 +172,7 @@ def test_copilot_classifies_rate_limit(monkeypatch):
         raise http_error
 
     monkeypatch.setattr(copilot, "_payload_for_use_case", lambda use_case: {"problem": "klar"})
-    monkeypatch.setattr(copilot.urllib.request, "urlopen", raise_rate_limit)
+    monkeypatch.setattr(openrouter.urllib.request, "urlopen", raise_rate_limit)
 
     with pytest.raises(copilot.CopilotUnavailable) as exc_info:
         copilot.analyze_use_case(_use_case())
@@ -191,7 +194,7 @@ def test_copilot_does_not_retry_after_timeout(monkeypatch):
         raise TimeoutError
 
     monkeypatch.setattr(copilot, "_payload_for_use_case", lambda use_case: {"problem": "klar"})
-    monkeypatch.setattr(copilot.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(openrouter.urllib.request, "urlopen", fake_urlopen)
 
     with pytest.raises(copilot.CopilotUnavailable) as exc_info:
         copilot.analyze_use_case(_use_case())
@@ -208,7 +211,7 @@ def test_copilot_does_not_retry_after_timeout(monkeypatch):
 def test_copilot_rejects_invalid_json(monkeypatch):
     monkeypatch.setattr(copilot, "_payload_for_use_case", lambda use_case: {"problem": "klar"})
     monkeypatch.setattr(
-        copilot.urllib.request,
+        openrouter.urllib.request,
         "urlopen",
         lambda *args, **kwargs: FakeResponse(b"{"),
     )
@@ -227,7 +230,7 @@ def test_copilot_rejects_invalid_json(monkeypatch):
 def test_copilot_rejects_empty_response(monkeypatch):
     monkeypatch.setattr(copilot, "_payload_for_use_case", lambda use_case: {"problem": "klar"})
     monkeypatch.setattr(
-        copilot.urllib.request,
+        openrouter.urllib.request,
         "urlopen",
         lambda *args, **kwargs: FakeResponse(_success_payload("   ")),
     )
@@ -243,6 +246,54 @@ def test_copilot_rejects_empty_response(monkeypatch):
     OPENROUTER_API_URL="https://openrouter.example/v1/chat/completions",
     **VALID_LIMITS,
 )
+def test_transport_rejects_oversized_raw_response(monkeypatch):
+    monkeypatch.setattr(openrouter, "MAX_OPENROUTER_RESPONSE_BYTES", 20)
+    monkeypatch.setattr(
+        openrouter.urllib.request,
+        "urlopen",
+        lambda *args, **kwargs: FakeResponse(b"x" * 21),
+    )
+
+    with pytest.raises(openrouter.OpenRouterUnavailable) as exc_info:
+        openrouter.request_openrouter(
+            messages=[{"role": "user", "content": "test"}],
+            max_tokens=10,
+            timeout_seconds=5,
+        )
+
+    assert exc_info.value.code == "response_too_large"
+
+
+@override_settings(
+    OPENROUTER_API_KEY="test-key",
+    OPENROUTER_API_URL="http://openrouter.example/v1/chat/completions",
+    **VALID_LIMITS,
+)
+def test_transport_requires_https_without_network_call(monkeypatch):
+    calls = 0
+
+    def fake_urlopen(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+
+    monkeypatch.setattr(openrouter.urllib.request, "urlopen", fake_urlopen)
+
+    with pytest.raises(openrouter.OpenRouterUnavailable) as exc_info:
+        openrouter.request_openrouter(
+            messages=[{"role": "user", "content": "test"}],
+            max_tokens=10,
+            timeout_seconds=5,
+        )
+
+    assert exc_info.value.code == "invalid_configuration"
+    assert calls == 0
+
+
+@override_settings(
+    OPENROUTER_API_KEY="test-key",
+    OPENROUTER_API_URL="https://openrouter.example/v1/chat/completions",
+    **VALID_LIMITS,
+)
 def test_copilot_logs_metadata_without_prompt_or_raw_content(monkeypatch, caplog):
     sensitive_content = "SEHR-VERTRAULICHER-INHALT"
     monkeypatch.setattr(
@@ -251,7 +302,7 @@ def test_copilot_logs_metadata_without_prompt_or_raw_content(monkeypatch, caplog
         lambda use_case: {"problem": sensitive_content},
     )
     monkeypatch.setattr(
-        copilot.urllib.request,
+        openrouter.urllib.request,
         "urlopen",
         lambda *args, **kwargs: FakeResponse(_success_payload("Antwort ohne Rohdaten")),
     )
