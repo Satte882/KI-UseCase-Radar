@@ -40,9 +40,7 @@ def _positive_int(name: str, value: Any) -> int:
     except (TypeError, ValueError) as exc:
         raise LLMConfigurationError(f"{name} muss eine ganze Zahl sein.") from exc
     if not lower <= parsed <= upper:
-        raise LLMConfigurationError(
-            f"{name} muss zwischen {lower} und {upper} liegen."
-        )
+        raise LLMConfigurationError(f"{name} muss zwischen {lower} und {upper} liegen.")
     return parsed
 
 
@@ -54,10 +52,7 @@ def get_accelerator_llm_policy() -> AcceleratorLLMPolicy:
     output limits; persistent quota counting is introduced with that context.
     """
 
-    values = {
-        name: _positive_int(name, getattr(settings, name))
-        for name in _SETTING_BOUNDS
-    }
+    values = {name: _positive_int(name, getattr(settings, name)) for name in _SETTING_BOUNDS}
     context_limit = values["ACCELERATOR_LLM_MAX_CALLS_PER_CONTEXT"]
     user_limit = values["ACCELERATOR_LLM_MAX_CALLS_PER_USER_DAY"]
     global_limit = values["ACCELERATOR_LLM_MAX_CALLS_GLOBAL_DAY"]
