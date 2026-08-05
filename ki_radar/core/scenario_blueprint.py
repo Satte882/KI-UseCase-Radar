@@ -17,17 +17,17 @@ def load_blueprint_json(path: Path) -> dict[str, Any]:
         raw = path.read_text(encoding="utf-8")
     except OSError as exc:
         raise BlueprintCanonicalizationError(
-            f"Blueprint-Datei konnte nicht gelesen werden: {path}"
+            f"Blueprint-Datei konnte nicht gelesen werden: {path}",
         ) from exc
     try:
         payload = json.loads(raw, parse_float=Decimal)
     except json.JSONDecodeError as exc:
         raise BlueprintCanonicalizationError(
-            f"Blueprint enthält ungültiges JSON: Zeile {exc.lineno}, Spalte {exc.colno}."
+            f"Blueprint enthält ungültiges JSON: Zeile {exc.lineno}, Spalte {exc.colno}.",
         ) from exc
     if not isinstance(payload, dict):
         raise BlueprintCanonicalizationError(
-            "Ein Blueprint muss auf oberster Ebene ein JSON-Objekt sein."
+            "Ein Blueprint muss auf oberster Ebene ein JSON-Objekt sein.",
         )
     return payload
 
@@ -35,7 +35,7 @@ def load_blueprint_json(path: Path) -> dict[str, Any]:
 def _canonical_decimal(value: Decimal) -> str:
     if not value.is_finite():
         raise BlueprintCanonicalizationError(
-            "NaN und unendliche Zahlen sind in Blueprints nicht zulässig."
+            "NaN und unendliche Zahlen sind in Blueprints nicht zulässig.",
         )
     if value == 0:
         return "0"
@@ -56,7 +56,7 @@ def canonical_json_text(value: Any) -> str:
         return _canonical_decimal(value)
     if isinstance(value, float):
         raise BlueprintCanonicalizationError(
-            "Binäre Gleitkommawerte sind nicht zulässig; JSON mit Decimal laden."
+            "Binäre Gleitkommawerte sind nicht zulässig; JSON mit Decimal laden.",
         )
     if isinstance(value, str):
         return json.dumps(value, ensure_ascii=False)
@@ -65,7 +65,7 @@ def canonical_json_text(value: Any) -> str:
     if isinstance(value, dict):
         if not all(isinstance(key, str) for key in value):
             raise BlueprintCanonicalizationError(
-                "JSON-Objektschlüssel müssen Zeichenketten sein."
+                "JSON-Objektschlüssel müssen Zeichenketten sein.",
             )
         items = (
             f"{json.dumps(key, ensure_ascii=False)}:{canonical_json_text(value[key])}"
@@ -73,7 +73,7 @@ def canonical_json_text(value: Any) -> str:
         )
         return "{" + ",".join(items) + "}"
     raise BlueprintCanonicalizationError(
-        f"Nicht unterstützter Blueprint-Wert: {type(value).__name__}."
+        f"Nicht unterstützter Blueprint-Wert: {type(value).__name__}.",
     )
 
 
