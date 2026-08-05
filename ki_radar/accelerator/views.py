@@ -121,9 +121,7 @@ def capture_session_list(request):
         "accelerator/capture_list.html",
         {
             "capture_sessions": sessions,
-            "can_start_value_stream": (
-                CaptureSession.CaptureType.VALUE_STREAM in allowed_types
-            ),
+            "can_start_value_stream": (CaptureSession.CaptureType.VALUE_STREAM in allowed_types),
             "can_start_use_case": CaptureSession.CaptureType.USE_CASE in allowed_types,
         },
     )
