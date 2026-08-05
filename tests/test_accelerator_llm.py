@@ -83,9 +83,12 @@ def test_policy_rejects_inconsistent_request_limits():
         "ACCELERATOR_LLM_MAX_CALLS_PER_USER_DAY": "20",
     }
 
-    with override_settings(**configured), pytest.raises(
-        LLMConfigurationError,
-        match="nutzerbezogene Tagesgrenze",
+    with (
+        override_settings(**configured),
+        pytest.raises(
+            LLMConfigurationError,
+            match="nutzerbezogene Tagesgrenze",
+        ),
     ):
         get_accelerator_llm_policy()
 
