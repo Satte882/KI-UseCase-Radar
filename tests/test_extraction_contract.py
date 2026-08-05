@@ -6,6 +6,7 @@ from ki_radar.accelerator.extraction_contract import (
     EXTRACTION_SCHEMA_VERSION,
     ExtractionContractError,
     allowed_extraction_target_paths,
+    build_extraction_json_schema,
     parse_extraction_document,
     target_object_type_for_path,
 )
@@ -137,3 +138,22 @@ def test_target_object_type_is_derived_from_the_target_path():
     assert target_object_type_for_path("value_stream.stages[].name") == "value_stream_stage"
     assert target_object_type_for_path("solution_options[].name") == "solution_option"
     assert target_object_type_for_path("use_case.title") == "use_case"
+
+
+def test_provider_schema_is_derived_from_frozen_catalog():
+    catalog = get_capture_catalog("value_stream", "1.0")
+
+    schema = build_extraction_json_schema(catalog)
+    suggestion_schema = schema["properties"]["suggestions"]["items"]
+
+    assert schema["additionalProperties"] is False
+    assert schema["properties"]["schema_version"]["const"] == EXTRACTION_SCHEMA_VERSION
+    assert schema["properties"]["prompt_version"]["const"] == EXTRACTION_PROMPT_VERSION
+    assert set(suggestion_schema["properties"]["target_field"]["enum"]) == set(
+        allowed_extraction_target_paths(catalog)
+    )
+    assert "use_case.title" not in suggestion_schema["properties"]["target_field"]["enum"]
+    assert set(suggestion_schema["properties"]["source_question"]["enum"]) == set(
+        catalog.question_map
+    )
+    assert suggestion_schema["additionalProperties"] is False

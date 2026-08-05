@@ -167,3 +167,18 @@ Abgeschlossene Capture Sessions erhalten eine konfigurierbare Retention von 30 b
 - keine Audio-, Datei- oder Connector-Extraktion,
 - keine Queue-, Streaming-, AI-Gateway-, Prompt-Management-, Cache-, Vektor- oder Billing-Plattform,
 - keine Änderung von Issue #116.
+
+## Nachtrag: Reale Structured-Output-Integration
+
+Nach dem formalen Block-4-Abschluss zeigte ein realer OpenRouter-Aufruf eine Integrationslücke, die von den vollständig simulierten Providerantworten der ursprünglichen Regression nicht erkannt wurde. Die Nachverfolgung erfolgt transparent in Issue #163 und einem separaten Fix-PR.
+
+Der Nachtrag korrigiert keine fachliche Scope-Entscheidung aus Block 4, sondern den realen Providervertrag:
+
+- das Ausgabelimit wird von 700 auf 4096 Tokens angehoben und der Timeout auf 60 Sekunden gesetzt,
+- der vorhandene versionierte Extraktionsvertrag wird als striktes JSON Schema an OpenRouter übermittelt,
+- `provider.require_parameters=true` schließt Provider aus, die das Schema ignorieren würden,
+- abgeschnittene Antworten werden als `output_truncated` statt als generisches `invalid_response` protokolliert,
+- ein fehlender kompatibler Schema-Provider wird als `provider_schema_unsupported` ausgewiesen,
+- die bestehende atomare serverseitige Validierung bleibt als zweite, maßgebliche Schutzschicht unverändert bestehen.
+
+Die Ergänzung wird durch Transport-, Vertrags- und Analyse-Service-Regressionen abgesichert. Issue #120 bleibt als historischer Blockabschluss geschlossen; dieser Nachtrag stellt den später erkannten Realbetrieb-Fix nachvollziehbar daneben.

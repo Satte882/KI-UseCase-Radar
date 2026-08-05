@@ -25,6 +25,7 @@ class OpenRouterResult:
     model: str
     usage: dict[str, object]
     output_chars: int
+    finish_reason: str = ""
 
 
 def _setting(name: str, default: str = "") -> str:
@@ -39,6 +40,54 @@ def _usage_metadata(payload: object) -> dict[str, object]:
         return {}
     allowed = ("prompt_tokens", "completion_tokens", "total_tokens", "cost")
     return {name: usage.get(name) for name in allowed if usage.get(name) is not None}
+
+
+def _http_error_payload(exc: urllib.error.HTTPError) -> dict[str, Any]:
+    try:
+        raw = exc.read(MAX_OPENROUTER_RESPONSE_BYTES + 1)
+    except (AttributeError, OSError):
+        return {}
+    if not raw or len(raw) > MAX_OPENROUTER_RESPONSE_BYTES:
+        return {}
+    try:
+        payload = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def _requires_json_schema(
+    response_format: dict[str, Any] | None,
+    provider: dict[str, Any] | None,
+) -> bool:
+    return bool(
+        response_format
+        and response_format.get("type") == "json_schema"
+        and provider
+        and provider.get("require_parameters") is True
+    )
+
+
+def _schema_provider_unavailable(payload: dict[str, Any]) -> bool:
+    error = payload.get("error")
+    if not isinstance(error, dict):
+        return False
+    message = str(error.get("message") or "").casefold()
+    metadata = error.get("metadata")
+    error_type = ""
+    if isinstance(metadata, dict):
+        error_type = str(metadata.get("error_type") or "").casefold()
+    markers = (
+        "routing requirements",
+        "requested parameters",
+        "support the requested parameters",
+        "structured output",
+        "json schema",
+        "no endpoints found",
+    )
+    return error_type in {"no_available_provider", "provider_routing_error"} or any(
+        marker in message for marker in markers
+    )
 
 
 def _api_url() -> str:
@@ -84,6 +133,7 @@ def request_openrouter(
     timeout_seconds: int,
     temperature: float = 0.1,
     response_format: dict[str, Any] | None = None,
+    provider: dict[str, Any] | None = None,
 ) -> OpenRouterResult:
     api_key = _setting("OPENROUTER_API_KEY")
     if not api_key:
@@ -102,6 +152,8 @@ def request_openrouter(
         body["model"] = model
     if response_format is not None:
         body["response_format"] = response_format
+    if provider is not None:
+        body["provider"] = provider
 
     request = urllib.request.Request(  # noqa: S310
         _api_url(),
@@ -116,12 +168,23 @@ def request_openrouter(
         ) as response:
             payload = json.loads(_read_bounded(response).decode("utf-8"))
     except urllib.error.HTTPError as exc:
+        error_payload = _http_error_payload(exc)
         if exc.code == 429:
             code = "rate_limit"
             message = "OpenRouter hat das Aufruflimit erreicht. Bitte später erneut versuchen."
         elif exc.code in {401, 403}:
             code = "unauthorized"
             message = "OpenRouter ist nicht korrekt autorisiert."
+        elif (
+            exc.code == 503
+            and _requires_json_schema(response_format, provider)
+            and _schema_provider_unavailable(error_payload)
+        ):
+            code = "provider_schema_unsupported"
+            message = (
+                "Für das konfigurierte Modell steht kein OpenRouter-Provider bereit, "
+                "der das erforderliche strukturierte Ausgabeschema unterstützt."
+            )
         elif 500 <= exc.code <= 599:
             code = "provider_unavailable"
             message = "OpenRouter ist derzeit nicht verfügbar."
@@ -147,7 +210,9 @@ def request_openrouter(
 
     usage = _usage_metadata(payload)
     try:
-        content = payload["choices"][0]["message"]["content"].strip()
+        choice = payload["choices"][0]
+        content = choice["message"]["content"].strip()
+        finish_reason = str(choice.get("finish_reason") or "")
     except (KeyError, IndexError, TypeError, AttributeError) as exc:
         raise OpenRouterUnavailable(
             "OpenRouter hat ein unerwartetes Antwortformat zurückgegeben.",
@@ -164,4 +229,5 @@ def request_openrouter(
         model=str(returned_model or model),
         usage=usage,
         output_chars=len(content),
+        finish_reason=finish_reason,
     )

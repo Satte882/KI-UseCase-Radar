@@ -111,6 +111,129 @@ def target_object_type_for_path(path: str) -> str:
     raise ValueError(f"Unbekannter Accelerator-Zielpfad: {path}")
 
 
+def build_extraction_json_schema(catalog: CaptureCatalog) -> dict[str, Any]:
+    """Build the provider schema from the frozen server-side contract."""
+
+    target_paths = sorted(allowed_extraction_target_paths(catalog))
+    question_keys = sorted(catalog.question_map)
+    target_object_types = sorted({target_object_type_for_path(path) for path in target_paths})
+    finding_schema = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["message", "source_questions"],
+        "properties": {
+            "message": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Konkrete offene Frage oder festgestellter Widerspruch.",
+            },
+            "source_questions": {
+                "type": "array",
+                "items": {"type": "string", "enum": question_keys},
+                "description": "Betroffene Fragen aus dem eingefrorenen Katalog.",
+            },
+        },
+    }
+    suggestion_schema = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": [
+            "target_object_type",
+            "target_field",
+            "target_group_key",
+            "field_type",
+            "suggested_value",
+            "source_question",
+            "source_excerpt",
+            "uncertainty",
+            "uncertainty_reason",
+        ],
+        "properties": {
+            "target_object_type": {
+                "type": "string",
+                "enum": target_object_types,
+                "description": "Aus dem Zielpfad abgeleiteter Objekt-Typ.",
+            },
+            "target_field": {
+                "type": "string",
+                "enum": target_paths,
+                "description": "Zulässiger Zielpfad aus dem eingefrorenen Katalog.",
+            },
+            "target_group_key": {
+                "anyOf": [
+                    {
+                        "type": "string",
+                        "minLength": 1,
+                        "pattern": GROUP_KEY_PATTERN.pattern,
+                    },
+                    {"type": "null"},
+                ],
+                "description": "Lokaler Gruppenschlüssel für wiederholbare Ziele, sonst null.",
+            },
+            "field_type": {
+                "type": "string",
+                "enum": sorted(ALLOWED_FIELD_TYPES),
+            },
+            "suggested_value": {
+                "anyOf": [
+                    {"type": "string", "minLength": 1},
+                    {"type": "integer"},
+                    {"type": "boolean"},
+                    {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {"type": "string", "minLength": 1},
+                    },
+                ],
+                "description": "Typisierter Vorschlagswert; Dezimalwerte bleiben Strings.",
+            },
+            "source_question": {
+                "type": "string",
+                "enum": question_keys,
+            },
+            "source_excerpt": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Wörtlicher Ausschnitt aus der Nutzerantwort.",
+            },
+            "uncertainty": {
+                "type": "string",
+                "enum": sorted(ALLOWED_UNCERTAINTY_LEVELS),
+            },
+            "uncertainty_reason": {"type": "string", "minLength": 1},
+        },
+    }
+    return {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "additionalProperties": False,
+        "required": [
+            "schema_version",
+            "prompt_version",
+            "suggestions",
+            "open_questions",
+            "contradictions",
+        ],
+        "properties": {
+            "schema_version": {
+                "type": "string",
+                "const": EXTRACTION_SCHEMA_VERSION,
+            },
+            "prompt_version": {
+                "type": "string",
+                "const": EXTRACTION_PROMPT_VERSION,
+            },
+            "suggestions": {
+                "type": "array",
+                "maxItems": MAX_EXTRACTION_SUGGESTIONS,
+                "items": suggestion_schema,
+            },
+            "open_questions": {"type": "array", "items": finding_schema},
+            "contradictions": {"type": "array", "items": finding_schema},
+        },
+    }
+
+
 def _exact_fields(
     value: dict[str, Any],
     allowed: frozenset[str],

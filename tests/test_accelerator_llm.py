@@ -1,3 +1,4 @@
+import io
 import json
 import logging
 from pathlib import Path
@@ -152,6 +153,8 @@ def test_copilot_uses_shared_timeout_output_limit_and_returned_model(monkeypatch
     assert captured["timeout"] == 15
     assert captured["body"]["max_tokens"] == 400
     assert captured["body"]["model"] == "test/model"
+    assert "provider" not in captured["body"]
+    assert "response_format" not in captured["body"]
 
 
 @override_settings(
@@ -329,3 +332,80 @@ def test_copilot_submit_guard_is_loaded_and_prevents_second_submit():
     assert 'form.dataset.submitted === "true"' in guard_script
     assert 'button.setAttribute("aria-busy", "true")' in guard_script
     assert "Analyse läuft …" in guard_script
+
+
+@override_settings(
+    OPENROUTER_API_KEY="test-key",
+    OPENROUTER_API_URL="https://openrouter.example/v1/chat/completions",
+    **VALID_LIMITS,
+)
+def test_transport_forwards_structured_output_requirements_and_finish_reason(monkeypatch):
+    captured = {}
+    payload = _success_payload('{"schema_version":"1.0"}')
+    payload["choices"][0]["finish_reason"] = "stop"
+
+    def fake_urlopen(request, timeout):
+        captured["body"] = json.loads(request.data.decode("utf-8"))
+        return FakeResponse(payload)
+
+    monkeypatch.setattr(openrouter.urllib.request, "urlopen", fake_urlopen)
+
+    result = openrouter.request_openrouter(
+        messages=[{"role": "user", "content": "test"}],
+        max_tokens=100,
+        timeout_seconds=5,
+        response_format={
+            "type": "json_schema",
+            "json_schema": {"name": "test", "strict": True, "schema": {"type": "object"}},
+        },
+        provider={"require_parameters": True},
+    )
+
+    assert captured["body"]["provider"] == {"require_parameters": True}
+    assert captured["body"]["response_format"]["type"] == "json_schema"
+    assert result.finish_reason == "stop"
+
+
+@override_settings(
+    OPENROUTER_API_KEY="test-key",
+    OPENROUTER_API_URL="https://openrouter.example/v1/chat/completions",
+    **VALID_LIMITS,
+)
+def test_transport_classifies_missing_schema_provider(monkeypatch):
+    error_payload = {
+        "error": {
+            "code": 503,
+            "message": "No endpoints found that support the requested parameters.",
+            "metadata": {"error_type": "no_available_provider"},
+        }
+    }
+    http_error = openrouter.urllib.error.HTTPError(
+        "https://openrouter.example/v1/chat/completions",
+        503,
+        "Service Unavailable",
+        {},
+        io.BytesIO(json.dumps(error_payload).encode("utf-8")),
+    )
+
+    def raise_schema_error(*args, **kwargs):
+        raise http_error
+
+    monkeypatch.setattr(openrouter.urllib.request, "urlopen", raise_schema_error)
+
+    with pytest.raises(openrouter.OpenRouterUnavailable) as exc_info:
+        openrouter.request_openrouter(
+            messages=[{"role": "user", "content": "test"}],
+            max_tokens=100,
+            timeout_seconds=5,
+            response_format={
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "test",
+                    "strict": True,
+                    "schema": {"type": "object"},
+                },
+            },
+            provider={"require_parameters": True},
+        )
+
+    assert exc_info.value.code == "provider_schema_unsupported"

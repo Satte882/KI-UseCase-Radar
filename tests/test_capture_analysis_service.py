@@ -164,21 +164,33 @@ def test_provider_payload_is_json_object_and_metadata_is_returned(owner, monkeyp
         "contradictions": [],
     }
 
-    monkeypatch.setattr(
-        analysis_service,
-        "request_openrouter",
-        lambda **kwargs: OpenRouterResult(
+    captured = {}
+
+    def fake_request_openrouter(**kwargs):
+        captured.update(kwargs)
+        return OpenRouterResult(
             content=json.dumps(response),
             model="test/model",
             usage={"total_tokens": 12, "cost": 0.001},
             output_chars=100,
-        ),
-    )
+            finish_reason="stop",
+        )
+
+    monkeypatch.setattr(analysis_service, "request_openrouter", fake_request_openrouter)
 
     provider = analysis_service.request_capture_provider(prepared)
 
     assert provider.payload == response
     assert provider.result.model == "test/model"
+    assert captured["provider"] == {"require_parameters": True}
+    assert captured["response_format"]["type"] == "json_schema"
+    assert captured["response_format"]["json_schema"]["strict"] is True
+    assert (
+        captured["response_format"]["json_schema"]["schema"]["properties"]["schema_version"][
+            "const"
+        ]
+        == "1.0"
+    )
     assert prepared.analysis.status == CaptureAnalysis.Status.RUNNING
 
 
@@ -205,3 +217,53 @@ def test_invalid_provider_json_marks_analysis_failed(owner, monkeypatch):
     assert exc_info.value.code == "invalid_response"
     assert prepared.analysis.status == CaptureAnalysis.Status.FAILED
     assert prepared.analysis.model_name == "test/model"
+
+
+@pytest.mark.django_db
+@override_settings(**LIMITS)
+def test_truncated_provider_output_has_explicit_error_code(owner, monkeypatch):
+    session = _completed_session(owner)
+    prepared = analysis_service.prepare_capture_analysis(actor=owner, session_id=session.pk)
+    monkeypatch.setattr(
+        analysis_service,
+        "request_openrouter",
+        lambda **kwargs: OpenRouterResult(
+            content='{"schema_version":"1.0"',
+            model="test/model",
+            usage={"completion_tokens": 700},
+            output_chars=23,
+            finish_reason="length",
+        ),
+    )
+
+    with pytest.raises(analysis_service.CaptureAnalysisError) as exc_info:
+        analysis_service.request_capture_provider(prepared)
+
+    prepared.analysis.refresh_from_db()
+    assert exc_info.value.code == "output_truncated"
+    assert prepared.analysis.error_code == "output_truncated"
+    assert prepared.analysis.status == CaptureAnalysis.Status.FAILED
+    assert prepared.analysis.completion_tokens == 700
+
+
+@pytest.mark.django_db
+@override_settings(**LIMITS)
+def test_schema_provider_error_is_preserved_on_analysis(owner, monkeypatch):
+    session = _completed_session(owner)
+    prepared = analysis_service.prepare_capture_analysis(actor=owner, session_id=session.pk)
+
+    def fail_provider(**kwargs):
+        raise OpenRouterUnavailable(
+            "Kein kompatibler Provider",
+            code="provider_schema_unsupported",
+        )
+
+    monkeypatch.setattr(analysis_service, "request_openrouter", fail_provider)
+
+    with pytest.raises(analysis_service.CaptureAnalysisError) as exc_info:
+        analysis_service.request_capture_provider(prepared)
+
+    prepared.analysis.refresh_from_db()
+    assert exc_info.value.code == "provider_schema_unsupported"
+    assert prepared.analysis.error_code == "provider_schema_unsupported"
+    assert prepared.analysis.status == CaptureAnalysis.Status.FAILED

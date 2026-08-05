@@ -20,7 +20,11 @@ from ki_radar.core.llm_policy import (
 from ki_radar.core.openrouter import OpenRouterResult, OpenRouterUnavailable, request_openrouter
 
 from .catalogs import CaptureCatalog, get_capture_catalog, validate_answer_document
-from .extraction_contract import EXTRACTION_PROMPT_VERSION, EXTRACTION_SCHEMA_VERSION
+from .extraction_contract import (
+    EXTRACTION_PROMPT_VERSION,
+    EXTRACTION_SCHEMA_VERSION,
+    build_extraction_json_schema,
+)
 from .models import AcceleratorLLMQuota, CaptureAnalysis, CaptureSession
 from .retention_policy import (
     CaptureRetentionConfigurationError,
@@ -327,19 +331,39 @@ def mark_capture_analysis_failed(
     return analysis
 
 
-@sensitive_variables("prepared", "result", "payload")
+@sensitive_variables("prepared", "result", "payload", "response_schema")
 def request_capture_provider(prepared: PreparedCaptureAnalysis) -> CaptureProviderPayload:
+    response_schema = build_extraction_json_schema(prepared.catalog)
     try:
         result = request_openrouter(
             messages=prepared.messages,
             max_tokens=prepared.policy.max_output_tokens,
             timeout_seconds=prepared.policy.timeout_seconds,
             temperature=0.0,
-            response_format={"type": "json_object"},
+            response_format={
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "accelerator_capture_extraction_v1",
+                    "strict": True,
+                    "schema": response_schema,
+                },
+            },
+            provider={"require_parameters": True},
         )
     except OpenRouterUnavailable as exc:
         mark_capture_analysis_failed(analysis_id=prepared.analysis.pk, error_code=exc.code)
         raise CaptureAnalysisError(str(exc), code=exc.code) from exc
+
+    if result.finish_reason == "length":
+        mark_capture_analysis_failed(
+            analysis_id=prepared.analysis.pk,
+            error_code="output_truncated",
+            result=result,
+        )
+        raise CaptureAnalysisError(
+            "Die Providerantwort wurde am konfigurierten Ausgabelimit abgeschnitten.",
+            code="output_truncated",
+        )
 
     try:
         payload = json.loads(result.content)
