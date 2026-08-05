@@ -6,6 +6,7 @@ from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.shortcuts import redirect, render
 from django.urls import reverse
+from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_POST
 
 from ki_radar.architecture.permissions import can_manage_architecture
@@ -127,6 +128,7 @@ def capture_session_list(request):
     )
 
 
+@sensitive_post_parameters()
 @login_required
 def start_capture(request, capture_type: str):
     if capture_type not in SUPPORTED_UI_CAPTURE_TYPES:
@@ -155,6 +157,7 @@ def start_capture(request, capture_type: str):
     )
 
 
+@sensitive_post_parameters()
 @login_required
 def capture_step(request, session_id, step: int):
     session = _load_ui_session(actor=request.user, session_id=session_id)
@@ -184,6 +187,10 @@ def capture_step(request, session_id, step: int):
                     session_id=session.pk,
                     expected_revision=form.cleaned_data["revision"],
                     answer_updates=form.cleaned_answer_updates(),
+                    active_entry_seconds_delta=form.cleaned_data.get(
+                        "active_entry_seconds",
+                        0,
+                    ),
                 )
             except CaptureRevisionConflict as exc:
                 session = _load_ui_session(actor=request.user, session_id=session_id)

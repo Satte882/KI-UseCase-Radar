@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}{{ section.title }} – KI-Radar{% endblock %}
 {% block content %}
 <div class="page-header">
@@ -25,9 +26,10 @@
 </div>
 
 <div class="app-card mb-4">
-  <form method="post">
+  <form method="post" data-capture-active-time>
     {% csrf_token %}
     {{ form.revision }}
+    {{ form.active_entry_seconds }}
     <div class="card-body">
       {% if conflict_message %}
       <div class="alert alert-danger" role="alert">
@@ -62,3 +64,4 @@
   </form>
 </div>
 {% endblock %}
+{% block extra_js %}<script src="{% static 'js/capture-active-time.js' %}" defer></script>{% endblock %}
