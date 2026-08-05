@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import logging
 import os
-import socket
 import time
 import urllib.error
 import urllib.parse
@@ -212,7 +211,7 @@ def analyze_use_case(use_case: UseCase) -> str:
                 error_code = "provider_error"
                 message = "Die OpenRouter-Anfrage wurde abgelehnt."
             raise CopilotUnavailable(message, code=error_code) from exc
-        except (TimeoutError, socket.timeout) as exc:
+        except TimeoutError as exc:
             error_code = "timeout"
             raise CopilotUnavailable(
                 "Die OpenRouter-Anfrage hat das Zeitlimit überschritten.",
