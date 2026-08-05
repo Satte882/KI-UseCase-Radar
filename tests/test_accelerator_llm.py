@@ -3,9 +3,9 @@ from __future__ import annotations
 import io
 import json
 import logging
-import urllib.error
 from pathlib import Path
 from types import SimpleNamespace
+from urllib import error as urllib_error
 
 import pytest
 from django.test import override_settings
@@ -159,15 +159,19 @@ def test_copilot_uses_shared_timeout_and_output_limit(monkeypatch):
     **VALID_LIMITS,
 )
 def test_copilot_classifies_rate_limit(monkeypatch):
-    error = urllib.error.HTTPError(
+    http_error = urllib_error.HTTPError(
         "https://openrouter.example/v1/chat/completions",
         429,
         "Too Many Requests",
         {},
         io.BytesIO(b"{}"),
     )
+
+    def raise_rate_limit(*args, **kwargs):
+        raise http_error
+
     monkeypatch.setattr(copilot, "_payload_for_use_case", lambda use_case: {"problem": "klar"})
-    monkeypatch.setattr(copilot.urllib.request, "urlopen", lambda *args, **kwargs: (_ for _ in ()).throw(error))
+    monkeypatch.setattr(copilot.urllib.request, "urlopen", raise_rate_limit)
 
     with pytest.raises(copilot.CopilotUnavailable) as exc_info:
         copilot.analyze_use_case(_use_case())
@@ -242,8 +246,12 @@ def test_copilot_rejects_empty_response(monkeypatch):
     **VALID_LIMITS,
 )
 def test_copilot_logs_metadata_without_prompt_or_raw_content(monkeypatch, caplog):
-    secret = "SEHR-VERTRAULICHER-INHALT"
-    monkeypatch.setattr(copilot, "_payload_for_use_case", lambda use_case: {"problem": secret})
+    sensitive_content = "SEHR-VERTRAULICHER-INHALT"
+    monkeypatch.setattr(
+        copilot,
+        "_payload_for_use_case",
+        lambda use_case: {"problem": sensitive_content},
+    )
     monkeypatch.setattr(
         copilot.urllib.request,
         "urlopen",
@@ -256,7 +264,7 @@ def test_copilot_logs_metadata_without_prompt_or_raw_content(monkeypatch, caplog
     log_text = caplog.text
     assert "status=success" in log_text
     assert "total_tokens=30" in log_text
-    assert secret not in log_text
+    assert sensitive_content not in log_text
     assert "Antwort ohne Rohdaten" not in log_text
 
 
