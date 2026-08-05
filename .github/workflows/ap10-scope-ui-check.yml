@@ -1,0 +1,46 @@
+name: Scope AP 10 UI check
+
+on:
+  push:
+    branches:
+      - issue-120-ap10-completion
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: issue-120-ap10-completion
+      - name: Scope interactive viewport check to main content
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          script = Path("scripts/block4_ui_verification.py")
+          text = script.read_text(encoding="utf-8")
+          old = "document.querySelectorAll('a, button, input, select, textarea')"
+          new = "document.querySelectorAll('main a, main button, main input, main select, main textarea')"
+          if old not in text:
+              raise SystemExit("interactive selector anchor not found")
+          script.write_text(text.replace(old, new, 1), encoding="utf-8")
+
+          completion = Path("docs/accelerator/BLOCK_4_COMPLETION.md")
+          text = completion.read_text(encoding="utf-8")
+          old = "keine interaktiven Elemente außerhalb des Viewports"
+          new = "keine interaktiven Elemente des Block-4-Hauptinhalts außerhalb des Viewports"
+          if old not in text:
+              raise SystemExit("completion wording anchor not found")
+          completion.write_text(text.replace(old, new, 1), encoding="utf-8")
+          PY
+      - name: Commit scoped verification
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/block4_ui_verification.py docs/accelerator/BLOCK_4_COMPLETION.md
+          git commit -m "test(ap10): scope viewport actions to Block 4 content"
+          git push origin HEAD:issue-120-ap10-completion
