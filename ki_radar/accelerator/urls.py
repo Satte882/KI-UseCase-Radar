@@ -30,6 +30,16 @@ urlpatterns = [
         name="capture_review",
     ),
     path(
+        "<uuid:session_id>/analyze/",
+        views.capture_analyze,
+        name="capture_analyze",
+    ),
+    path(
+        "analyses/<uuid:analysis_id>/",
+        views.analysis_detail,
+        name="analysis_detail",
+    ),
+    path(
         "<uuid:session_id>/discard/",
         views.capture_discard,
         name="capture_discard",
