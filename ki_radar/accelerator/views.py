@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from ki_radar.architecture.permissions import can_manage_architecture
@@ -27,7 +28,10 @@ from .services import (
     save_capture_session,
 )
 
-SUPPORTED_UI_CAPTURE_TYPES = {CaptureSession.CaptureType.VALUE_STREAM}
+SUPPORTED_UI_CAPTURE_TYPES = {
+    CaptureSession.CaptureType.VALUE_STREAM,
+    CaptureSession.CaptureType.USE_CASE,
+}
 
 
 def _can_start_capture(actor, capture_type: str) -> bool:
@@ -36,6 +40,20 @@ def _can_start_capture(actor, capture_type: str) -> bool:
     if capture_type == CaptureSession.CaptureType.USE_CASE:
         return can_create_use_case(actor)
     return False
+
+
+def _capture_ui(capture_type: str) -> dict[str, str]:
+    if capture_type == CaptureSession.CaptureType.VALUE_STREAM:
+        return {
+            "capture_label": "Value Stream",
+            "overview_url": reverse("architecture:value_stream_list"),
+        }
+    if capture_type == CaptureSession.CaptureType.USE_CASE:
+        return {
+            "capture_label": "Use-Case",
+            "overview_url": reverse("use_cases:list"),
+        }
+    raise Http404
 
 
 def _load_ui_session(*, actor, session_id) -> CaptureSession:
@@ -104,7 +122,7 @@ def start_capture(request, capture_type: str):
         {
             "form": form,
             "capture_type": capture_type,
-            "capture_label": "Value Stream",
+            **_capture_ui(capture_type),
         },
     )
 
@@ -182,6 +200,7 @@ def capture_step(request, session_id, step: int):
             "previous_step": step - 1 if step > 1 else None,
             "is_last_step": step == len(catalog.sections),
             "conflict_message": conflict_message,
+            **_capture_ui(session.capture_type),
         },
         status=response_status,
     )
@@ -233,6 +252,7 @@ def capture_review(request, session_id):
             "sections": _review_sections(catalog, session) if catalog else [],
             "completion_errors": completion_errors,
             "conflict_message": conflict_message,
+            **_capture_ui(session.capture_type),
         },
         status=response_status,
     )
