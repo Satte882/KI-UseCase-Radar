@@ -213,11 +213,7 @@ def test_complete_value_stream_capture_is_immutable_and_creates_no_domain_object
 
 
 @pytest.mark.django_db
-def test_foreign_and_not_yet_supported_capture_sessions_are_not_exposed(
-    client,
-    owner,
-    other_owner,
-):
+def test_foreign_capture_sessions_are_not_exposed(client, owner, other_owner):
     value_stream = create_capture_session(
         actor=owner,
         capture_type=CaptureSession.CaptureType.VALUE_STREAM,
@@ -228,26 +224,16 @@ def test_foreign_and_not_yet_supported_capture_sessions_are_not_exposed(
     )
 
     client.force_login(other_owner)
-    assert (
-        client.get(
-            reverse(
-                "accelerator:capture_step",
-                kwargs={"session_id": value_stream.pk, "step": 1},
-            )
-        ).status_code
-        == 404
-    )
-
-    client.force_login(owner)
-    assert (
-        client.get(
-            reverse(
-                "accelerator:capture_step",
-                kwargs={"session_id": use_case.pk, "step": 1},
-            )
-        ).status_code
-        == 404
-    )
+    for session in (value_stream, use_case):
+        assert (
+            client.get(
+                reverse(
+                    "accelerator:capture_step",
+                    kwargs={"session_id": session.pk, "step": 1},
+                )
+            ).status_code
+            == 404
+        )
 
 
 @pytest.mark.django_db
