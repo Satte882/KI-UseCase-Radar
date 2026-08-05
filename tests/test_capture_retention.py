@@ -61,7 +61,9 @@ def test_discard_is_irreversible(owner):
 
 
 @pytest.mark.django_db
-def test_retention_command_expires_due_drafts_and_purges_only_old_terminal_sessions(owner):
+def test_retention_command_expires_due_drafts_and_purges_only_old_terminal_sessions(
+    owner,
+):
     now = timezone.now()
     due_draft = create_capture_session(
         actor=owner,
