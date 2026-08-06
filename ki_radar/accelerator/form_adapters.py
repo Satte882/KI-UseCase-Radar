@@ -115,3 +115,23 @@ def prepare_field_update(
         proposed_value=proposed_value,
         changed_model_fields=changed_fields,
     )
+
+
+def apply_prepared_field_update(*, prepared: PreparedFieldUpdate, target):
+    if not prepared.is_valid:
+        raise AdoptionFormValidationError(
+            "Die reguläre Formvalidierung hat die Feldänderung nicht freigegeben."
+        )
+    spec = assert_adoptable_field(
+        target_type=prepared.target_type,
+        field_name=prepared.field_name,
+    )
+    if not isinstance(target, spec.model) or target.pk != prepared.form.instance.pk:
+        raise UnsupportedAdoptionField("Das gesperrte Ziel passt nicht zur validierten Änderung.")
+
+    cleaned_value = prepared.form.cleaned_data[prepared.field_name]
+    if not isinstance(cleaned_value, str):
+        raise AdoptionFormValidationError("Der validierte Übernahmewert ist kein Text.")
+    setattr(target, prepared.field_name, cleaned_value)
+    target.save(update_fields=[prepared.field_name, "updated_at"])
+    return target
