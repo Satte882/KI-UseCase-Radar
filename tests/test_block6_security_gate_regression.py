@@ -1,4 +1,4 @@
-"""Regression tests for Block 6 security, rollback, gate, and responsive-layout invariants."""
+"""Regression tests for Block 6 security, rollback, gate, and responsive layout invariants."""
 
 from __future__ import annotations
 
