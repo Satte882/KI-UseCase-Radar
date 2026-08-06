@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import adoption_views, views
+from . import adoption_views, structured_views, views
 from .models import CaptureSession
 
 app_name = "accelerator"
@@ -53,5 +53,20 @@ urlpatterns = [
         "<uuid:session_id>/discard/",
         views.capture_discard,
         name="capture_discard",
+    ),
+    path(
+        "analyses/<uuid:analysis_id>/structured-review/",
+        structured_views.structured_review,
+        name="structured_review",
+    ),
+    path(
+        "analyses/<uuid:analysis_id>/structured-review/<uuid:batch_id>/items/<uuid:item_id>/decide/",
+        structured_views.structured_review_decide,
+        name="structured_review_decide",
+    ),
+    path(
+        "analyses/<uuid:analysis_id>/structured-review/<uuid:batch_id>/commit/",
+        structured_views.structured_review_commit,
+        name="structured_review_commit",
     ),
 ]
