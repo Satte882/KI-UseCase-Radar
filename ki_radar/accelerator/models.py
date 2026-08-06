@@ -30,6 +30,20 @@ class CaptureSession(TimeStampedModel):
     working_title = models.CharField(max_length=200, blank=True)
     catalog_version = models.CharField(max_length=20)
     schema_version = models.CharField(max_length=20)
+    target_value_stream = models.ForeignKey(
+        "architecture.ValueStream",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="capture_sessions",
+    )
+    target_use_case = models.ForeignKey(
+        "use_cases.UseCase",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="capture_sessions",
+    )
     answers = models.JSONField(default=dict, blank=True)
     status = models.CharField(
         max_length=20,
@@ -63,6 +77,21 @@ class CaptureSession(TimeStampedModel):
                 name="capture_status_expires_idx",
             ),
         ]
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(
+                        capture_type="value_stream",
+                        target_use_case__isnull=True,
+                    )
+                    | models.Q(
+                        capture_type="use_case",
+                        target_value_stream__isnull=True,
+                    )
+                ),
+                name="capture_target_matches_type",
+            ),
+        ]
 
     @property
     def progress_percent(self) -> int:
@@ -73,6 +102,14 @@ class CaptureSession(TimeStampedModel):
     @property
     def is_editable(self) -> bool:
         return self.status == self.Status.DRAFT
+
+    @property
+    def target_object(self):
+        if self.capture_type == self.CaptureType.VALUE_STREAM:
+            return self.target_value_stream
+        if self.capture_type == self.CaptureType.USE_CASE:
+            return self.target_use_case
+        return None
 
     def __str__(self) -> str:
         label = self.working_title or self.get_capture_type_display()
