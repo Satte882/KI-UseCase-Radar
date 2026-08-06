@@ -11,6 +11,7 @@ from django.utils import timezone
 from ki_radar.architecture.models import ValueStream
 from ki_radar.use_cases.models import UseCase
 
+from .candidate_state import supersede_open_candidates
 from .catalogs import ANSWER_SCHEMA_VERSION, CATALOG_VERSION_V1
 from .extraction_contract import EXTRACTION_PROMPT_VERSION, EXTRACTION_SCHEMA_VERSION
 from .models import (
@@ -119,26 +120,34 @@ def create_adoption_candidates(*, analysis_id) -> list[FieldAdoptionCandidate]:
     ).order_by("target_field")
     created_candidates = []
     for suggestion in suggestions:
+        existing_candidate = FieldAdoptionCandidate.objects.filter(suggestion=suggestion).first()
+        if existing_candidate is not None:
+            created_candidates.append(existing_candidate)
+            continue
         if not isinstance(suggestion.suggested_value, str):
             raise CandidateSnapshotError("Der Vorschlagswert ist kein Textwert.")
         previous_value = _text_model_value(target, suggestion.target_field)
-        candidate, _created = FieldAdoptionCandidate.objects.get_or_create(
+        supersede_open_candidates(
+            target_object_type=session.capture_type,
+            target_object_id=target.pk,
+            target_field=suggestion.target_field,
+            exclude_suggestion_id=suggestion.pk,
+        )
+        candidate = FieldAdoptionCandidate.objects.create(
             suggestion=suggestion,
-            defaults={
-                "target_object_type": session.capture_type,
-                "target_object_id": target.pk,
-                "target_field": suggestion.target_field,
-                "proposed_value": canonicalize_text(suggestion.suggested_value),
-                "previous_value": canonicalize_text(previous_value),
-                "previous_value_hash": canonical_text_hash(previous_value),
-                "target_updated_at": target.updated_at,
-                "source_revision": analysis.source_revision,
-                "source_hash": analysis.source_hash,
-                "catalog_version": analysis.catalog_version,
-                "answer_schema_version": analysis.answer_schema_version,
-                "prompt_version": analysis.prompt_version,
-                "extraction_schema_version": analysis.extraction_schema_version,
-            },
+            target_object_type=session.capture_type,
+            target_object_id=target.pk,
+            target_field=suggestion.target_field,
+            proposed_value=canonicalize_text(suggestion.suggested_value),
+            previous_value=canonicalize_text(previous_value),
+            previous_value_hash=canonical_text_hash(previous_value),
+            target_updated_at=target.updated_at,
+            source_revision=analysis.source_revision,
+            source_hash=analysis.source_hash,
+            catalog_version=analysis.catalog_version,
+            answer_schema_version=analysis.answer_schema_version,
+            prompt_version=analysis.prompt_version,
+            extraction_schema_version=analysis.extraction_schema_version,
         )
         created_candidates.append(candidate)
     return created_candidates
