@@ -4,6 +4,10 @@ from .candidate_snapshot import canonical_text_hash, canonicalize_text
 from .models import FieldAdoptionAudit, FieldAdoptionCandidate
 
 
+def _canonical_text_or_empty(value) -> str:
+    return canonicalize_text(value) if isinstance(value, str) else ""
+
+
 def record_adoption_audit(
     *,
     candidate: FieldAdoptionCandidate,
@@ -22,7 +26,6 @@ def record_adoption_audit(
     session = analysis.session
     adopted = outcome in {"adopted", "adopted_edited"}
     stored_value = final_value if adopted else current_value
-    canonical_edited_value = "" if edited_value is None else canonicalize_text(edited_value)
 
     audit, _created = FieldAdoptionAudit.objects.get_or_create(
         candidate_id_snapshot=candidate.pk,
@@ -42,9 +45,9 @@ def record_adoption_audit(
             "previous_value": candidate.previous_value,
             "previous_value_hash": candidate.previous_value_hash,
             "proposed_value": candidate.proposed_value,
-            "edited_value": canonical_edited_value,
-            "current_value": canonicalize_text(current_value),
-            "final_value": canonicalize_text(stored_value),
+            "edited_value": _canonical_text_or_empty(edited_value),
+            "current_value": _canonical_text_or_empty(current_value),
+            "final_value": _canonical_text_or_empty(stored_value),
             "action": action,
             "outcome": outcome,
             "error_code": error_code,

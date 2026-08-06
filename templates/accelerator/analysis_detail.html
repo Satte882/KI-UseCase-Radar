@@ -1,11 +1,12 @@
 {% extends "base.html" %}
+{% load accelerator_adoption %}
 {% block title %}Extraktionsvorschau – KI-Radar{% endblock %}
 {% block content %}
 <div class="page-header">
   <div>
     <div class="eyebrow mb-2">{{ capture_label }} · Extraktionsvorschau</div>
     <h1 class="page-title">{{ session.working_title|default:capture_label }}</h1>
-    <p class="page-subtitle">Geprüfte Feldvorschläge aus dem unveränderlichen Antwortstand. Es wurden keine Fachobjekte verändert.</p>
+    <p class="page-subtitle">Prüfen Sie jeden Feldvorschlag einzeln. Berechtigung, Ausgangswert und aktueller Datenbankstand werden vor jeder Übernahme erneut geprüft.</p>
   </div>
   <span class="badge {% if analysis.status == 'success' %}state-ready{% elif analysis.status == 'running' %}state-review{% else %}state-blocked{% endif %}">{{ analysis.get_status_display }}</span>
 </div>
@@ -72,6 +73,7 @@
           <div class="mt-3"><strong>Vorschlag</strong><div class="mt-1">{{ suggestion.display_value|linebreaksbr }}</div></div>
           <div class="mt-3"><strong>Quelle</strong><div class="text-muted mt-1">{{ suggestion.source_question }}</div><blockquote class="mt-2 mb-0">{{ suggestion.source_excerpt }}</blockquote></div>
           <div class="mt-3"><strong>Begründung der Unsicherheit</strong><div class="text-muted mt-1">{{ suggestion.uncertainty_reason }}</div></div>
+          {% adoption_controls analysis suggestion.target_field %}
         </article>
         {% endfor %}
       </div>

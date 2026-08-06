@@ -7,7 +7,11 @@ from django.core.exceptions import PermissionDenied
 from django.db import transaction
 
 from .adoption_audit import record_adoption_audit
-from .adoption_policy import field_adoption_enabled
+from .adoption_policy import (
+    AdoptionAction,
+    adoption_action_allowed,
+    field_adoption_enabled,
+)
 from .candidate_snapshot import (
     CandidateValidity,
     candidate_validity,
@@ -39,6 +43,7 @@ class AdoptionOutcome(StrEnum):
     TARGET_INACTIVE = "target_inactive"
     PERMISSION_DENIED = "permission_denied"
     VALIDATION_FAILED = "validation_failed"
+    ACTION_NOT_ALLOWED = "action_not_allowed"
     IN_PROGRESS = "in_progress"
     FAILED = "failed"
 
@@ -71,6 +76,7 @@ _ERROR_OUTCOMES = {
     AdoptionOutcome.TARGET_INACTIVE.value: AdoptionOutcome.TARGET_INACTIVE,
     AdoptionOutcome.PERMISSION_DENIED.value: AdoptionOutcome.PERMISSION_DENIED,
     AdoptionOutcome.VALIDATION_FAILED.value: AdoptionOutcome.VALIDATION_FAILED,
+    AdoptionOutcome.ACTION_NOT_ALLOWED.value: AdoptionOutcome.ACTION_NOT_ALLOWED,
 }
 
 
@@ -234,6 +240,38 @@ def _require_enabled() -> None:
         raise AdoptionDisabled("Die Feldübernahme ist serverseitig deaktiviert.")
 
 
+def _requested_action(candidate: FieldAdoptionCandidate, edited_value) -> AdoptionAction:
+    if edited_value is None:
+        return AdoptionAction.DIRECT
+    if not isinstance(edited_value, str):
+        return AdoptionAction.EDITED
+    if canonicalize_text(edited_value) == candidate.proposed_value:
+        return AdoptionAction.DIRECT
+    return AdoptionAction.EDITED
+
+
+def _action_failure(
+    *,
+    candidate: FieldAdoptionCandidate,
+    actor,
+    action: AdoptionAction,
+) -> AdoptionResult | None:
+    if adoption_action_allowed(uncertainty=candidate.suggestion.uncertainty, action=action):
+        return None
+    return _complete_result(
+        candidate=candidate,
+        actor=actor,
+        status=FieldAdoptionCandidate.Status.FAILED,
+        outcome=AdoptionOutcome.ACTION_NOT_ALLOWED,
+        action=(
+            FieldAdoptionAudit.Action.REJECT
+            if action == AdoptionAction.REJECT
+            else FieldAdoptionAudit.Action.ADOPT
+        ),
+        error_code=AdoptionOutcome.ACTION_NOT_ALLOWED.value,
+    )
+
+
 @transaction.atomic
 def adopt_field_candidate(
     *,
@@ -275,6 +313,15 @@ def adopt_field_candidate(
             outcome=AdoptionOutcome.STALE,
             error_code="candidate_integrity_failed",
         )
+
+    requested_action = _requested_action(candidate, edited_value)
+    action_failure = _action_failure(
+        candidate=candidate,
+        actor=actor,
+        action=requested_action,
+    )
+    if action_failure is not None:
+        return action_failure
 
     validity_failure = _validity_failure(
         candidate=candidate,
@@ -374,15 +421,59 @@ def adopt_field_candidate(
     )
 
 
+def _discard_conflict_candidate(*, candidate: FieldAdoptionCandidate, actor) -> AdoptionResult:
+    try:
+        spec, target = _lock_target(candidate)
+    except UnsupportedAdoptionField:
+        return _result_from_candidate(candidate)
+    if target is not None and not spec.can_edit(actor, target):
+        return AdoptionResult(
+            outcome=AdoptionOutcome.PERMISSION_DENIED,
+            candidate_id=candidate.pk,
+            previous_value=candidate.previous_value,
+            proposed_value=candidate.proposed_value,
+        )
+    updated = FieldAdoptionCandidate.objects.filter(
+        pk=candidate.pk,
+        status=FieldAdoptionCandidate.Status.CONFLICT,
+    ).update(
+        status=FieldAdoptionCandidate.Status.REJECTED,
+        error_code="conflict_discarded",
+    )
+    if not updated:
+        candidate.refresh_from_db()
+        return _result_from_candidate(candidate)
+    candidate.status = FieldAdoptionCandidate.Status.REJECTED
+    candidate.error_code = "conflict_discarded"
+    return AdoptionResult(
+        outcome=AdoptionOutcome.REJECTED,
+        candidate_id=candidate.pk,
+        previous_value=candidate.previous_value,
+        current_value=(
+            canonicalize_text(getattr(target, candidate.target_field)) if target is not None else ""
+        ),
+        proposed_value=candidate.proposed_value,
+    )
+
+
 @transaction.atomic
 def reject_field_candidate(*, candidate_id, actor) -> AdoptionResult:
     _require_enabled()
-    candidate, existing_result = _reserve_and_lock_candidate(
-        candidate_id=candidate_id,
+    reservation = reserve_candidate(candidate_id=candidate_id, actor=actor)
+    if not reservation.acquired:
+        if reservation.candidate.status == FieldAdoptionCandidate.Status.CONFLICT:
+            candidate = _candidate_queryset().select_for_update().get(pk=candidate_id)
+            return _discard_conflict_candidate(candidate=candidate, actor=actor)
+        return _result_from_candidate(reservation.candidate)
+    candidate = _candidate_queryset().select_for_update().get(pk=candidate_id)
+
+    action_failure = _action_failure(
+        candidate=candidate,
         actor=actor,
+        action=AdoptionAction.REJECT,
     )
-    if existing_result is not None:
-        return existing_result
+    if action_failure is not None:
+        return action_failure
 
     action = FieldAdoptionAudit.Action.REJECT
     try:

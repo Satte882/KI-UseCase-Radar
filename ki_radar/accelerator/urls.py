@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import adoption_views, views
 from .models import CaptureSession
 
 app_name = "accelerator"
@@ -38,6 +38,16 @@ urlpatterns = [
         "analyses/<uuid:analysis_id>/",
         views.analysis_detail,
         name="analysis_detail",
+    ),
+    path(
+        "analyses/<uuid:analysis_id>/candidates/<uuid:candidate_id>/adopt/",
+        adoption_views.candidate_adopt,
+        name="candidate_adopt",
+    ),
+    path(
+        "analyses/<uuid:analysis_id>/candidates/<uuid:candidate_id>/reject/",
+        adoption_views.candidate_reject,
+        name="candidate_reject",
     ),
     path(
         "<uuid:session_id>/discard/",
