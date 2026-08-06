@@ -255,6 +255,17 @@ class CaptureFieldSuggestion(TimeStampedModel):
 
 
 class FieldAdoptionCandidate(TimeStampedModel):
+    class Status(models.TextChoices):
+        OPEN = "open", "Offen"
+        PROCESSING = "processing", "In Bearbeitung"
+        ADOPTED = "adopted", "Übernommen"
+        ADOPTED_EDITED = "adopted_edited", "Bearbeitet übernommen"
+        REJECTED = "rejected", "Verworfen"
+        CONFLICT = "conflict", "Konflikt"
+        SUPERSEDED = "superseded", "Ersetzt"
+        STALE = "stale", "Veraltet"
+        FAILED = "failed", "Fehlgeschlagen"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     suggestion = models.OneToOneField(
         CaptureFieldSuggestion,
@@ -277,6 +288,22 @@ class FieldAdoptionCandidate(TimeStampedModel):
     answer_schema_version = models.CharField(max_length=20)
     prompt_version = models.CharField(max_length=20)
     extraction_schema_version = models.CharField(max_length=20)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.OPEN,
+        db_index=True,
+    )
+    processing_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="processing_field_adoption_candidates",
+    )
+    processing_started_at = models.DateTimeField(null=True, blank=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    error_code = models.CharField(max_length=50, blank=True)
 
     class Meta:
         ordering = ["target_object_type", "target_object_id", "target_field"]
@@ -284,7 +311,47 @@ class FieldAdoptionCandidate(TimeStampedModel):
             models.Index(
                 fields=["target_object_type", "target_object_id", "target_field"],
                 name="adopt_candidate_target_idx",
-            )
+            ),
+            models.Index(
+                fields=["status", "-created_at"],
+                name="adopt_candidate_status_idx",
+            ),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["target_object_type", "target_object_id", "target_field"],
+                condition=models.Q(status="open"),
+                name="uniq_open_adoption_target_field",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(
+                        status="processing",
+                        processing_by__isnull=False,
+                        processing_started_at__isnull=False,
+                        resolved_at__isnull=True,
+                    )
+                    | models.Q(
+                        status="open",
+                        processing_by__isnull=True,
+                        processing_started_at__isnull=True,
+                        resolved_at__isnull=True,
+                    )
+                    | models.Q(
+                        status__in=[
+                            "adopted",
+                            "adopted_edited",
+                            "rejected",
+                            "conflict",
+                            "superseded",
+                            "stale",
+                            "failed",
+                        ],
+                        resolved_at__isnull=False,
+                    )
+                ),
+                name="adoption_candidate_state_valid",
+            ),
         ]
 
     def __str__(self) -> str:
