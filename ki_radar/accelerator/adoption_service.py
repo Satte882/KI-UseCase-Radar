@@ -6,6 +6,7 @@ from enum import StrEnum
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 
+from .adoption_audit import record_adoption_audit
 from .adoption_policy import field_adoption_enabled
 from .candidate_snapshot import (
     CandidateValidity,
@@ -16,7 +17,12 @@ from .candidate_snapshot import (
 from .candidate_state import complete_candidate, reserve_candidate
 from .field_registry import UnsupportedAdoptionField, assert_adoptable_field
 from .form_adapters import apply_prepared_field_update, prepare_field_update
-from .models import CaptureFieldSuggestion, CaptureSession, FieldAdoptionCandidate
+from .models import (
+    CaptureFieldSuggestion,
+    CaptureSession,
+    FieldAdoptionAudit,
+    FieldAdoptionCandidate,
+)
 
 
 class AdoptionDisabled(PermissionDenied):
@@ -129,9 +135,11 @@ def _complete_result(
     actor,
     status: str,
     outcome: AdoptionOutcome,
+    action: str = FieldAdoptionAudit.Action.ADOPT,
     error_code: str = "",
     current_value: str = "",
     final_value: str = "",
+    edited_value: str | None = None,
     target_updated_at_changed: bool = False,
     errors: dict[str, list[str]] | None = None,
 ) -> AdoptionResult:
@@ -140,6 +148,17 @@ def _complete_result(
         actor=actor,
         status=status,
         error_code=error_code,
+    )
+    record_adoption_audit(
+        candidate=candidate,
+        actor=actor,
+        action=action,
+        outcome=outcome.value,
+        error_code=error_code,
+        current_value=current_value,
+        final_value=final_value,
+        edited_value=edited_value,
+        target_updated_at_changed=target_updated_at_changed,
     )
     return AdoptionResult(
         outcome=outcome,
@@ -178,6 +197,7 @@ def _validity_failure(
     candidate: FieldAdoptionCandidate,
     actor,
     validity: CandidateValidity,
+    action: str = FieldAdoptionAudit.Action.ADOPT,
 ) -> AdoptionResult | None:
     if validity == CandidateValidity.VALID:
         return None
@@ -187,6 +207,7 @@ def _validity_failure(
             actor=actor,
             status=FieldAdoptionCandidate.Status.STALE,
             outcome=AdoptionOutcome.TARGET_MISSING,
+            action=action,
             error_code=AdoptionOutcome.TARGET_MISSING.value,
         )
     if validity == CandidateValidity.TARGET_INACTIVE:
@@ -195,6 +216,7 @@ def _validity_failure(
             actor=actor,
             status=FieldAdoptionCandidate.Status.STALE,
             outcome=AdoptionOutcome.TARGET_INACTIVE,
+            action=action,
             error_code=AdoptionOutcome.TARGET_INACTIVE.value,
         )
     return _complete_result(
@@ -202,6 +224,7 @@ def _validity_failure(
         actor=actor,
         status=FieldAdoptionCandidate.Status.STALE,
         outcome=AdoptionOutcome.STALE,
+        action=action,
         error_code="stale_candidate",
     )
 
@@ -291,6 +314,7 @@ def adopt_field_candidate(
             outcome=AdoptionOutcome.VALIDATION_FAILED,
             error_code=AdoptionOutcome.VALIDATION_FAILED.value,
             current_value=current_value,
+            edited_value=edited_value,
             target_updated_at_changed=target_updated_at_changed,
             errors={candidate.target_field: ["Der Übernahmewert muss Text sein."]},
         )
@@ -312,6 +336,7 @@ def adopt_field_candidate(
             outcome=final_outcome,
             current_value=current_value,
             final_value=current_value,
+            edited_value=edited_value,
             target_updated_at_changed=target_updated_at_changed,
         )
 
@@ -330,7 +355,7 @@ def adopt_field_candidate(
             outcome=AdoptionOutcome.VALIDATION_FAILED,
             error_code=AdoptionOutcome.VALIDATION_FAILED.value,
             current_value=current_value,
-            final_value=final_value,
+            edited_value=edited_value,
             target_updated_at_changed=target_updated_at_changed,
             errors=_form_errors(prepared.form),
         )
@@ -344,6 +369,7 @@ def adopt_field_candidate(
         outcome=final_outcome,
         current_value=current_value,
         final_value=stored_value,
+        edited_value=edited_value,
         target_updated_at_changed=target_updated_at_changed,
     )
 
@@ -358,6 +384,7 @@ def reject_field_candidate(*, candidate_id, actor) -> AdoptionResult:
     if existing_result is not None:
         return existing_result
 
+    action = FieldAdoptionAudit.Action.REJECT
     try:
         spec, target = _lock_target(candidate)
     except UnsupportedAdoptionField:
@@ -366,6 +393,7 @@ def reject_field_candidate(*, candidate_id, actor) -> AdoptionResult:
             actor=actor,
             status=FieldAdoptionCandidate.Status.FAILED,
             outcome=AdoptionOutcome.FAILED,
+            action=action,
             error_code="unsupported_field",
         )
     if target is None:
@@ -374,6 +402,7 @@ def reject_field_candidate(*, candidate_id, actor) -> AdoptionResult:
             actor=actor,
             status=FieldAdoptionCandidate.Status.STALE,
             outcome=AdoptionOutcome.TARGET_MISSING,
+            action=action,
             error_code=AdoptionOutcome.TARGET_MISSING.value,
         )
     if not _candidate_integrity_valid(candidate):
@@ -382,6 +411,7 @@ def reject_field_candidate(*, candidate_id, actor) -> AdoptionResult:
             actor=actor,
             status=FieldAdoptionCandidate.Status.STALE,
             outcome=AdoptionOutcome.STALE,
+            action=action,
             error_code="candidate_integrity_failed",
         )
 
@@ -389,6 +419,7 @@ def reject_field_candidate(*, candidate_id, actor) -> AdoptionResult:
         candidate=candidate,
         actor=actor,
         validity=candidate_validity(candidate),
+        action=action,
     )
     if validity_failure is not None:
         return validity_failure
@@ -398,6 +429,7 @@ def reject_field_candidate(*, candidate_id, actor) -> AdoptionResult:
             actor=actor,
             status=FieldAdoptionCandidate.Status.FAILED,
             outcome=AdoptionOutcome.PERMISSION_DENIED,
+            action=action,
             error_code=AdoptionOutcome.PERMISSION_DENIED.value,
         )
 
@@ -406,5 +438,6 @@ def reject_field_candidate(*, candidate_id, actor) -> AdoptionResult:
         actor=actor,
         status=FieldAdoptionCandidate.Status.REJECTED,
         outcome=AdoptionOutcome.REJECTED,
+        action=action,
         current_value=canonicalize_text(getattr(target, candidate.target_field)),
     )

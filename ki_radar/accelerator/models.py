@@ -358,6 +358,95 @@ class FieldAdoptionCandidate(TimeStampedModel):
         return f"{self.target_object_type}.{self.target_field}@{self.target_object_id}"
 
 
+class FieldAdoptionAudit(TimeStampedModel):
+    class Action(models.TextChoices):
+        ADOPT = "adopt", "Übernehmen"
+        REJECT = "reject", "Verwerfen"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    candidate = models.ForeignKey(
+        FieldAdoptionCandidate,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="audit_events",
+    )
+    suggestion = models.ForeignKey(
+        CaptureFieldSuggestion,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="adoption_audit_events",
+    )
+    analysis = models.ForeignKey(
+        CaptureAnalysis,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="adoption_audit_events",
+    )
+    session = models.ForeignKey(
+        CaptureSession,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="adoption_audit_events",
+    )
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="field_adoption_audit_events",
+    )
+    candidate_id_snapshot = models.UUIDField(unique=True)
+    suggestion_id_snapshot = models.UUIDField()
+    analysis_id_snapshot = models.UUIDField(db_index=True)
+    session_id_snapshot = models.UUIDField(db_index=True)
+    actor_id_snapshot = models.PositiveBigIntegerField(null=True, blank=True)
+    target_object_type = models.CharField(max_length=30)
+    target_object_id = models.UUIDField()
+    target_field = models.CharField(max_length=200)
+    previous_value = models.TextField(blank=True)
+    previous_value_hash = models.CharField(max_length=64)
+    proposed_value = models.TextField(blank=True)
+    edited_value = models.TextField(blank=True)
+    current_value = models.TextField(blank=True)
+    final_value = models.TextField(blank=True)
+    action = models.CharField(max_length=20, choices=Action.choices)
+    outcome = models.CharField(max_length=30)
+    error_code = models.CharField(max_length=50, blank=True)
+    target_updated_at_changed = models.BooleanField(default=False)
+    source_question = models.CharField(max_length=100, blank=True)
+    source_excerpt_hash = models.CharField(max_length=64, blank=True)
+    provider = models.CharField(max_length=50, blank=True)
+    model_name = models.CharField(max_length=200, blank=True)
+    catalog_version = models.CharField(max_length=20)
+    answer_schema_version = models.CharField(max_length=20)
+    prompt_version = models.CharField(max_length=20)
+    extraction_schema_version = models.CharField(max_length=20)
+    prompt_tokens = models.PositiveIntegerField(null=True, blank=True)
+    completion_tokens = models.PositiveIntegerField(null=True, blank=True)
+    total_tokens = models.PositiveIntegerField(null=True, blank=True)
+    cost = models.DecimalField(max_digits=12, decimal_places=6, null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(
+                fields=["target_object_type", "target_object_id", "target_field"],
+                name="adopt_audit_target_idx",
+            ),
+            models.Index(
+                fields=["outcome", "-created_at"],
+                name="adopt_audit_outcome_idx",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.action}:{self.outcome}:{self.candidate_id_snapshot}"
+
+
 class AcceleratorLLMQuota(TimeStampedModel):
     class Scope(models.TextChoices):
         CONTEXT = "context", "Capture Session"
