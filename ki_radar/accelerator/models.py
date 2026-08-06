@@ -254,6 +254,43 @@ class CaptureFieldSuggestion(TimeStampedModel):
         return f"{self.target_object_type}.{self.target_field}"
 
 
+class FieldAdoptionCandidate(TimeStampedModel):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    suggestion = models.OneToOneField(
+        CaptureFieldSuggestion,
+        on_delete=models.CASCADE,
+        related_name="adoption_candidate",
+    )
+    target_object_type = models.CharField(
+        max_length=30,
+        choices=CaptureFieldSuggestion.TargetObjectType.choices,
+    )
+    target_object_id = models.UUIDField()
+    target_field = models.CharField(max_length=200)
+    proposed_value = models.TextField()
+    previous_value = models.TextField(blank=True)
+    previous_value_hash = models.CharField(max_length=64)
+    target_updated_at = models.DateTimeField()
+    source_revision = models.PositiveIntegerField()
+    source_hash = models.CharField(max_length=64)
+    catalog_version = models.CharField(max_length=20)
+    answer_schema_version = models.CharField(max_length=20)
+    prompt_version = models.CharField(max_length=20)
+    extraction_schema_version = models.CharField(max_length=20)
+
+    class Meta:
+        ordering = ["target_object_type", "target_object_id", "target_field"]
+        indexes = [
+            models.Index(
+                fields=["target_object_type", "target_object_id", "target_field"],
+                name="adopt_candidate_target_idx",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.target_object_type}.{self.target_field}@{self.target_object_id}"
+
+
 class AcceleratorLLMQuota(TimeStampedModel):
     class Scope(models.TextChoices):
         CONTEXT = "context", "Capture Session"
