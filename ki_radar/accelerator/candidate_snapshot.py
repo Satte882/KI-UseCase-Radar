@@ -187,7 +187,7 @@ def candidate_validity(candidate: FieldAdoptionCandidate, *, now=None) -> Candid
     session_target_id = _bound_target_id(session)
     is_stale = (
         analysis.status != CaptureAnalysis.Status.SUCCESS
-        or session.status in {CaptureSession.Status.DISCARDED, CaptureSession.Status.EXPIRED}
+        or session.status != CaptureSession.Status.COMPLETED
         or session.expires_at <= checked_now
         or session.revision != candidate.source_revision
         or analysis.source_revision != candidate.source_revision

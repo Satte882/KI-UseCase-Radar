@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from django.db import models
 
 from ki_radar.architecture.forms import ValueStreamForm
 from ki_radar.architecture.models import ValueStream
+from ki_radar.architecture.permissions import can_edit_value_stream
 from ki_radar.use_cases.forms import UseCaseForm
 from ki_radar.use_cases.models import UseCase
+from ki_radar.use_cases.permissions import can_edit_use_case
 
 from .models import CaptureSession
 
@@ -20,6 +23,7 @@ class UnsupportedAdoptionField(ValueError):
 class AdoptionTargetSpec:
     model: type[models.Model]
     form_class: type
+    can_edit: Callable[[object, models.Model], bool]
     fields: frozenset[str]
 
 
@@ -27,6 +31,7 @@ ADOPTION_TARGETS: dict[str, AdoptionTargetSpec] = {
     CaptureSession.CaptureType.VALUE_STREAM: AdoptionTargetSpec(
         model=ValueStream,
         form_class=ValueStreamForm,
+        can_edit=can_edit_value_stream,
         fields=frozenset(
             {
                 "name",
@@ -42,6 +47,7 @@ ADOPTION_TARGETS: dict[str, AdoptionTargetSpec] = {
     CaptureSession.CaptureType.USE_CASE: AdoptionTargetSpec(
         model=UseCase,
         form_class=UseCaseForm,
+        can_edit=can_edit_use_case,
         fields=frozenset(
             {
                 "title",
