@@ -177,9 +177,7 @@ def test_adoption_uses_saved_preview_edits_and_options_remain_editable(
     process = make_process(owner, business_unit)
     run = make_run(owner, process)
     payload = dict(run.preview_payload)
-    payload["edits"] = {
-        "assistant": {"description": "Vom Menschen präzisierter Assistenzentwurf."}
-    }
+    payload["edits"] = {"assistant": {"description": "Vom Menschen präzisierter Assistenzentwurf."}}
     run.preview_payload = payload
     run.save(update_fields=["preview_payload", "updated_at"])
 

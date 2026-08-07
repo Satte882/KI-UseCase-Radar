@@ -106,9 +106,7 @@ def _validated_effective_payload(preview_payload: dict, source_context) -> dict:
 
 
 def _option_form_data(lane: str, option: dict) -> dict[str, str]:
-    data = {
-        field_name: option[field_name]["text"] for field_name in GENERATED_OPTION_FIELDS
-    }
+    data = {field_name: option[field_name]["text"] for field_name in GENERATED_OPTION_FIELDS}
     data.update(
         {
             "option_type": LANE_OPTION_TYPES[lane],
