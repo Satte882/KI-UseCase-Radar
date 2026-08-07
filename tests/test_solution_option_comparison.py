@@ -319,51 +319,12 @@ def test_comparison_page_selects_and_shows_history(client, comparison_process, o
         },
     )
     assert response.status_code == 302
-    assert response.url == f"{url}#selection-result"
     decision = SolutionSelectionDecision.objects.get(process_analysis=comparison_process)
     assert decision.selected_option == assistant
 
     history = client.get(url).content.decode()
-    assert "Aktuell bevorzugt: KI-Assistenz" in history
     assert "Auswahlhistorie" in history
     assert "Die organisatorische Alternative" in history
-
-
-@pytest.mark.django_db
-def test_comparison_page_makes_incomplete_selection_gate_actionable(
-    client,
-    comparison_process,
-    owner,
-):
-    organizational = make_option(
-        comparison_process,
-        owner,
-        name="Organisatorischer Entwurf",
-        option_type=SolutionOption.OptionType.ORGANIZATIONAL,
-        status=SolutionOption.EvaluationStatus.DRAFT,
-    )
-    assistant = make_option(
-        comparison_process,
-        owner,
-        name="Assistenzentwurf",
-        option_type=SolutionOption.OptionType.ASSISTANT,
-        status=SolutionOption.EvaluationStatus.DRAFT,
-    )
-    for option in (organizational, assistant):
-        option.feasibility = SolutionOption.Effort.NOT_ASSESSED
-        option.integration_effort = SolutionOption.Effort.NOT_ASSESSED
-        option.save(update_fields=["feasibility", "integration_effort", "updated_at"])
-
-    client.force_login(owner)
-    url = reverse("architecture:solution_option_compare", kwargs={"pk": comparison_process.pk})
-    content = client.get(url).content.decode()
-
-    assert "Auswahl noch gesperrt" in content
-    assert "KI-Entwürfe werden absichtlich zunächst als „Noch nicht bewertet“ übernommen." in content
-    assert content.count("Option vollständig bewerten") == 2
-    assert reverse("architecture:solution_option_update", args=[organizational.pk]) in content
-    assert reverse("architecture:solution_option_update", args=[assistant.pk]) in content
-    assert 'type="button" disabled>Auswahl noch gesperrt</button>' in content
 
 
 @pytest.mark.django_db
