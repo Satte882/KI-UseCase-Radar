@@ -54,6 +54,7 @@ def get_accelerator_llm_policy() -> AcceleratorLLMPolicy:
     Capture and other compact Accelerator calls keep the shared output/context
     limits. The much larger Block-7 three-option bundle has dedicated limits so
     it can be sized realistically without widening every Accelerator LLM call.
+    User and global limits remain effective upper caps for every purpose.
     """
 
     values = {name: _positive_int(name, getattr(settings, name)) for name in _SETTING_BOUNDS}
@@ -64,11 +65,6 @@ def get_accelerator_llm_policy() -> AcceleratorLLMPolicy:
     if context_limit > user_limit:
         raise LLMConfigurationError(
             "ACCELERATOR_LLM_MAX_CALLS_PER_CONTEXT darf die nutzerbezogene "
-            "Tagesgrenze nicht überschreiten."
-        )
-    if solution_context_limit > user_limit:
-        raise LLMConfigurationError(
-            "ACCELERATOR_SOLUTION_GENERATION_MAX_CALLS_PER_CONTEXT darf die nutzerbezogene "
             "Tagesgrenze nicht überschreiten."
         )
     if user_limit > global_limit:
