@@ -21,6 +21,7 @@ from ki_radar.accelerator.solution_generation_service import (
 from ki_radar.accelerator.solution_generation_sources import (
     build_solution_generation_source_context,
 )
+from ki_radar.architecture.focus import ValueStreamFocus
 from ki_radar.architecture.models import (
     ProcessAnalysis,
     ProcessValidation,
@@ -31,6 +32,7 @@ from ki_radar.architecture.models import (
 )
 from ki_radar.architecture.solution_selection import select_preferred_solution
 from ki_radar.core.openrouter import OpenRouterResult, OpenRouterUnavailable
+from ki_radar.core.taxonomy import BusinessDomain, ScreeningLevel
 from ki_radar.delivery.models import DeliveryPackage
 from ki_radar.governance.models import GovernanceAssessment, GovernanceReview
 from ki_radar.reviews.models import Review
@@ -88,6 +90,22 @@ def make_process(owner, business_unit):
         baseline_metrics="11 Minuten pro Vergleich",
         target_state_principles="Nachvollziehbar und assistierend",
         analyzed_by=owner,
+    )
+
+
+def select_focus(process, owner):
+    ValueStreamFocus.objects.create(
+        value_stream=process.stage.value_stream,
+        business_domain=BusinessDomain.PROCUREMENT,
+        capability="Supplier Sourcing und Angebotsvergleich",
+        strategic_impact=ScreeningLevel.HIGH,
+        economic_potential=ScreeningLevel.MEDIUM,
+        pain_intensity=ScreeningLevel.HIGH,
+        data_accessibility=ScreeningLevel.MEDIUM,
+        change_effort=ScreeningLevel.MEDIUM,
+        status=ValueStreamFocus.Status.SELECTED,
+        rationale="Der Angebotsvergleich wurde fachlich für den Deep Dive ausgewählt.",
+        updated_by=owner,
     )
 
 
@@ -255,6 +273,7 @@ def test_successful_generation_and_adoption_preserve_manual_option_and_all_gates
 @pytest.mark.django_db
 def test_existing_manual_selection_service_remains_explicit(owner, business_unit):
     process = make_process(owner, business_unit)
+    select_focus(process, owner)
     first = create_option(process, owner, name="Manuelle Option A", assessed=True)
     second = create_option(process, owner, name="Manuelle Option B", assessed=True)
 
