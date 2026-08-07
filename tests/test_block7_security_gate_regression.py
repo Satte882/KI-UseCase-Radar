@@ -43,6 +43,7 @@ from ki_radar.governance.models import GovernanceAssessment, GovernanceReview
 from ki_radar.reviews.models import Review
 from ki_radar.use_cases.models import UseCase
 
+PROVIDER_PATH = "ki_radar.accelerator.solution_generation_service.request_openrouter"
 VALID_LIMITS = {
     "ACCELERATOR_LLM_TIMEOUT_SECONDS": "15",
     "ACCELERATOR_LLM_MAX_INPUT_CHARS": "10000",
@@ -213,10 +214,7 @@ def test_missing_required_source_fails_before_provider_or_side_effects(owner, bu
     process.save(update_fields=["current_flow", "updated_at"])
     before_gates = gate_counts()
 
-    with (
-        patch("ki_radar.accelerator.solution_generation_service.request_openrouter") as provider,
-        pytest.raises(SolutionGenerationError) as exc_info,
-    ):
+    with patch(PROVIDER_PATH) as provider, pytest.raises(SolutionGenerationError) as exc_info:
         generate_solution_preview(actor=owner, process_analysis_id=process.pk)
 
     assert exc_info.value.code == "process_not_ready"
@@ -255,7 +253,8 @@ def test_prompt_injection_in_multiple_process_fields_stays_untrusted(owner, busi
     process.bottlenecks = injection_b
     process.save(update_fields=["current_flow", "bottlenecks", "updated_at"])
 
-    messages = build_solution_generation_messages(build_solution_generation_source_context(process))
+    context = build_solution_generation_source_context(process)
+    messages = build_solution_generation_messages(context)
 
     assert messages[0]["content"] == SOLUTION_GENERATION_SYSTEM_PROMPT
     assert injection_a not in messages[0]["content"]
@@ -287,14 +286,10 @@ def test_provider_failures_leave_manual_data_and_gates_unchanged(
     }
     process_snapshot = (process.status, process.version, process.current_flow)
     before_gates = gate_counts()
+    provider_error = OpenRouterUnavailable("provider failure", code=provider_code)
+    provider_patch = patch(PROVIDER_PATH, side_effect=provider_error)
 
-    with (
-        patch(
-            "ki_radar.accelerator.solution_generation_service.request_openrouter",
-            side_effect=OpenRouterUnavailable("provider failure", code=provider_code),
-        ) as provider,
-        pytest.raises(SolutionGenerationError) as exc_info,
-    ):
+    with provider_patch as provider, pytest.raises(SolutionGenerationError) as exc_info:
         generate_solution_preview(actor=owner, process_analysis_id=process.pk)
 
     assert exc_info.value.code == provider_code
@@ -339,14 +334,9 @@ def test_invalid_generated_bundle_fails_closed_without_domain_writes(
             "Die Durchlaufzeit sinkt garantiert um 73 Prozent."
         )
     before_gates = gate_counts()
+    provider_patch = patch(PROVIDER_PATH, return_value=provider_result(payload))
 
-    with (
-        patch(
-            "ki_radar.accelerator.solution_generation_service.request_openrouter",
-            return_value=provider_result(payload),
-        ),
-        pytest.raises(SolutionGenerationError) as exc_info,
-    ):
+    with provider_patch, pytest.raises(SolutionGenerationError) as exc_info:
         generate_solution_preview(actor=owner, process_analysis_id=process.pk)
 
     assert exc_info.value.code == "invalid_generation_payload"
@@ -369,10 +359,7 @@ def test_concurrent_second_generation_never_reaches_provider_or_extra_quota(
         AcceleratorLLMQuota.objects.order_by("scope").values_list("scope", "calls")
     )
 
-    with (
-        patch("ki_radar.accelerator.solution_generation_service.request_openrouter") as provider,
-        pytest.raises(SolutionGenerationError) as exc_info,
-    ):
+    with patch(PROVIDER_PATH) as provider, pytest.raises(SolutionGenerationError) as exc_info:
         generate_solution_preview(actor=owner, process_analysis_id=process.pk)
 
     assert exc_info.value.code == "generation_already_running"
@@ -395,10 +382,7 @@ def test_successful_generation_and_adoption_preserve_manual_option_and_all_gates
     manual_snapshot = (manual.name, manual.description, manual.recommendation)
     before_gates = gate_counts()
 
-    with patch(
-        "ki_radar.accelerator.solution_generation_service.request_openrouter",
-        return_value=provider_result(),
-    ):
+    with patch(PROVIDER_PATH, return_value=provider_result()):
         run = generate_solution_preview(actor=owner, process_analysis_id=process.pk)
     result = adopt_solution_generation_bundle(actor=owner, run_id=run.pk)
 
@@ -420,10 +404,7 @@ def test_stale_preview_blocks_adoption_and_duplicate_post_remains_idempotent(
     business_unit,
 ):
     stale_process = make_process(owner, business_unit, suffix=" stale")
-    with patch(
-        "ki_radar.accelerator.solution_generation_service.request_openrouter",
-        return_value=provider_result(),
-    ):
+    with patch(PROVIDER_PATH, return_value=provider_result()):
         stale_run = generate_solution_preview(
             actor=owner,
             process_analysis_id=stale_process.pk,
@@ -438,10 +419,7 @@ def test_stale_preview_blocks_adoption_and_duplicate_post_remains_idempotent(
     assert not SolutionOption.objects.filter(process_analysis=stale_process).exists()
 
     process = make_process(owner, business_unit, suffix=" idempotent")
-    with patch(
-        "ki_radar.accelerator.solution_generation_service.request_openrouter",
-        return_value=provider_result(),
-    ):
+    with patch(PROVIDER_PATH, return_value=provider_result()):
         run = generate_solution_preview(actor=owner, process_analysis_id=process.pk)
     first = adopt_solution_generation_bundle(actor=owner, run_id=run.pk)
     second = adopt_solution_generation_bundle(actor=owner, run_id=run.pk)
