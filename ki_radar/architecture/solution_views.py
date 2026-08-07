@@ -3,14 +3,16 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.views.decorators.http import require_POST
 
 from ki_radar.accelerator.solution_generation_entry import (
     build_solution_generation_entry_context,
 )
 
 from .forms import SolutionSelectionForm
-from .models import ProcessAnalysis
+from .models import ProcessAnalysis, SolutionOption
 from .permissions import can_edit_value_stream
+from .solution_retirement import retire_solution_option
 from .solution_selection import (
     comparison_blockers,
     ordered_solution_options,
@@ -83,3 +85,30 @@ def solution_option_compare(request, pk):
             **generation_entry,
         },
     )
+
+
+@login_required
+@require_POST
+def solution_option_retire(request, pk):
+    option = get_object_or_404(
+        SolutionOption.objects.select_related("process_analysis__stage__value_stream"),
+        pk=pk,
+    )
+    process_analysis = option.process_analysis
+    try:
+        retire_solution_option(option=option, actor=request.user)
+    except ValidationError as exc:
+        messages.error(
+            request,
+            "Lösungsoption kann nicht ausgeblendet werden: " + " ".join(exc.messages),
+        )
+    else:
+        messages.success(
+            request,
+            f"„{option.name}“ wird nicht weiterverfolgt und bleibt für den Audit-Nachweis erhalten.",
+        )
+    comparison_url = reverse(
+        "architecture:solution_option_compare",
+        kwargs={"pk": process_analysis.pk},
+    )
+    return redirect(comparison_url)
