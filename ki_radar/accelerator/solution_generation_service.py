@@ -35,6 +35,10 @@ from .solution_generation_sources import (
     SolutionGenerationSourceContext,
     require_solution_generation_ready,
 )
+from .solution_generation_validation import (
+    SolutionGenerationContractError,
+    validate_solution_generation_payload,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -268,6 +272,7 @@ def mark_solution_generation_failed(
     run.finished_at = finished_at
     run.duration_ms = _duration_ms(run, finished_at)
     run.error_code = error_code
+    run.preview_payload = {}
     if result is not None:
         _apply_provider_metadata(run, result)
     run.save(
@@ -276,6 +281,7 @@ def mark_solution_generation_failed(
             "finished_at",
             "duration_ms",
             "error_code",
+            "preview_payload",
             "model_name",
             "output_chars",
             "prompt_tokens",
@@ -310,6 +316,35 @@ def record_solution_generation_provider_result(
             "updated_at",
         ]
     )
+    return run
+
+
+@transaction.atomic
+def mark_solution_generation_success(
+    *,
+    run_id,
+    preview_payload: dict[str, Any],
+) -> SolutionGenerationRun:
+    run = SolutionGenerationRun.objects.select_for_update().get(pk=run_id)
+    if run.status != SolutionGenerationRun.Status.RUNNING:
+        return run
+    finished_at = timezone.now()
+    run.status = SolutionGenerationRun.Status.SUCCESS
+    run.finished_at = finished_at
+    run.duration_ms = _duration_ms(run, finished_at)
+    run.error_code = ""
+    run.preview_payload = preview_payload
+    run.save(
+        update_fields=[
+            "status",
+            "finished_at",
+            "duration_ms",
+            "error_code",
+            "preview_payload",
+            "updated_at",
+        ]
+    )
+    log_solution_generation_run(run)
     return run
 
 
@@ -374,3 +409,45 @@ def request_solution_generation_provider(
 
     record_solution_generation_provider_result(run_id=prepared.run.pk, result=result)
     return SolutionGenerationProviderPayload(result=result, payload=payload)
+
+
+def _validated_preview_payload(
+    *,
+    prepared: PreparedSolutionGeneration,
+    payload: dict[str, Any],
+) -> dict[str, Any]:
+    validated = validate_solution_generation_payload(payload, prepared.source_context)
+    return {
+        "schema_version": validated["schema_version"],
+        "prompt_version": validated["prompt_version"],
+        "source_context": prepared.source_context.provider_payload(),
+        "options": validated["options"],
+        "edits": {},
+    }
+
+
+@sensitive_variables("prepared", "provider_payload", "preview_payload")
+def generate_solution_preview(*, actor, process_analysis_id) -> SolutionGenerationRun:
+    prepared = prepare_solution_generation_run(
+        actor=actor,
+        process_analysis_id=process_analysis_id,
+    )
+    provider_payload = request_solution_generation_provider(prepared)
+    try:
+        preview_payload = _validated_preview_payload(
+            prepared=prepared,
+            payload=provider_payload.payload,
+        )
+    except SolutionGenerationContractError as exc:
+        mark_solution_generation_failed(
+            run_id=prepared.run.pk,
+            error_code="invalid_generation_payload",
+        )
+        raise SolutionGenerationError(
+            "Der generierte Lösungsentwurf verletzt den fachlichen Datenvertrag.",
+            code="invalid_generation_payload",
+        ) from exc
+    return mark_solution_generation_success(
+        run_id=prepared.run.pk,
+        preview_payload=preview_payload,
+    )

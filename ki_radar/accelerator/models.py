@@ -488,6 +488,7 @@ class SolutionGenerationRun(TimeStampedModel):
     completion_tokens = models.PositiveIntegerField(null=True, blank=True)
     total_tokens = models.PositiveIntegerField(null=True, blank=True)
     cost = models.DecimalField(max_digits=12, decimal_places=6, null=True, blank=True)
+    preview_payload = models.JSONField(default=dict, blank=True)
     expires_at = models.DateTimeField(db_index=True)
 
     class Meta:
