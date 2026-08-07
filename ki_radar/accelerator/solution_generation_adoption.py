@@ -161,7 +161,6 @@ def adopt_solution_generation_bundle(*, actor, run_id) -> SolutionGenerationAdop
     run_reference = SolutionGenerationRun.objects.only("process_analysis_id").get(pk=run_id)
     process_analysis = (
         ProcessAnalysis.objects.select_for_update()
-        .select_related("stage__value_stream__owner")
         .prefetch_related("validations")
         .get(pk=run_reference.process_analysis_id)
     )

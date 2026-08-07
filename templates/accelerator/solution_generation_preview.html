@@ -18,11 +18,11 @@
 {% if state.adopted %}
   <div class="alert alert-success"><strong>Bereits übernommen.</strong> Diese drei Entwürfe wurden vollständig als reguläre Lösungsoptionen angelegt. Eine erneute Übernahme ist gesperrt.</div>
 {% elif state.stale %}
-  <div class="alert alert-warning"><strong>Veralteter Quellstand.</strong> Die Prozessdaten haben sich seit der Generierung geändert. Bearbeitung und Übernahme sind gesperrt; bitte neu generieren.</div>
+  <div class="alert alert-warning"><strong>Veralteter Quellstand.</strong> Die Prozessdaten haben sich seit der Generierung geändert. Bearbeitung ist gesperrt; auch die Übernahme ist nicht mehr möglich. Bitte neu generieren.</div>
 {% elif state.expired %}
-  <div class="alert alert-warning"><strong>Vorschau abgelaufen.</strong> Bearbeitung und Übernahme sind gesperrt; bitte neu generieren.</div>
+  <div class="alert alert-warning"><strong>Vorschau abgelaufen.</strong> Bearbeitung ist gesperrt; auch die Übernahme ist nicht mehr möglich. Bitte neu generieren.</div>
 {% elif not state.current_ready %}
-  <div class="alert alert-warning"><strong>Prozessanalyse nicht mehr vollständig.</strong> Bearbeitung und Übernahme sind gesperrt; bitte die Prozessanalyse vervollständigen und neu generieren.</div>
+  <div class="alert alert-warning"><strong>Prozessanalyse nicht mehr vollständig.</strong> Bearbeitung ist gesperrt; auch die Übernahme ist nicht mehr möglich. Bitte die Prozessanalyse vervollständigen und neu generieren.</div>
 {% endif %}
 
 <div class="app-card mb-4">
