@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}KI-Lösungsentwürfe prüfen – KI-Radar{% endblock %}
 {% block content %}
-<div class="page-header">
+<div class="page-header" id="solution-generation-result" tabindex="-1">
   <div>
     <div class="eyebrow mb-2">{{ process_analysis.name }}</div>
     <h1 class="page-title">KI-Lösungsentwürfe prüfen</h1>
@@ -11,7 +11,7 @@
 </div>
 
 <div class="alert alert-info">
-  <strong>KI-Entwurf – noch nicht fachlich bewertet.</strong>
+  <strong>KI-Generierung erfolgreich – Entwürfe noch nicht fachlich bewertet.</strong>
   Es wurden weder Machbarkeit noch Integrationsaufwand bewertet und keine bevorzugte Option ausgewählt.
 </div>
 

@@ -2,7 +2,12 @@ import pytest
 from django.urls import reverse
 
 from ki_radar.architecture.focus import ValueStreamFocus
-from ki_radar.architecture.models import ProcessAnalysis, SolutionOption, ValueStream, ValueStreamStage
+from ki_radar.architecture.models import (
+    ProcessAnalysis,
+    SolutionOption,
+    ValueStream,
+    ValueStreamStage,
+)
 from ki_radar.architecture.solution_selection import comparison_blockers
 from ki_radar.core.taxonomy import BusinessDomain, ScreeningLevel
 

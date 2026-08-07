@@ -21,4 +21,7 @@ def test_minimum_two_options_message_belongs_to_persisted_selection_comparison()
 
     blockers = comparison_blockers([existing_option])
 
-    assert blockers == ["Mindestens zwei unterschiedliche Lösungsoptionen sind erforderlich."]
+    assert blockers == [
+        "Für die spätere Auswahl sind mindestens zwei unterschiedliche, gespeicherte "
+        "Lösungsoptionen erforderlich."
+    ]

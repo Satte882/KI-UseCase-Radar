@@ -209,7 +209,8 @@ def test_comparison_requires_two_complete_options(comparison_process, owner):
         option_type=SolutionOption.OptionType.ORGANIZATIONAL,
     )
     assert comparison_blockers([first]) == [
-        "Mindestens zwei unterschiedliche Lösungsoptionen sind erforderlich."
+        "Für die spätere Auswahl sind mindestens zwei unterschiedliche, gespeicherte "
+        "Lösungsoptionen erforderlich."
     ]
 
     second = make_option(

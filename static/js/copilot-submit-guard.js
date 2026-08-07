@@ -43,4 +43,20 @@ document.addEventListener("DOMContentLoaded", () => {
         statusLabel: "KI-Generierung läuft. Das kann einige Sekunden dauern.",
       });
     });
+
+  const feedback = document.querySelectorAll(".alert-solution-generation-feedback");
+  const solutionArea = document.querySelector("#loesungsoptionen .card-body");
+  if (solutionArea && feedback.length) {
+    [...feedback].reverse().forEach((message) => {
+      message.classList.add("alert-danger", "mb-3");
+      const label = document.createElement("strong");
+      label.textContent = "KI-Generierung fehlgeschlagen. ";
+      message.prepend(label);
+      solutionArea.prepend(message);
+      message.setAttribute("tabindex", "-1");
+    });
+    const firstMessage = feedback[0];
+    firstMessage.focus({preventScroll: true});
+    document.getElementById("loesungsoptionen")?.scrollIntoView({block: "center"});
+  }
 });

@@ -3,7 +3,9 @@ from __future__ import annotations
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from ki_radar.architecture.models import ProcessAnalysis
@@ -91,14 +93,15 @@ def solution_generation_start(request, process_pk):
             process_analysis_id=process_analysis.pk,
         )
     except SolutionGenerationError as exc:
-        messages.error(request, _generation_error_message(exc))
-        return redirect("architecture:solution_option_compare", pk=process_analysis.pk)
+        messages.error(
+            request,
+            _generation_error_message(exc),
+            extra_tags="solution-generation-feedback",
+        )
+        return HttpResponseRedirect(f"{process_analysis.get_absolute_url()}#loesungsoptionen")
 
-    messages.success(
-        request,
-        "Drei KI-Entwürfe wurden erzeugt. Bitte Quellen, Annahmen und Unsicherheiten prüfen.",
-    )
-    return redirect("accelerator:solution_generation_preview", run_id=run.pk)
+    preview_url = reverse("accelerator:solution_generation_preview", kwargs={"run_id": run.pk})
+    return HttpResponseRedirect(f"{preview_url}#solution-generation-result")
 
 
 @login_required

@@ -12,8 +12,7 @@ class Command(BaseCommand):
         self.stdout.write(f"max_input_chars={policy.max_input_chars}")
         self.stdout.write(f"shared_max_output_tokens={policy.max_output_tokens}")
         self.stdout.write(
-            "solution_generation_max_output_tokens="
-            f"{policy.solution_generation_max_output_tokens}"
+            f"solution_generation_max_output_tokens={policy.solution_generation_max_output_tokens}"
         )
         self.stdout.write(
             "solution_generation_max_calls_per_context="
