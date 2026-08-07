@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.urls import reverse
 
 from ki_radar.architecture.focus import ValueStreamFocus
+from ki_radar.architecture.forms import SolutionOptionForm
 from ki_radar.architecture.models import (
     ProcessAnalysis,
     SolutionOption,
@@ -93,6 +94,86 @@ def make_option(process, owner, *, name, option_type, status="assessed"):
         architecture_fit="Passt zur bestehenden Architektur",
         created_by=owner,
     )
+
+
+def assessed_form_data(**overrides):
+    data = {
+        "name": "Regelprüfung",
+        "option_type": SolutionOption.OptionType.RULE_AUTOMATION,
+        "evaluation_status": SolutionOption.EvaluationStatus.ASSESSED,
+        "description": "Beschreibung Regelprüfung",
+        "expected_value": "Nutzen Regelprüfung",
+        "bottleneck_coverage": "Reduziert manuelle Übertragung.",
+        "feasibility": SolutionOption.Effort.HIGH,
+        "data_requirements": "Angebote und Kriterien",
+        "application_impact": "Ergänzung der Fachanwendung",
+        "integration_effort": SolutionOption.Effort.MEDIUM,
+        "integration_impact": "ERP-Export",
+        "technology_constraints": "Nachvollziehbare Verarbeitung",
+        "risks": "Fehlerhafte Eingaben",
+        "architecture_fit": "Passt zur bestehenden Architektur",
+    }
+    data.update(overrides)
+    return data
+
+
+@pytest.mark.django_db
+def test_new_solution_option_defaults_are_not_assessed(comparison_process, owner):
+    option = SolutionOption.objects.create(
+        process_analysis=comparison_process,
+        name="Neuer Entwurf",
+        option_type=SolutionOption.OptionType.ORGANIZATIONAL,
+        description="Beschreibung",
+        expected_value="Erwarteter Beitrag",
+        created_by=owner,
+    )
+
+    assert option.feasibility == SolutionOption.Effort.NOT_ASSESSED
+    assert option.integration_effort == SolutionOption.Effort.NOT_ASSESSED
+    assert option.get_feasibility_display() == "Noch nicht bewertet"
+    assert option.get_integration_effort_display() == "Noch nicht bewertet"
+    assert option.comparison_complete is False
+
+
+@pytest.mark.django_db
+def test_explicit_existing_assessments_remain_unchanged(comparison_process, owner):
+    option = make_option(
+        comparison_process,
+        owner,
+        name="Bestehende Bewertung",
+        option_type=SolutionOption.OptionType.RULE_AUTOMATION,
+    )
+    option.refresh_from_db()
+
+    assert option.feasibility == SolutionOption.Effort.HIGH
+    assert option.integration_effort == SolutionOption.Effort.MEDIUM
+    assert option.comparison_complete is True
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("field_name", ["feasibility", "integration_effort"])
+def test_assessed_form_rejects_unassessed_effort(comparison_process, field_name):
+    form = SolutionOptionForm(
+        data=assessed_form_data(**{field_name: SolutionOption.Effort.NOT_ASSESSED}),
+        process_analysis=comparison_process,
+    )
+
+    assert not form.is_valid()
+    assert field_name in form.errors
+    assert "muss für den Status 'Bewertet' bewertet sein" in form.errors[field_name][0]
+
+
+@pytest.mark.django_db
+def test_comparison_complete_rejects_unassessed_effort(comparison_process, owner):
+    option = make_option(
+        comparison_process,
+        owner,
+        name="Unvollständige Bewertung",
+        option_type=SolutionOption.OptionType.RULE_AUTOMATION,
+    )
+    option.feasibility = SolutionOption.Effort.NOT_ASSESSED
+
+    assert option.comparison_complete is False
 
 
 @pytest.mark.django_db
@@ -227,6 +308,7 @@ def test_comparison_page_selects_and_shows_history(client, comparison_process, o
     assert content.index(organizational.name) < content.index(assistant.name)
     assert "Bottleneck-Abdeckung" in content
     assert "Integrationsaufwand" in content
+    assert "Technologieleitplanken" in content
 
     response = client.post(
         url,
@@ -242,6 +324,43 @@ def test_comparison_page_selects_and_shows_history(client, comparison_process, o
     history = client.get(url).content.decode()
     assert "Auswahlhistorie" in history
     assert "Die organisatorische Alternative" in history
+
+
+@pytest.mark.django_db
+def test_comparison_page_handles_unassessed_and_empty_technology_constraints(
+    client,
+    comparison_process,
+    owner,
+):
+    option = SolutionOption.objects.create(
+        process_analysis=comparison_process,
+        name="Ältere manuelle Option",
+        option_type=SolutionOption.OptionType.ORGANIZATIONAL,
+        description="Beschreibung",
+        expected_value="Nutzen",
+        feasibility=SolutionOption.Effort.MEDIUM,
+        integration_effort=SolutionOption.Effort.MEDIUM,
+        technology_constraints="",
+        created_by=owner,
+    )
+    new_option = SolutionOption.objects.create(
+        process_analysis=comparison_process,
+        name="Neutraler Entwurf",
+        option_type=SolutionOption.OptionType.RULE_AUTOMATION,
+        description="Beschreibung",
+        expected_value="Nutzen",
+        created_by=owner,
+    )
+    client.force_login(owner)
+    url = reverse("architecture:solution_option_compare", kwargs={"pk": comparison_process.pk})
+
+    content = client.get(url).content.decode()
+
+    assert option.name in content
+    assert new_option.name in content
+    assert "Noch nicht bewertet" in content
+    assert "Technologieleitplanken" in content
+    assert "\u2013" in content
 
 
 @pytest.mark.django_db

@@ -206,6 +206,7 @@ class SolutionOption(TimeStampedModel):
         ASSESSED = "assessed", "Bewertet"
 
     class Effort(models.TextChoices):
+        NOT_ASSESSED = "not_assessed", "Noch nicht bewertet"
         LOW = "low", "Niedrig"
         MEDIUM = "medium", "Mittel"
         HIGH = "high", "Hoch"
@@ -236,9 +237,9 @@ class SolutionOption(TimeStampedModel):
         verbose_name="Abdeckung von Bottleneck und Ursache",
     )
     feasibility = models.CharField(
-        max_length=10,
-        choices=[("low", "Niedrig"), ("medium", "Mittel"), ("high", "Hoch")],
-        default="medium",
+        max_length=20,
+        choices=Effort.choices,
+        default=Effort.NOT_ASSESSED,
         verbose_name="Machbarkeit",
     )
     data_requirements = models.TextField(blank=True, verbose_name="Datenanforderungen")
@@ -248,9 +249,9 @@ class SolutionOption(TimeStampedModel):
     )
     integration_impact = models.TextField(blank=True, verbose_name="Integrationen")
     integration_effort = models.CharField(
-        max_length=10,
+        max_length=20,
         choices=Effort.choices,
-        default=Effort.MEDIUM,
+        default=Effort.NOT_ASSESSED,
         verbose_name="Integrationsaufwand",
     )
     technology_constraints = models.TextField(
@@ -279,6 +280,20 @@ class SolutionOption(TimeStampedModel):
             )
         ]
 
+    def clean(self):
+        super().clean()
+        if self.evaluation_status != self.EvaluationStatus.ASSESSED:
+            return
+        errors = {}
+        if self.feasibility == self.Effort.NOT_ASSESSED:
+            errors["feasibility"] = "Machbarkeit muss für den Status 'Bewertet' bewertet sein."
+        if self.integration_effort == self.Effort.NOT_ASSESSED:
+            errors["integration_effort"] = (
+                "Integrationsaufwand muss für den Status 'Bewertet' bewertet sein."
+            )
+        if errors:
+            raise ValidationError(errors)
+
     def __str__(self) -> str:
         return self.name
 
@@ -297,8 +312,14 @@ class SolutionOption(TimeStampedModel):
             self.risks,
             self.architecture_fit,
         )
-        return self.evaluation_status == self.EvaluationStatus.ASSESSED and all(
-            str(value).strip() for value in required
+        assessed_efforts = (
+            self.feasibility,
+            self.integration_effort,
+        )
+        return (
+            self.evaluation_status == self.EvaluationStatus.ASSESSED
+            and all(str(value).strip() for value in required)
+            and all(value != self.Effort.NOT_ASSESSED for value in assessed_efforts)
         )
 
     @property
