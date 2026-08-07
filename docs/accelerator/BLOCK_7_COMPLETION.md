@@ -176,7 +176,7 @@ Die kanonische Referenz liegt unter:
 
 SHA-256 der Version 1:
 
-`e81ab938e7f15958347849c495546af4ca192337fbcd257d15ab3f59b8a5d336`
+`505ead68b471d25792797c7469342871ed7eff6eb1a413f1fd4d5be95bf25b83`
 
 Der Regressionstest berechnet die Prüfsumme aus den tatsächlichen JSON-Bytes neu. Referenz und
 Prüfsumme müssen bei einer bewussten fachlichen Änderung gemeinsam aktualisiert werden.
