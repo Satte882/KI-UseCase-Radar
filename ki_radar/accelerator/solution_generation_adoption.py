@@ -278,7 +278,8 @@ def adopt_solution_generation_bundle(
 
     if form_errors:
         raise SolutionGenerationAdoptionError(
-            "Mindestens ein ausgewählter Entwurf erfüllt den regulären Lösungsoptionsvertrag nicht.",
+            "Mindestens ein ausgewählter Entwurf erfüllt den regulären "
+            "Lösungsoptionsvertrag nicht.",
             code="option_form_invalid",
         )
 
