@@ -197,10 +197,7 @@ def _validate_statement(
 
     has_provenance = bool(source_ids or assumptions or open_evidence)
     if not has_provenance:
-        message = (
-            f"{path}: Mindestens Quelle, Annahme oder offene Evidenz "
-            "muss angegeben sein."
-        )
+        message = f"{path}: Mindestens Quelle, Annahme oder offene Evidenz muss angegeben sein."
         errors.append(message)
 
     if text:
@@ -223,8 +220,7 @@ def _validate_statement(
 
 def _normalized_signature(option: dict[str, Any]) -> tuple[str, ...]:
     return tuple(
-        " ".join(option[field_name]["text"].lower().split())
-        for field_name in DISTINCTIVE_FIELDS
+        " ".join(option[field_name]["text"].lower().split()) for field_name in DISTINCTIVE_FIELDS
     )
 
 
@@ -277,8 +273,7 @@ def validate_solution_generation_payload(
         normalized_options[lane] = normalized_option
 
     names = [
-        " ".join(normalized_options[lane]["name"]["text"].lower().split())
-        for lane in OPTION_LANES
+        " ".join(normalized_options[lane]["name"]["text"].lower().split()) for lane in OPTION_LANES
     ]
     if all(names) and len(set(names)) != len(names):
         errors.append(
