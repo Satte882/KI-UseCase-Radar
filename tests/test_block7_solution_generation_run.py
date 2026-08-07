@@ -101,7 +101,7 @@ def test_prepare_persists_block4_compatible_metadata_and_all_three_quotas(owner,
     assert run.source_hash == prepared.source_context.source_hash
     assert run.requested_by == owner
     assert run.provider == "openrouter"
-    assert run.input_chars == 0
+    assert run.input_chars == sum(len(item["content"]) for item in prepared.messages)
     assert run.output_chars == 0
     assert run.prompt_tokens is None
     assert run.completion_tokens is None
