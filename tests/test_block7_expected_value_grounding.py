@@ -20,7 +20,12 @@ from ki_radar.accelerator.solution_generation_validation import (
     SolutionGenerationContractError,
     validate_solution_generation_payload,
 )
-from ki_radar.architecture.models import ProcessAnalysis, SolutionOption, ValueStream, ValueStreamStage
+from ki_radar.architecture.models import (
+    ProcessAnalysis,
+    SolutionOption,
+    ValueStream,
+    ValueStreamStage,
+)
 from ki_radar.core.openrouter import OpenRouterResult
 
 FIELD_SOURCES = {
@@ -47,7 +52,8 @@ QUALITATIVE_EXPECTED_VALUES = {
     "rule_automation": "Reduziert manuelle Übertragungsarbeit durch regelbasierte Verarbeitung.",
     "assistant": (
         "Die dokumentierte Ausgangslage liegt bei 11 Minuten pro Vergleich; der mögliche Nutzen "
-        "wird mangels belegter Zielgröße qualitativ als Entlastung bei der Gegenüberstellung beschrieben."
+        "wird mangels belegter Zielgröße qualitativ als Entlastung bei der Gegenüberstellung "
+        "beschrieben."
     ),
 }
 
