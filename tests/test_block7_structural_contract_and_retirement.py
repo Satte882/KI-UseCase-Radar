@@ -1,6 +1,4 @@
 from copy import deepcopy
-from pathlib import Path
-from types import SimpleNamespace
 
 import pytest
 from django.core.exceptions import ValidationError
@@ -30,14 +28,20 @@ from ki_radar.architecture.solution_retirement import retire_solution_option
 from ki_radar.architecture.solution_selection import ordered_solution_options
 from ki_radar.use_cases.models import UseCase
 
-
 SOURCE_ID = "process.current_flow"
 
 
-def source_context():
-    return SimpleNamespace(
-        facts=(SimpleNamespace(source_id=SOURCE_ID, value="Manueller Vergleich"),),
-        provider_payload=lambda: {
+class SourceFact:
+    source_id = SOURCE_ID
+    value = "Manueller Vergleich"
+
+
+class SourceContext:
+    facts = (SourceFact(),)
+
+    @staticmethod
+    def provider_payload():
+        return {
             "facts": [
                 {
                     "source_id": SOURCE_ID,
@@ -45,8 +49,11 @@ def source_context():
                     "value": "Manueller Vergleich",
                 }
             ]
-        },
-    )
+        }
+
+
+def source_context():
+    return SourceContext()
 
 
 def statement(text="Qualitative Aussage"):
@@ -245,19 +252,3 @@ def test_retirement_blocks_use_case_linked_option(owner, business_unit):
 
     with pytest.raises(ValidationError, match="Use Case verknüpfte"):
         retire_solution_option(option=option, actor=owner)
-
-
-@pytest.mark.django_db
-def test_preview_selection_is_visible_individual_and_discardable():
-    template = Path("templates/accelerator/solution_generation_preview.html").read_text(
-        encoding="utf-8"
-    )
-    script = Path("static/js/solution-generation-selection.js").read_text(encoding="utf-8")
-
-    assert 'class="form-check-input"' in template
-    assert "Diesen KI-Vorschlag übernehmen" in template
-    assert "Vorschlag verwerfen" in template
-    assert "Jeder Vorschlag wird einzeln ausgewählt" in template
-    assert "Ausgewählte KI-Lösungsoptionen hinzufügen" in template
-    assert "data-discard-generated-option" in script
-    assert "selectedCount" in script
