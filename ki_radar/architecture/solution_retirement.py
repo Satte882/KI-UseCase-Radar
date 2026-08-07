@@ -28,10 +28,13 @@ def retire_solution_option(*, option: SolutionOption, actor) -> SolutionOptionRe
             "Eine mit einem Use Case verknüpfte Lösungsoption kann nicht als nicht weiterverfolgt markiert werden."
         )
 
-    retirement, _created = SolutionOptionRetirement.objects.get_or_create(
+    retirement, created = SolutionOptionRetirement.objects.get_or_create(
         option=option,
         defaults={"retired_by": actor},
     )
+    if created and option.recommendation != SolutionOption.Recommendation.REJECTED:
+        option.recommendation = SolutionOption.Recommendation.REJECTED
+        option.save(update_fields=["recommendation", "updated_at"])
     return retirement
 
 
