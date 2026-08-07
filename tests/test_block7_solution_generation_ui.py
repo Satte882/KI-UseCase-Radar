@@ -188,7 +188,8 @@ def test_generation_start_redirects_to_preview_without_domain_write(
         response = client.post(reverse("accelerator:solution_generation_start", args=[process.pk]))
 
     assert response.status_code == 302
-    assert response.url == reverse("accelerator:solution_generation_preview", args=[run.pk])
+    expected = reverse("accelerator:solution_generation_preview", args=[run.pk])
+    assert response.url == f"{expected}#solution-generation-result"
     generate_mock.assert_called_once_with(actor=owner, process_analysis_id=process.pk)
     assert not SolutionOption.objects.filter(process_analysis=process).exists()
 

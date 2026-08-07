@@ -34,7 +34,10 @@ def ordered_solution_options(process_analysis: ProcessAnalysis) -> list[Solution
 def comparison_blockers(options: list[SolutionOption]) -> list[str]:
     blockers: list[str] = []
     if len(options) < 2:
-        blockers.append("Mindestens zwei unterschiedliche Lösungsoptionen sind erforderlich.")
+        blockers.append(
+            "Für die spätere Auswahl sind mindestens zwei unterschiedliche, gespeicherte "
+            "Lösungsoptionen erforderlich."
+        )
     incomplete = [option.name for option in options if not option.comparison_complete]
     if incomplete:
         blockers.append(
