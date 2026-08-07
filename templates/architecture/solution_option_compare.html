@@ -14,7 +14,7 @@
 
 <div class="app-card mb-4">
   <div class="card-header d-flex justify-content-between align-items-start gap-3 flex-wrap">
-    <div><strong>Vergleichsmatrix</strong><div class="small text-muted mt-1">Alle Optionen werden anhand derselben Kriterien gegenübergestellt.</div></div>
+    <div><strong>Vergleichsmatrix</strong><div class="small text-muted mt-1">Alle aktiven Optionen werden anhand derselben Kriterien gegenübergestellt. Nicht weiterverfolgte Optionen bleiben auditierbar, zählen aber nicht mehr für Vergleich oder Auswahl.</div></div>
     {% if can_select %}
       <div class="d-flex gap-2 flex-wrap">
         <a class="btn btn-sm btn-outline-secondary" href="{% url 'architecture:solution_option_create' process_analysis.pk %}">Option ergänzen</a>
@@ -68,6 +68,27 @@
         <tr><th scope="row">Risiken</th>{% for option in options %}<td class="text-preline">{{ option.risks|default:"–" }}</td>{% endfor %}</tr>
         <tr><th scope="row">Passung zu Zielbild und Leitplanken</th>{% for option in options %}<td class="text-preline">{{ option.architecture_fit|default:"–" }}</td>{% endfor %}</tr>
         <tr><th scope="row">Entscheidungsstatus</th>{% for option in options %}<td>{{ option.get_recommendation_display }}</td>{% endfor %}</tr>
+        {% if can_select %}
+        <tr>
+          <th scope="row">Aktion</th>
+          {% for option in options %}
+          <td>
+            <div class="d-grid gap-2">
+              <a class="btn btn-sm btn-outline-secondary" href="{% url 'architecture:solution_option_update' option.pk %}">Option bearbeiten</a>
+              {% if option.recommendation == 'preferred' or option.selection_decisions.all or option.use_case_origins.all %}
+                <button class="btn btn-sm btn-outline-secondary" type="button" disabled>Nicht weiterverfolgen</button>
+                <div class="small text-muted">Ausgewählte, bevorzugte oder mit einem Use Case verknüpfte Optionen sind geschützt.</div>
+              {% else %}
+                <form method="post" action="{% url 'architecture:solution_option_retire' option.pk %}">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-outline-danger w-100" type="submit">Nicht weiterverfolgen</button>
+                </form>
+              {% endif %}
+            </div>
+          </td>
+          {% endfor %}
+        </tr>
+        {% endif %}
       </tbody>
     </table>
   </div>
