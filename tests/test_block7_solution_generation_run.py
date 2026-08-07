@@ -162,9 +162,7 @@ def test_running_process_rejects_second_start_before_extra_quota(owner, business
 def test_stale_running_generation_is_failed_and_next_start_proceeds(owner, business_unit):
     process = make_process(owner, business_unit)
     first = prepare_solution_generation_run(actor=owner, process_analysis_id=process.pk)
-    stale_started_at = timezone.now() - timedelta(
-        seconds=15 + RUNNING_RECOVERY_GRACE_SECONDS + 1
-    )
+    stale_started_at = timezone.now() - timedelta(seconds=15 + RUNNING_RECOVERY_GRACE_SECONDS + 1)
     SolutionGenerationRun.objects.filter(pk=first.run.pk).update(started_at=stale_started_at)
 
     second = prepare_solution_generation_run(actor=owner, process_analysis_id=process.pk)
