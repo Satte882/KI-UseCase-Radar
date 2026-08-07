@@ -148,10 +148,16 @@ def test_atomic_adoption_creates_exactly_three_neutral_regular_options(
     options = list(SolutionOption.objects.filter(process_analysis=process).order_by("option_type"))
     assert len(options) == 3
     assert {option.option_type for option in options} == set(LANE_TYPES.values())
-    assert all(option.recommendation == SolutionOption.Recommendation.CANDIDATE for option in options)
-    assert all(option.evaluation_status == SolutionOption.EvaluationStatus.DRAFT for option in options)
+    assert all(
+        option.recommendation == SolutionOption.Recommendation.CANDIDATE for option in options
+    )
+    assert all(
+        option.evaluation_status == SolutionOption.EvaluationStatus.DRAFT for option in options
+    )
     assert all(option.feasibility == SolutionOption.Effort.NOT_ASSESSED for option in options)
-    assert all(option.integration_effort == SolutionOption.Effort.NOT_ASSESSED for option in options)
+    assert all(
+        option.integration_effort == SolutionOption.Effort.NOT_ASSESSED for option in options
+    )
     assert all(option.created_by == owner for option in options)
     assert not ProcessValidation.objects.filter(process_analysis=process).exists()
     assert not SolutionSelectionDecision.objects.filter(process_analysis=process).exists()
@@ -255,9 +261,11 @@ def test_persistence_failure_rolls_back_first_created_option(owner, business_uni
             raise RuntimeError("simulated persistence failure")
         return original_save(instance, *args, **kwargs)
 
-    with patch.object(SolutionOption, "save", new=flaky_save):
-        with pytest.raises(RuntimeError, match="simulated persistence failure"):
-            adopt_solution_generation_bundle(actor=owner, run_id=run.pk)
+    with (
+        patch.object(SolutionOption, "save", new=flaky_save),
+        pytest.raises(RuntimeError, match="simulated persistence failure"),
+    ):
+        adopt_solution_generation_bundle(actor=owner, run_id=run.pk)
 
     assert not SolutionOption.objects.filter(process_analysis=process).exists()
     run.refresh_from_db()

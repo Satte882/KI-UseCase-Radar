@@ -124,7 +124,8 @@ def solution_generation_adopt(request, run_id):
     if result.created:
         messages.success(
             request,
-            "Drei KI-Entwürfe wurden als reguläre, noch nicht bewertete Lösungsoptionen übernommen.",
+            "Drei KI-Entwürfe wurden als reguläre, noch nicht bewertete "
+            "Lösungsoptionen übernommen.",
         )
     else:
         messages.info(
