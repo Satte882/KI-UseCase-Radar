@@ -92,6 +92,52 @@ Bei `invalid_generation_payload` wird nun zusätzlich ein begrenzter, serverseit
 Fail-closed-Regel bestehen, während der tatsächliche Grund der KI-Verwerfung sichtbar und klar
 vom bestehenden Auswahlblocker getrennt wird.
 
+## 5. Unbelegte Zahlen in `expected_value`
+
+### Befund
+
+Ein weiterer manueller Lauf wurde korrekt fail-closed verworfen, weil alle drei generierten
+`expected_value`-Texte neue quantitative Nutzenangaben enthielten, unter anderem 20 %, 4 und
+30 %. Die Prozessanalyse enthält eine dokumentierte `baseline_metrics`-Quelle; diese wird als
+`process.baseline_metrics` bereits vollständig in den minimierten Source Snapshot und damit an
+den Provider weitergereicht. Es fehlten also keine Baseline-Daten im Providerpfad.
+
+Die bestehende Validierung verlangt für jeden generierten Zahlenwert, dass derselbe Wert in
+einer im selben Statement referenzierten Quelle vorkommt. Eine aus einer Baseline berechnete,
+geschätzte oder extrapolierte Verbesserungsquote ist deshalb bewusst nicht zulässig.
+
+### Ursache
+
+Der Prompt formulierte die Regel bisher nur allgemein als „keine Kennzahlen erfinden“. Das war
+für ein Modell bei einem Feld namens `expected_value` zu wenig präzise: Es liegt nahe, dort
+selbstständig Prozentwerte, Zielwerte oder Einsparungen zu schätzen, obwohl der nachgelagerte
+Validator genau solche nicht belegten Zahlen ablehnt.
+
+### Korrektur
+
+Prompt-Version 1.1 gleicht die Generierungsanleitung jetzt explizit an die unveränderte
+Fail-closed-Validatorsemantik an:
+
+- Jeder Zahlenwert muss in mindestens einer im selben Statement referenzierten Source-ID bereits
+  vorkommen.
+- Keine Berechnung, Schätzung, Extrapolation, Spannweite oder Umrechnung aus Baselines.
+- `expected_value` ist standardmäßig qualitativ zu formulieren.
+- Eine dokumentierte Baseline darf als Ausgangswert wiederholt werden, wenn
+  `process.baseline_metrics` referenziert wird; daraus darf keine neue Zielgröße oder
+  Verbesserungsquote abgeleitet werden.
+
+Die Regeln stehen sowohl in der Systeminstruktion als auch einmal strukturiert im
+`generation_rules`-Block des User-Payloads. Der `untrusted_source_data`-Block bleibt davon
+getrennt. Die serverseitige quantitative Validierung wurde nicht gelockert oder verändert.
+
+### Regression
+
+Der neue Regressionstest bildet den beobachteten Fall mit bereits vorhandener manueller Option
+und den unbelegten Werten 20 %, 4 und 30 % nach und bestätigt weiterhin die vollständige
+Verwerfung. Ein zweiter Lauf mit demselben Prozessaufbau verwendet ausschließlich qualitative
+Nutzenformulierungen beziehungsweise die belegte Baseline von 11 Minuten und erreicht den
+`SUCCESS`-Preview, ohne die bereits vorhandene manuelle Option zu verändern.
+
 ## Regression
 
 Der Nachtrag ergänzt beziehungsweise verschärft Tests für:
@@ -103,7 +149,11 @@ Der Nachtrag ergänzt beziehungsweise verschärft Tests für:
 - das dedizierte Prozesskontingent für Block 7,
 - erfolgreiche Generierung trotz bereits vorhandener manueller Lösungsoption,
 - sichtbaren Contract-Validierungsgrund,
-- klare Herkunft des „Mindestens zwei …“-Hinweises aus der bestehenden Auswahlmatrix.
+- klare Herkunft des „Mindestens zwei …“-Hinweises aus der bestehenden Auswahlmatrix,
+- Weitergabe von `process.baseline_metrics` an den Provider,
+- explizite Prompt-Regeln gegen abgeleitete quantitative Nutzenangaben,
+- unveränderte Fail-closed-Ablehnung der beobachteten 20-/4-/30-%-Halluzinationen,
+- erfolgreichen Preview mit qualitativen beziehungsweise direkt belegten Nutzenangaben.
 
 Die fachliche Blockgrenze bleibt unverändert: keine automatische Bewertung, Präferenz,
 Auswahlentscheidung, Governance-, Delivery- oder Lifecycle-Änderung.
