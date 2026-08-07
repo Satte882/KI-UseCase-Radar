@@ -157,7 +157,13 @@ def provider_result(payload=None):
     )
 
 
-def create_manual_option(process, owner, *, name="Bestehende manuelle Option", assessed=False):
+def create_manual_option(
+    process,
+    owner,
+    *,
+    name="Bestehende manuelle Option",
+    assessed=False,
+):
     return SolutionOption.objects.create(
         process_analysis=process,
         option_type=SolutionOption.OptionType.STANDARD_SOFTWARE,
@@ -207,11 +213,11 @@ def test_missing_required_source_fails_before_provider_or_side_effects(owner, bu
     process.save(update_fields=["current_flow", "updated_at"])
     before_gates = gate_counts()
 
-    with patch(
-        "ki_radar.accelerator.solution_generation_service.request_openrouter"
-    ) as provider:
-        with pytest.raises(SolutionGenerationError) as exc_info:
-            generate_solution_preview(actor=owner, process_analysis_id=process.pk)
+    with (
+        patch("ki_radar.accelerator.solution_generation_service.request_openrouter") as provider,
+        pytest.raises(SolutionGenerationError) as exc_info,
+    ):
+        generate_solution_preview(actor=owner, process_analysis_id=process.pk)
 
     assert exc_info.value.code == "process_not_ready"
     provider.assert_not_called()
@@ -222,7 +228,10 @@ def test_missing_required_source_fails_before_provider_or_side_effects(owner, bu
 
 
 @pytest.mark.django_db
-def test_contradictory_source_facts_are_preserved_not_silently_resolved(owner, business_unit):
+def test_contradictory_source_facts_are_preserved_not_silently_resolved(
+    owner,
+    business_unit,
+):
     process = make_process(owner, business_unit)
     process.current_flow = "Freigaben erfolgen im Ist-Ablauf durch genau eine Person."
     process.business_rules = "Jede Freigabe erfordert ausdrücklich zwei prüfende Personen."
@@ -279,12 +288,14 @@ def test_provider_failures_leave_manual_data_and_gates_unchanged(
     process_snapshot = (process.status, process.version, process.current_flow)
     before_gates = gate_counts()
 
-    with patch(
-        "ki_radar.accelerator.solution_generation_service.request_openrouter",
-        side_effect=OpenRouterUnavailable("provider failure", code=provider_code),
-    ) as provider:
-        with pytest.raises(SolutionGenerationError) as exc_info:
-            generate_solution_preview(actor=owner, process_analysis_id=process.pk)
+    with (
+        patch(
+            "ki_radar.accelerator.solution_generation_service.request_openrouter",
+            side_effect=OpenRouterUnavailable("provider failure", code=provider_code),
+        ) as provider,
+        pytest.raises(SolutionGenerationError) as exc_info,
+    ):
+        generate_solution_preview(actor=owner, process_analysis_id=process.pk)
 
     assert exc_info.value.code == provider_code
     provider.assert_called_once()
@@ -329,12 +340,14 @@ def test_invalid_generated_bundle_fails_closed_without_domain_writes(
         )
     before_gates = gate_counts()
 
-    with patch(
-        "ki_radar.accelerator.solution_generation_service.request_openrouter",
-        return_value=provider_result(payload),
+    with (
+        patch(
+            "ki_radar.accelerator.solution_generation_service.request_openrouter",
+            return_value=provider_result(payload),
+        ),
+        pytest.raises(SolutionGenerationError) as exc_info,
     ):
-        with pytest.raises(SolutionGenerationError) as exc_info:
-            generate_solution_preview(actor=owner, process_analysis_id=process.pk)
+        generate_solution_preview(actor=owner, process_analysis_id=process.pk)
 
     assert exc_info.value.code == "invalid_generation_payload"
     assert not SolutionOption.objects.filter(process_analysis=process).exists()
@@ -356,11 +369,11 @@ def test_concurrent_second_generation_never_reaches_provider_or_extra_quota(
         AcceleratorLLMQuota.objects.order_by("scope").values_list("scope", "calls")
     )
 
-    with patch(
-        "ki_radar.accelerator.solution_generation_service.request_openrouter"
-    ) as provider:
-        with pytest.raises(SolutionGenerationError) as exc_info:
-            generate_solution_preview(actor=owner, process_analysis_id=process.pk)
+    with (
+        patch("ki_radar.accelerator.solution_generation_service.request_openrouter") as provider,
+        pytest.raises(SolutionGenerationError) as exc_info,
+    ):
+        generate_solution_preview(actor=owner, process_analysis_id=process.pk)
 
     assert exc_info.value.code == "generation_already_running"
     provider.assert_not_called()
