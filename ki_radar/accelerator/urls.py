@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import adoption_views, structured_views, views
+from . import adoption_views, solution_generation_views, structured_views, views
 from .models import CaptureSession
 
 app_name = "accelerator"
@@ -68,5 +68,15 @@ urlpatterns = [
         "analyses/<uuid:analysis_id>/structured-review/<uuid:batch_id>/commit/",
         structured_views.structured_review_commit,
         name="structured_review_commit",
+    ),
+    path(
+        "processes/<uuid:process_pk>/solution-generation/start/",
+        solution_generation_views.solution_generation_start,
+        name="solution_generation_start",
+    ),
+    path(
+        "solution-generations/<uuid:run_id>/preview/",
+        solution_generation_views.solution_generation_preview,
+        name="solution_generation_preview",
     ),
 ]

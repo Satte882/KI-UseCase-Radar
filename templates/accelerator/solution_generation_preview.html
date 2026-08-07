@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}KI-Lösungsentwürfe prüfen – KI-Radar{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="eyebrow mb-2">{{ process_analysis.name }}</div>
+    <h1 class="page-title">KI-Lösungsentwürfe prüfen</h1>
+    <p class="page-subtitle">Drei lösungsoffene Entwürfe auf demselben Quellstand. Quellen, Annahmen, Evidenzlücken und Unsicherheit bleiben direkt sichtbar.</p>
+  </div>
+  <a class="btn btn-outline-secondary" href="{% url 'architecture:solution_option_compare' process_analysis.pk %}">Zum Lösungsvergleich</a>
+</div>
+
+<div class="alert alert-info">
+  <strong>KI-Entwurf – noch nicht fachlich bewertet.</strong>
+  Es wurden weder Machbarkeit noch Integrationsaufwand bewertet und keine bevorzugte Option ausgewählt.
+</div>
+
+{% if state.stale %}
+  <div class="alert alert-warning"><strong>Veralteter Quellstand.</strong> Die Prozessdaten haben sich seit der Generierung geändert. Bearbeitung ist gesperrt; bitte neu generieren.</div>
+{% elif state.expired %}
+  <div class="alert alert-warning"><strong>Vorschau abgelaufen.</strong> Bearbeitung ist gesperrt; bitte neu generieren.</div>
+{% elif not state.current_ready %}
+  <div class="alert alert-warning"><strong>Prozessanalyse nicht mehr vollständig.</strong> Bearbeitung ist gesperrt; bitte die Prozessanalyse vervollständigen und neu generieren.</div>
+{% endif %}
+
+<div class="app-card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-start gap-3 flex-wrap">
+    <div>
+      <strong>Gemeinsame Ausgangslage</strong>
+      <div class="small text-muted mt-1">Einmal eingefrorene Quellenbasis für alle drei Entwürfe.</div>
+    </div>
+    <div class="small text-muted text-end">
+      <div>Generiert: {{ run.created_at|date:"d.m.Y H:i" }}</div>
+      <div>Quellstand bei Generierung: {{ frozen_validation_label }}</div>
+      {% if state.stale %}<div>Aktueller Quellstand: {{ current_validation_label }}</div>{% endif %}
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="row g-3">
+      {% for fact in source_facts %}
+        <div class="col-12 col-md-6">
+          <div class="border border-secondary-subtle rounded p-3 h-100">
+            <div class="small text-muted">{{ fact.label }}</div>
+            <div class="text-preline mt-1">{{ fact.value }}</div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<form method="post">
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+  <div class="row g-4 align-items-stretch">
+    {% for option in preview_options %}
+      <div class="col-12 col-xl-4">
+        <section class="app-card h-100">
+          <div class="card-header">
+            <span class="badge badge-soft">{{ option.label }}</span>
+            <div class="small text-muted mt-2">KI-Entwurf – noch nicht fachlich bewertet</div>
+          </div>
+          <div class="card-body">
+            {% for field in option.fields %}
+              <section class="pb-3 mb-3 border-bottom border-secondary-subtle">
+                <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                  <strong>{{ field.label }}</strong>
+                  {% if field.edited %}<span class="badge badge-soft">Manuell bearbeitet</span>{% endif %}
+                </div>
+                {% if editable %}
+                  {{ field.form_field }}
+                  {% if field.form_field.errors %}<div class="text-danger small mt-1">{{ field.form_field.errors }}</div>{% endif %}
+                {% else %}
+                  <div class="text-preline">{{ field.text }}</div>
+                {% endif %}
+
+                <div class="small mt-3">
+                  <div class="text-muted mb-1">Quellen</div>
+                  {% for source in field.sources %}
+                    <span class="badge badge-soft me-1 mb-1">{{ source.label }}</span>
+                  {% empty %}
+                    <span class="text-muted">Keine direkte Quelle</span>
+                  {% endfor %}
+                </div>
+
+                {% if field.assumptions %}
+                  <div class="small mt-2">
+                    <div class="text-muted">Annahmen</div>
+                    <ul class="mb-0 ps-3">{% for item in field.assumptions %}<li>{{ item }}</li>{% endfor %}</ul>
+                  </div>
+                {% endif %}
+
+                {% if field.open_evidence %}
+                  <div class="small mt-2">
+                    <div class="text-muted">Offene Evidenz</div>
+                    <ul class="mb-0 ps-3">{% for item in field.open_evidence %}<li>{{ item }}</li>{% endfor %}</ul>
+                  </div>
+                {% endif %}
+
+                <div class="small mt-2">
+                  <div class="text-muted">Unsicherheit</div>
+                  <div>{{ field.uncertainty_label }} · {{ field.uncertainty_reason }}</div>
+                </div>
+              </section>
+            {% endfor %}
+          </div>
+        </section>
+      </div>
+    {% endfor %}
+  </div>
+
+  {% if editable %}
+    <div class="d-flex justify-content-end mt-4">
+      <button class="btn btn-primary" type="submit">Bearbeitungen speichern</button>
+    </div>
+  {% endif %}
+</form>
+{% endblock %}
