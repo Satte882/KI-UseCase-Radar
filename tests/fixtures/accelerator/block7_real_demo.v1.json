@@ -52,7 +52,7 @@
       "assistant"
     ],
     "preview_option_count": 3,
-    "prompt_version": "1.0",
+    "prompt_version": "1.1",
     "provider_calls": 1,
     "provider_mode": "deterministic_ci_double",
     "schema_version": "1.0",
