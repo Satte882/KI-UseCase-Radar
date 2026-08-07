@@ -240,7 +240,7 @@ def run_block7_real_demo() -> dict[str, object]:
     rollback = _rollback_report(actor=actor, source_process=process)
 
     options = []
-    for lane, option in zip(OPTION_LANES, adoption.options):
+    for lane, option in zip(OPTION_LANES, adoption.options, strict=True):
         options.append(
             {
                 "lane": lane,

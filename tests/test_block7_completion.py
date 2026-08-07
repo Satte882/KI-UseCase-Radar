@@ -101,7 +101,13 @@ def test_block7_real_demo_preview_and_comparison_preserve_review_contract(client
     options = SolutionOption.objects.filter(process_analysis=process)
     assert options.count() == 3
     assert not SolutionSelectionDecision.objects.filter(process_analysis=process).exists()
-    assert all(option.recommendation == SolutionOption.Recommendation.CANDIDATE for option in options)
-    assert all(option.evaluation_status == SolutionOption.EvaluationStatus.DRAFT for option in options)
+    assert all(
+        option.recommendation == SolutionOption.Recommendation.CANDIDATE for option in options
+    )
+    assert all(
+        option.evaluation_status == SolutionOption.EvaluationStatus.DRAFT for option in options
+    )
     assert all(option.feasibility == SolutionOption.Effort.NOT_ASSESSED for option in options)
-    assert all(option.integration_effort == SolutionOption.Effort.NOT_ASSESSED for option in options)
+    assert all(
+        option.integration_effort == SolutionOption.Effort.NOT_ASSESSED for option in options
+    )
