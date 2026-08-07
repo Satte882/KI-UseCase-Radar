@@ -105,7 +105,8 @@ def solution_option_retire(request, pk):
     else:
         messages.success(
             request,
-            f"„{option.name}“ wird nicht weiterverfolgt und bleibt für den Audit-Nachweis erhalten.",
+            f"„{option.name}“ wird nicht weiterverfolgt und bleibt für den "
+            "Audit-Nachweis erhalten.",
         )
     comparison_url = reverse(
         "architecture:solution_option_compare",
