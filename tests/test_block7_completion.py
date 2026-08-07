@@ -11,9 +11,15 @@ from django.urls import reverse
 from ki_radar.accelerator import block7_demo
 from ki_radar.accelerator.models import SolutionGenerationRun
 from ki_radar.accounts.models import User
-from ki_radar.architecture.models import ProcessAnalysis, SolutionOption, SolutionSelectionDecision
+from ki_radar.architecture.models import (
+    ProcessAnalysis,
+    SolutionOption,
+    SolutionSelectionDecision,
+)
 
-FIXTURE_PATH = Path(__file__).parent / "fixtures" / "accelerator" / "block7_real_demo.v1.json"
+FIXTURE_PATH = (
+    Path(__file__).parent / "fixtures" / "accelerator" / "block7_real_demo.v1.json"
+)
 CHECKSUM_PATH = FIXTURE_PATH.with_suffix(".sha256")
 
 
@@ -102,12 +108,15 @@ def test_block7_real_demo_preview_and_comparison_preserve_review_contract(client
     assert options.count() == 3
     assert not SolutionSelectionDecision.objects.filter(process_analysis=process).exists()
     assert all(
-        option.recommendation == SolutionOption.Recommendation.CANDIDATE for option in options
+        option.recommendation == SolutionOption.Recommendation.CANDIDATE
+        for option in options
     )
     assert all(
-        option.evaluation_status == SolutionOption.EvaluationStatus.DRAFT for option in options
+        option.evaluation_status == SolutionOption.EvaluationStatus.DRAFT
+        for option in options
     )
     assert all(option.feasibility == SolutionOption.Effort.NOT_ASSESSED for option in options)
     assert all(
-        option.integration_effort == SolutionOption.Effort.NOT_ASSESSED for option in options
+        option.integration_effort == SolutionOption.Effort.NOT_ASSESSED
+        for option in options
     )

@@ -58,10 +58,13 @@ FIELD_SOURCE_IDS = {
 
 def _statement(*, lane: str, field_name: str) -> dict[str, object]:
     label = LANE_LABELS[lane]
-    text = LANE_TITLES[lane] if field_name == "name" else (
-        f"{label}: {field_name.replace('_', ' ')} wird aus dem dokumentierten "
-        "Angebotsvergleich abgeleitet."
-    )
+    if field_name == "name":
+        text = LANE_TITLES[lane]
+    else:
+        text = (
+            f"{label}: {field_name.replace('_', ' ')} wird aus dem dokumentierten "
+            "Angebotsvergleich abgeleitet."
+        )
     assumptions = []
     open_evidence = []
     if lane == "assistant" and field_name == "risks":
@@ -146,7 +149,11 @@ def _preview_evidence(preview_payload: dict[str, object]) -> dict[str, bool]:
     }
 
 
-def _rollback_report(*, actor: User, source_process: ProcessAnalysis) -> dict[str, object]:
+def _rollback_report(
+    *,
+    actor: User,
+    source_process: ProcessAnalysis,
+) -> dict[str, object]:
     rollback_process = ProcessAnalysis.objects.create(
         stage=source_process.stage,
         name="Angebotsvergleich Rollback-Nachweis",
@@ -207,7 +214,9 @@ def _rollback_report(*, actor: User, source_process: ProcessAnalysis) -> dict[st
     run.refresh_from_db()
     report = {
         "error": error,
-        "option_count": SolutionOption.objects.filter(process_analysis=rollback_process).count(),
+        "option_count": SolutionOption.objects.filter(
+            process_analysis=rollback_process
+        ).count(),
         "adoption_recorded": "adoption" in run.preview_payload,
     }
     rollback_process.delete()
