@@ -246,7 +246,8 @@ def test_preview_shows_shared_sources_provenance_and_unassessed_boundary(
     assert "Unsicherheit" in content
     assert "KI-Entwurf" in content
     assert "noch nicht fachlich bewertet" in content
-    assert "Machbarkeit" not in content
+    assert "Machbarkeit bewerten" not in content
+    assert "Integrationsaufwand bewerten" not in content
     assert "Bevorzugte Option" not in content
 
 
