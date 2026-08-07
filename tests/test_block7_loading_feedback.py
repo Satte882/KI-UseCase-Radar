@@ -13,3 +13,6 @@ def test_solution_generation_submit_has_local_progress_feedback_and_double_submi
     assert "KI-Generierung läuft. Das kann einige Sekunden dauern." in script
     assert 'status.setAttribute("role", "status")' in script
     assert 'status.setAttribute("aria-live", "polite")' in script
+    assert "waitForPaint: true" in script
+    assert script.count("window.requestAnimationFrame") >= 2
+    assert "HTMLFormElement.prototype.submit.call(form)" in script

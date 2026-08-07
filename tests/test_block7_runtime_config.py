@@ -28,10 +28,20 @@ def test_block7_prompt_explicitly_caps_verbosity_without_dropping_comparison_fie
     assert "höchstens zwei kurze Einträge" in SOLUTION_GENERATION_SYSTEM_PROMPT
 
 
-@override_settings(ACCELERATOR_SOLUTION_GENERATION_MAX_OUTPUT_TOKENS="16384")
-def test_runtime_policy_command_exposes_effective_solution_generation_budget():
+@override_settings(
+    ACCELERATOR_SOLUTION_GENERATION_MAX_OUTPUT_TOKENS="16384",
+    OPENROUTER_API_KEY="test-key",
+    OPENROUTER_MODEL="test/model",
+    OPENROUTER_API_URL="https://openrouter.ai/api/v1/chat/completions",
+)
+def test_runtime_policy_command_exposes_effective_solution_generation_and_provider_config():
     output = StringIO()
 
     call_command("show_accelerator_llm_policy", stdout=output)
 
-    assert "solution_generation_max_output_tokens=16384" in output.getvalue()
+    rendered = output.getvalue()
+    assert "solution_generation_max_output_tokens=16384" in rendered
+    assert "openrouter_api_key_configured=yes" in rendered
+    assert "openrouter_model=test/model" in rendered
+    assert "openrouter_api_url=https://openrouter.ai/api/v1/chat/completions" in rendered
+    assert "test-key" not in rendered

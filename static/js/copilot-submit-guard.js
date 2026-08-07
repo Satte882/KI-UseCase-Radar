@@ -1,5 +1,8 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const attachSubmitGuard = (form, { buttonLabel, statusLabel = "" }) => {
+  const attachSubmitGuard = (
+    form,
+    {buttonLabel, statusLabel = "", waitForPaint = false},
+  ) => {
     form.addEventListener("submit", (event) => {
       if (form.dataset.submitted === "true") {
         event.preventDefault();
@@ -28,6 +31,15 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         button.textContent = buttonLabel;
       }
+
+      if (waitForPaint) {
+        event.preventDefault();
+        window.requestAnimationFrame(() => {
+          window.requestAnimationFrame(() => {
+            HTMLFormElement.prototype.submit.call(form);
+          });
+        });
+      }
     });
   };
 
@@ -41,6 +53,7 @@ document.addEventListener("DOMContentLoaded", () => {
       attachSubmitGuard(form, {
         buttonLabel: "KI-Entwürfe werden erstellt …",
         statusLabel: "KI-Generierung läuft. Das kann einige Sekunden dauern.",
+        waitForPaint: true,
       });
     });
 
