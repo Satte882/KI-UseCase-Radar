@@ -69,7 +69,7 @@ def _statement(*, lane: str, field_name: str) -> dict[str, object]:
 
     open_evidence = []
     if lane == "assistant" and field_name == "technology_constraints":
-        open_evidence.append("Betriebs- und Datenschutzleitplanken für eine Assistenzlösung klären.")
+        open_evidence.append("Betriebs- und Datenschutzleitplanken für Assistenzlösung klären.")
 
     return {
         "text": text,
