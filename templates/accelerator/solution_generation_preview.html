@@ -142,6 +142,7 @@
       </div>
       <form method="post" action="{% url 'accelerator:solution_generation_adopt' run.pk %}" id="solution-generation-adoption-form">
         {% csrf_token %}
+        <input type="hidden" name="selection_mode" value="explicit">
         <button class="btn btn-primary" type="submit" data-testid="adopt-selected-solutions">Ausgewählte KI-Lösungsoptionen hinzufügen</button>
       </form>
     </div>
