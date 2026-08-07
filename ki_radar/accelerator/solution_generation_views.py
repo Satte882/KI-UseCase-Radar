@@ -46,6 +46,15 @@ def _generation_error_message(exc: SolutionGenerationError) -> str:
         "invalid_configuration",
         "invalid_generation_payload",
         "internal_error",
+        "not_configured",
+        "unauthorized",
+        "provider_schema_unsupported",
+        "provider_unavailable",
+        "provider_error",
+        "invalid_response",
+        "empty_response",
+        "response_too_large",
+        "unavailable",
     }:
         return str(exc)
     if exc.code == "rate_limit":
