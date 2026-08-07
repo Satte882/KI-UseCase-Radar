@@ -17,23 +17,25 @@ from ki_radar.architecture.models import (
     SolutionSelectionDecision,
 )
 
-FIXTURE_PATH = (
-    Path(__file__).parent / "fixtures" / "accelerator" / "block7_real_demo.v1.json"
-)
-CHECKSUM_PATH = FIXTURE_PATH.with_suffix(".sha256")
+FIXTURE_DIR = Path(__file__).parent / "fixtures" / "accelerator"
+FIXTURE_PATH = FIXTURE_DIR / "block7_real_demo.v1.json"
+CHECKSUM_PATH = FIXTURE_DIR / "block7_real_demo.v1.sha256"
 
 
 def _expected_report() -> dict:
-    return json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
+    content = FIXTURE_PATH.read_text(encoding="utf-8")
+    return json.loads(content)
 
 
 def test_block7_real_demo_fixture_checksum_prevents_silent_drift():
-    expected = CHECKSUM_PATH.read_text(encoding="utf-8").split()[0]
+    checksum_text = CHECKSUM_PATH.read_text(encoding="utf-8")
+    expected = checksum_text.split()[0]
     actual = hashlib.sha256(FIXTURE_PATH.read_bytes()).hexdigest()
+    report = _expected_report()
 
     assert actual == expected
-    assert _expected_report()["path"] == "solution_generation"
-    assert _expected_report()["generation"]["provider_calls"] == 1
+    assert report["path"] == "solution_generation"
+    assert report["generation"]["provider_calls"] == 1
 
 
 @pytest.mark.django_db
@@ -55,11 +57,15 @@ def test_block7_real_demo_management_command_is_reproducible(tmp_path):
     output_path = tmp_path / "block7-real-demo.json"
 
     call_command("run_block7_real_demo", output=output_path)
-    first = json.loads(output_path.read_text(encoding="utf-8"))
-    call_command("run_block7_real_demo", output=output_path)
-    second = json.loads(output_path.read_text(encoding="utf-8"))
+    first_text = output_path.read_text(encoding="utf-8")
+    first = json.loads(first_text)
 
-    assert first == second == _expected_report()
+    call_command("run_block7_real_demo", output=output_path)
+    second_text = output_path.read_text(encoding="utf-8")
+    second = json.loads(second_text)
+
+    assert first == second
+    assert second == _expected_report()
 
 
 @pytest.mark.django_db
@@ -76,9 +82,8 @@ def test_block7_real_demo_preview_and_comparison_preserve_review_contract(client
     )
     client.force_login(actor)
 
-    preview_response = client.get(
-        reverse("accelerator:solution_generation_preview", args=[run.pk])
-    )
+    preview_url = reverse("accelerator:solution_generation_preview", args=[run.pk])
+    preview_response = client.get(preview_url)
     preview_page = preview_response.content.decode()
 
     assert preview_response.status_code == 200
@@ -96,27 +101,18 @@ def test_block7_real_demo_preview_and_comparison_preserve_review_contract(client
     assert "<table" not in preview_page
     assert "min-width" not in preview_page
 
-    compare_response = client.get(
-        reverse("architecture:solution_option_compare", args=[process.pk])
-    )
+    compare_url = reverse("architecture:solution_option_compare", args=[process.pk])
+    compare_response = client.get(compare_url)
     compare_page = compare_response.content.decode()
     assert compare_response.status_code == 200
     for option in report["adoption"]["options"]:
         assert option["name"] in compare_page
 
-    options = SolutionOption.objects.filter(process_analysis=process)
-    assert options.count() == 3
+    options = list(SolutionOption.objects.filter(process_analysis=process))
+    assert len(options) == 3
     assert not SolutionSelectionDecision.objects.filter(process_analysis=process).exists()
-    assert all(
-        option.recommendation == SolutionOption.Recommendation.CANDIDATE
-        for option in options
-    )
-    assert all(
-        option.evaluation_status == SolutionOption.EvaluationStatus.DRAFT
-        for option in options
-    )
-    assert all(option.feasibility == SolutionOption.Effort.NOT_ASSESSED for option in options)
-    assert all(
-        option.integration_effort == SolutionOption.Effort.NOT_ASSESSED
-        for option in options
-    )
+    for option in options:
+        assert option.recommendation == SolutionOption.Recommendation.CANDIDATE
+        assert option.evaluation_status == SolutionOption.EvaluationStatus.DRAFT
+        assert option.feasibility == SolutionOption.Effort.NOT_ASSESSED
+        assert option.integration_effort == SolutionOption.Effort.NOT_ASSESSED
