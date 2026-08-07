@@ -6,6 +6,7 @@ from django.db import transaction
 from .focus import get_value_stream_focus
 from .models import ProcessAnalysis, SolutionOption, SolutionSelectionDecision
 from .permissions import can_edit_value_stream
+from .solution_retirement import active_solution_options
 
 OPTION_TYPE_PRIORITY = {
     SolutionOption.OptionType.NO_TECH: 0,
@@ -22,7 +23,7 @@ OPTION_TYPE_PRIORITY = {
 
 def ordered_solution_options(process_analysis: ProcessAnalysis) -> list[SolutionOption]:
     return sorted(
-        process_analysis.solution_options.all(),
+        active_solution_options(process_analysis),
         key=lambda option: (
             OPTION_TYPE_PRIORITY.get(option.option_type, 99),
             option.name.casefold(),
@@ -94,7 +95,7 @@ def select_preferred_solution(
         raise ValidationError(" | ".join(blockers))
     selected = next((option for option in options if option.pk == selected_option.pk), None)
     if selected is None:
-        raise ValidationError("Die gewählte Option gehört nicht zu dieser Prozessanalyse.")
+        raise ValidationError("Die gewählte Option gehört nicht zu den aktiven Lösungsoptionen.")
     reason = rationale.strip()
     if not reason:
         raise ValidationError("Für die Auswahl ist eine Begründung erforderlich.")
@@ -106,7 +107,8 @@ def select_preferred_solution(
         comparison_snapshot=build_comparison_snapshot(options),
         decided_by=actor,
     )
-    process_analysis.solution_options.exclude(pk=selected.pk).update(
+    active_ids = [option.pk for option in options]
+    process_analysis.solution_options.filter(pk__in=active_ids).exclude(pk=selected.pk).update(
         recommendation=SolutionOption.Recommendation.REJECTED
     )
     selected.recommendation = SolutionOption.Recommendation.PREFERRED
