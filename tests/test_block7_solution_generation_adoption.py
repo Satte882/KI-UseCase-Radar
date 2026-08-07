@@ -350,7 +350,8 @@ def test_preview_offers_one_adoption_choice_per_generated_option(client, owner, 
     ).content.decode()
 
     assert content.count('name="selected_lanes"') == 3
-    assert content.count("Für Übernahme auswählen") == 3
+    assert content.count("Diesen KI-Vorschlag übernehmen") == 3
+    assert content.count("Vorschlag verwerfen") == 3
     assert "Ausgewählte KI-Lösungsoptionen hinzufügen" in content
     assert 'name="selection_mode" value="explicit"' in content
 
