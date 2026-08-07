@@ -65,15 +65,11 @@ def _statement(*, lane: str, field_name: str) -> dict[str, object]:
 
     assumptions = []
     if lane == "assistant" and field_name == "risks":
-        assumptions.append(
-            "Fachliche Prüfung bleibt vor jeder Auswahlentscheidung erforderlich."
-        )
+        assumptions.append("Fachliche Prüfung bleibt vor jeder Auswahlentscheidung erforderlich.")
 
     open_evidence = []
     if lane == "assistant" and field_name == "technology_constraints":
-        open_evidence.append(
-            "Betriebs- und Datenschutzleitplanken für eine Assistenzlösung klären."
-        )
+        open_evidence.append("Betriebs- und Datenschutzleitplanken für eine Assistenzlösung klären.")
 
     return {
         "text": text,
@@ -159,11 +155,7 @@ def _preview_evidence(preview_payload: dict[str, object]) -> dict[str, bool]:
     }
 
 
-def _rollback_report(
-    *,
-    actor: User,
-    source_process: ProcessAnalysis,
-) -> dict[str, object]:
+def _rollback_report(*, actor: User, source_process: ProcessAnalysis) -> dict[str, object]:
     rollback_process = ProcessAnalysis.objects.create(
         stage=source_process.stage,
         name="Angebotsvergleich Rollback-Nachweis",
@@ -222,9 +214,7 @@ def _rollback_report(
         raise AssertionError("Der erwartete Rollback-Fehler wurde nicht ausgelöst.")
 
     run.refresh_from_db()
-    option_count = SolutionOption.objects.filter(
-        process_analysis=rollback_process
-    ).count()
+    option_count = SolutionOption.objects.filter(process_analysis=rollback_process).count()
     report = {
         "error": error,
         "option_count": option_count,
