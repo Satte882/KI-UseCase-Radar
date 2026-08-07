@@ -1,5 +1,8 @@
 from django import template
 
+from ki_radar.accelerator.solution_generation_entry import (
+    build_solution_generation_entry_context,
+)
 from ki_radar.core.taxonomy import ScreeningLevel
 
 from ..process_findings import build_process_findings
@@ -33,3 +36,8 @@ def process_findings_summary(process_analysis):
         "process_analysis": process_analysis,
         "finding_groups": build_process_findings(process_analysis),
     }
+
+
+@register.simple_tag
+def solution_generation_entry(process_analysis):
+    return build_solution_generation_entry_context(process_analysis)

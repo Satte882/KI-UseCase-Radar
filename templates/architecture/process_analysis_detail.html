@@ -108,16 +108,35 @@
 {% process_findings_summary process_analysis %}
 
 <div class="app-card mb-4" id="loesungsoptionen">
-  <div class="card-header d-flex justify-content-between align-items-start gap-3">
+  {% if can_edit and process_analysis.stage.value_stream.focus.is_selected %}{% solution_generation_entry process_analysis as generation_entry %}{% endif %}
+  <div class="card-header d-flex justify-content-between align-items-start gap-3 flex-wrap">
     <div><strong>Lösungsoptionen vergleichen</strong><div class="small text-muted mt-1">Alternativen anhand identischer Kriterien prüfen und die Auswahl getrennt auditieren. Methodik: Opportunities &amp; Solutions (ADM Phase E).</div></div>
     {% if can_edit and process_analysis.stage.value_stream.focus.is_selected %}
       <div class="d-flex gap-2 flex-wrap">
         {% if journey.next_action.key == 'solution' and journey.next_action.url %}<a class="btn btn-sm btn-primary" href="{{ journey.next_action.url }}" data-testid="primary-next-action-control">{{ journey.next_action.action_label|default:"Lösungsoptionen bearbeiten" }} →</a>{% endif %}
         {% if process_analysis.solution_options.all %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'architecture:solution_option_create' process_analysis.pk %}">Weitere Option ergänzen</a>{% endif %}
+        {% if generation_entry.generation_ready %}
+          <form method="post" action="{% url 'accelerator:solution_generation_start' process_analysis.pk %}" class="m-0">
+            {% csrf_token %}
+            <button class="btn btn-sm btn-outline-secondary" type="submit">3 Lösungsentwürfe mit KI erstellen</button>
+          </form>
+        {% else %}
+          <button class="btn btn-sm btn-outline-secondary" type="button" disabled>3 Lösungsentwürfe mit KI erstellen</button>
+        {% endif %}
+        {% if generation_entry.latest_generation_run %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'accelerator:solution_generation_preview' generation_entry.latest_generation_run.pk %}">Letzten KI-Entwurf ansehen</a>{% endif %}
       </div>
     {% endif %}
   </div>
   <div class="card-body">
+    {% if can_edit and process_analysis.stage.value_stream.focus.is_selected %}
+      {% if not generation_entry.generation_ready %}
+      <div class="alert alert-warning"><strong>KI-Generierung noch nicht möglich.</strong> Es fehlen: {{ generation_entry.generation_missing_labels|join:", " }}.</div>
+      {% elif generation_entry.latest_generation_state.stale %}
+      <div class="alert alert-warning">Der letzte KI-Entwurf basiert auf einem älteren Prozessstand und muss vor einer späteren Übernahme neu generiert werden.</div>
+      {% elif generation_entry.latest_generation_state.expired %}
+      <div class="alert alert-warning">Der letzte KI-Entwurf ist abgelaufen. Eine neue Generierung ist erforderlich.</div>
+      {% endif %}
+    {% endif %}
     {% if not process_analysis.stage.value_stream.focus.is_selected %}<p class="text-muted">Lösungsoptionen können dokumentiert werden, eine bevorzugte Option und die Use-Case-Ableitung setzen jedoch eine positive Fokusentscheidung voraus.</p>{% endif %}
     {% if journey.next_action.key == 'solution' and journey.next_action.action_label == 'Lösungsoptionen vergleichen' %}
     <div class="alert alert-info"><strong>Lösungsentscheidung offen.</strong> Bewerten Sie die Optionen vollständig und wählen Sie die bevorzugte Lösung anschließend in der Vergleichsmatrix mit Begründung aus.</div>
