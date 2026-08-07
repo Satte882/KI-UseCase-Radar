@@ -165,6 +165,12 @@ def create_manual_option(
     name="Bestehende manuelle Option",
     assessed=False,
 ):
+    feasibility = SolutionOption.Effort.MEDIUM if assessed else SolutionOption.Effort.NOT_ASSESSED
+    evaluation_status = (
+        SolutionOption.EvaluationStatus.ASSESSED
+        if assessed
+        else SolutionOption.EvaluationStatus.DRAFT
+    )
     return SolutionOption.objects.create(
         process_analysis=process,
         option_type=SolutionOption.OptionType.STANDARD_SOFTWARE,
@@ -172,23 +178,15 @@ def create_manual_option(
         description="Bestehende manuelle Lösungsbeschreibung",
         expected_value="Manuell dokumentierter Nutzen",
         bottleneck_coverage="Manuell dokumentierte Engpassabdeckung",
-        feasibility=(
-            SolutionOption.Effort.MEDIUM if assessed else SolutionOption.Effort.NOT_ASSESSED
-        ),
+        feasibility=feasibility,
         data_requirements="Manuell dokumentierte Datenanforderungen",
         application_impact="Manuell dokumentierte Anwendungsauswirkung",
-        integration_effort=(
-            SolutionOption.Effort.MEDIUM if assessed else SolutionOption.Effort.NOT_ASSESSED
-        ),
+        integration_effort=feasibility,
         integration_impact="Manuell dokumentierte Integrationsauswirkung",
         technology_constraints="Manuell dokumentierte Leitplanken",
         risks="Manuell dokumentierte Risiken",
         architecture_fit="Manuell dokumentierter Architecture Fit",
-        evaluation_status=(
-            SolutionOption.EvaluationStatus.ASSESSED
-            if assessed
-            else SolutionOption.EvaluationStatus.DRAFT
-        ),
+        evaluation_status=evaluation_status,
         recommendation=SolutionOption.Recommendation.CANDIDATE,
         created_by=owner,
     )
@@ -206,6 +204,14 @@ def gate_counts():
     }
 
 
+def capture_generation_error(owner, process):
+    try:
+        generate_solution_preview(actor=owner, process_analysis_id=process.pk)
+    except SolutionGenerationError as exc:
+        return exc
+    pytest.fail("SolutionGenerationError erwartet")
+
+
 @pytest.mark.django_db
 @override_settings(**VALID_LIMITS)
 def test_missing_required_source_fails_before_provider_or_side_effects(owner, business_unit):
@@ -214,10 +220,10 @@ def test_missing_required_source_fails_before_provider_or_side_effects(owner, bu
     process.save(update_fields=["current_flow", "updated_at"])
     before_gates = gate_counts()
 
-    with patch(PROVIDER_PATH) as provider, pytest.raises(SolutionGenerationError) as exc_info:
-        generate_solution_preview(actor=owner, process_analysis_id=process.pk)
+    with patch(PROVIDER_PATH) as provider:
+        error = capture_generation_error(owner, process)
 
-    assert exc_info.value.code == "process_not_ready"
+    assert error.code == "process_not_ready"
     provider.assert_not_called()
     assert not SolutionGenerationRun.objects.filter(process_analysis=process).exists()
     assert not AcceleratorLLMQuota.objects.filter(process_analysis=process).exists()
@@ -287,12 +293,11 @@ def test_provider_failures_leave_manual_data_and_gates_unchanged(
     process_snapshot = (process.status, process.version, process.current_flow)
     before_gates = gate_counts()
     provider_error = OpenRouterUnavailable("provider failure", code=provider_code)
-    provider_patch = patch(PROVIDER_PATH, side_effect=provider_error)
 
-    with provider_patch as provider, pytest.raises(SolutionGenerationError) as exc_info:
-        generate_solution_preview(actor=owner, process_analysis_id=process.pk)
+    with patch(PROVIDER_PATH, side_effect=provider_error) as provider:
+        error = capture_generation_error(owner, process)
 
-    assert exc_info.value.code == provider_code
+    assert error.code == provider_code
     provider.assert_called_once()
     manual.refresh_from_db()
     process.refresh_from_db()
@@ -334,12 +339,11 @@ def test_invalid_generated_bundle_fails_closed_without_domain_writes(
             "Die Durchlaufzeit sinkt garantiert um 73 Prozent."
         )
     before_gates = gate_counts()
-    provider_patch = patch(PROVIDER_PATH, return_value=provider_result(payload))
 
-    with provider_patch, pytest.raises(SolutionGenerationError) as exc_info:
-        generate_solution_preview(actor=owner, process_analysis_id=process.pk)
+    with patch(PROVIDER_PATH, return_value=provider_result(payload)):
+        error = capture_generation_error(owner, process)
 
-    assert exc_info.value.code == "invalid_generation_payload"
+    assert error.code == "invalid_generation_payload"
     assert not SolutionOption.objects.filter(process_analysis=process).exists()
     run = SolutionGenerationRun.objects.get(process_analysis=process)
     assert run.status == SolutionGenerationRun.Status.FAILED
@@ -359,10 +363,10 @@ def test_concurrent_second_generation_never_reaches_provider_or_extra_quota(
         AcceleratorLLMQuota.objects.order_by("scope").values_list("scope", "calls")
     )
 
-    with patch(PROVIDER_PATH) as provider, pytest.raises(SolutionGenerationError) as exc_info:
-        generate_solution_preview(actor=owner, process_analysis_id=process.pk)
+    with patch(PROVIDER_PATH) as provider:
+        error = capture_generation_error(owner, process)
 
-    assert exc_info.value.code == "generation_already_running"
+    assert error.code == "generation_already_running"
     provider.assert_not_called()
     assert list(
         AcceleratorLLMQuota.objects.order_by("scope").values_list("scope", "calls")
