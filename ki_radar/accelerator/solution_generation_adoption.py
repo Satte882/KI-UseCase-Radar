@@ -33,8 +33,31 @@ class SolutionGenerationAdoptionError(RuntimeError):
 
 @dataclass(frozen=True)
 class SolutionGenerationAdoptionResult:
-    options: tuple[SolutionOption, SolutionOption, SolutionOption]
+    options: tuple[SolutionOption, ...]
     created: bool
+
+
+def _normalize_selected_lanes(selected_lanes: tuple[str, ...] | None) -> tuple[str, ...]:
+    if selected_lanes is None:
+        return OPTION_LANES
+    if not selected_lanes:
+        raise SolutionGenerationAdoptionError(
+            "Bitte mindestens einen KI-Entwurf für die Übernahme auswählen.",
+            code="no_selection",
+        )
+
+    if len(set(selected_lanes)) != len(selected_lanes):
+        raise SolutionGenerationAdoptionError(
+            "Die Auswahl der KI-Entwürfe ist ungültig.",
+            code="invalid_selection",
+        )
+    unknown_lanes = set(selected_lanes) - set(OPTION_LANES)
+    if unknown_lanes:
+        raise SolutionGenerationAdoptionError(
+            "Die Auswahl enthält eine unbekannte Lösungsrichtung.",
+            code="invalid_selection",
+        )
+    return tuple(lane for lane in OPTION_LANES if lane in selected_lanes)
 
 
 def _normalized_edits(preview_payload: dict) -> dict[str, dict[str, str]]:
@@ -133,7 +156,35 @@ def _existing_adoption(
         )
 
     option_ids = adoption.get("option_ids", [])
-    if not isinstance(option_ids, list) or len(option_ids) != len(OPTION_LANES):
+    if not isinstance(option_ids, list):
+        raise SolutionGenerationAdoptionError(
+            "Der Übernahmenachweis dieser Vorschau ist unvollständig.",
+            code="invalid_adoption_state",
+        )
+
+    adopted_lanes = adoption.get("lanes")
+    if adopted_lanes is None:
+        if len(option_ids) != len(OPTION_LANES):
+            raise SolutionGenerationAdoptionError(
+                "Der Übernahmenachweis dieser Vorschau ist unvollständig.",
+                code="invalid_adoption_state",
+            )
+        normalized_lanes = OPTION_LANES
+    else:
+        if not isinstance(adopted_lanes, list):
+            raise SolutionGenerationAdoptionError(
+                "Der Übernahmenachweis dieser Vorschau ist unvollständig.",
+                code="invalid_adoption_state",
+            )
+        try:
+            normalized_lanes = _normalize_selected_lanes(tuple(adopted_lanes))
+        except SolutionGenerationAdoptionError as exc:
+            raise SolutionGenerationAdoptionError(
+                "Der Übernahmenachweis dieser Vorschau ist unvollständig.",
+                code="invalid_adoption_state",
+            ) from exc
+
+    if len(option_ids) != len(normalized_lanes):
         raise SolutionGenerationAdoptionError(
             "Der Übernahmenachweis dieser Vorschau ist unvollständig.",
             code="invalid_adoption_state",
@@ -146,18 +197,31 @@ def _existing_adoption(
             pk__in=option_ids,
         )
     }
-    if len(options_by_id) != len(OPTION_LANES):
+    if len(options_by_id) != len(normalized_lanes):
         raise SolutionGenerationAdoptionError(
             "Die bereits übernommenen Lösungsoptionen sind nicht vollständig vorhanden.",
             code="invalid_adoption_state",
         )
 
     ordered = tuple(options_by_id[str(option_id)] for option_id in option_ids)
+    if any(
+        option.option_type != LANE_OPTION_TYPES[lane]
+        for lane, option in zip(normalized_lanes, ordered, strict=True)
+    ):
+        raise SolutionGenerationAdoptionError(
+            "Der Übernahmenachweis dieser Vorschau ist inkonsistent.",
+            code="invalid_adoption_state",
+        )
     return SolutionGenerationAdoptionResult(options=ordered, created=False)
 
 
 @transaction.atomic
-def adopt_solution_generation_bundle(*, actor, run_id) -> SolutionGenerationAdoptionResult:
+def adopt_solution_generation_bundle(
+    *,
+    actor,
+    run_id,
+    selected_lanes: tuple[str, ...] | None = None,
+) -> SolutionGenerationAdoptionResult:
     run_reference = SolutionGenerationRun.objects.only("process_analysis_id").get(pk=run_id)
     process_analysis = (
         ProcessAnalysis.objects.select_for_update()
@@ -175,6 +239,8 @@ def adopt_solution_generation_bundle(*, actor, run_id) -> SolutionGenerationAdop
     existing = _existing_adoption(run=run, process_analysis=process_analysis)
     if existing is not None:
         return existing
+
+    normalized_lanes = _normalize_selected_lanes(selected_lanes)
 
     if run.status != SolutionGenerationRun.Status.SUCCESS or not run.preview_payload:
         raise SolutionGenerationAdoptionError(
@@ -201,7 +267,7 @@ def adopt_solution_generation_bundle(*, actor, run_id) -> SolutionGenerationAdop
     effective_payload = _validated_effective_payload(run.preview_payload, source_context)
     forms: list[SolutionOptionForm] = []
     form_errors: list[str] = []
-    for lane in OPTION_LANES:
+    for lane in normalized_lanes:
         form = SolutionOptionForm(
             _option_form_data(lane, effective_payload["options"][lane]),
             process_analysis=process_analysis,
@@ -212,7 +278,8 @@ def adopt_solution_generation_bundle(*, actor, run_id) -> SolutionGenerationAdop
 
     if form_errors:
         raise SolutionGenerationAdoptionError(
-            "Mindestens ein Entwurf erfüllt den regulären Lösungsoptionsvertrag nicht.",
+            "Mindestens ein ausgewählter Entwurf erfüllt den regulären "
+            "Lösungsoptionsvertrag nicht.",
             code="option_form_invalid",
         )
 
@@ -232,6 +299,7 @@ def adopt_solution_generation_bundle(*, actor, run_id) -> SolutionGenerationAdop
     preview_payload = dict(run.preview_payload)
     preview_payload["adoption"] = {
         "status": "adopted",
+        "lanes": list(normalized_lanes),
         "option_ids": [str(option.pk) for option in created_options],
         "adopted_at": timezone.now().isoformat(),
         "actor_id": actor.pk,
@@ -239,5 +307,4 @@ def adopt_solution_generation_bundle(*, actor, run_id) -> SolutionGenerationAdop
     run.preview_payload = preview_payload
     run.save(update_fields=["preview_payload", "updated_at"])
 
-    options_tuple = tuple(created_options)
-    return SolutionGenerationAdoptionResult(options=options_tuple, created=True)
+    return SolutionGenerationAdoptionResult(options=tuple(created_options), created=True)

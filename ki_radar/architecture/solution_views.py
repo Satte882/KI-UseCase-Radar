@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 
 from ki_radar.accelerator.solution_generation_entry import (
     build_solution_generation_entry_context,
@@ -33,6 +34,7 @@ def solution_option_compare(request, pk):
     )
     options = ordered_solution_options(process_analysis)
     blockers = comparison_blockers(options)
+    incomplete_options = [option for option in options if not option.comparison_complete]
     can_select = can_edit_value_stream(
         request.user,
         process_analysis.stage.value_stream,
@@ -58,7 +60,13 @@ def solution_option_compare(request, pk):
                     request,
                     "Die bevorzugte Lösungsoption wurde auditierbar ausgewählt.",
                 )
-                return redirect(process_analysis)
+                comparison_url = reverse(
+                    "architecture:solution_option_compare",
+                    kwargs={"pk": process_analysis.pk},
+                )
+                return redirect(f"{comparison_url}#selection-result")
+
+    selection_history = process_analysis.solution_selection_decisions.all()
     return render(
         request,
         "architecture/solution_option_compare.html",
@@ -66,9 +74,12 @@ def solution_option_compare(request, pk):
             "process_analysis": process_analysis,
             "options": options,
             "blockers": blockers,
+            "incomplete_options": incomplete_options,
+            "needs_more_options": len(options) < 2,
             "form": form,
             "can_select": can_select,
-            "selection_history": process_analysis.solution_selection_decisions.all(),
+            "selection_history": selection_history,
+            "latest_selection": selection_history.first(),
             **generation_entry,
         },
     )

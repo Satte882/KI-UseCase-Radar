@@ -125,22 +125,41 @@ def solution_generation_adopt(request, run_id):
     if not can_edit_value_stream(request.user, process_analysis.stage.value_stream):
         raise PermissionDenied
 
+    selected_lanes = None
+    if request.POST.get("selection_mode") == "explicit":
+        selected_lanes = tuple(request.POST.getlist("selected_lanes"))
+
     try:
-        result = adopt_solution_generation_bundle(actor=request.user, run_id=run.pk)
+        result = adopt_solution_generation_bundle(
+            actor=request.user,
+            run_id=run.pk,
+            selected_lanes=selected_lanes,
+        )
     except SolutionGenerationAdoptionError as exc:
         messages.error(request, str(exc))
-        return redirect("accelerator:solution_generation_preview", run_id=run.pk)
-
-    if result.created:
-        messages.success(
-            request,
-            "Drei KI-Entwürfe wurden als reguläre, noch nicht bewertete "
-            "Lösungsoptionen übernommen.",
+        preview_url = reverse(
+            "accelerator:solution_generation_preview",
+            kwargs={"run_id": run.pk},
         )
+        return HttpResponseRedirect(f"{preview_url}#solution-generation-adoption")
+
+    option_count = len(result.options)
+    if result.created:
+        if option_count == 1:
+            message = (
+                "Der ausgewählte KI-Entwurf wurde als reguläre, noch nicht bewertete "
+                "Lösungsoption übernommen."
+            )
+        else:
+            message = (
+                f"{option_count} ausgewählte KI-Entwürfe wurden als reguläre, noch nicht "
+                "bewertete Lösungsoptionen übernommen."
+            )
+        messages.success(request, message)
     else:
         messages.info(
             request,
-            "Diese drei KI-Entwürfe waren bereits vollständig übernommen.",
+            "Die ausgewählten KI-Entwürfe waren bereits übernommen.",
         )
     return redirect("architecture:solution_option_compare", pk=process_analysis.pk)
 

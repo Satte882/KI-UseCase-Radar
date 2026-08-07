@@ -74,15 +74,57 @@
 </div>
 
 {% if can_select %}
-<form method="post" class="app-card mb-4">
+<form method="post" class="app-card mb-4" id="solution-selection">
   {% csrf_token %}
-  <div class="card-header"><strong>Bevorzugte Option auswählen</strong><div class="small text-muted mt-1">Die Auswahl wird mit Vergleichsstand, Person, Zeitpunkt und Begründung unveränderlich gespeichert.</div></div>
-  <div class="card-body">
-    {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
-    <div class="mb-3"><label class="form-label">{{ form.selected_option.label }}</label>{{ form.selected_option }}{{ form.selected_option.errors }}</div>
-    <div><label class="form-label" for="{{ form.rationale.id_for_label }}">{{ form.rationale.label }}</label>{{ form.rationale }}<div class="form-text">{{ form.rationale.help_text }}</div>{{ form.rationale.errors }}</div>
+  <div class="card-header">
+    <strong>Bevorzugte Option auswählen</strong>
+    <div class="small text-muted mt-1">Nach vollständiger Bewertung wird die gewählte Option als bevorzugt und die übrigen als verworfen markiert. Vergleichsstand, Person, Zeitpunkt und Begründung werden unveränderlich gespeichert.</div>
   </div>
-  <div class="card-body border-top border-secondary-subtle text-end"><button class="btn btn-primary" {% if blockers %}disabled{% endif %}>Bevorzugte Option auswählen</button></div>
+  <div class="card-body">
+    {% if latest_selection %}
+      <div class="alert alert-success" id="selection-result" tabindex="-1">
+        <strong>Aktuell bevorzugt: {{ latest_selection.selected_option.name }}</strong>
+        <div class="small mt-1">Entschieden am {{ latest_selection.decided_at|date:"d.m.Y H:i" }}. Die Entscheidung ist in der Auswahlhistorie auditierbar.</div>
+      </div>
+    {% else %}
+      <div id="selection-result"></div>
+    {% endif %}
+
+    {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+
+    {% if blockers %}
+      <div class="alert alert-warning mb-0">
+        <strong>Auswahl noch gesperrt.</strong>
+        Vor einer bevorzugten Option müssen mindestens zwei gespeicherte Lösungsoptionen vorliegen und alle Optionen vollständig bewertet sein. KI-Entwürfe werden absichtlich zunächst als „Noch nicht bewertet“ übernommen.
+
+        {% if needs_more_options %}
+          <div class="mt-3"><a class="btn btn-sm btn-outline-secondary" href="{% url 'architecture:solution_option_create' process_analysis.pk %}">Weitere Option ergänzen</a></div>
+        {% endif %}
+
+        {% if incomplete_options %}
+          <div class="small text-muted mt-3 mb-2">Noch vollständig zu bewerten:</div>
+          <div class="d-grid gap-2">
+            {% for option in incomplete_options %}
+              <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap border border-secondary-subtle rounded p-2">
+                <span>{{ option.name }}</span>
+                <a class="btn btn-sm btn-outline-secondary" href="{% url 'architecture:solution_option_update' option.pk %}">Option vollständig bewerten</a>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    {% else %}
+      <div class="mb-3"><label class="form-label">{{ form.selected_option.label }}</label>{{ form.selected_option }}{{ form.selected_option.errors }}</div>
+      <div><label class="form-label" for="{{ form.rationale.id_for_label }}">{{ form.rationale.label }}</label>{{ form.rationale }}<div class="form-text">{{ form.rationale.help_text }}</div>{{ form.rationale.errors }}</div>
+    {% endif %}
+  </div>
+  <div class="card-body border-top border-secondary-subtle text-end">
+    {% if blockers %}
+      <button class="btn btn-primary" type="button" disabled>Auswahl noch gesperrt</button>
+    {% else %}
+      <button class="btn btn-primary" type="submit">Bevorzugte Option auswählen</button>
+    {% endif %}
+  </div>
 </form>
 {% endif %}
 

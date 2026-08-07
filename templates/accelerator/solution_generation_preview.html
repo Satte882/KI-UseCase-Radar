@@ -16,7 +16,7 @@
 </div>
 
 {% if state.adopted %}
-  <div class="alert alert-success"><strong>Bereits übernommen.</strong> Diese drei Entwürfe wurden vollständig als reguläre Lösungsoptionen angelegt. Eine erneute Übernahme ist gesperrt.</div>
+  <div class="alert alert-success"><strong>Bereits übernommen.</strong> Die ausgewählten Entwürfe wurden als reguläre Lösungsoptionen angelegt. Eine erneute Übernahme aus dieser Vorschau ist gesperrt.</div>
 {% elif state.stale %}
   <div class="alert alert-warning"><strong>Veralteter Quellstand.</strong> Die Prozessdaten haben sich seit der Generierung geändert. Bearbeitung ist gesperrt; auch die Übernahme ist nicht mehr möglich. Bitte neu generieren.</div>
 {% elif state.expired %}
@@ -106,6 +106,21 @@
               </section>
             {% endfor %}
           </div>
+          {% if editable %}
+            <div class="card-body border-top border-secondary-subtle">
+              <input
+                class="btn-check"
+                type="checkbox"
+                name="selected_lanes"
+                value="{{ option.lane }}"
+                id="solution-adoption-{{ option.lane }}"
+                form="solution-generation-adoption-form"
+                autocomplete="off"
+                checked
+              >
+              <label class="btn btn-outline-primary w-100" for="solution-adoption-{{ option.lane }}">Für Übernahme auswählen</label>
+            </div>
+          {% endif %}
         </section>
       </div>
     {% endfor %}
@@ -119,15 +134,16 @@
 </form>
 
 {% if editable %}
-  <div class="app-card mt-4">
+  <div class="app-card mt-4" id="solution-generation-adoption">
     <div class="card-body d-flex justify-content-between align-items-center gap-3 flex-wrap">
       <div>
-        <strong>Vollständiges Dreier-Bundle übernehmen</strong>
-        <div class="small text-muted mt-1">Gespeicherte Bearbeitungen werden erneut validiert. Alle drei Optionen werden gemeinsam oder gar nicht angelegt und bleiben fachlich unbewertet.</div>
+        <strong>Ausgewählte KI-Lösungsoptionen hinzufügen</strong>
+        <div class="small text-muted mt-1">Standardmäßig sind alle drei Entwürfe ausgewählt. Wähle 1–3 Optionen; die ausgewählten werden gemeinsam oder gar nicht angelegt und bleiben fachlich unbewertet.</div>
       </div>
-      <form method="post" action="{% url 'accelerator:solution_generation_adopt' run.pk %}">
+      <form method="post" action="{% url 'accelerator:solution_generation_adopt' run.pk %}" id="solution-generation-adoption-form">
         {% csrf_token %}
-        <button class="btn btn-primary" type="submit">Alle drei Lösungsoptionen übernehmen</button>
+        <input type="hidden" name="selection_mode" value="explicit">
+        <button class="btn btn-primary" type="submit" data-testid="adopt-selected-solutions">Ausgewählte KI-Lösungsoptionen hinzufügen</button>
       </form>
     </div>
   </div>
