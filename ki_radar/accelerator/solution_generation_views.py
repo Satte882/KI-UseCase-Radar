@@ -125,7 +125,10 @@ def solution_generation_adopt(request, run_id):
     if not can_edit_value_stream(request.user, process_analysis.stage.value_stream):
         raise PermissionDenied
 
-    selected_lanes = tuple(request.POST.getlist("selected_lanes"))
+    selected_lanes = None
+    if request.POST.get("selection_mode") == "explicit":
+        selected_lanes = tuple(request.POST.getlist("selected_lanes"))
+
     try:
         result = adopt_solution_generation_bundle(
             actor=request.user,
