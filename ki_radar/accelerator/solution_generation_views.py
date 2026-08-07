@@ -10,6 +10,10 @@ from ki_radar.architecture.models import ProcessAnalysis
 from ki_radar.architecture.permissions import can_edit_value_stream
 
 from .models import SolutionGenerationRun
+from .solution_generation_adoption import (
+    SolutionGenerationAdoptionError,
+    adopt_solution_generation_bundle,
+)
 from .solution_generation_contract import GENERATED_OPTION_FIELDS, OPTION_LANES
 from .solution_generation_forms import (
     FIELD_LABELS,
@@ -97,6 +101,38 @@ def solution_generation_start(request, process_pk):
         "Drei KI-Entwürfe wurden erzeugt. Bitte Quellen, Annahmen und Unsicherheiten prüfen.",
     )
     return redirect("accelerator:solution_generation_preview", run_id=run.pk)
+
+
+@login_required
+@require_POST
+def solution_generation_adopt(request, run_id):
+    run = get_object_or_404(
+        _run_queryset(),
+        pk=run_id,
+        status=SolutionGenerationRun.Status.SUCCESS,
+    )
+    process_analysis = run.process_analysis
+    if not can_edit_value_stream(request.user, process_analysis.stage.value_stream):
+        raise PermissionDenied
+
+    try:
+        result = adopt_solution_generation_bundle(actor=request.user, run_id=run.pk)
+    except SolutionGenerationAdoptionError as exc:
+        messages.error(request, str(exc))
+        return redirect("accelerator:solution_generation_preview", run_id=run.pk)
+
+    if result.created:
+        messages.success(
+            request,
+            "Drei KI-Entwürfe wurden als reguläre, noch nicht bewertete "
+            "Lösungsoptionen übernommen.",
+        )
+    else:
+        messages.info(
+            request,
+            "Diese drei KI-Entwürfe waren bereits vollständig übernommen.",
+        )
+    return redirect("architecture:solution_option_compare", pk=process_analysis.pk)
 
 
 def _preview_source_facts(preview_payload: dict) -> list[dict[str, str]]:

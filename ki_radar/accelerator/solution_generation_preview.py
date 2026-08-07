@@ -22,10 +22,11 @@ class SolutionGenerationPreviewState:
     expired: bool
     current_ready: bool
     validation_state: str
+    adopted: bool
 
     @property
     def editable(self) -> bool:
-        return not self.stale and not self.expired and self.current_ready
+        return not self.stale and not self.expired and self.current_ready and not self.adopted
 
 
 def build_solution_generation_preview_state(
@@ -36,11 +37,14 @@ def build_solution_generation_preview_state(
         current_context.source_hash != run.source_hash
         or current_context.process_version != run.process_version
     )
+    adoption = run.preview_payload.get("adoption", {}) if run.preview_payload else {}
+    adopted = isinstance(adoption, dict) and adoption.get("status") == "adopted"
     return SolutionGenerationPreviewState(
         stale=stale,
         expired=run.expires_at <= timezone.now(),
         current_ready=current_context.is_ready,
         validation_state=current_context.validation_state,
+        adopted=adopted,
     )
 
 
@@ -99,6 +103,11 @@ def update_solution_generation_preview_edits(
         )
 
     state = build_solution_generation_preview_state(run)
+    if state.adopted:
+        raise SolutionGenerationPreviewError(
+            "Diese KI-Vorschau wurde bereits übernommen und ist nicht mehr bearbeitbar.",
+            code="preview_adopted",
+        )
     if state.expired:
         raise SolutionGenerationPreviewError(
             "Diese KI-Vorschau ist abgelaufen. Bitte neu generieren.",

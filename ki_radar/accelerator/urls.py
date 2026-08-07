@@ -79,4 +79,9 @@ urlpatterns = [
         solution_generation_views.solution_generation_preview,
         name="solution_generation_preview",
     ),
+    path(
+        "solution-generations/<uuid:run_id>/adopt/",
+        solution_generation_views.solution_generation_adopt,
+        name="solution_generation_adopt",
+    ),
 ]
