@@ -316,9 +316,7 @@ def test_successful_preferred_selection_returns_to_visible_local_result(
         compare_url,
         data={
             "selected_option": assistant.pk,
-            "rationale": (
-                "Die organisatorische Alternative deckt die Extraktionsarbeit nicht ab."
-            ),
+            "rationale": "Die organisatorische Alternative deckt die Extraktionsarbeit nicht ab.",
         },
     )
 
