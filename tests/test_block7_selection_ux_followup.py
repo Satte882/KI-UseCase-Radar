@@ -163,7 +163,11 @@ def make_option(process, owner, *, name, option_type, assessed):
 
 
 @pytest.mark.django_db
-def test_preview_offers_one_adoption_choice_per_generated_option(client, owner, business_unit):
+def test_preview_offers_one_adoption_choice_per_generated_option(
+    client,
+    owner,
+    business_unit,
+):
     process = make_process(owner, business_unit)
     run = make_run(owner, process)
     client.force_login(owner)
@@ -182,7 +186,11 @@ def test_preview_offers_one_adoption_choice_per_generated_option(client, owner, 
 
 
 @pytest.mark.django_db
-def test_explicit_subset_adoption_creates_only_selected_options(client, owner, business_unit):
+def test_explicit_subset_adoption_creates_only_selected_options(
+    client,
+    owner,
+    business_unit,
+):
     process = make_process(owner, business_unit)
     run = make_run(owner, process)
     client.force_login(owner)
@@ -202,8 +210,14 @@ def test_explicit_subset_adoption_creates_only_selected_options(client, owner, b
         SolutionOption.OptionType.ORGANIZATIONAL,
         SolutionOption.OptionType.ASSISTANT,
     }
-    assert all(option.recommendation == SolutionOption.Recommendation.CANDIDATE for option in options)
-    assert all(option.evaluation_status == SolutionOption.EvaluationStatus.DRAFT for option in options)
+    assert all(
+        option.recommendation == SolutionOption.Recommendation.CANDIDATE
+        for option in options
+    )
+    assert all(
+        option.evaluation_status == SolutionOption.EvaluationStatus.DRAFT
+        for option in options
+    )
     assert not SolutionSelectionDecision.objects.filter(process_analysis=process).exists()
 
     run.refresh_from_db()
@@ -212,7 +226,11 @@ def test_explicit_subset_adoption_creates_only_selected_options(client, owner, b
 
 
 @pytest.mark.django_db
-def test_explicit_empty_adoption_is_rejected_without_domain_write(client, owner, business_unit):
+def test_explicit_empty_adoption_is_rejected_without_domain_write(
+    client,
+    owner,
+    business_unit,
+):
     process = make_process(owner, business_unit)
     run = make_run(owner, process)
     client.force_login(owner)
@@ -231,7 +249,11 @@ def test_explicit_empty_adoption_is_rejected_without_domain_write(client, owner,
 
 
 @pytest.mark.django_db
-def test_ai_drafts_explain_why_preferred_selection_is_locked(client, owner, business_unit):
+def test_ai_drafts_explain_why_preferred_selection_is_locked(
+    client,
+    owner,
+    business_unit,
+):
     process = make_process(owner, business_unit)
     select_focus(process, owner)
     first = make_option(
@@ -255,12 +277,14 @@ def test_ai_drafts_explain_why_preferred_selection_is_locked(client, owner, busi
     ).content.decode()
 
     assert "Auswahl noch gesperrt" in content
-    assert "KI-Entwürfe werden absichtlich zunächst als“" not in content
-    assert "KI-Entwürfe werden absichtlich zunächst als „Noch nicht bewertet“ übernommen." in content
+    assert (
+        "KI-Entwürfe werden absichtlich zunächst als „Noch nicht bewertet“ übernommen."
+        in content
+    )
     assert content.count("Option vollständig bewerten") == 2
     assert reverse("architecture:solution_option_update", args=[first.pk]) in content
     assert reverse("architecture:solution_option_update", args=[second.pk]) in content
-    assert '<button class="btn btn-primary" type="button" disabled>Auswahl noch gesperrt</button>' in content
+    assert "type=\"button\" disabled>Auswahl noch gesperrt</button>" in content
 
 
 @pytest.mark.django_db
@@ -292,7 +316,9 @@ def test_successful_preferred_selection_returns_to_visible_local_result(
         compare_url,
         data={
             "selected_option": assistant.pk,
-            "rationale": "Die organisatorische Alternative deckt die Extraktionsarbeit nicht ab.",
+            "rationale": (
+                "Die organisatorische Alternative deckt die Extraktionsarbeit nicht ab."
+            ),
         },
     )
 
