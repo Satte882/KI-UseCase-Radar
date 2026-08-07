@@ -20,6 +20,7 @@ from ki_radar.accelerator.solution_generation_contract import (
 from ki_radar.accelerator.solution_generation_sources import (
     build_solution_generation_source_context,
 )
+from ki_radar.architecture.focus import ValueStreamFocus
 from ki_radar.architecture.models import (
     ProcessAnalysis,
     ProcessValidation,
@@ -28,6 +29,7 @@ from ki_radar.architecture.models import (
     ValueStream,
     ValueStreamStage,
 )
+from ki_radar.core.taxonomy import BusinessDomain, ScreeningLevel
 
 LANE_NAMES = {
     "organizational": "Organisatorischer Entwurf",
@@ -82,6 +84,22 @@ def make_process(owner, business_unit):
         baseline_metrics="Elf Minuten pro Vergleich",
         target_state_principles="Nachvollziehbar und assistierend",
         analyzed_by=owner,
+    )
+
+
+def select_focus(process, owner):
+    ValueStreamFocus.objects.create(
+        value_stream=process.stage.value_stream,
+        business_domain=BusinessDomain.PROCUREMENT,
+        capability="Supplier Sourcing und Angebotsvergleich",
+        strategic_impact=ScreeningLevel.HIGH,
+        economic_potential=ScreeningLevel.MEDIUM,
+        pain_intensity=ScreeningLevel.HIGH,
+        data_accessibility=ScreeningLevel.MEDIUM,
+        change_effort=ScreeningLevel.MEDIUM,
+        status=ValueStreamFocus.Status.SELECTED,
+        rationale="Der Angebotsvergleich wurde fachlich für den Deep Dive ausgewählt.",
+        updated_by=owner,
     )
 
 
@@ -175,6 +193,7 @@ def test_adoption_uses_saved_preview_edits_and_options_remain_editable(
     business_unit,
 ):
     process = make_process(owner, business_unit)
+    select_focus(process, owner)
     run = make_run(owner, process)
     payload = dict(run.preview_payload)
     payload["edits"] = {"assistant": {"description": "Vom Menschen präzisierter Assistenzentwurf."}}
@@ -193,6 +212,7 @@ def test_adoption_uses_saved_preview_edits_and_options_remain_editable(
     client.force_login(owner)
     response = client.get(reverse("architecture:solution_option_update", args=[assistant.pk]))
     assert response.status_code == 200
+    assert "Lösungsoption bearbeiten" in response.content.decode()
 
 
 @pytest.mark.django_db
