@@ -144,9 +144,7 @@ def test_compare_offers_manual_and_ai_entries_equally(client, owner, business_un
     process = make_process(owner, business_unit)
     client.force_login(owner)
 
-    response = client.get(
-        reverse("architecture:solution_option_compare", args=[process.pk])
-    )
+    response = client.get(reverse("architecture:solution_option_compare", args=[process.pk]))
 
     assert response.status_code == 200
     content = response.content.decode()
@@ -164,9 +162,7 @@ def test_compare_explains_missing_generation_readiness(client, owner, business_u
     process.save(update_fields=["current_flow", "updated_at"])
     client.force_login(owner)
 
-    response = client.get(
-        reverse("architecture:solution_option_compare", args=[process.pk])
-    )
+    response = client.get(reverse("architecture:solution_option_compare", args=[process.pk]))
 
     content = response.content.decode()
     assert "KI-Generierung noch nicht möglich" in content
@@ -189,14 +185,10 @@ def test_generation_start_redirects_to_preview_without_domain_write(
         "ki_radar.accelerator.solution_generation_views.generate_solution_preview",
         return_value=run,
     ) as generate_mock:
-        response = client.post(
-            reverse("accelerator:solution_generation_start", args=[process.pk])
-        )
+        response = client.post(reverse("accelerator:solution_generation_start", args=[process.pk]))
 
     assert response.status_code == 302
-    assert response.url == reverse(
-        "accelerator:solution_generation_preview", args=[run.pk]
-    )
+    assert response.url == reverse("accelerator:solution_generation_preview", args=[run.pk])
     generate_mock.assert_called_once_with(actor=owner, process_analysis_id=process.pk)
     assert not SolutionOption.objects.filter(process_analysis=process).exists()
 
@@ -238,9 +230,7 @@ def test_preview_shows_shared_sources_provenance_and_unassessed_boundary(
     run = make_run(owner, process)
     client.force_login(owner)
 
-    response = client.get(
-        reverse("accelerator:solution_generation_preview", args=[run.pk])
-    )
+    response = client.get(reverse("accelerator:solution_generation_preview", args=[run.pk]))
 
     content = response.content.decode()
     assert response.status_code == 200
@@ -294,9 +284,7 @@ def test_stale_preview_is_visible_but_not_editable(client, owner, business_unit)
     process.save(update_fields=["current_flow", "updated_at"])
     client.force_login(owner)
 
-    response = client.get(
-        reverse("accelerator:solution_generation_preview", args=[run.pk])
-    )
+    response = client.get(reverse("accelerator:solution_generation_preview", args=[run.pk]))
 
     content = response.content.decode()
     assert response.status_code == 200
@@ -315,9 +303,7 @@ def test_preview_uses_responsive_cards_without_comparison_table(
     run = make_run(owner, process)
     client.force_login(owner)
 
-    response = client.get(
-        reverse("accelerator:solution_generation_preview", args=[run.pk])
-    )
+    response = client.get(reverse("accelerator:solution_generation_preview", args=[run.pk]))
 
     content = response.content.decode()
     assert "col-12 col-xl-4" in content
