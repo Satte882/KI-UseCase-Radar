@@ -57,22 +57,24 @@ FIELD_SOURCE_IDS = {
 
 
 def _statement(*, lane: str, field_name: str) -> dict[str, object]:
-    label = LANE_LABELS[lane]
     if field_name == "name":
         text = LANE_TITLES[lane]
     else:
-        text = (
-            f"{label}: {field_name.replace('_', ' ')} wird aus dem dokumentierten "
-            "Angebotsvergleich abgeleitet."
-        )
+        field_label = field_name.replace("_", " ")
+        text = f"{LANE_LABELS[lane]}: {field_label} wird aus dem Angebotsvergleich abgeleitet."
+
     assumptions = []
-    open_evidence = []
     if lane == "assistant" and field_name == "risks":
-        assumptions = ["Fachliche Prüfung bleibt vor jeder Auswahlentscheidung erforderlich."]
+        assumptions.append(
+            "Fachliche Prüfung bleibt vor jeder Auswahlentscheidung erforderlich."
+        )
+
+    open_evidence = []
     if lane == "assistant" and field_name == "technology_constraints":
-        open_evidence = [
-            "Betriebs- und Datenschutzleitplanken für eine spätere Assistenzlösung klären."
-        ]
+        open_evidence.append(
+            "Betriebs- und Datenschutzleitplanken für eine Assistenzlösung klären."
+        )
+
     return {
         "text": text,
         "source_ids": [FIELD_SOURCE_IDS[field_name]],
@@ -86,30 +88,32 @@ def _statement(*, lane: str, field_name: str) -> dict[str, object]:
 
 
 def _provider_payload() -> dict[str, object]:
+    options = {}
+    for lane in OPTION_LANES:
+        lane_payload = {}
+        for field_name in GENERATED_OPTION_FIELDS:
+            lane_payload[field_name] = _statement(lane=lane, field_name=field_name)
+        options[lane] = lane_payload
+
     return {
         "schema_version": GENERATION_SCHEMA_VERSION,
         "prompt_version": GENERATION_PROMPT_VERSION,
-        "options": {
-            lane: {
-                field_name: _statement(lane=lane, field_name=field_name)
-                for field_name in GENERATED_OPTION_FIELDS
-            }
-            for lane in OPTION_LANES
-        },
+        "options": options,
     }
 
 
 def _provider_result() -> OpenRouterResult:
     content = json.dumps(_provider_payload(), ensure_ascii=False)
+    usage = {
+        "prompt_tokens": 100,
+        "completion_tokens": 200,
+        "total_tokens": 300,
+        "cost": 0,
+    }
     return OpenRouterResult(
         content=content,
         model="real-demo/deterministic",
-        usage={
-            "prompt_tokens": 100,
-            "completion_tokens": 200,
-            "total_tokens": 300,
-            "cost": 0,
-        },
+        usage=usage,
         output_chars=len(content),
         finish_reason="stop",
     )
@@ -128,24 +132,30 @@ def _gate_snapshot() -> dict[str, int]:
 
 
 def _gate_report(before: dict[str, int], after: dict[str, int]) -> dict[str, bool]:
-    return {f"{key}_unchanged": after[key] == value for key, value in before.items()}
+    report = {}
+    for key, value in before.items():
+        report[f"{key}_unchanged"] = after[key] == value
+    return report
 
 
 def _preview_evidence(preview_payload: dict[str, object]) -> dict[str, bool]:
+    statements = []
     options = preview_payload["options"]
-    statements = [
-        options[lane][field_name]
-        for lane in OPTION_LANES
-        for field_name in GENERATED_OPTION_FIELDS
-    ]
+    for lane in OPTION_LANES:
+        for field_name in GENERATED_OPTION_FIELDS:
+            statements.append(options[lane][field_name])
+
+    has_uncertainty = True
+    for statement in statements:
+        uncertainty = statement["uncertainty"]
+        if not uncertainty["level"] or not uncertainty["reason"]:
+            has_uncertainty = False
+
     return {
-        "has_sources": all(statement["source_ids"] for statement in statements),
-        "has_assumptions": any(statement["assumptions"] for statement in statements),
-        "has_open_evidence": any(statement["open_evidence"] for statement in statements),
-        "has_uncertainty": all(
-            statement["uncertainty"]["level"] and statement["uncertainty"]["reason"]
-            for statement in statements
-        ),
+        "has_sources": all(item["source_ids"] for item in statements),
+        "has_assumptions": any(item["assumptions"] for item in statements),
+        "has_open_evidence": any(item["open_evidence"] for item in statements),
+        "has_uncertainty": has_uncertainty,
     }
 
 
@@ -171,7 +181,10 @@ def _rollback_report(
     )
     context = build_solution_generation_source_context(rollback_process)
     now = timezone.now()
-    payload = _provider_payload()
+    preview_payload = _provider_payload()
+    preview_payload["source_context"] = context.provider_payload()
+    preview_payload["edits"] = {}
+
     run = SolutionGenerationRun.objects.create(
         process_analysis=rollback_process,
         process_version=rollback_process.version,
@@ -183,19 +196,16 @@ def _rollback_report(
         generation_schema_version=GENERATION_SCHEMA_VERSION,
         finished_at=now,
         expires_at=now + timedelta(days=1),
-        preview_payload={
-            **payload,
-            "source_context": context.provider_payload(),
-            "edits": {},
-        },
+        preview_payload=preview_payload,
     )
 
     original_save = SolutionOption.save
-    save_calls = {"count": 0}
+    save_calls = 0
 
     def fail_second_save(instance, *args, **kwargs):
-        save_calls["count"] += 1
-        if save_calls["count"] == 2:
+        nonlocal save_calls
+        save_calls += 1
+        if save_calls == 2:
             raise RuntimeError("simulated persistence failure")
         return original_save(instance, *args, **kwargs)
 
@@ -209,14 +219,15 @@ def _rollback_report(
             error = "simulated_persistence_failure"
 
     if not error:
-        raise AssertionError("Der Rollback-Nachweis hat den erwarteten Fehler nicht ausgelöst.")
+        raise AssertionError("Der erwartete Rollback-Fehler wurde nicht ausgelöst.")
 
     run.refresh_from_db()
+    option_count = SolutionOption.objects.filter(
+        process_analysis=rollback_process
+    ).count()
     report = {
         "error": error,
-        "option_count": SolutionOption.objects.filter(
-            process_analysis=rollback_process
-        ).count(),
+        "option_count": option_count,
         "adoption_recorded": "adoption" in run.preview_payload,
     }
     rollback_process.delete()
@@ -226,21 +237,15 @@ def _rollback_report(
 def run_block7_real_demo() -> dict[str, object]:
     block6_demo.run_block6_real_demo()
     actor = User.objects.get(username=block6_demo.DEMO_USERNAME)
-    process = (
-        ProcessAnalysis.objects.select_related("stage__value_stream")
-        .prefetch_related("validations")
-        .get(
-            stage__value_stream__demo_key=block6_demo.VALUE_STREAM_DEMO_KEY,
-            name=PROCESS_NAME,
-        )
+    process = ProcessAnalysis.objects.get(
+        stage__value_stream__demo_key=block6_demo.VALUE_STREAM_DEMO_KEY,
+        name=PROCESS_NAME,
     )
     source_context = build_solution_generation_source_context(process)
     gates_before = _gate_snapshot()
 
-    with patch(
-        "ki_radar.accelerator.solution_generation_service.request_openrouter",
-        return_value=_provider_result(),
-    ) as provider_mock:
+    provider_path = "ki_radar.accelerator.solution_generation_service.request_openrouter"
+    with patch(provider_path, return_value=_provider_result()) as provider_mock:
         run = generate_solution_preview(actor=actor, process_analysis_id=process.pk)
 
     preview_evidence = _preview_evidence(run.preview_payload)
@@ -262,6 +267,17 @@ def run_block7_real_demo() -> dict[str, object]:
             }
         )
 
+    generation = {
+        "provider_mode": "deterministic_ci_double",
+        "provider_calls": provider_mock.call_count,
+        "status": run.status,
+        "schema_version": run.generation_schema_version,
+        "prompt_version": run.prompt_version,
+        "lanes": list(OPTION_LANES),
+        "preview_option_count": len(run.preview_payload["options"]),
+    }
+    generation.update(preview_evidence)
+
     return {
         "marker": "[Real-DEMO]",
         "schema_version": "1",
@@ -273,16 +289,7 @@ def run_block7_real_demo() -> dict[str, object]:
             "validation_state": source_context.validation_state,
             "required_source_gaps": list(source_context.missing_required),
         },
-        "generation": {
-            "provider_mode": "deterministic_ci_double",
-            "provider_calls": provider_mock.call_count,
-            "status": run.status,
-            "schema_version": run.generation_schema_version,
-            "prompt_version": run.prompt_version,
-            "lanes": list(OPTION_LANES),
-            "preview_option_count": len(run.preview_payload["options"]),
-            **preview_evidence,
-        },
+        "generation": generation,
         "adoption": {
             "created": adoption.created,
             "option_count": len(adoption.options),
