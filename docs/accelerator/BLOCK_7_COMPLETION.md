@@ -53,7 +53,7 @@ Das LLM darf ausschließlich folgende vorhandene Vergleichsfelder formulieren:
 
 Nicht generiert werden `feasibility`, `integration_effort`, `evaluation_status`,
 `recommendation`, Rangfolge, Präferenz, Auswahlbegründung oder Governance-Entscheidungen.
-Bei der Übernahme werden die drei Optionen explizit als `draft`, `candidate`,
+Bei der Übernahme werden die ausgewählten Optionen explizit als `draft`, `candidate`,
 `not_assessed` und `not_assessed` angelegt.
 
 ## 4. Readiness, Quellen und Datenminimierung
@@ -111,13 +111,14 @@ unvollständige oder bereits übernommene Previews sind nicht mehr bearbeitbar.
 
 ## 8. Atomare Übernahme
 
-Die Übernahme ist eine explizite POST-Aktion für das vollständige Dreier-Bundle. Innerhalb der
-Transaktion werden Berechtigung, Quellversion, Source-Hash, Readiness, Previewvertrag und
-menschliche Bearbeitungen erneut geprüft.
+Die Generierung liefert weiterhin exakt drei Entwürfe. In der Preview wählt der Nutzer jedoch
+explizit 1–3 Vorschläge für die Übernahme aus. Innerhalb der Transaktion werden Berechtigung,
+Quellversion, Source-Hash, Readiness, Previewvertrag und menschliche Bearbeitungen erneut geprüft.
 
-Alle drei `SolutionOptionForm`-Instanzen müssen vor dem ersten Fachobjektschreibvorgang gültig
-sein. Persistenzfehler rollen das gesamte Bundle zurück. Der Übernahmenachweis wird atomar im
-Generation-Run gespeichert; Wiederholung derselben Übernahme erzeugt keine Duplikate.
+Alle ausgewählten `SolutionOptionForm`-Instanzen müssen vor dem ersten Fachobjektschreibvorgang
+gültig sein. Persistenzfehler rollen die gesamte ausgewählte Teilmenge zurück. Der
+Übernahmenachweis speichert die übernommenen Lanes und Option-IDs atomar im Generation-Run;
+Wiederholung derselben Übernahme erzeugt keine Duplikate.
 
 Die übernommenen Optionen bleiben danach regulär über die bestehenden fachlichen Pfade
 bearbeitbar und bewertbar.
@@ -176,7 +177,7 @@ Die kanonische Referenz liegt unter:
 
 SHA-256 der Version 1:
 
-`505ead68b471d25792797c7469342871ed7eff6eb1a413f1fd4d5be95bf25b83`
+`ed05ee8c45677cf889f97537bcda370b34136e3cb86062ce4c417215e4604d48`
 
 Der Regressionstest berechnet die Prüfsumme aus den tatsächlichen JSON-Bytes neu. Referenz und
 Prüfsumme müssen bei einer bewussten fachlichen Änderung gemeinsam aktualisiert werden.
