@@ -21,11 +21,13 @@ def retire_solution_option(*, option: SolutionOption, actor) -> SolutionOptionRe
         )
     if option.selection_decisions.exists():
         raise ValidationError(
-            "Eine bereits ausgewählte Lösungsoption kann nicht als nicht weiterverfolgt markiert werden."
+            "Eine bereits ausgewählte Lösungsoption kann nicht als nicht weiterverfolgt "
+            "markiert werden."
         )
     if option.use_case_origins.exists():
         raise ValidationError(
-            "Eine mit einem Use Case verknüpfte Lösungsoption kann nicht als nicht weiterverfolgt markiert werden."
+            "Eine mit einem Use Case verknüpfte Lösungsoption kann nicht als nicht "
+            "weiterverfolgt markiert werden."
         )
 
     retirement, created = SolutionOptionRetirement.objects.get_or_create(
