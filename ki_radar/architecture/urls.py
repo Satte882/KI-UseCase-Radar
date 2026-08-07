@@ -89,6 +89,11 @@ urlpatterns = [
         name="solution_option_update",
     ),
     path(
+        "options/<uuid:pk>/retire/",
+        solution_views.solution_option_retire,
+        name="solution_option_retire",
+    ),
+    path(
         "options/<uuid:pk>/start-use-case/",
         views.solution_option_start_use_case,
         name="solution_option_start_use_case",

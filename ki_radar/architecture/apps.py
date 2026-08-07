@@ -9,5 +9,6 @@ class ArchitectureConfig(AppConfig):
     def ready(self):
         from . import (
             focus,  # noqa: F401
+            retirement_models,  # noqa: F401
             stage_focus,  # noqa: F401
         )
