@@ -38,6 +38,8 @@ VALID_LIMITS = {
     "ACCELERATOR_LLM_MAX_CALLS_PER_CONTEXT": "2",
     "ACCELERATOR_LLM_MAX_CALLS_PER_USER_DAY": "5",
     "ACCELERATOR_LLM_MAX_CALLS_GLOBAL_DAY": "20",
+    "ACCELERATOR_SOLUTION_GENERATION_MAX_OUTPUT_TOKENS": "8192",
+    "ACCELERATOR_SOLUTION_GENERATION_MAX_CALLS_PER_CONTEXT": "2",
     "ACCELERATOR_CAPTURE_COMPLETED_RETENTION_DAYS": "30",
 }
 
@@ -280,6 +282,30 @@ def test_full_generation_persists_preview_only_after_complete_validation(owner, 
 
 @pytest.mark.django_db
 @override_settings(**VALID_LIMITS)
+def test_existing_manual_option_does_not_affect_generated_bundle_validation(owner, business_unit):
+    process = make_process(owner, business_unit)
+    SolutionOption.objects.create(
+        process_analysis=process,
+        name="Bereits vorhandene manuelle Option",
+        option_type=SolutionOption.OptionType.ORGANIZATIONAL,
+        description="Manuell angelegte Alternative.",
+        expected_value="Vergleichswert für die bestehende Auswahl.",
+        created_by=owner,
+    )
+
+    with patch(
+        "ki_radar.accelerator.solution_generation_service.request_openrouter",
+        return_value=provider_result(valid_payload()),
+    ):
+        run = generate_solution_preview(actor=owner, process_analysis_id=process.pk)
+
+    assert run.status == SolutionGenerationRun.Status.SUCCESS
+    assert tuple(run.preview_payload["options"]) == OPTION_LANES
+    assert SolutionOption.objects.filter(process_analysis=process).count() == 1
+
+
+@pytest.mark.django_db
+@override_settings(**VALID_LIMITS)
 def test_invalid_bundle_fails_without_preview_or_solution_options(owner, business_unit):
     process = make_process(owner, business_unit)
     payload = valid_payload()
@@ -295,6 +321,8 @@ def test_invalid_bundle_fails_without_preview_or_solution_options(owner, busines
         generate_solution_preview(actor=owner, process_analysis_id=process.pk)
 
     assert exc_info.value.code == "invalid_generation_payload"
+    assert "Validierungsgrund:" in str(exc_info.value)
+    assert "Unbekannte Source-ID process.fabricated" in str(exc_info.value)
     run = SolutionGenerationRun.objects.get(process_analysis=process)
     assert run.status == SolutionGenerationRun.Status.FAILED
     assert run.preview_payload == {}

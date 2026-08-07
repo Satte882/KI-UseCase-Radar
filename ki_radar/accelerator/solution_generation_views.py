@@ -38,9 +38,12 @@ def _generation_error_message(exc: SolutionGenerationError) -> str:
         "user_quota_exceeded",
         "global_quota_exceeded",
         "generation_already_running",
+        "generation_superseded",
         "process_not_ready",
         "input_too_large",
         "invalid_configuration",
+        "invalid_generation_payload",
+        "internal_error",
     }:
         return str(exc)
     if exc.code == "rate_limit":
@@ -57,11 +60,6 @@ def _generation_error_message(exc: SolutionGenerationError) -> str:
         return (
             "Die KI-Antwort war unvollständig und wurde verworfen. "
             "Es wurden keine Lösungsoptionen angelegt."
-        )
-    if exc.code == "invalid_generation_payload":
-        return (
-            "Die KI-Antwort hat die fachlichen Sicherheitsregeln nicht erfüllt und wurde "
-            "vollständig verworfen."
         )
     return (
         "Die KI-Generierung ist derzeit nicht verfügbar. Es wurden keine Lösungsoptionen angelegt."

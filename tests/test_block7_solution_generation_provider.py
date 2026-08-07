@@ -25,6 +25,8 @@ VALID_LIMITS = {
     "ACCELERATOR_LLM_MAX_CALLS_PER_CONTEXT": "2",
     "ACCELERATOR_LLM_MAX_CALLS_PER_USER_DAY": "5",
     "ACCELERATOR_LLM_MAX_CALLS_GLOBAL_DAY": "20",
+    "ACCELERATOR_SOLUTION_GENERATION_MAX_OUTPUT_TOKENS": "8192",
+    "ACCELERATOR_SOLUTION_GENERATION_MAX_CALLS_PER_CONTEXT": "2",
     "ACCELERATOR_CAPTURE_COMPLETED_RETENTION_DAYS": "30",
 }
 
@@ -104,7 +106,7 @@ def test_generation_uses_exactly_one_structured_openrouter_call(owner, business_
     assert request_mock.call_count == 1
     kwargs = request_mock.call_args.kwargs
     assert kwargs["messages"] == prepared.messages
-    assert kwargs["max_tokens"] == 700
+    assert kwargs["max_tokens"] == 8192
     assert kwargs["timeout_seconds"] == 17
     assert kwargs["temperature"] == 0.0
     assert kwargs["provider"] == {"require_parameters": True}
@@ -200,6 +202,10 @@ def test_output_truncation_is_terminal_and_records_provider_metadata(owner, busi
     assert prepared.run.model_name == "test/model"
     assert prepared.run.total_tokens == 200
     assert not SolutionOption.objects.filter(process_analysis=process).exists()
+
+    retry = prepare_solution_generation_run(actor=owner, process_analysis_id=process.pk)
+    assert retry.run.pk != prepared.run.pk
+    assert retry.run.status == SolutionGenerationRun.Status.RUNNING
 
 
 @pytest.mark.django_db

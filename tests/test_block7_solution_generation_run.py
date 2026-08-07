@@ -12,6 +12,7 @@ from ki_radar.accelerator.models import (
     SolutionGenerationRun,
 )
 from ki_radar.accelerator.solution_generation_service import (
+    RUNNING_RECOVERY_GRACE_SECONDS,
     SolutionGenerationAlreadyRunning,
     SolutionGenerationQuotaExceeded,
     mark_solution_generation_failed,
@@ -26,11 +27,17 @@ VALID_LIMITS = {
     "ACCELERATOR_LLM_MAX_CALLS_PER_CONTEXT": "2",
     "ACCELERATOR_LLM_MAX_CALLS_PER_USER_DAY": "5",
     "ACCELERATOR_LLM_MAX_CALLS_GLOBAL_DAY": "20",
+    "ACCELERATOR_SOLUTION_GENERATION_MAX_OUTPUT_TOKENS": "8192",
+    "ACCELERATOR_SOLUTION_GENERATION_MAX_CALLS_PER_CONTEXT": "2",
     "ACCELERATOR_CAPTURE_COMPLETED_RETENTION_DAYS": "30",
 }
-CONTEXT_ONE_LIMITS = {**VALID_LIMITS, "ACCELERATOR_LLM_MAX_CALLS_PER_CONTEXT": "1"}
+CONTEXT_ONE_LIMITS = {
+    **VALID_LIMITS,
+    "ACCELERATOR_SOLUTION_GENERATION_MAX_CALLS_PER_CONTEXT": "1",
+}
 USER_ONE_LIMITS = {
-    **CONTEXT_ONE_LIMITS,
+    **VALID_LIMITS,
+    "ACCELERATOR_LLM_MAX_CALLS_PER_CONTEXT": "1",
     "ACCELERATOR_LLM_MAX_CALLS_PER_USER_DAY": "1",
 }
 GLOBAL_ONE_LIMITS = {
@@ -149,6 +156,23 @@ def test_running_process_rejects_second_start_before_extra_quota(owner, business
     assert exc_info.value.code == "generation_already_running"
     assert quota_counts() == before
     assert SolutionGenerationRun.objects.filter(process_analysis=process).count() == 1
+
+
+@pytest.mark.django_db
+@override_settings(**VALID_LIMITS)
+def test_stale_running_generation_is_failed_and_next_start_proceeds(owner, business_unit):
+    process = make_process(owner, business_unit)
+    first = prepare_solution_generation_run(actor=owner, process_analysis_id=process.pk)
+    stale_started_at = timezone.now() - timedelta(seconds=15 + RUNNING_RECOVERY_GRACE_SECONDS + 1)
+    SolutionGenerationRun.objects.filter(pk=first.run.pk).update(started_at=stale_started_at)
+
+    second = prepare_solution_generation_run(actor=owner, process_analysis_id=process.pk)
+
+    first.run.refresh_from_db()
+    assert first.run.status == SolutionGenerationRun.Status.FAILED
+    assert first.run.error_code == "stale_running_recovered"
+    assert second.run.status == SolutionGenerationRun.Status.RUNNING
+    assert second.run.pk != first.run.pk
 
 
 @pytest.mark.django_db

@@ -18,6 +18,8 @@ class AcceleratorLLMPolicy:
     max_calls_per_context: int
     max_calls_per_user_day: int
     max_calls_global_day: int
+    solution_generation_max_output_tokens: int
+    solution_generation_max_calls_per_context: int
 
 
 _SETTING_BOUNDS = {
@@ -27,6 +29,8 @@ _SETTING_BOUNDS = {
     "ACCELERATOR_LLM_MAX_CALLS_PER_CONTEXT": (1, 50),
     "ACCELERATOR_LLM_MAX_CALLS_PER_USER_DAY": (1, 1_000),
     "ACCELERATOR_LLM_MAX_CALLS_GLOBAL_DAY": (1, 100_000),
+    "ACCELERATOR_SOLUTION_GENERATION_MAX_OUTPUT_TOKENS": (4_096, 16_384),
+    "ACCELERATOR_SOLUTION_GENERATION_MAX_CALLS_PER_CONTEXT": (1, 50),
 }
 
 
@@ -45,15 +49,17 @@ def _positive_int(name: str, value: Any) -> int:
 
 
 def get_accelerator_llm_policy() -> AcceleratorLLMPolicy:
-    """Return the validated, repository-wide Accelerator LLM limits.
+    """Return the validated repository-wide Accelerator LLM limits.
 
-    Request-count limits are configuration contracts for the later persistent
-    Capture/Suggestion context. Block 1 immediately enforces timeout, input and
-    output limits; persistent quota counting is introduced with that context.
+    Capture and other compact Accelerator calls keep the shared output/context
+    limits. The much larger Block-7 three-option bundle has dedicated limits so
+    it can be sized realistically without widening every Accelerator LLM call.
+    User and global limits remain effective upper caps for every purpose.
     """
 
     values = {name: _positive_int(name, getattr(settings, name)) for name in _SETTING_BOUNDS}
     context_limit = values["ACCELERATOR_LLM_MAX_CALLS_PER_CONTEXT"]
+    solution_context_limit = values["ACCELERATOR_SOLUTION_GENERATION_MAX_CALLS_PER_CONTEXT"]
     user_limit = values["ACCELERATOR_LLM_MAX_CALLS_PER_USER_DAY"]
     global_limit = values["ACCELERATOR_LLM_MAX_CALLS_GLOBAL_DAY"]
     if context_limit > user_limit:
@@ -73,4 +79,8 @@ def get_accelerator_llm_policy() -> AcceleratorLLMPolicy:
         max_calls_per_context=context_limit,
         max_calls_per_user_day=user_limit,
         max_calls_global_day=global_limit,
+        solution_generation_max_output_tokens=values[
+            "ACCELERATOR_SOLUTION_GENERATION_MAX_OUTPUT_TOKENS"
+        ],
+        solution_generation_max_calls_per_context=solution_context_limit,
     )
