@@ -447,9 +447,84 @@ class FieldAdoptionAudit(TimeStampedModel):
         return f"{self.action}:{self.outcome}:{self.candidate_id_snapshot}"
 
 
+class SolutionGenerationRun(TimeStampedModel):
+    class Status(models.TextChoices):
+        RUNNING = "running", "Läuft"
+        SUCCESS = "success", "Erfolgreich"
+        FAILED = "failed", "Fehlgeschlagen"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    process_analysis = models.ForeignKey(
+        "architecture.ProcessAnalysis",
+        on_delete=models.CASCADE,
+        related_name="solution_generation_runs",
+    )
+    process_version = models.PositiveIntegerField()
+    source_hash = models.CharField(max_length=64)
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="solution_generation_runs",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.RUNNING,
+        db_index=True,
+    )
+    provider = models.CharField(max_length=50, default="openrouter")
+    model_name = models.CharField(max_length=200, blank=True)
+    prompt_version = models.CharField(max_length=20)
+    generation_schema_version = models.CharField(max_length=20)
+    started_at = models.DateTimeField(default=timezone.now)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    duration_ms = models.PositiveIntegerField(null=True, blank=True)
+    error_code = models.CharField(max_length=50, blank=True)
+    input_chars = models.PositiveIntegerField(default=0)
+    output_chars = models.PositiveIntegerField(default=0)
+    prompt_tokens = models.PositiveIntegerField(null=True, blank=True)
+    completion_tokens = models.PositiveIntegerField(null=True, blank=True)
+    total_tokens = models.PositiveIntegerField(null=True, blank=True)
+    cost = models.DecimalField(max_digits=12, decimal_places=6, null=True, blank=True)
+    expires_at = models.DateTimeField(db_index=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(
+                fields=["process_analysis", "status", "-created_at"],
+                name="solgen_process_status_idx",
+            ),
+            models.Index(
+                fields=["requested_by", "-created_at"],
+                name="solgen_user_created_idx",
+            ),
+            models.Index(fields=["expires_at"], name="solgen_expires_idx"),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["process_analysis"],
+                condition=models.Q(status="running"),
+                name="uniq_running_solution_generation",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(status="running", finished_at__isnull=True)
+                    | models.Q(status__in=["success", "failed"], finished_at__isnull=False)
+                ),
+                name="solution_generation_status_finished_valid",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.process_analysis_id}: {self.get_status_display()}"
+
+
 class AcceleratorLLMQuota(TimeStampedModel):
     class Scope(models.TextChoices):
-        CONTEXT = "context", "Capture Session"
+        CONTEXT = "context", "Kontext"
         USER = "user", "Benutzer"
         GLOBAL = "global", "Global"
 
@@ -469,6 +544,13 @@ class AcceleratorLLMQuota(TimeStampedModel):
         blank=True,
         related_name="llm_quotas",
     )
+    process_analysis = models.ForeignKey(
+        "architecture.ProcessAnalysis",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="llm_quotas",
+    )
     calls = models.PositiveIntegerField(default=0)
 
     class Meta:
@@ -481,9 +563,30 @@ class AcceleratorLLMQuota(TimeStampedModel):
         constraints = [
             models.CheckConstraint(
                 condition=(
-                    models.Q(scope="global", user__isnull=True, session__isnull=True)
-                    | models.Q(scope="user", user__isnull=False, session__isnull=True)
-                    | models.Q(scope="context", user__isnull=True, session__isnull=False)
+                    models.Q(
+                        scope="global",
+                        user__isnull=True,
+                        session__isnull=True,
+                        process_analysis__isnull=True,
+                    )
+                    | models.Q(
+                        scope="user",
+                        user__isnull=False,
+                        session__isnull=True,
+                        process_analysis__isnull=True,
+                    )
+                    | models.Q(
+                        scope="context",
+                        user__isnull=True,
+                        session__isnull=False,
+                        process_analysis__isnull=True,
+                    )
+                    | models.Q(
+                        scope="context",
+                        user__isnull=True,
+                        session__isnull=True,
+                        process_analysis__isnull=False,
+                    )
                 ),
                 name="valid_accel_quota_scope_owner",
             ),
@@ -501,6 +604,11 @@ class AcceleratorLLMQuota(TimeStampedModel):
                 fields=["session", "quota_date"],
                 condition=models.Q(scope="context"),
                 name="uniq_accel_quota_context_date",
+            ),
+            models.UniqueConstraint(
+                fields=["process_analysis", "quota_date"],
+                condition=models.Q(scope="context"),
+                name="uniq_accel_quota_process_date",
             ),
         ]
 
