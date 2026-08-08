@@ -17,7 +17,7 @@ jobs:
   cleanup:
     runs-on: ubuntu-latest
     steps:
-      - name: Delete merged same-repository branches
+      - name: Delete obsolete same-repository branches
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPOSITORY: ${{ github.repository }}
@@ -40,7 +40,7 @@ jobs:
               "Accept": "application/vnd.github+json",
               "Authorization": f"Bearer {token}",
               "X-GitHub-Api-Version": "2022-11-28",
-              "User-Agent": "ki-radar-merged-branch-cleanup",
+              "User-Agent": "ki-radar-branch-cleanup",
           }
 
 
@@ -52,10 +52,11 @@ jobs:
                   return json.loads(response.read().decode("utf-8"))
 
 
-          def pull_requests(state: str):
+          def paged(path: str):
               page = 1
               while True:
-                  url = f"{api_root}/pulls?state={state}&per_page=100&page={page}"
+                  separator = "&" if "?" in path else "?"
+                  url = f"{api_root}/{path}{separator}per_page=100&page={page}"
                   batch = api_request(url)
                   if not batch:
                       return
@@ -65,21 +66,48 @@ jobs:
                   page += 1
 
 
+          open_pulls = list(paged("pulls?state=open"))
+          closed_pulls = list(paged("pulls?state=closed"))
           open_branches = {
               pull["head"]["ref"]
-              for pull in pull_requests("open")
+              for pull in open_pulls
               if pull.get("head", {}).get("repo", {}).get("full_name") == repository
           }
+
           merged_branches = {
               pull["head"]["ref"]
-              for pull in pull_requests("closed")
+              for pull in closed_pulls
               if pull.get("merged_at")
               and pull.get("head", {}).get("repo", {}).get("full_name") == repository
               and pull["head"]["ref"] != default_branch
               and pull["head"]["ref"] not in open_branches
           }
+          superseded_branches = {
+              pull["head"]["ref"]
+              for pull in closed_pulls
+              if not pull.get("merged_at")
+              and "ersetzt durch" in (pull.get("body") or "").casefold()
+              and pull.get("head", {}).get("repo", {}).get("full_name") == repository
+              and pull["head"]["ref"] != default_branch
+              and pull["head"]["ref"] not in open_branches
+          }
+          helper_branches = {
+              branch["name"]
+              for branch in paged("branches")
+              if branch["name"] != default_branch
+              and branch["name"] not in open_branches
+              and branch["name"].startswith(("tmp/", "tools/"))
+          }
 
-          for branch in sorted(merged_branches):
+          reasons = {}
+          for branch in merged_branches:
+              reasons[branch] = "gemergt"
+          for branch in superseded_branches:
+              reasons[branch] = "explizit ersetzt"
+          for branch in helper_branches:
+              reasons[branch] = "temporärer Hilfsbranch"
+
+          for branch in sorted(reasons):
               encoded = urllib.parse.quote(branch, safe="/")
               url = f"{api_root}/git/refs/heads/{encoded}"
               try:
@@ -89,5 +117,5 @@ jobs:
                       print(f"Branch bereits entfernt oder geschützt: {branch}")
                       continue
                   raise
-              print(f"Gemergten Branch gelöscht: {branch}")
+              print(f"Branch gelöscht ({reasons[branch]}): {branch}")
           PY
