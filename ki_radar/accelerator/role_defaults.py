@@ -241,9 +241,7 @@ def resolve_delivery_review_roles(*, package, review) -> tuple[DeliveryReviewRes
     if "business" in required and review.business_confirmed_at is None:
         owner_id = package.use_case.business_owner_id
         owner = _load_user(owner_id)
-        if _is_currently_usable(owner) and can_confirm_business(
-            owner, package, review.section_key
-        ):
+        if _is_currently_usable(owner) and can_confirm_business(owner, package, review.section_key):
             resolution = _person_resolution(
                 role_key="delivery_review_business",
                 eligible_state=SUGGESTION,
