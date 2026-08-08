@@ -14,6 +14,7 @@ from ki_radar.use_cases.models import UseCase
 from .candidate_state import supersede_open_candidates
 from .catalogs import ANSWER_SCHEMA_VERSION, CATALOG_VERSION_V1
 from .extraction_contract import EXTRACTION_PROMPT_VERSION, EXTRACTION_SCHEMA_VERSION
+from .field_registry import UnsupportedAdoptionField, assert_adoptable_field
 from .models import (
     CaptureAnalysis,
     CaptureFieldSuggestion,
@@ -91,6 +92,25 @@ def _text_model_value(target, field_name: str) -> str:
     return value
 
 
+def _adoption_field_name(suggestion: CaptureFieldSuggestion) -> str | None:
+    """Resolve an extraction target path to an explicitly adoptable model field."""
+
+    field_name = suggestion.target_field
+    prefix = f"{suggestion.target_object_type}."
+    if field_name.startswith(prefix):
+        field_name = field_name[len(prefix) :]
+    if "." in field_name or "[]" in field_name:
+        return None
+    try:
+        assert_adoptable_field(
+            target_type=suggestion.target_object_type,
+            field_name=field_name,
+        )
+    except UnsupportedAdoptionField:
+        return None
+    return field_name
+
+
 @transaction.atomic
 def create_adoption_candidates(*, analysis_id) -> list[FieldAdoptionCandidate]:
     analysis = (
@@ -120,24 +140,27 @@ def create_adoption_candidates(*, analysis_id) -> list[FieldAdoptionCandidate]:
     ).order_by("target_field")
     created_candidates = []
     for suggestion in suggestions:
+        field_name = _adoption_field_name(suggestion)
+        if field_name is None:
+            continue
         existing_candidate = FieldAdoptionCandidate.objects.filter(suggestion=suggestion).first()
         if existing_candidate is not None:
             created_candidates.append(existing_candidate)
             continue
         if not isinstance(suggestion.suggested_value, str):
             raise CandidateSnapshotError("Der Vorschlagswert ist kein Textwert.")
-        previous_value = _text_model_value(target, suggestion.target_field)
+        previous_value = _text_model_value(target, field_name)
         supersede_open_candidates(
             target_object_type=session.capture_type,
             target_object_id=target.pk,
-            target_field=suggestion.target_field,
+            target_field=field_name,
             exclude_suggestion_id=suggestion.pk,
         )
         candidate = FieldAdoptionCandidate.objects.create(
             suggestion=suggestion,
             target_object_type=session.capture_type,
             target_object_id=target.pk,
-            target_field=suggestion.target_field,
+            target_field=field_name,
             proposed_value=canonicalize_text(suggestion.suggested_value),
             previous_value=canonicalize_text(previous_value),
             previous_value_hash=canonical_text_hash(previous_value),

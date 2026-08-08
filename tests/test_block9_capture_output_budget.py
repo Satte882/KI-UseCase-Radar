@@ -52,4 +52,5 @@ def test_capture_provider_forwards_dedicated_output_budget(monkeypatch):
     assert result.payload == {}
     assert captured["max_tokens"] == 32768
     assert captured["timeout_seconds"] == 60
+    assert captured["temperature"] == 0.0
     assert captured["response_format"]["type"] == "json_schema"
