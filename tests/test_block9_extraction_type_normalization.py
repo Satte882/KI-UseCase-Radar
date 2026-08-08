@@ -171,5 +171,5 @@ def test_authoritative_text_target_rejects_non_text_raw_value():
         field_type="boolean",
     )
 
-    with pytest.raises(ExtractionValidationError, match="Text erwartet"):
+    with pytest.raises(ExtractionValidationError, match="wird 'text' erwartet"):
         validate_extraction_document(payload, prepared=prepared)
