@@ -128,8 +128,7 @@ def resolve_use_case_business_owner(
             source_label="Owner des zugehörigen Value Streams",
             predicate=is_business_owner,
             reason=(
-                "Cross-Role-Vorschlag: Value-Stream-Owner und Business Owner "
-                "sind getrennte Rollen."
+                "Cross-Role-Vorschlag: Value-Stream-Owner und Business Owner sind getrennte Rollen."
             ),
         )
 
@@ -262,10 +261,7 @@ def resolve_second_approver(
         )
     return open_resolution(
         "second_approver",
-        reason=(
-            "Mehrere unabhängige Zweitprüfer sind zulässig; "
-            "keine Person wird bevorzugt."
-        ),
+        reason=("Mehrere unabhängige Zweitprüfer sind zulässig; keine Person wird bevorzugt."),
     )
 
 
@@ -303,8 +299,7 @@ def resolve_delivery_review_roles(
                 source_id=_object_id(review),
                 source_label="Erforderliche Business Confirmation",
                 reason=(
-                    "Die Rolle ist erforderlich, aber keine eindeutige zulässige "
-                    "Person verfügbar."
+                    "Die Rolle ist erforderlich, aber keine eindeutige zulässige Person verfügbar."
                 ),
             )
         resolutions.append(DeliveryReviewResolution(role="business", resolution=resolution))
@@ -335,8 +330,7 @@ def resolve_delivery_review_roles(
                 source_id=_object_id(review),
                 source_label="Erforderliche Technical Confirmation",
                 reason=(
-                    "Die Rolle ist erforderlich, aber keine eindeutige zulässige "
-                    "Person verfügbar."
+                    "Die Rolle ist erforderlich, aber keine eindeutige zulässige Person verfügbar."
                 ),
             )
         resolutions.append(DeliveryReviewResolution(role="technical", resolution=resolution))
