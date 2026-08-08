@@ -40,7 +40,7 @@ class DeliveryReviewResolution:
 
 
 def _object_id(value) -> str:
-    pk = getattr(value, "pk", None)
+    pk = value.pk if value is not None else None
     return "" if pk is None else str(pk)
 
 
@@ -53,7 +53,7 @@ def _load_user(user_id: int | None):
 def _is_currently_usable(user, predicate: Callable | None = None) -> bool:
     if user is None or not user.is_active or user.is_anonymized:
         return False
-    return predicate(user) if predicate is not None else True
+    return predicate is None or predicate(user)
 
 
 def _person_resolution(
@@ -96,7 +96,7 @@ def open_resolution(role_key: str, *, reason: str = "Keine eindeutige Rollenquel
 
 
 def resolve_use_case_business_owner(*, use_case=None, value_stream=None) -> RoleDefaultResolution:
-    if use_case is not None and getattr(use_case, "business_owner_id", None):
+    if use_case is not None and use_case.business_owner_id:
         return _person_resolution(
             role_key="business_owner",
             eligible_state=EXISTING,
@@ -107,7 +107,7 @@ def resolve_use_case_business_owner(*, use_case=None, value_stream=None) -> Role
             predicate=is_business_owner,
         )
 
-    if value_stream is not None and getattr(value_stream, "owner_id", None):
+    if value_stream is not None and value_stream.owner_id:
         return _person_resolution(
             role_key="business_owner",
             eligible_state=SUGGESTION,
@@ -126,7 +126,7 @@ def resolve_use_case_business_owner(*, use_case=None, value_stream=None) -> Role
 
 
 def resolve_use_case_coordinator(*, use_case=None) -> RoleDefaultResolution:
-    if use_case is not None and getattr(use_case, "coordinator_id", None):
+    if use_case is not None and use_case.coordinator_id:
         return _person_resolution(
             role_key="coordinator",
             eligible_state=EXISTING,
@@ -140,7 +140,7 @@ def resolve_use_case_coordinator(*, use_case=None) -> RoleDefaultResolution:
 
 
 def resolve_use_case_technical_owner(*, use_case=None) -> RoleDefaultResolution:
-    if use_case is not None and getattr(use_case, "technical_owner_id", None):
+    if use_case is not None and use_case.technical_owner_id:
         return _person_resolution(
             role_key="technical_owner",
             eligible_state=EXISTING,
@@ -153,7 +153,7 @@ def resolve_use_case_technical_owner(*, use_case=None) -> RoleDefaultResolution:
 
 
 def resolve_delivery_technical_owner(*, use_case, package=None) -> RoleDefaultResolution:
-    if package is not None and getattr(package, "technical_owner_id", None):
+    if package is not None and package.technical_owner_id:
         return _person_resolution(
             role_key="technical_owner",
             eligible_state=EXISTING,
@@ -163,7 +163,7 @@ def resolve_delivery_technical_owner(*, use_case, package=None) -> RoleDefaultRe
             source_label="Technical Owner des Delivery Packages",
         )
 
-    if getattr(use_case, "technical_owner_id", None):
+    if use_case.technical_owner_id:
         return _person_resolution(
             role_key="technical_owner",
             eligible_state=PREFILL,
@@ -177,7 +177,7 @@ def resolve_delivery_technical_owner(*, use_case, package=None) -> RoleDefaultRe
 
 
 def resolve_condition_owner(*, decision=None) -> RoleDefaultResolution:
-    if decision is not None and getattr(decision, "condition_owner_id", None):
+    if decision is not None and decision.condition_owner_id:
         return _person_resolution(
             role_key="condition_owner",
             eligible_state=EXISTING,
@@ -206,7 +206,7 @@ def resolve_second_approver(*, use_case, first_decider, assigned=None) -> RoleDe
         return RoleDefaultResolution(
             role_key="second_approver",
             state=INELIGIBLE,
-            user_id=getattr(assigned, "pk", None),
+            user_id=assigned.pk,
             user_label=assigned.get_display_name(),
             source_kind="approval_decision",
             source_id=_object_id(use_case),
@@ -300,7 +300,7 @@ def resolve_delivery_review_roles(*, package, review) -> tuple[DeliveryReviewRes
 
 
 def resolve_governance_review_role(*, review) -> RoleDefaultResolution:
-    role_label = (getattr(review, "responsible_role", "") or "").strip()
+    role_label = (review.responsible_role or "").strip()
     if not role_label:
         role_label = review.get_review_type_display()
     return RoleDefaultResolution(
