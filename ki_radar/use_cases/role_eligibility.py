@@ -16,11 +16,7 @@ def _current_active_user(user):
     user_id = getattr(user, "pk", None)
     if user_id is None:
         return None
-    return (
-        get_user_model()
-        .objects.filter(pk=user_id, is_active=True, is_anonymized=False)
-        .first()
-    )
+    return get_user_model().objects.filter(pk=user_id, is_active=True, is_anonymized=False).first()
 
 
 def revalidate_use_case_role(*, role_key: str, user, required: bool = False):

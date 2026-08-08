@@ -55,10 +55,7 @@ def test_technical_owner_selection_reloads_current_user_state(reader):
         revalidate_use_case_role(role_key="technical_owner", user=reader)
 
 
-def test_cross_role_business_owner_suggestion_is_revalidated_before_use(
-    business_unit,
-    owner,
-):
+def test_cross_role_business_owner_suggestion_is_revalidated_before_use(business_unit, owner):
     value_stream = ValueStream.objects.create(
         name="Beschaffung",
         business_unit=business_unit,
