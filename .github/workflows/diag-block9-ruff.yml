@@ -1,0 +1,43 @@
+name: Block9 Ruff Format Diagnostic
+
+on:
+  push:
+    branches:
+      - diag/block9-ap3-ruff-format
+
+permissions:
+  contents: read
+
+jobs:
+  format-diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.10.0"
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --frozen --dev
+
+      - name: Format resolver
+        run: uv run ruff format ki_radar/accelerator/role_defaults.py
+
+      - name: Show exact diff
+        run: git diff -- ki_radar/accelerator/role_defaults.py
+
+      - name: Upload formatted resolver
+        uses: actions/upload-artifact@v4
+        with:
+          name: block9-ap3-formatted-resolver
+          path: ki_radar/accelerator/role_defaults.py
+          if-no-files-found: error
