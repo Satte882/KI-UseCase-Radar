@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable
 
 from django.contrib.auth import get_user_model
 
@@ -117,7 +117,8 @@ def resolve_use_case_business_owner(*, use_case=None, value_stream=None) -> Role
             source_label="Owner des zugehörigen Value Streams",
             predicate=is_business_owner,
             reason=(
-                "Cross-Role-Vorschlag: Value-Stream-Owner und Business Owner sind getrennte Rollen."
+                "Cross-Role-Vorschlag: Value-Stream-Owner und Business Owner "
+                "sind getrennte Rollen."
             ),
         )
 
@@ -259,7 +260,10 @@ def resolve_delivery_review_roles(*, package, review) -> tuple[DeliveryReviewRes
                 source_kind="delivery_section",
                 source_id=_object_id(review),
                 source_label="Erforderliche Business Confirmation",
-                reason="Die Rolle ist erforderlich, aber keine eindeutige zulässige Person verfügbar.",
+                reason=(
+                    "Die Rolle ist erforderlich, aber keine eindeutige zulässige "
+                    "Person verfügbar."
+                ),
             )
         resolutions.append(DeliveryReviewResolution(role="business", resolution=resolution))
 
@@ -285,7 +289,10 @@ def resolve_delivery_review_roles(*, package, review) -> tuple[DeliveryReviewRes
                 source_kind="delivery_section",
                 source_id=_object_id(review),
                 source_label="Erforderliche Technical Confirmation",
-                reason="Die Rolle ist erforderlich, aber keine eindeutige zulässige Person verfügbar.",
+                reason=(
+                    "Die Rolle ist erforderlich, aber keine eindeutige zulässige "
+                    "Person verfügbar."
+                ),
             )
         resolutions.append(DeliveryReviewResolution(role="technical", resolution=resolution))
 
