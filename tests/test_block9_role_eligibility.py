@@ -121,8 +121,7 @@ def test_second_approver_eligibility_is_recomputed_from_current_state(
         eligible_second_approvers(
             use_case=use_case,
             first_decider=coordinator,
-        )
-        .filter(pk=candidate.pk)
+        ).filter(pk=candidate.pk)
         .exists()
     )
 
@@ -132,7 +131,6 @@ def test_second_approver_eligibility_is_recomputed_from_current_state(
         not eligible_second_approvers(
             use_case=use_case,
             first_decider=coordinator,
-        )
-        .filter(pk=candidate.pk)
+        ).filter(pk=candidate.pk)
         .exists()
     )
