@@ -11,6 +11,12 @@ from ki_radar.use_cases.metric_presentation import build_metric_set_presentation
 from ki_radar.use_cases.models import ApprovalDecision, UseCase
 
 from .exports import render_delivery_markdown
+from .mapping_integration import (
+    apply_refresh_plan,
+    block8_mapper_enabled,
+    build_existing_package_refresh_plan,
+    build_mapped_delivery_seed,
+)
 from .models import (
     DELIVERY_SECTION_DEFINITIONS,
     DeliveryPackage,
@@ -468,13 +474,35 @@ def _create_section_reviews(package: DeliveryPackage, manifest: dict) -> None:
 
 
 @transaction.atomic
-def create_delivery_package(*, use_case: UseCase, actor) -> DeliveryPackage:
+def create_delivery_package(
+    *,
+    use_case: UseCase,
+    actor,
+    use_evidence_mapper: bool | None = None,
+) -> DeliveryPackage:
     eligible, reason, decision = delivery_eligibility(use_case)
     if not eligible or decision is None:
         raise ValidationError(reason)
     version = (
         use_case.delivery_packages.aggregate(max_version=Max("version"))["max_version"] or 0
     ) + 1
+    package_values = build_initial_delivery_data(use_case, decision)
+    architecture_values = _architecture_artifacts_payload(use_case, decision)
+    source_manifest = build_source_manifest(use_case, decision)
+    if use_evidence_mapper is None:
+        use_evidence_mapper = block8_mapper_enabled()
+    if use_evidence_mapper:
+        seed = build_mapped_delivery_seed(
+            use_case=use_case,
+            approval_decision=decision,
+            fallback_package_values=package_values,
+            fallback_architecture_values=architecture_values,
+            source_manifest=source_manifest,
+        )
+        package_values = seed.package_values
+        architecture_values = seed.architecture_values
+        source_manifest = seed.source_manifest
+
     package = DeliveryPackage(
         use_case=use_case,
         technical_owner=use_case.technical_owner,
@@ -482,12 +510,24 @@ def create_delivery_package(*, use_case: UseCase, actor) -> DeliveryPackage:
         generated_from_decision=decision,
         created_by=actor,
         readiness_schema_version=2,
-        **build_initial_delivery_data(use_case, decision),
+        **package_values,
     )
-    package._architecture_artifacts_payload = _architecture_artifacts_payload(use_case, decision)
+    package._architecture_artifacts_payload = architecture_values
     package.save()
-    _create_section_reviews(package, build_source_manifest(use_case, decision))
+    _create_section_reviews(package, source_manifest)
     return package
+
+
+@transaction.atomic
+def refresh_delivery_package_mapping(package: DeliveryPackage):
+    package = DeliveryPackage.objects.select_for_update().get(pk=package.pk)
+    if package.status == DeliveryPackage.Status.HANDED_OVER:
+        raise ValidationError("Ein übergebenes Delivery Package ist unveränderlich.")
+    if package.generated_from_decision_id is None:
+        raise ValidationError("Für den Mapper fehlt der Freigabe-Snapshot des Delivery Packages.")
+    plan = build_existing_package_refresh_plan(package)
+    apply_refresh_plan(package, plan)
+    return plan
 
 
 @transaction.atomic
@@ -718,6 +758,7 @@ __all__ = [
     "latest_final_approval",
     "mark_package_ready",
     "missing_ready_fields",
+    "refresh_delivery_package_mapping",
     "refresh_technical_owner_source_snapshot",
     "render_delivery_markdown",
     "reset_section_reviews",
