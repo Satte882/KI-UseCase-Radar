@@ -1,8 +1,6 @@
 import pytest
 from django.contrib.auth.models import Group
 
-from ki_radar.accounts.models import User
-from ki_radar.accounts.permissions import GROUP_COORDINATOR
 from ki_radar.accelerator.role_defaults import (
     EXISTING,
     INELIGIBLE,
@@ -16,6 +14,8 @@ from ki_radar.accelerator.role_defaults import (
     resolve_use_case_business_owner,
     resolve_use_case_coordinator,
 )
+from ki_radar.accounts.models import User
+from ki_radar.accounts.permissions import GROUP_COORDINATOR
 from ki_radar.architecture.models import ValueStream
 from ki_radar.delivery.models import DeliveryPackage, DeliverySectionReview
 from ki_radar.use_cases.models import UseCase
