@@ -25,11 +25,12 @@ def _coordinator_user(*, username, business_unit):
 
 
 def test_business_owner_selection_reuses_existing_permission_rule(owner, reader):
-    assert revalidate_use_case_role(
+    selected = revalidate_use_case_role(
         role_key="business_owner",
         user=owner,
         required=True,
-    ).pk == owner.pk
+    )
+    assert selected.pk == owner.pk
 
     with pytest.raises(ValidationError, match="Business Owner"):
         revalidate_use_case_role(
@@ -40,14 +41,16 @@ def test_business_owner_selection_reuses_existing_permission_rule(owner, reader)
 
 
 def test_coordinator_selection_reuses_existing_permission_rule(coordinator, reader):
-    assert revalidate_use_case_role(role_key="coordinator", user=coordinator).pk == coordinator.pk
+    selected = revalidate_use_case_role(role_key="coordinator", user=coordinator)
+    assert selected.pk == coordinator.pk
 
     with pytest.raises(ValidationError, match="KI-Koordinator"):
         revalidate_use_case_role(role_key="coordinator", user=reader)
 
 
 def test_technical_owner_selection_reloads_current_user_state(reader):
-    assert revalidate_use_case_role(role_key="technical_owner", user=reader).pk == reader.pk
+    selected = revalidate_use_case_role(role_key="technical_owner", user=reader)
+    assert selected.pk == reader.pk
 
     User.objects.filter(pk=reader.pk).update(is_active=False)
 
@@ -91,8 +94,10 @@ def test_use_case_form_applies_role_revalidation(coordinator, reader):
 
 
 def test_optional_roles_may_remain_open():
-    assert revalidate_use_case_role(role_key="coordinator", user=None) is None
-    assert revalidate_use_case_role(role_key="technical_owner", user=None) is None
+    coordinator_result = revalidate_use_case_role(role_key="coordinator", user=None)
+    technical_owner_result = revalidate_use_case_role(role_key="technical_owner", user=None)
+    assert coordinator_result is None
+    assert technical_owner_result is None
 
 
 def test_unknown_role_fails_closed(reader):
