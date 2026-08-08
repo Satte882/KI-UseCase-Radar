@@ -26,7 +26,7 @@
       <dt class="col-sm-4">Provider und Modell</dt><dd class="col-sm-8">{{ analysis.provider }} · {{ analysis.model_name|default:"Provider-Standard" }}</dd>
       <dt class="col-sm-4">Quellstand</dt><dd class="col-sm-8">Revision {{ analysis.source_revision }} · Katalog {{ analysis.catalog_version }} · Antwortschema {{ analysis.answer_schema_version }}</dd>
       <dt class="col-sm-4">Vertrag</dt><dd class="col-sm-8">Prompt {{ analysis.prompt_version }} · Extraktionsschema {{ analysis.extraction_schema_version }}</dd>
-      <dt class="col-sm-4">Nutzung</dt><dd class="col-sm-8">{{ analysis.total_tokens|default:"–" }} Tokens{% if analysis.cost is not None %} · {{ analysis.cost }} Kostenwert{% endif %}</dd>
+      <dt class="col-sm-4">Nutzung</dt><dd class="col-sm-8">{{ analysis.total_tokens|default:"–" }} Tokens{% if analysis.cost is not None %} · Geschätzte LLM-Kosten: {{ analysis.cost }} USD{% endif %}</dd>
     </dl>
   </div>
 </section>

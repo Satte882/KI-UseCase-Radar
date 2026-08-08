@@ -1,4 +1,5 @@
 from datetime import timedelta
+from decimal import Decimal
 
 import pytest
 from django.urls import reverse
@@ -152,6 +153,26 @@ def test_preview_shows_source_uncertainty_and_no_block5_actions(client, owner):
     assert "Explizit genannt" in content
     assert "Übernehmen" not in content
     assert "Verwerfen" not in content
+
+
+@pytest.mark.django_db
+def test_preview_labels_estimated_llm_cost_in_usd(client, owner):
+    session = _session(owner)
+    analysis = _analysis(session, owner)
+    analysis.total_tokens = 8901
+    analysis.cost = Decimal("0.014670")
+    analysis.save(update_fields=["total_tokens", "cost"])
+    client.force_login(owner)
+
+    response = client.get(
+        reverse("accelerator:analysis_detail", kwargs={"analysis_id": analysis.pk})
+    )
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert "8901 Tokens" in content
+    assert "Geschätzte LLM-Kosten: 0,014670 USD" in content
+    assert "Kostenwert" not in content
 
 
 @pytest.mark.django_db
