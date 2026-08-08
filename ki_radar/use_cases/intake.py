@@ -1,8 +1,14 @@
 from decimal import Decimal
 
 from django import forms
+from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 
+from ki_radar.accelerator.role_default_guard import validate_business_owner_suggestion
+from ki_radar.accelerator.role_default_ui import attach_role_default
+from ki_radar.accelerator.role_defaults import SUGGESTION, resolve_use_case_business_owner
 from ki_radar.accounts.models import BusinessUnit
+from ki_radar.accounts.permissions import is_business_owner
 from ki_radar.core.taxonomy import BusinessDomain
 
 from .form_fields import LocalizedDecimalField
@@ -28,6 +34,11 @@ class ProblemStepForm(IntakeStepForm):
     business_unit = forms.ModelChoiceField(
         queryset=BusinessUnit.objects.none(), label="Organisationseinheit"
     )
+    business_owner = forms.ModelChoiceField(
+        queryset=get_user_model().objects.none(),
+        label="Business Owner",
+        help_text="Die fachlich verantwortliche Person wird ausdrücklich gewählt.",
+    )
     problem_statement = forms.CharField(
         label="Welches Problem soll gelöst werden?",
         widget=forms.Textarea(attrs={"rows": 5}),
@@ -37,9 +48,24 @@ class ProblemStepForm(IntakeStepForm):
         ),
     )
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, value_stream=None, **kwargs):
+        self.value_stream = value_stream
         super().__init__(*args, **kwargs)
         self.fields["business_unit"].queryset = BusinessUnit.objects.filter(is_active=True)
+        user_model = get_user_model()
+        active_users = list(
+            user_model.objects.filter(is_active=True, is_anonymized=False)
+            .prefetch_related("groups")
+            .order_by("last_name", "first_name", "username")
+        )
+        eligible_ids = [user.pk for user in active_users if is_business_owner(user)]
+        self.fields["business_owner"].queryset = user_model.objects.filter(
+            pk__in=eligible_ids
+        ).order_by("last_name", "first_name", "username")
+        attach_role_default(
+            self.fields["business_owner"],
+            resolve_use_case_business_owner(value_stream=value_stream),
+        )
 
     def clean_problem_statement(self):
         value = self.cleaned_data["problem_statement"].strip()
@@ -50,6 +76,26 @@ class ProblemStepForm(IntakeStepForm):
                 "gewünschte Technologie."
             )
         return value
+
+    def clean(self):
+        cleaned = super().clean()
+        selected = cleaned.get("business_owner")
+        resolution = getattr(self.fields["business_owner"], "role_default", None)
+        if (
+            selected is not None
+            and self.value_stream is not None
+            and resolution is not None
+            and resolution.state == SUGGESTION
+            and resolution.user_id == selected.pk
+        ):
+            try:
+                validate_business_owner_suggestion(
+                    submitted_user_id=selected.pk,
+                    value_stream=self.value_stream,
+                )
+            except ValidationError as exc:
+                self.add_error("business_owner", exc)
+        return cleaned
 
 
 class ProcessStepForm(IntakeStepForm):

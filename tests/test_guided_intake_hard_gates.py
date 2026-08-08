@@ -19,10 +19,11 @@ from ki_radar.use_cases.services import (
 )
 
 
-def complete_intake_data(business_unit, **overrides):
+def complete_intake_data(business_unit, business_owner, **overrides):
     data = {
         "title": "Wissenssuche verbessern",
         "business_unit": business_unit.pk,
+        "business_owner": business_owner.pk,
         "problem_statement": (
             "Mitarbeitende benötigen zu viel Zeit, um verbindliche Informationen zu finden."
         ),
@@ -53,9 +54,13 @@ def complete_intake_data(business_unit, **overrides):
     return data
 
 
-def set_intake_session(client, business_unit, **overrides):
+def set_intake_session(client, business_unit, business_owner, **overrides):
     session = client.session
-    session["use_case_intake"] = complete_intake_data(business_unit, **overrides)
+    session["use_case_intake"] = complete_intake_data(
+        business_unit,
+        business_owner,
+        **overrides,
+    )
     session.save()
 
 
@@ -291,6 +296,7 @@ def test_guided_intake_creates_assessment_ready_use_case(client, owner, business
         {
             "title": "Wissenssuche verbessern",
             "business_unit": business_unit.pk,
+            "business_owner": owner.pk,
             "problem_statement": (
                 "Mitarbeitende benötigen zu viel Zeit, um verbindliche Informationen in "
                 "mehreren Richtliniendokumenten zu finden."
@@ -354,7 +360,7 @@ def test_guided_intake_creates_assessment_ready_use_case(client, owner, business
 def test_intake_uses_validated_progress_class(client, owner, business_unit, step):
     client.force_login(owner)
     if step == 6:
-        set_intake_session(client, business_unit)
+        set_intake_session(client, business_unit, owner)
 
     response = client.get(reverse("use_cases:intake_step", args=[step]))
     content = response.content.decode()
@@ -414,6 +420,7 @@ def test_intake_precheck_lists_required_reviews_separately(
     set_intake_session(
         client,
         business_unit,
+        owner,
         privacy_review_required=privacy,
         security_review_required=security,
         legal_review_required=legal,

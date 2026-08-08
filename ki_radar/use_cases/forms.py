@@ -2,8 +2,14 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 
+from ki_radar.accelerator.role_default_ui import attach_role_default
+from ki_radar.accelerator.role_defaults import (
+    resolve_use_case_business_owner,
+    resolve_use_case_coordinator,
+    resolve_use_case_technical_owner,
+)
 from ki_radar.accounts.models import BusinessUnit
-from ki_radar.accounts.permissions import is_coordinator
+from ki_radar.accounts.permissions import is_business_owner, is_coordinator
 from ki_radar.core.taxonomy import BusinessDomain
 
 from .form_fields import LocalizedDecimalInput
@@ -207,19 +213,36 @@ class UseCaseForm(forms.ModelForm):
                 self.fields[field_name].widget.attrs["class"] = "form-select"
         self.fields["business_unit"].queryset = BusinessUnit.objects.filter(is_active=True)
         user_model = get_user_model()
-        active_users = user_model.objects.filter(is_active=True, is_anonymized=False).order_by(
-            "last_name", "first_name", "username"
+        active_users = list(
+            user_model.objects.filter(is_active=True, is_anonymized=False)
+            .prefetch_related("groups")
+            .order_by("last_name", "first_name", "username")
         )
-        for name in ["business_owner", "coordinator", "technical_owner"]:
-            self.fields[name].queryset = active_users
+        active_ids = [user.pk for user in active_users]
+        business_owner_ids = [user.pk for user in active_users if is_business_owner(user)]
+        coordinator_ids = [user.pk for user in active_users if is_coordinator(user)]
+        ordered_users = user_model.objects.order_by("last_name", "first_name", "username")
+        self.fields["business_owner"].queryset = ordered_users.filter(pk__in=business_owner_ids)
+        self.fields["coordinator"].queryset = ordered_users.filter(pk__in=coordinator_ids)
+        self.fields["technical_owner"].queryset = ordered_users.filter(pk__in=active_ids)
         self.fields["business_owner"].required = True
-        if current_user and not self.instance.pk:
-            self.fields["business_owner"].initial = current_user
-        if current_user and not is_coordinator(current_user):
-            for name in [
-                "business_owner",
-                "coordinator",
-            ]:
+
+        role_source = self.instance if self.instance.pk else None
+        attach_role_default(
+            self.fields["business_owner"],
+            resolve_use_case_business_owner(use_case=role_source),
+        )
+        attach_role_default(
+            self.fields["coordinator"],
+            resolve_use_case_coordinator(use_case=role_source),
+        )
+        attach_role_default(
+            self.fields["technical_owner"],
+            resolve_use_case_technical_owner(use_case=role_source),
+        )
+
+        if current_user and self.instance.pk and not is_coordinator(current_user):
+            for name in ["business_owner", "coordinator"]:
                 if name in self.fields:
                     self.fields[name].disabled = True
 

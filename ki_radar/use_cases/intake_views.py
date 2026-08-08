@@ -1,11 +1,14 @@
 from decimal import Decimal
 
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.db.models import Model
 from django.shortcuts import get_object_or_404, redirect, render
 
 from ki_radar.accounts.models import BusinessUnit
+from ki_radar.accounts.permissions import is_business_owner
 from ki_radar.core.taxonomy import BusinessDomain
 
 from .intake import WIZARD_STEPS
@@ -27,7 +30,7 @@ STEP_LABELS = {
 def _serialize_cleaned_data(cleaned_data: dict) -> dict:
     serialized = {}
     for key, value in cleaned_data.items():
-        if isinstance(value, BusinessUnit):
+        if isinstance(value, Model):
             serialized[key] = value.pk
         elif isinstance(value, Decimal):
             serialized[key] = str(value)
@@ -39,6 +42,34 @@ def _serialize_cleaned_data(cleaned_data: dict) -> dict:
 def _form_initial(step: int, stored: dict) -> dict:
     fields = WIZARD_STEPS[step]["form"].base_fields
     return {name: stored[name] for name in fields if name in stored}
+
+
+def _source_value_stream(stored: dict):
+    source_stage_id = stored.get("source_stage_id")
+    if not source_stage_id:
+        return None
+    from ki_radar.architecture.models import ValueStreamStage
+
+    stage = (
+        ValueStreamStage.objects.select_related("value_stream__owner")
+        .filter(pk=source_stage_id)
+        .first()
+    )
+    return stage.value_stream if stage is not None else None
+
+
+def _current_business_owner(stored: dict):
+    business_owner_id = stored.get("business_owner")
+    if not business_owner_id:
+        return None
+    owner = (
+        get_user_model()
+        .objects.filter(pk=business_owner_id, is_active=True, is_anonymized=False)
+        .first()
+    )
+    if owner is None or not is_business_owner(owner):
+        return None
+    return owner
 
 
 def _wizard_step_states(
@@ -75,7 +106,7 @@ def _wizard_step_states(
     return states
 
 
-def _build_use_case(*, stored: dict, user) -> UseCase:
+def _build_use_case(*, stored: dict, user, business_owner) -> UseCase:
     candidate = UseCase(
         title=stored["title"],
         summary=stored["summary"],
@@ -84,7 +115,7 @@ def _build_use_case(*, stored: dict, user) -> UseCase:
         affected_process=stored["affected_process"],
         target_users=stored["target_users"],
         submitter=user,
-        business_owner=user,
+        business_owner=business_owner,
         source_systems=stored.get("source_systems", ""),
         data_sources=stored["data_sources"],
         intended_users=stored["intended_users"],
@@ -175,7 +206,18 @@ def use_case_intake(request, step: int = 1):
         if not required_steps_complete:
             messages.warning(request, "Die Aufnahme ist noch nicht vollständig.")
             return redirect("use_cases:create")
-        candidate = _build_use_case(stored=stored, user=request.user)
+        business_owner = _current_business_owner(stored)
+        if business_owner is None:
+            messages.warning(
+                request,
+                "Der gewählte Business Owner ist aktuell nicht mehr zulässig. Bitte neu wählen.",
+            )
+            return redirect("use_cases:create")
+        candidate = _build_use_case(
+            stored=stored,
+            user=request.user,
+            business_owner=business_owner,
+        )
         blockers = intake_blockers(candidate)
         if request.method == "POST":
             if blockers:
@@ -209,8 +251,9 @@ def use_case_intake(request, step: int = 1):
         )
 
     error_step = None
+    form_kwargs = {"value_stream": _source_value_stream(stored)} if step == 1 else {}
     if request.method == "POST":
-        form = form_class(request.POST)
+        form = form_class(request.POST, **form_kwargs)
         if form.is_valid():
             stored.update(_serialize_cleaned_data(form.cleaned_data))
             request.session[SESSION_KEY] = stored
@@ -218,7 +261,7 @@ def use_case_intake(request, step: int = 1):
             return redirect("use_cases:intake_step", step=step + 1)
         error_step = step
     else:
-        form = form_class(initial=_form_initial(step, stored))
+        form = form_class(initial=_form_initial(step, stored), **form_kwargs)
 
     return render(
         request,
