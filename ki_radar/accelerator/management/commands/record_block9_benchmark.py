@@ -14,6 +14,11 @@ class Command(BaseCommand):
         parser.add_argument("--run-id", required=True)
         parser.add_argument("--path", required=True)
         parser.add_argument("--case", dest="case_key", required=True)
+        parser.add_argument(
+            "--benchmark-version",
+            default=measurement.BENCHMARK_VERSION,
+            choices=sorted(measurement.SUPPORTED_BENCHMARK_VERSIONS),
+        )
         parser.add_argument("--status", default="completed")
         parser.add_argument("--quality-json", default="{}")
         parser.add_argument("--capture-session")
@@ -43,6 +48,7 @@ class Command(BaseCommand):
         times = {key: options[key] for key in measurement.TIME_KEYS}
         try:
             record = measurement.build_raw_record(
+                benchmark_version=options["benchmark_version"],
                 run_id=options["run_id"],
                 path=options["path"],
                 case_key=options["case_key"],

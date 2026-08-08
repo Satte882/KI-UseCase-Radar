@@ -9,6 +9,7 @@ from django.db.models import Sum
 from .models import CaptureAnalysis, FieldAdoptionCandidate
 
 BENCHMARK_VERSION = "block9-v1"
+SUPPORTED_BENCHMARK_VERSIONS = {"block9-v1", "block9-v2"}
 VALID_PATHS = {"manual", "blueprint", "accelerator", "delivery"}
 VALID_STATUSES = {"completed", "failed", "aborted", "blocked"}
 TIME_KEYS = (
@@ -122,10 +123,13 @@ def build_raw_record(
     status,
     times,
     quality,
+    benchmark_version=BENCHMARK_VERSION,
     capture_session=None,
     delivery=None,
     notes="",
 ):
+    if benchmark_version not in SUPPORTED_BENCHMARK_VERSIONS:
+        raise ValueError(f"Unknown benchmark version: {benchmark_version}")
     if path not in VALID_PATHS:
         raise ValueError(f"Unknown benchmark path: {path}")
     if status not in VALID_STATUSES:
@@ -133,7 +137,7 @@ def build_raw_record(
     if case_key not in {"A", "B"}:
         raise ValueError(f"Unknown benchmark case: {case_key}")
     record = {
-        "benchmark_version": BENCHMARK_VERSION,
+        "benchmark_version": benchmark_version,
         "run_id": run_id,
         "path": path,
         "case": case_key,
