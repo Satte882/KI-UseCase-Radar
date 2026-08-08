@@ -1,5 +1,14 @@
 from django import forms
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
+
+from ki_radar.accelerator.role_default_guard import validate_second_approver_suggestion
+from ki_radar.accelerator.role_default_ui import attach_role_default
+from ki_radar.accelerator.role_defaults import (
+    SUGGESTION,
+    resolve_condition_owner,
+    resolve_second_approver,
+)
 
 from .models import ApprovalDecision, DecisionAssessment, UseCase
 from .services import eligible_second_approvers
@@ -139,6 +148,8 @@ class ApprovalDecisionForm(forms.ModelForm):
         }
 
     def __init__(self, *args, actor=None, use_case=None, **kwargs):
+        self.actor = actor
+        self.use_case = use_case
         super().__init__(*args, **kwargs)
         self.fields["decision_status"].choices = [
             (UseCase.DecisionStatus.DEFERRED, UseCase.DecisionStatus.DEFERRED.label),
@@ -160,6 +171,12 @@ class ApprovalDecisionForm(forms.ModelForm):
             if use_case is not None and actor is not None
             else users.none()
         )
+        attach_role_default(self.fields["condition_owner"], resolve_condition_owner())
+        if use_case is not None and actor is not None:
+            attach_role_default(
+                self.fields["second_approval_assignee"],
+                resolve_second_approver(use_case=use_case, first_decider=actor),
+            )
         selected_status = (
             self.data.get("decision_status")
             if self.is_bound
@@ -189,6 +206,26 @@ class ApprovalDecisionForm(forms.ModelForm):
                     )
         else:
             cleaned["second_approval_assignee"] = None
+            return cleaned
+
+        assignee = cleaned.get("second_approval_assignee")
+        resolution = getattr(self.fields["second_approval_assignee"], "role_default", None)
+        if (
+            assignee is not None
+            and resolution is not None
+            and resolution.state == SUGGESTION
+            and resolution.user_id == assignee.pk
+            and self.use_case is not None
+            and self.actor is not None
+        ):
+            try:
+                validate_second_approver_suggestion(
+                    use_case=self.use_case,
+                    first_decider=self.actor,
+                    submitted_user_id=assignee.pk,
+                )
+            except ValidationError as exc:
+                self.add_error("second_approval_assignee", exc)
         return cleaned
 
 
