@@ -41,7 +41,7 @@ def adoption_controls(context, analysis, target_field: str):
         .filter(
             suggestion__analysis=analysis,
             suggestion__target_group_key="",
-            target_field=target_field,
+            suggestion__target_field=target_field,
         )
         .first()
     )

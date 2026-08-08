@@ -339,7 +339,7 @@ def request_capture_provider(prepared: PreparedCaptureAnalysis) -> CaptureProvid
             messages=prepared.messages,
             max_tokens=prepared.policy.capture_max_output_tokens,
             timeout_seconds=prepared.policy.timeout_seconds,
-            temperature=0.0,
+            temperature=prepared.policy.capture_temperature,
             response_format={
                 "type": "json_schema",
                 "json_schema": {
