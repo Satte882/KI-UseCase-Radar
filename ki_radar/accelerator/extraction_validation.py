@@ -145,6 +145,28 @@ def _normalize_decimal(raw: object, path: str, errors: list[str]) -> dict[str, s
     return {"value": value, "unit": _ALLOWED_UNITS[unit_key]}
 
 
+def _normalize_enum(
+    raw: object,
+    *,
+    allowed: list[str],
+    target_field: str,
+    path: str,
+    errors: list[str],
+) -> str | None:
+    if not isinstance(raw, str):
+        errors.append(f"{path}: Enumwert muss als Text vorliegen.")
+        return None
+    value = raw.strip()
+    if value in allowed:
+        return value
+    code, separator, label = value.partition(" / ")
+    canonical = code.strip()
+    if separator and canonical in allowed and label.strip():
+        return canonical
+    errors.append(f"{path}: Ungültiger Enumwert {raw!r} für {target_field}.")
+    return None
+
+
 def _value_text(value: Any) -> str:
     if isinstance(value, list):
         return " ".join(str(item) for item in value)
@@ -175,13 +197,22 @@ def _normalize_value(
 ) -> Any:
     expected = _expected_field_type(suggestion.target_field)
     if suggestion.field_type != expected:
-        errors.append(
-            f"{path}.field_type: Für {suggestion.target_field!r} wird {expected!r} erwartet."
-        )
-        return None
+        recoverable_text_underclassification = suggestion.field_type == "text" and expected in {
+            "enum",
+            "decimal",
+            "integer",
+        }
+        if not recoverable_text_underclassification:
+            errors.append(
+                f"{path}.field_type: Für {suggestion.target_field!r} wird {expected!r} erwartet."
+            )
+            return None
     value = suggestion.suggested_value
     if expected == "text":
-        return str(value).strip()
+        if not isinstance(value, str):
+            errors.append(f"{path}.suggested_value: Text erwartet.")
+            return None
+        return value.strip()
     if expected == "integer":
         if isinstance(value, bool) or not isinstance(value, int) or value < 1:
             errors.append(f"{path}.suggested_value: Positive Ganzzahl erwartet.")
@@ -191,13 +222,13 @@ def _normalize_value(
         return _normalize_decimal(value, f"{path}.suggested_value", errors)
     if expected == "enum":
         allowed = contract["allowed_enums"][_ENUM_PATHS[suggestion.target_field]]
-        if value not in allowed:
-            errors.append(
-                f"{path}.suggested_value: Ungültiger Enumwert {value!r} für "
-                f"{suggestion.target_field}."
-            )
-            return None
-        return value
+        return _normalize_enum(
+            value,
+            allowed=allowed,
+            target_field=suggestion.target_field,
+            path=f"{path}.suggested_value",
+            errors=errors,
+        )
     if expected == "boolean":
         if not isinstance(value, bool):
             errors.append(f"{path}.suggested_value: Boolean erwartet.")
@@ -271,7 +302,7 @@ def validate_extraction_document(
                 "target_object_type": suggestion.target_object_type,
                 "target_field": suggestion.target_field,
                 "target_group_key": suggestion.target_group_key or "",
-                "field_type": suggestion.field_type,
+                "field_type": _expected_field_type(suggestion.target_field),
                 "suggested_value": normalized_value,
                 "source_question": suggestion.source_question,
                 "source_excerpt": suggestion.source_excerpt,
