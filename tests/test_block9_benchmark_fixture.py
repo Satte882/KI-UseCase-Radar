@@ -1,3 +1,4 @@
+# fmt: off
 import hashlib
 import json
 from pathlib import Path
@@ -126,3 +127,4 @@ def test_block9_measurement_contract_preserves_raw_runs():
     assert "total_tokens" in measurement["llm_metrics"]
     assert "deterministic_fields" in measurement["delivery_metrics"]
     assert "Never discard" in measurement["raw_run_rule"]
+# fmt: on
