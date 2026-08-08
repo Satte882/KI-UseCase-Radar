@@ -1,3 +1,4 @@
+# fmt: off
 from __future__ import annotations
 
 import json
@@ -204,3 +205,4 @@ class Command(BaseCommand):
 
         _write_interactive_manifest(options["interactive_manifest"])
         self.stdout.write(self.style.SUCCESS(f"Technical raw data written to {output}"))
+# fmt: on
