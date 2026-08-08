@@ -128,8 +128,8 @@ def test_second_approver_eligibility_is_recomputed_from_current_state(
 
     User.objects.filter(pk=candidate.pk).update(is_active=False)
 
-    assert not (
-        eligible_second_approvers(
+    assert (
+        not eligible_second_approvers(
             use_case=use_case,
             first_decider=coordinator,
         )
