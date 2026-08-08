@@ -38,9 +38,7 @@ def test_block9_benchmark_uses_real_demo_as_reference_without_mutating_it():
     fixture = _load_fixture()
     reference = fixture["reference"]
 
-    assert reference["blueprint_path"] == (
-        "ki_radar/core/scenario_blueprints/real_demo.v1.json"
-    )
+    assert reference["blueprint_path"] == "ki_radar/core/scenario_blueprints/real_demo.v1.json"
     assert reference["blueprint_canonical_sha256"] == (
         "a910863c3f677eb95b593e8031f48e54f811c5bb55295b4e601ae6f13a0b70d5"
     )
