@@ -1,3 +1,4 @@
+# fmt: off
 import json
 
 import pytest
@@ -57,3 +58,4 @@ def test_block9_technical_runner_records_only_real_technical_controls(tmp_path):
     assert tuple(item["run_id"] for item in manifest["runs"]) == EXPECTED_INTERACTIVE_RUNS
     assert all(item["status"] == "not_executed" for item in manifest["runs"])
     assert manifest["quality_case_B"]["status"] == "not_executed"
+# fmt: on
