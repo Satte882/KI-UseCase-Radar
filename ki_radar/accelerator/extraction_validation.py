@@ -95,6 +95,15 @@ _DECIMAL_PATHS = {
     "use_case.recurring_cost",
 }
 _INTEGER_PATHS = {"value_stream.stages[].sequence"}
+_TEXT_LIST_NORMALIZATION_TARGETS = frozenset(
+    {
+        "use_case.benefit_category",
+        "use_case.data_sources",
+        "use_case.intended_users",
+        "use_case.source_systems",
+        "use_case.target_users",
+    }
+)
 
 
 class ExtractionValidationError(ValueError):
@@ -204,17 +213,30 @@ def _normalize_value(
             "decimal",
             "integer",
         }
-        if not recoverable_text_underclassification:
+        recoverable_text_list = (
+            suggestion.field_type == "text_list"
+            and expected == "text"
+            and suggestion.target_field in _TEXT_LIST_NORMALIZATION_TARGETS
+        )
+        if not recoverable_text_underclassification and not recoverable_text_list:
             errors.append(
                 f"{path}.field_type: Für {suggestion.target_field!r} wird {expected!r} erwartet."
             )
             return None
     value = suggestion.suggested_value
     if expected == "text":
-        if not isinstance(value, str):
-            errors.append(f"{path}.suggested_value: Text erwartet.")
-            return None
-        return value.strip()
+        if isinstance(value, str):
+            return value.strip()
+        if (
+            suggestion.field_type == "text_list"
+            and suggestion.target_field in _TEXT_LIST_NORMALIZATION_TARGETS
+            and isinstance(value, list)
+        ):
+            items = [item.strip() for item in value if isinstance(item, str) and item.strip()]
+            if len(items) == len(value) and items:
+                return ", ".join(items)
+        errors.append(f"{path}.suggested_value: Text oder nicht-leere Textliste erwartet.")
+        return None
     if expected == "integer":
         if isinstance(value, bool) or not isinstance(value, int) or value < 1:
             errors.append(f"{path}.suggested_value: Positive Ganzzahl erwartet.")

@@ -371,6 +371,35 @@ def test_transport_forwards_structured_output_requirements_and_finish_reason(mon
     OPENROUTER_API_URL="https://openrouter.example/v1/chat/completions",
     **VALID_LIMITS,
 )
+def test_transport_omits_optional_temperature(monkeypatch):
+    captured = {}
+
+    def fake_urlopen(request, timeout):
+        captured["body"] = json.loads(request.data.decode("utf-8"))
+        return FakeResponse(_success_payload('{"schema_version":"1.0"}'))
+
+    monkeypatch.setattr(openrouter.urllib.request, "urlopen", fake_urlopen)
+
+    openrouter.request_openrouter(
+        messages=[{"role": "user", "content": "test"}],
+        max_tokens=100,
+        timeout_seconds=5,
+        temperature=None,
+        response_format={"type": "json_schema"},
+        provider={"require_parameters": True},
+    )
+
+    assert "temperature" not in captured["body"]
+    assert captured["body"]["max_tokens"] == 100
+    assert captured["body"]["response_format"] == {"type": "json_schema"}
+    assert captured["body"]["provider"] == {"require_parameters": True}
+
+
+@override_settings(
+    OPENROUTER_API_KEY="test-key",
+    OPENROUTER_API_URL="https://openrouter.example/v1/chat/completions",
+    **VALID_LIMITS,
+)
 def test_transport_classifies_missing_schema_provider(monkeypatch):
     error_payload = {
         "error": {

@@ -16,6 +16,7 @@ class AcceleratorLLMPolicy:
     max_input_chars: int
     max_output_tokens: int
     capture_max_output_tokens: int
+    capture_temperature: float | None
     max_calls_per_context: int
     max_calls_per_user_day: int
     max_calls_global_day: int
@@ -50,6 +51,21 @@ def _positive_int(name: str, value: Any) -> int:
     return parsed
 
 
+def _optional_temperature(value: Any) -> float | None:
+    raw = str(value).strip()
+    if not raw:
+        return None
+    try:
+        parsed = float(raw)
+    except (TypeError, ValueError) as exc:
+        raise LLMConfigurationError(
+            "ACCELERATOR_CAPTURE_TEMPERATURE muss leer oder eine Zahl sein."
+        ) from exc
+    if not 0.0 <= parsed <= 2.0:
+        raise LLMConfigurationError("ACCELERATOR_CAPTURE_TEMPERATURE muss zwischen 0 und 2 liegen.")
+    return parsed
+
+
 def get_accelerator_llm_policy() -> AcceleratorLLMPolicy:
     """Return the validated repository-wide Accelerator LLM limits.
 
@@ -80,6 +96,9 @@ def get_accelerator_llm_policy() -> AcceleratorLLMPolicy:
         max_input_chars=values["ACCELERATOR_LLM_MAX_INPUT_CHARS"],
         max_output_tokens=values["ACCELERATOR_LLM_MAX_OUTPUT_TOKENS"],
         capture_max_output_tokens=values["ACCELERATOR_CAPTURE_MAX_OUTPUT_TOKENS"],
+        capture_temperature=_optional_temperature(
+            getattr(settings, "ACCELERATOR_CAPTURE_TEMPERATURE", "")
+        ),
         max_calls_per_context=context_limit,
         max_calls_per_user_day=user_limit,
         max_calls_global_day=global_limit,

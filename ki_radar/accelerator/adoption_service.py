@@ -14,6 +14,7 @@ from .adoption_policy import (
 )
 from .candidate_snapshot import (
     CandidateValidity,
+    adoption_field_name,
     candidate_validity,
     canonical_text_hash,
     canonicalize_text,
@@ -108,7 +109,7 @@ def _candidate_integrity_valid(candidate: FieldAdoptionCandidate) -> bool:
         candidate.target_object_type == suggestion.target_object_type
         and candidate.target_object_type == analysis.capture_type
         and candidate.target_object_type == session.capture_type
-        and candidate.target_field == suggestion.target_field
+        and candidate.target_field == adoption_field_name(suggestion)
         and suggestion.field_type == CaptureFieldSuggestion.FieldType.TEXT
         and not suggestion.target_group_key
         and suggestion_target_matches

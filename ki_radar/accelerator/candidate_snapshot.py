@@ -92,7 +92,7 @@ def _text_model_value(target, field_name: str) -> str:
     return value
 
 
-def _adoption_field_name(suggestion: CaptureFieldSuggestion) -> str | None:
+def adoption_field_name(suggestion: CaptureFieldSuggestion) -> str | None:
     """Resolve an extraction target path to an explicitly adoptable model field."""
 
     field_name = suggestion.target_field
@@ -140,7 +140,7 @@ def create_adoption_candidates(*, analysis_id) -> list[FieldAdoptionCandidate]:
     ).order_by("target_field")
     created_candidates = []
     for suggestion in suggestions:
-        field_name = _adoption_field_name(suggestion)
+        field_name = adoption_field_name(suggestion)
         if field_name is None:
             continue
         existing_candidate = FieldAdoptionCandidate.objects.filter(suggestion=suggestion).first()

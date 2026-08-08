@@ -118,6 +118,41 @@ def test_review_ui_follows_uncertainty_policy(
 
 
 @pytest.mark.django_db
+def test_review_ui_resolves_prefixed_extraction_target_path(
+    client,
+    owner,
+    business_unit,
+):
+    target, _session, analysis, candidate = make_candidate(
+        owner=owner,
+        business_unit=business_unit,
+        uncertainty=CaptureFieldSuggestion.Uncertainty.LOW,
+    )
+    suggestion = candidate.suggestion
+    suggestion.target_field = "value_stream.description"
+    suggestion.save(update_fields=["target_field", "updated_at"])
+    client.force_login(owner)
+
+    response = client.get(reverse("accelerator:analysis_detail", args=[analysis.pk]))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert str(candidate.pk) in content
+    assert "Direkt übernehmen" in content
+
+    response = client.post(
+        reverse("accelerator:candidate_adopt", args=[analysis.pk, candidate.pk]),
+        {"mode": "direct"},
+    )
+    target.refresh_from_db()
+    candidate.refresh_from_db()
+
+    assert response.status_code == 302
+    assert target.description == "Neue geprüfte Beschreibung"
+    assert candidate.status == FieldAdoptionCandidate.Status.ADOPTED
+
+
+@pytest.mark.django_db
 def test_medium_direct_request_is_rejected_server_side(client, owner, business_unit):
     target, _session, analysis, candidate = make_candidate(
         owner=owner,

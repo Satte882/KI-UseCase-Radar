@@ -131,7 +131,7 @@ def request_openrouter(
     messages: list[dict[str, str]],
     max_tokens: int,
     timeout_seconds: int,
-    temperature: float = 0.1,
+    temperature: float | None = 0.1,
     response_format: dict[str, Any] | None = None,
     provider: dict[str, Any] | None = None,
 ) -> OpenRouterResult:
@@ -143,11 +143,9 @@ def request_openrouter(
         )
 
     model = _setting("OPENROUTER_MODEL")
-    body: dict[str, Any] = {
-        "temperature": temperature,
-        "max_tokens": max_tokens,
-        "messages": messages,
-    }
+    body: dict[str, Any] = {"max_tokens": max_tokens, "messages": messages}
+    if temperature is not None:
+        body["temperature"] = temperature
     if model:
         body["model"] = model
     if response_format is not None:
