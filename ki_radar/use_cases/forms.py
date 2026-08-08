@@ -9,6 +9,7 @@ from ki_radar.core.taxonomy import BusinessDomain
 from .form_fields import LocalizedDecimalInput
 from .governance_status import build_governance_statuses
 from .models import UseCase
+from .role_eligibility import revalidate_use_case_role
 
 
 class DateInput(forms.DateInput):
@@ -222,6 +223,28 @@ class UseCaseForm(forms.ModelForm):
             ]:
                 if name in self.fields:
                     self.fields[name].disabled = True
+
+    def clean_business_owner(self):
+        selected = self.cleaned_data["business_owner"]
+        if self.fields["business_owner"].disabled and self.instance.pk:
+            return selected
+        return revalidate_use_case_role(
+            role_key="business_owner",
+            user=selected,
+            required=True,
+        )
+
+    def clean_coordinator(self):
+        selected = self.cleaned_data.get("coordinator")
+        if self.fields["coordinator"].disabled and self.instance.pk:
+            return selected
+        return revalidate_use_case_role(role_key="coordinator", user=selected)
+
+    def clean_technical_owner(self):
+        return revalidate_use_case_role(
+            role_key="technical_owner",
+            user=self.cleaned_data.get("technical_owner"),
+        )
 
     def save(self, commit=True):
         use_case = super().save(commit=False)
