@@ -15,6 +15,7 @@ class AcceleratorLLMPolicy:
     timeout_seconds: int
     max_input_chars: int
     max_output_tokens: int
+    capture_max_output_tokens: int
     max_calls_per_context: int
     max_calls_per_user_day: int
     max_calls_global_day: int
@@ -26,6 +27,7 @@ _SETTING_BOUNDS = {
     "ACCELERATOR_LLM_TIMEOUT_SECONDS": (1, 120),
     "ACCELERATOR_LLM_MAX_INPUT_CHARS": (1, 100_000),
     "ACCELERATOR_LLM_MAX_OUTPUT_TOKENS": (1, 4_096),
+    "ACCELERATOR_CAPTURE_MAX_OUTPUT_TOKENS": (1, 32_768),
     "ACCELERATOR_LLM_MAX_CALLS_PER_CONTEXT": (1, 50),
     "ACCELERATOR_LLM_MAX_CALLS_PER_USER_DAY": (1, 1_000),
     "ACCELERATOR_LLM_MAX_CALLS_GLOBAL_DAY": (1, 100_000),
@@ -51,10 +53,11 @@ def _positive_int(name: str, value: Any) -> int:
 def get_accelerator_llm_policy() -> AcceleratorLLMPolicy:
     """Return the validated repository-wide Accelerator LLM limits.
 
-    Capture and other compact Accelerator calls keep the shared output/context
-    limits. The much larger Block-7 three-option bundle has dedicated limits so
-    it can be sized realistically without widening every Accelerator LLM call.
-    User and global limits remain effective upper caps for every purpose.
+    Compact Accelerator calls keep the shared output/context limits. Capture
+    structured extraction and the much larger Block-7 three-option bundle have
+    dedicated output limits so they can be sized realistically without widening
+    every Accelerator LLM call. User and global limits remain effective upper
+    caps for every purpose.
     """
 
     values = {name: _positive_int(name, getattr(settings, name)) for name in _SETTING_BOUNDS}
@@ -76,6 +79,7 @@ def get_accelerator_llm_policy() -> AcceleratorLLMPolicy:
         timeout_seconds=values["ACCELERATOR_LLM_TIMEOUT_SECONDS"],
         max_input_chars=values["ACCELERATOR_LLM_MAX_INPUT_CHARS"],
         max_output_tokens=values["ACCELERATOR_LLM_MAX_OUTPUT_TOKENS"],
+        capture_max_output_tokens=values["ACCELERATOR_CAPTURE_MAX_OUTPUT_TOKENS"],
         max_calls_per_context=context_limit,
         max_calls_per_user_day=user_limit,
         max_calls_global_day=global_limit,

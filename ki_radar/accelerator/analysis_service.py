@@ -337,7 +337,7 @@ def request_capture_provider(prepared: PreparedCaptureAnalysis) -> CaptureProvid
     try:
         result = request_openrouter(
             messages=prepared.messages,
-            max_tokens=prepared.policy.max_output_tokens,
+            max_tokens=prepared.policy.capture_max_output_tokens,
             timeout_seconds=prepared.policy.timeout_seconds,
             temperature=0.0,
             response_format={
