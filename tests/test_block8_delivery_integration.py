@@ -1,9 +1,15 @@
 from decimal import Decimal
 
 import pytest
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 
+from ki_radar.delivery.mapping_integration import (
+    block8_mapping_source_differences,
+    delivery_mapping_is_legacy,
+)
 from ki_radar.delivery.mapping_refresh import BLOCK8_MAPPING_MANIFEST_KEY, MappingStatus
+from ki_radar.delivery.models import DeliveryPackage, DeliverySectionReview
 from ki_radar.delivery.services import create_delivery_package, refresh_delivery_package_mapping
 from ki_radar.use_cases.models import ApprovalDecision, DecisionAssessment, UseCase
 
@@ -69,6 +75,23 @@ def approved_use_case(owner, coordinator, business_unit):
         finalized_at=timezone.now(),
     )
     return use_case
+
+
+def mark_review_confirmed(review, actor):
+    now = timezone.now()
+    DeliverySectionReview.objects.filter(pk=review.pk).update(
+        review_status=DeliverySectionReview.ReviewStatus.CONFIRMED,
+        reviewed_by=actor,
+        reviewed_at=now,
+        business_confirmed_by=actor,
+        business_confirmed_at=now,
+        technical_confirmed_by=actor,
+        technical_confirmed_at=now,
+        business_confirmation_role="Test",
+        technical_confirmation_role="Test",
+    )
+    review.refresh_from_db()
+    return review
 
 
 def test_existing_delivery_path_remains_explicit_fallback(approved_use_case, coordinator):
@@ -179,3 +202,140 @@ def test_noop_refresh_is_idempotent_and_writes_no_delivery_fields(approved_use_c
     assert second.changed_fields == ()
     assert after_first == before_updated_at
     assert package.updated_at == before_updated_at
+
+
+def test_block8_provenance_detects_staleness_without_mutating_manifest(
+    approved_use_case,
+    coordinator,
+):
+    package = create_delivery_package(
+        use_case=approved_use_case,
+        actor=coordinator,
+        use_evidence_mapper=True,
+    )
+    review = package.section_reviews.get(section_key="problem_and_target")
+    before_manifest = review.source_manifest
+    assert delivery_mapping_is_legacy(package) is False
+    assert not any(item["changed"] for item in block8_mapping_source_differences(package))
+
+    approved_use_case.problem_statement = "Geänderte bestätigte Problembeschreibung."
+    approved_use_case.save(update_fields=["problem_statement", "updated_at"])
+    differences = block8_mapping_source_differences(package)
+    problem = next(item for item in differences if item["package_field"] == "problem_context")
+    target = next(item for item in differences if item["package_field"] == "target_outcome")
+
+    assert problem["changed"] is True
+    assert problem["stale"] is True
+    assert problem["snapshot_evidence_hash"] != problem["current_evidence_hash"]
+    assert target["changed"] is False
+    review.refresh_from_db()
+    assert review.source_manifest == before_manifest
+
+
+def test_legacy_package_stays_untracked_until_explicit_refresh(approved_use_case, coordinator):
+    package = create_delivery_package(
+        use_case=approved_use_case,
+        actor=coordinator,
+        use_evidence_mapper=False,
+    )
+    review = package.section_reviews.get(section_key="problem_and_target")
+    before_manifest = review.source_manifest
+
+    assert delivery_mapping_is_legacy(package) is True
+    assert block8_mapping_source_differences(package) == []
+    review.refresh_from_db()
+    assert review.source_manifest == before_manifest
+    assert BLOCK8_MAPPING_MANIFEST_KEY not in review.source_manifest
+
+    refresh_delivery_package_mapping(package)
+    review.refresh_from_db()
+    assert delivery_mapping_is_legacy(package) is False
+    assert BLOCK8_MAPPING_MANIFEST_KEY in review.source_manifest
+
+
+def test_real_mapping_change_resets_only_affected_review_and_ready_status(
+    approved_use_case,
+    coordinator,
+):
+    package = create_delivery_package(
+        use_case=approved_use_case,
+        actor=coordinator,
+        use_evidence_mapper=True,
+    )
+    problem_review = mark_review_confirmed(
+        package.section_reviews.get(section_key="problem_and_target"),
+        coordinator,
+    )
+    scope_review = mark_review_confirmed(
+        package.section_reviews.get(section_key="scope_and_users"),
+        coordinator,
+    )
+    DeliveryPackage.objects.filter(pk=package.pk).update(status=DeliveryPackage.Status.READY)
+    package.refresh_from_db()
+
+    approved_use_case.problem_statement = "Neue bestätigte Problembeschreibung."
+    approved_use_case.save(update_fields=["problem_statement", "updated_at"])
+    plan = refresh_delivery_package_mapping(package)
+
+    package.refresh_from_db()
+    problem_review.refresh_from_db()
+    scope_review.refresh_from_db()
+    assert plan.changed_fields == ("problem_context",)
+    assert package.status == DeliveryPackage.Status.DRAFT
+    assert problem_review.review_status == DeliverySectionReview.ReviewStatus.NEEDS_REVIEW
+    assert problem_review.reviewed_by is None
+    assert problem_review.business_confirmed_by is None
+    assert problem_review.technical_confirmed_by is None
+    assert scope_review.review_status == DeliverySectionReview.ReviewStatus.CONFIRMED
+    assert scope_review.reviewed_by == coordinator
+
+
+def test_noop_refresh_does_not_reset_review_or_ready_status(approved_use_case, coordinator):
+    package = create_delivery_package(
+        use_case=approved_use_case,
+        actor=coordinator,
+        use_evidence_mapper=True,
+    )
+    review = mark_review_confirmed(
+        package.section_reviews.get(section_key="problem_and_target"),
+        coordinator,
+    )
+    before_review_updated_at = review.updated_at
+    DeliveryPackage.objects.filter(pk=package.pk).update(status=DeliveryPackage.Status.READY)
+    package.refresh_from_db()
+
+    plan = refresh_delivery_package_mapping(package)
+
+    package.refresh_from_db()
+    review.refresh_from_db()
+    assert plan.changed_fields == ()
+    assert package.status == DeliveryPackage.Status.READY
+    assert review.review_status == DeliverySectionReview.ReviewStatus.CONFIRMED
+    assert review.reviewed_by == coordinator
+    assert review.updated_at == before_review_updated_at
+
+
+def test_handed_over_package_blocks_refresh_without_mutation(approved_use_case, coordinator):
+    package = create_delivery_package(
+        use_case=approved_use_case,
+        actor=coordinator,
+        use_evidence_mapper=True,
+    )
+    review = package.section_reviews.get(section_key="problem_and_target")
+    before_value = package.problem_context
+    before_manifest = review.source_manifest
+    DeliveryPackage.objects.filter(pk=package.pk).update(
+        status=DeliveryPackage.Status.HANDED_OVER,
+        handed_over_at=timezone.now(),
+    )
+    package.refresh_from_db()
+    approved_use_case.problem_statement = "Geänderte bestätigte Problembeschreibung."
+    approved_use_case.save(update_fields=["problem_statement", "updated_at"])
+
+    with pytest.raises(ValidationError, match="unveränderlich"):
+        refresh_delivery_package_mapping(package)
+
+    package.refresh_from_db()
+    review.refresh_from_db()
+    assert package.problem_context == before_value
+    assert review.source_manifest == before_manifest
