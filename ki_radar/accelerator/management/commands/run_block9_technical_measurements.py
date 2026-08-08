@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import secrets
 from pathlib import Path
 from time import perf_counter
 
@@ -141,7 +142,7 @@ class Command(BaseCommand):
         with override_settings(DEBUG=True):
             call_command(
                 "seed_demo_data",
-                demo_user_password="block9-benchmark-only",
+                demo_user_password=secrets.token_urlsafe(18),
                 verbosity=0,
             )
 
