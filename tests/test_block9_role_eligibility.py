@@ -117,14 +117,22 @@ def test_second_approver_eligibility_is_recomputed_from_current_state(
     )
     candidate = _coordinator_user(username="second-reviewer", business_unit=business_unit)
 
-    assert eligible_second_approvers(
-        use_case=use_case,
-        first_decider=coordinator,
-    ).filter(pk=candidate.pk).exists()
+    assert (
+        eligible_second_approvers(
+            use_case=use_case,
+            first_decider=coordinator,
+        )
+        .filter(pk=candidate.pk)
+        .exists()
+    )
 
     User.objects.filter(pk=candidate.pk).update(is_active=False)
 
-    assert not eligible_second_approvers(
-        use_case=use_case,
-        first_decider=coordinator,
-    ).filter(pk=candidate.pk).exists()
+    assert not (
+        eligible_second_approvers(
+            use_case=use_case,
+            first_decider=coordinator,
+        )
+        .filter(pk=candidate.pk)
+        .exists()
+    )
