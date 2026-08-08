@@ -62,6 +62,6 @@
 {% include "includes/status_dimensions.html" %}
 {% if request.resolver_match.namespace == 'delivery' and request.resolver_match.url_name == 'package_detail' %}
 {% load block8_mapping %}
-{% block8_mapping_status package as mapping_status %}
-{% include "delivery/includes/mapping_status.html" with mapping_status=mapping_status only %}
+{% block8_mapping_status package request.user as mapping_status %}
+{% include "delivery/includes/mapping_status.html" with mapping_status=mapping_status package=package only %}
 {% endif %}
