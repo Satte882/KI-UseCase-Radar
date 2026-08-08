@@ -6,5 +6,5 @@ register = template.Library()
 
 
 @register.simple_tag
-def block8_mapping_status(package):
-    return build_delivery_mapping_status(package)
+def block8_mapping_status(package, user=None):
+    return build_delivery_mapping_status(package, user=user)

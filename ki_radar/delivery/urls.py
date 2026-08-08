@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import residual_views, views
 
 app_name = "delivery"
 urlpatterns = [
@@ -10,6 +10,11 @@ urlpatterns = [
     path("use-cases/<uuid:use_case_id>/new/", views.package_create, name="package_create"),
     path("<uuid:pk>/", views.package_detail, name="package_detail"),
     path("<uuid:pk>/edit/", views.package_update, name="package_update"),
+    path(
+        "<uuid:pk>/mapping/<str:target_field>/refine/",
+        residual_views.refine_mapping_text,
+        name="refine_mapping_text",
+    ),
     path(
         "<uuid:pk>/sections/<str:section_key>/review/",
         views.package_section_review,

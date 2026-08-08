@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import asdict
 
+from .evidence_mapping_contract import LLMRestTask, mapping_spec
 from .mapping_integration import (
     ARCHITECTURE_MAPPING_FIELDS,
     block8_mapping_source_differences,
@@ -9,6 +10,7 @@ from .mapping_integration import (
     delivery_mapping_is_legacy,
 )
 from .mapping_refresh import MappingStatus
+from .permissions import can_edit_package
 
 ARCHITECTURE_FIELD_LABELS = {
     "system_landscape": "Ist-/Ziel-Systemlandschaft",
@@ -28,7 +30,7 @@ STATUS_LABELS = {
 }
 
 
-def build_delivery_mapping_status(package) -> dict:
+def build_delivery_mapping_status(package, user=None) -> dict:
     """Build a read-only UI model from the existing Block-8 mapping state."""
 
     if delivery_mapping_is_legacy(package):
@@ -45,6 +47,7 @@ def build_delivery_mapping_status(package) -> dict:
     source_differences = {
         item["package_field"]: item for item in block8_mapping_source_differences(package)
     }
+    editable = bool(user is not None and can_edit_package(user, package))
     rows = []
     for decision in plan.decisions:
         source_changed = bool(source_differences.get(decision.target_field, {}).get("changed"))
@@ -54,6 +57,7 @@ def build_delivery_mapping_status(package) -> dict:
             display_status = MappingStatus.STALE
         current_value = _current_delivery_value(package, decision.target_field)
         conflict = asdict(decision.conflict) if decision.conflict is not None else None
+        spec = mapping_spec(decision.target_field)
         rows.append(
             {
                 "target_field": decision.target_field,
@@ -67,6 +71,11 @@ def build_delivery_mapping_status(package) -> dict:
                 "candidate_value": conflict["candidate_value"] if conflict else decision.value,
                 "conflict": conflict,
                 "sources": [_present_source(source) for source in decision.sources],
+                "can_refine": bool(
+                    editable
+                    and display_status is MappingStatus.MAPPED
+                    and spec.llm_rest_task is LLMRestTask.LANGUAGE_COMPACTION
+                ),
             }
         )
 
