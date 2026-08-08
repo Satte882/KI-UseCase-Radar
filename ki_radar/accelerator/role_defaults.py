@@ -193,21 +193,21 @@ def resolve_second_approver(*, use_case, first_decider, assigned=None) -> RoleDe
     from ki_radar.use_cases.services import eligible_second_approvers
 
     eligible = eligible_second_approvers(use_case=use_case, first_decider=first_decider)
+    if assigned is not None and eligible.filter(pk=assigned.pk).exists():
+        return _person_resolution(
+            role_key="second_approver",
+            eligible_state=EXISTING,
+            user_id=assigned.pk,
+            source_kind="approval_decision",
+            source=use_case,
+            source_label="Bereits zugewiesene unabhängige Zweitprüfung",
+        )
     if assigned is not None:
-        if eligible.filter(pk=assigned.pk).exists():
-            return _person_resolution(
-                role_key="second_approver",
-                eligible_state=EXISTING,
-                user_id=assigned.pk,
-                source_kind="approval_decision",
-                source=use_case,
-                source_label="Bereits zugewiesene unabhängige Zweitprüfung",
-            )
         return RoleDefaultResolution(
             role_key="second_approver",
             state=INELIGIBLE,
             user_id=getattr(assigned, "pk", None),
-            user_label=(assigned.get_display_name() if assigned is not None else ""),
+            user_label=assigned.get_display_name(),
             source_kind="approval_decision",
             source_id=_object_id(use_case),
             source_label="Bereits zugewiesene unabhängige Zweitprüfung",
