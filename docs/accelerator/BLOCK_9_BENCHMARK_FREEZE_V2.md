@@ -5,6 +5,11 @@
 **Kanonische SHA-256-Prüfsumme:** `d4f7431ac68bb94b05885ae25f323e4147cf68fb20977ecd18c2acdeef74e6d1`  
 **Ersetzt für interaktive AP-9-Läufe:** `block9-v1`
 
+**Operative Klarstellung vom 08.08.2026:** Die Retry-/Recovery-Regel in Abschnitt 10 wurde
+nach dem fehlgeschlagenen, nicht gewerteten Accelerator-Warm-up und ausdrücklich **vor dem
+ersten Scored-v2-Run** ergänzt. Faktenset, Fixture, Run-Reihenfolge, Messgrenze und Scoring
+bleiben unverändert; deshalb ändert sich die Fixture-Prüfsumme nicht.
+
 ## 1. Messgrenze
 
 Gemessen wird die menschliche Bedienzeit vom ersten gewerteten UI-Schritt bis zum
@@ -138,3 +143,35 @@ Jeder gestartete Scored Run wird unverändert protokolliert, auch wenn er fehlsc
 abgebrochen wird oder ein ungünstiges Ergebnis liefert.
 
 Keine Aussage zu „unter 30 Minuten“ und kein Beschleunigungsfaktor vor AP 10.
+
+## 10. Provider-/Extraktionsfehler, manueller Recovery und Modellgrenze
+
+Für einen **nicht gewerteten Warm-up** ist ein manueller Neustart des Accelerator-Pfads
+zulässig. Ein Warm-up ist reine Pfadvalidierung und erzeugt keinen Scored-Rohdatensatz. Die
+Scored-Sequenz darf erst starten, nachdem ein vollständiger Accelerator-Warm-up den
+fachlichen v2-Endzustand real erreicht hat.
+
+Für einen **gestarteten Scored-Slot** gilt dagegen der erste Versuch verbindlich:
+
+- Ein Provider-, Timeout-, Schema- oder `invalid_extraction`-Fehler beendet den betreffenden
+  Scored-Slot als `failed`.
+- Der Slot wird mit allen bis zum Fehler angefallenen menschlichen Zeiten, Systemwartezeiten,
+  vorhandenen LLM-Metriken und `errors >= 1` unverändert in den Raw-Daten protokolliert.
+- Ein fehlgeschlagener Slot darf weder gelöscht noch mit derselben Run-ID neu gestartet oder
+  durch einen später erfolgreichen Versuch ersetzt werden.
+- Ein automatischer Retry-Loop ist nicht Teil des Benchmarks.
+
+Ein **manueller Recovery-Versuch** durch den Operator ist nach einem solchen Scored-Fehler
+zulässig, aber nur zusätzlich. Er erhält eine eigene Run-ID nach dem Muster
+`<scored-run-id>-recovery-<n>` und wird in den Notes mit `recovery_of=<scored-run-id>`
+gekennzeichnet. Recovery-Runs sind ergänzende Zuverlässigkeits-/Betriebsbeobachtungen und
+werden **nicht** als Ersatz für den fehlgeschlagenen Slot und **nicht** in die primäre
+n=3-Zeit-/Beschleunigungsauswertung aufgenommen. Danach wird mit dem nächsten regulären
+Scored-Slot der eingefrorenen Reihenfolge fortgefahren.
+
+Für die bevorstehende v2-Messserie bleibt die LLM-Konfiguration über alle Scored-Läufe
+unverändert. Der aktuelle Warm-up wurde mit OpenRouter und
+`deepseek/deepseek-v4-flash` durchgeführt. AP 10 muss deshalb die tatsächlich verwendete
+Provider-/Modellkonfiguration ausweisen und ausdrücklich begrenzen: LLM-bezogene Laufzeiten,
+Token-/Kostenwerte, Fehlerraten und Vorschlagsqualität sind modellspezifisch und bei einem
+späteren Modellwechsel **nicht 1:1 übertragbar**.
