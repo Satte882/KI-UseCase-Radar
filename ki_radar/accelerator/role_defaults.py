@@ -50,7 +50,10 @@ def _load_user(user_id: int | None):
     return get_user_model().objects.filter(pk=user_id).first()
 
 
-def _is_currently_usable(user, predicate: Callable | None = None) -> bool:
+def _is_currently_usable(
+    user,
+    predicate: Callable | None = None,
+) -> bool:
     if user is None or not user.is_active or user.is_anonymized:
         return False
     return predicate is None or predicate(user)
@@ -91,11 +94,19 @@ def _person_resolution(
     )
 
 
-def open_resolution(role_key: str, *, reason: str = "Keine eindeutige Rollenquelle."):
+def open_resolution(
+    role_key: str,
+    *,
+    reason: str = "Keine eindeutige Rollenquelle.",
+) -> RoleDefaultResolution:
     return RoleDefaultResolution(role_key=role_key, state=OPEN, reason=reason)
 
 
-def resolve_use_case_business_owner(*, use_case=None, value_stream=None) -> RoleDefaultResolution:
+def resolve_use_case_business_owner(
+    *,
+    use_case=None,
+    value_stream=None,
+) -> RoleDefaultResolution:
     if use_case is not None and use_case.business_owner_id:
         return _person_resolution(
             role_key="business_owner",
@@ -125,7 +136,10 @@ def resolve_use_case_business_owner(*, use_case=None, value_stream=None) -> Role
     return open_resolution("business_owner")
 
 
-def resolve_use_case_coordinator(*, use_case=None) -> RoleDefaultResolution:
+def resolve_use_case_coordinator(
+    *,
+    use_case=None,
+) -> RoleDefaultResolution:
     if use_case is not None and use_case.coordinator_id:
         return _person_resolution(
             role_key="coordinator",
@@ -139,7 +153,10 @@ def resolve_use_case_coordinator(*, use_case=None) -> RoleDefaultResolution:
     return open_resolution("coordinator")
 
 
-def resolve_use_case_technical_owner(*, use_case=None) -> RoleDefaultResolution:
+def resolve_use_case_technical_owner(
+    *,
+    use_case=None,
+) -> RoleDefaultResolution:
     if use_case is not None and use_case.technical_owner_id:
         return _person_resolution(
             role_key="technical_owner",
@@ -152,7 +169,11 @@ def resolve_use_case_technical_owner(*, use_case=None) -> RoleDefaultResolution:
     return open_resolution("technical_owner")
 
 
-def resolve_delivery_technical_owner(*, use_case, package=None) -> RoleDefaultResolution:
+def resolve_delivery_technical_owner(
+    *,
+    use_case,
+    package=None,
+) -> RoleDefaultResolution:
     if package is not None and package.technical_owner_id:
         return _person_resolution(
             role_key="technical_owner",
@@ -176,7 +197,10 @@ def resolve_delivery_technical_owner(*, use_case, package=None) -> RoleDefaultRe
     return open_resolution("technical_owner")
 
 
-def resolve_condition_owner(*, decision=None) -> RoleDefaultResolution:
+def resolve_condition_owner(
+    *,
+    decision=None,
+) -> RoleDefaultResolution:
     if decision is not None and decision.condition_owner_id:
         return _person_resolution(
             role_key="condition_owner",
@@ -189,7 +213,12 @@ def resolve_condition_owner(*, decision=None) -> RoleDefaultResolution:
     return open_resolution("condition_owner")
 
 
-def resolve_second_approver(*, use_case, first_decider, assigned=None) -> RoleDefaultResolution:
+def resolve_second_approver(
+    *,
+    use_case,
+    first_decider,
+    assigned=None,
+) -> RoleDefaultResolution:
     from ki_radar.use_cases.services import eligible_second_approvers
 
     eligible = eligible_second_approvers(use_case=use_case, first_decider=first_decider)
@@ -226,22 +255,37 @@ def resolve_second_approver(*, use_case, first_decider, assigned=None) -> RoleDe
             source_label="Einzige aktuell zulässige unabhängige Zweitprüfung",
             reason="Eindeutiger Eligibility-Vorschlag; keine automatische Zuweisung.",
         )
-    reason = (
-        "Keine aktuell zulässige unabhängige Zweitprüfung."
-        if not candidates
-        else "Mehrere unabhängige Zweitprüfer sind zulässig; keine Person wird bevorzugt."
+    if not candidates:
+        return open_resolution(
+            "second_approver",
+            reason="Keine aktuell zulässige unabhängige Zweitprüfung.",
+        )
+    return open_resolution(
+        "second_approver",
+        reason=(
+            "Mehrere unabhängige Zweitprüfer sind zulässig; "
+            "keine Person wird bevorzugt."
+        ),
     )
-    return open_resolution("second_approver", reason=reason)
 
 
-def resolve_delivery_review_roles(*, package, review) -> tuple[DeliveryReviewResolution, ...]:
+def resolve_delivery_review_roles(
+    *,
+    package,
+    review,
+) -> tuple[DeliveryReviewResolution, ...]:
     resolutions: list[DeliveryReviewResolution] = []
     required = review.required_confirmations
 
     if "business" in required and review.business_confirmed_at is None:
         owner_id = package.use_case.business_owner_id
         owner = _load_user(owner_id)
-        if _is_currently_usable(owner) and can_confirm_business(owner, package, review.section_key):
+        owner_is_eligible = _is_currently_usable(owner) and can_confirm_business(
+            owner,
+            package,
+            review.section_key,
+        )
+        if owner_is_eligible:
             resolution = _person_resolution(
                 role_key="delivery_review_business",
                 eligible_state=SUGGESTION,
@@ -268,9 +312,12 @@ def resolve_delivery_review_roles(*, package, review) -> tuple[DeliveryReviewRes
     if "technical" in required and review.technical_confirmed_at is None:
         owner_id = package.technical_owner_id
         owner = _load_user(owner_id)
-        if _is_currently_usable(owner) and can_confirm_technical(
-            owner, package, review.section_key
-        ):
+        owner_is_eligible = _is_currently_usable(owner) and can_confirm_technical(
+            owner,
+            package,
+            review.section_key,
+        )
+        if owner_is_eligible:
             resolution = _person_resolution(
                 role_key="delivery_review_technical",
                 eligible_state=SUGGESTION,
@@ -297,7 +344,10 @@ def resolve_delivery_review_roles(*, package, review) -> tuple[DeliveryReviewRes
     return tuple(resolutions)
 
 
-def resolve_governance_review_role(*, review) -> RoleDefaultResolution:
+def resolve_governance_review_role(
+    *,
+    review,
+) -> RoleDefaultResolution:
     role_label = (review.responsible_role or "").strip()
     if not role_label:
         role_label = review.get_review_type_display()
