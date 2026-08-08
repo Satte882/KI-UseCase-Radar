@@ -13,6 +13,7 @@ from django.utils.text import slugify
 
 from ki_radar.core.scenario_blueprint_validation import load_blueprint_contract
 
+from .adoption_policy import field_adoption_enabled
 from .analysis_service import (
     CaptureAnalysisError,
     CaptureProviderPayload,
@@ -22,6 +23,7 @@ from .analysis_service import (
     prepare_capture_analysis,
     request_capture_provider,
 )
+from .candidate_snapshot import CandidateSnapshotError, create_adoption_candidates
 from .extraction_contract import (
     ExtractionContractError,
     ExtractionDocument,
@@ -385,6 +387,8 @@ def store_validated_extraction(
             "updated_at",
         ]
     )
+    if field_adoption_enabled() and analysis.session.target_object is not None:
+        create_adoption_candidates(analysis_id=analysis.pk)
     log_capture_analysis(analysis)
     return analysis
 
@@ -407,9 +411,20 @@ def execute_capture_analysis(*, actor, session_id) -> CaptureAnalysis:
             "Die Providerantwort hat die Extraktionsprüfung nicht bestanden.",
             code="invalid_extraction",
         ) from exc
-    return store_validated_extraction(
-        prepared=prepared,
-        provider=provider,
-        document=document,
-        suggestions=suggestions,
-    )
+    try:
+        return store_validated_extraction(
+            prepared=prepared,
+            provider=provider,
+            document=document,
+            suggestions=suggestions,
+        )
+    except CandidateSnapshotError as exc:
+        mark_capture_analysis_failed(
+            analysis_id=prepared.analysis.pk,
+            error_code="candidate_snapshot_failed",
+            result=provider.result,
+        )
+        raise CaptureAnalysisError(
+            "Die validierten Vorschläge konnten nicht für die Feldprüfung vorbereitet werden.",
+            code="candidate_snapshot_failed",
+        ) from exc
