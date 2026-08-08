@@ -2,9 +2,9 @@ import pytest
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 
+from ki_radar.accelerator.role_defaults import SUGGESTION, resolve_use_case_business_owner
 from ki_radar.accounts.models import User
 from ki_radar.accounts.permissions import GROUP_COORDINATOR
-from ki_radar.accelerator.role_defaults import SUGGESTION, resolve_use_case_business_owner
 from ki_radar.architecture.models import ValueStream
 from ki_radar.use_cases.forms import UseCaseForm
 from ki_radar.use_cases.role_eligibility import revalidate_use_case_role

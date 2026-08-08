@@ -35,11 +35,17 @@ def revalidate_use_case_role(*, role_key: str, user, required: bool = False):
 
     current = _current_active_user(user)
     if current is None:
-        raise ValidationError("Die ausgewählte Person ist nicht mehr aktiv oder wurde anonymisiert.")
+        raise ValidationError(
+            "Die ausgewählte Person ist nicht mehr aktiv oder wurde anonymisiert."
+        )
 
     if role_key == "business_owner" and not is_business_owner(current):
-        raise ValidationError("Die ausgewählte Person ist aktuell nicht als Business Owner zulässig.")
+        raise ValidationError(
+            "Die ausgewählte Person ist aktuell nicht als Business Owner zulässig."
+        )
     if role_key == "coordinator" and not is_coordinator(current):
-        raise ValidationError("Die ausgewählte Person ist aktuell nicht als KI-Koordinator zulässig.")
+        raise ValidationError(
+            "Die ausgewählte Person ist aktuell nicht als KI-Koordinator zulässig."
+        )
 
     return current
