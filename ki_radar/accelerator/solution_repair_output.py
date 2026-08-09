@@ -18,9 +18,7 @@ from .solution_repair_contract import SolutionRepairPlan, SolutionRepairTarget
 
 ROOT_FIELDS = frozenset(("schema_version", "prompt_version", "patches"))
 PATCH_FIELDS = frozenset(("option", "field", "statement"))
-STATEMENT_FIELDS = frozenset(
-    ("text", "source_ids", "assumptions", "open_evidence", "uncertainty")
-)
+STATEMENT_FIELDS = frozenset(("text", "source_ids", "assumptions", "open_evidence", "uncertainty"))
 UNCERTAINTY_FIELDS = frozenset(("level", "reason"))
 
 
