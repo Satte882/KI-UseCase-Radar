@@ -2,3 +2,5 @@
 *.sh text eol=lf
 *.yml text eol=lf
 *.yaml text eol=lf
+tests/fixtures/accelerator/*.json text eol=lf
+tests/fixtures/accelerator/*.sha256 text eol=lf
