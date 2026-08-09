@@ -21,9 +21,7 @@ from ki_radar.accelerator.solution_generation_preview import (
 from ki_radar.accelerator.solution_generation_sources import (
     build_solution_generation_source_context,
 )
-from ki_radar.accelerator.solution_generation_validation import (
-    validate_solution_generation_payload,
-)
+from ki_radar.accelerator.solution_generation_validation import validate_solution_generation_payload
 from ki_radar.accelerator.solution_quality_snapshot import build_solution_quality_snapshot
 from ki_radar.accelerator.solution_quality_versions import (
     CRITIC_PROMPT_VERSION,
