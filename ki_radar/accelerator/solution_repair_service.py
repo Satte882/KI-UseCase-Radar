@@ -195,7 +195,10 @@ def _activate_repair(
         generation_run=generation_run,
         initial_critic_run=initial_critic,
     )
-    if not _same_plan(current_plan, expected_plan) or quality_run.input_hash != current_plan.snapshot_hash:
+    if (
+        not _same_plan(current_plan, expected_plan)
+        or quality_run.input_hash != current_plan.snapshot_hash
+    ):
         raise SolutionRepairContractError(
             "Die Preview oder der Repair-Vertrag hat sich während des Repairs geändert.",
             code="repair_stale",
@@ -276,7 +279,11 @@ def run_targeted_solution_repair(
                 reserved_plan=reserved_plan,
             )
         )
-    except (SolutionRepairContractError, SolutionGenerationEffectivePayloadError, ValueError) as exc:
+    except (
+        SolutionRepairContractError,
+        SolutionGenerationEffectivePayloadError,
+        ValueError,
+    ) as exc:
         error_code = getattr(exc, "code", "invalid_repair_context")
         return _failed_repair_step(run_id=quality_run.pk, error_code=error_code)
 
