@@ -223,7 +223,8 @@ def solution_generation_repair(request, run_id):
             messages.warning(
                 request,
                 "Der einmalige Repair konnte nicht angewendet werden. "
-                "Die letzte deterministisch valide Vorschau bleibt erhalten; bitte fachlich prüfen.",
+                "Die letzte deterministisch valide Vorschau bleibt erhalten; "
+                "bitte fachlich prüfen.",
             )
 
     return HttpResponseRedirect(
