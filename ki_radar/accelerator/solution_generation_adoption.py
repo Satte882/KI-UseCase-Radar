@@ -12,11 +12,11 @@ from ki_radar.architecture.permissions import can_edit_value_stream
 
 from .models import SolutionGenerationRun
 from .solution_generation_contract import GENERATED_OPTION_FIELDS, OPTION_LANES
-from .solution_generation_sources import build_solution_generation_source_context
-from .solution_generation_validation import (
-    SolutionGenerationContractError,
-    validate_solution_generation_payload,
+from .solution_generation_effective import (
+    SolutionGenerationEffectivePayloadError,
+    build_validated_effective_solution_payload,
 )
+from .solution_generation_sources import build_solution_generation_source_context
 
 LANE_OPTION_TYPES = {
     "organizational": SolutionOption.OptionType.ORGANIZATIONAL,
@@ -60,72 +60,11 @@ def _normalize_selected_lanes(selected_lanes: tuple[str, ...] | None) -> tuple[s
     return tuple(lane for lane in OPTION_LANES if lane in selected_lanes)
 
 
-def _normalized_edits(preview_payload: dict) -> dict[str, dict[str, str]]:
-    edits = preview_payload.get("edits", {})
-    if not isinstance(edits, dict):
-        raise SolutionGenerationAdoptionError(
-            "Die gespeicherten Bearbeitungen sind ungültig. Bitte neu generieren.",
-            code="invalid_preview",
-        )
-
-    unknown_lanes = set(edits) - set(OPTION_LANES)
-    if unknown_lanes:
-        raise SolutionGenerationAdoptionError(
-            "Die gespeicherten Bearbeitungen enthalten eine unbekannte Lösungsrichtung.",
-            code="invalid_preview",
-        )
-
-    normalized: dict[str, dict[str, str]] = {}
-    for lane, lane_edits in edits.items():
-        if not isinstance(lane_edits, dict):
-            raise SolutionGenerationAdoptionError(
-                "Die gespeicherten Bearbeitungen sind ungültig. Bitte neu generieren.",
-                code="invalid_preview",
-            )
-        unknown_fields = set(lane_edits) - set(GENERATED_OPTION_FIELDS)
-        if unknown_fields:
-            raise SolutionGenerationAdoptionError(
-                "Die gespeicherten Bearbeitungen enthalten ein nicht freigegebenes Feld.",
-                code="invalid_preview",
-            )
-        normalized_lane: dict[str, str] = {}
-        for field_name, value in lane_edits.items():
-            if not isinstance(value, str) or not value.strip():
-                raise SolutionGenerationAdoptionError(
-                    "Bearbeitete Entwurfsfelder dürfen nicht leer sein.",
-                    code="invalid_preview",
-                )
-            normalized_lane[field_name] = value.strip()
-        if normalized_lane:
-            normalized[lane] = normalized_lane
-    return normalized
-
-
 def _validated_effective_payload(preview_payload: dict, source_context) -> dict:
-    raw_payload = {
-        "schema_version": preview_payload.get("schema_version"),
-        "prompt_version": preview_payload.get("prompt_version"),
-        "options": preview_payload.get("options"),
-    }
     try:
-        validated = validate_solution_generation_payload(raw_payload, source_context)
-    except SolutionGenerationContractError as exc:
-        raise SolutionGenerationAdoptionError(
-            "Die gespeicherte KI-Vorschau ist nicht mehr vertragskonform. Bitte neu generieren.",
-            code="invalid_preview",
-        ) from exc
-
-    for lane, lane_edits in _normalized_edits(preview_payload).items():
-        for field_name, value in lane_edits.items():
-            validated["options"][lane][field_name]["text"] = value
-
-    try:
-        return validate_solution_generation_payload(validated, source_context)
-    except SolutionGenerationContractError as exc:
-        raise SolutionGenerationAdoptionError(
-            "Eine Bearbeitung verletzt die Quellen- oder Inhaltsregeln. Bitte den Entwurf prüfen.",
-            code="invalid_preview_edit",
-        ) from exc
+        return build_validated_effective_solution_payload(preview_payload, source_context)
+    except SolutionGenerationEffectivePayloadError as exc:
+        raise SolutionGenerationAdoptionError(str(exc), code=exc.code) from exc
 
 
 def _option_form_data(lane: str, option: dict) -> dict[str, str]:
