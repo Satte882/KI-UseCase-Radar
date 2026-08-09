@@ -114,7 +114,9 @@ def classify_contract_answers(
     if "unclear" not in answers:
         return classify_complete_answers(answers)
 
-    outcomes = [classify_complete_answers(completion) for completion in _binary_completions(answers)]
+    outcomes = [
+        classify_complete_answers(completion) for completion in _binary_completions(answers)
+    ]
     modes = {mode for mode, _ in outcomes}
 
     if len(modes) != 1:
