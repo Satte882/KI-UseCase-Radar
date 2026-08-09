@@ -1,6 +1,12 @@
 from django.urls import path
 
-from . import gated_views, solution_views, stage_focus_views, views
+from . import (
+    architecture_assessment_views,
+    gated_views,
+    solution_views,
+    stage_focus_views,
+    views,
+)
 
 app_name = "architecture"
 
@@ -87,6 +93,11 @@ urlpatterns = [
         "options/<uuid:pk>/edit/",
         views.solution_option_update,
         name="solution_option_update",
+    ),
+    path(
+        "options/<uuid:pk>/architecture-assessment/",
+        architecture_assessment_views.solution_architecture_assessment_update,
+        name="solution_architecture_assessment_update",
     ),
     path(
         "options/<uuid:pk>/retire/",

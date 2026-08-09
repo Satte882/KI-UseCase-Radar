@@ -13,10 +13,18 @@ class SolutionArchitectureAssessmentForm(forms.ModelForm):
             "dynamic_orchestration_required",
         ]
         widgets = {
-            "simpler_solution_sufficient": forms.RadioSelect,
-            "semantic_reasoning_required": forms.RadioSelect,
-            "multiple_known_ai_steps_required": forms.RadioSelect,
-            "dynamic_orchestration_required": forms.RadioSelect,
+            "simpler_solution_sufficient": forms.RadioSelect(
+                attrs={"class": "form-check-input"}
+            ),
+            "semantic_reasoning_required": forms.RadioSelect(
+                attrs={"class": "form-check-input"}
+            ),
+            "multiple_known_ai_steps_required": forms.RadioSelect(
+                attrs={"class": "form-check-input"}
+            ),
+            "dynamic_orchestration_required": forms.RadioSelect(
+                attrs={"class": "form-check-input"}
+            ),
         }
         labels = {
             "simpler_solution_sufficient": "Einfachere Lösung ausreichend?",
