@@ -175,9 +175,7 @@ def test_unknown_critic_references_are_rejected(override, expected) -> None:
 
 
 def test_duplicate_target_is_rejected() -> None:
-    duplicated = finding(
-        related_targets=[{"option": "assistant", "field": "bottleneck_coverage"}]
-    )
+    duplicated = finding(related_targets=[{"option": "assistant", "field": "bottleneck_coverage"}])
 
     with pytest.raises(SolutionCriticContractError) as exc_info:
         validate_solution_critic_payload(payload_with([duplicated]), source_context())
