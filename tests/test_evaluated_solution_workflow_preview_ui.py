@@ -147,7 +147,10 @@ def _make_initial_critic(
         "criterion": "bottleneck_fit",
         "option": "assistant",
         "field": "bottleneck_coverage",
-        "finding": "Der Engpassbezug muss präziser aus der dokumentierten Ursache hergeleitet werden.",
+        "finding": (
+            "Der Engpassbezug muss präziser aus der dokumentierten Ursache "
+            "hergeleitet werden."
+        ),
         "source_ids": ["process.bottlenecks"],
         "repairable": repairable,
         "related_targets": [],
@@ -195,7 +198,7 @@ def test_preview_shows_repairable_finding_and_one_shot_action_without_provider_c
     content = response.content.decode()
     assert response.status_code == 200
     assert "KI-Qualitätsprüfung" in content
-    assert "Qualitätsprüfung – keine Bewertung oder Lösungsempfehlung." in content
+    assert "Qualitätsprüfung \u2013 keine Bewertung oder Lösungsempfehlung." in content
     assert "Passung zum Engpass" in content
     assert "Bottleneck-Abdeckung" in content
     assert "Engpassbezug muss präziser" in content
