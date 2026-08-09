@@ -523,6 +523,84 @@ class SolutionGenerationRun(TimeStampedModel):
         return f"{self.process_analysis_id}: {self.get_status_display()}"
 
 
+class SolutionQualityRun(TimeStampedModel):
+    class StepType(models.TextChoices):
+        INITIAL_CRITIC = "initial_critic", "Initial Critic"
+        REPAIR = "repair", "Repair"
+        FINAL_CRITIC = "final_critic", "Final Critic"
+
+    class Status(models.TextChoices):
+        RUNNING = "running", "Läuft"
+        SUCCESS = "success", "Erfolgreich"
+        FAILED = "failed", "Fehlgeschlagen"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    solution_generation_run = models.ForeignKey(
+        SolutionGenerationRun,
+        on_delete=models.CASCADE,
+        related_name="quality_runs",
+    )
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="solution_quality_runs",
+    )
+    step_type = models.CharField(max_length=20, choices=StepType.choices)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.RUNNING,
+        db_index=True,
+    )
+    provider = models.CharField(max_length=50, default="openrouter")
+    model_name = models.CharField(max_length=200, blank=True)
+    prompt_version = models.CharField(max_length=20)
+    output_schema_version = models.CharField(max_length=20)
+    input_hash = models.CharField(max_length=64)
+    started_at = models.DateTimeField(default=timezone.now)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    duration_ms = models.PositiveIntegerField(null=True, blank=True)
+    error_code = models.CharField(max_length=50, blank=True)
+    input_chars = models.PositiveIntegerField(default=0)
+    output_chars = models.PositiveIntegerField(default=0)
+    prompt_tokens = models.PositiveIntegerField(null=True, blank=True)
+    completion_tokens = models.PositiveIntegerField(null=True, blank=True)
+    total_tokens = models.PositiveIntegerField(null=True, blank=True)
+    cost = models.DecimalField(max_digits=12, decimal_places=6, null=True, blank=True)
+    result_payload = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(
+                fields=["solution_generation_run", "status", "-created_at"],
+                name="solquality_run_status_idx",
+            ),
+            models.Index(
+                fields=["requested_by", "-created_at"],
+                name="solquality_user_created_idx",
+            ),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["solution_generation_run", "step_type"],
+                name="uniq_solution_quality_step",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(status="running", finished_at__isnull=True)
+                    | models.Q(status__in=["success", "failed"], finished_at__isnull=False)
+                ),
+                name="solution_quality_status_finished_valid",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.solution_generation_run_id}:{self.step_type}:{self.status}"
+
+
 class AcceleratorLLMQuota(TimeStampedModel):
     class Scope(models.TextChoices):
         CONTEXT = "context", "Kontext"
