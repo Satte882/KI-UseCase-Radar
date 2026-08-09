@@ -2,7 +2,7 @@ from copy import deepcopy
 
 import pytest
 
-import ki_radar.accelerator.solution_quality_snapshot as quality_snapshot_module
+from ki_radar.accelerator import solution_quality_snapshot as quality_snapshot_module
 from ki_radar.accelerator.solution_generation_contract import (
     GENERATED_OPTION_FIELDS,
     GENERATION_PROMPT_VERSION,
