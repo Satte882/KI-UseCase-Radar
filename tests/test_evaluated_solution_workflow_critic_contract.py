@@ -18,8 +18,8 @@ from ki_radar.accelerator.solution_generation_contract import (
     SOLUTION_GENERATION_SYSTEM_PROMPT,
 )
 from ki_radar.accelerator.solution_generation_sources import (
-    SourceFact,
     SolutionGenerationSourceContext,
+    SourceFact,
 )
 from ki_radar.accelerator.solution_quality_snapshot import SolutionQualitySnapshot
 from ki_radar.accelerator.solution_quality_versions import (

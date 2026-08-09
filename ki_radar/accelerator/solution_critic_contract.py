@@ -95,7 +95,9 @@ def _source_ids(
         if not source_id:
             continue
         if source_id not in actual_source_ids:
-            errors.append(f"{path}[{index}]: Source-ID '{source_id}' ist nicht im Snapshot enthalten.")
+            errors.append(
+                f"{path}[{index}]: Source-ID '{source_id}' ist nicht im Snapshot enthalten."
+            )
             continue
         if source_id in normalized:
             errors.append(f"{path}[{index}]: Doppelte Source-ID '{source_id}'.")
@@ -122,7 +124,12 @@ def _target(
         path=path,
         errors=errors,
     )
-    option = _enum_text(target.get("option"), allowed=OPTION_LANES, path=f"{path}.option", errors=errors)
+    option = _enum_text(
+        target.get("option"),
+        allowed=OPTION_LANES,
+        path=f"{path}.option",
+        errors=errors,
+    )
     field = _enum_text(
         target.get("field"),
         allowed=GENERATED_OPTION_FIELDS,
