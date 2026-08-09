@@ -80,11 +80,8 @@ def reserve(run, owner, *, step_type=SolutionQualityRun.StepType.INITIAL_CRITIC)
 
 @pytest.mark.django_db
 def test_quality_step_types_are_fixed() -> None:
-    assert tuple(SolutionQualityRun.StepType.values) == (
-        "initial_critic",
-        "repair",
-        "final_critic",
-    )
+    expected = ("initial_critic", "repair", "final_critic")
+    assert tuple(SolutionQualityRun.StepType.values) == expected
 
 
 @pytest.mark.django_db
@@ -155,11 +152,7 @@ def test_invalid_reservation_contract_creates_no_row(owner, business_unit) -> No
     generation_run = make_generation_run(owner, business_unit)
     cases = (
         ("unknown", "b" * 64, "invalid_quality_step"),
-        (
-            SolutionQualityRun.StepType.INITIAL_CRITIC,
-            "not-a-hash",
-            "invalid_quality_input_hash",
-        ),
+        (SolutionQualityRun.StepType.INITIAL_CRITIC, "not-a-hash", "invalid_quality_input_hash"),
     )
 
     for step_type, input_hash, expected_code in cases:
@@ -186,9 +179,10 @@ def test_non_success_generation_is_rejected(owner, business_unit) -> None:
             reserve(generation_run, owner)
 
         assert exc_info.value.code == "quality_preview_unavailable"
-        assert not SolutionQualityRun.objects.filter(
-            solution_generation_run=generation_run
+        quality_exists = SolutionQualityRun.objects.filter(
+            solution_generation_run=generation_run,
         ).exists()
+        assert not quality_exists
 
 
 @pytest.mark.django_db
