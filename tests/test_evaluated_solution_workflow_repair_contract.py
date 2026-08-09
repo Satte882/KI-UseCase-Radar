@@ -246,10 +246,7 @@ def test_repair_plan_uses_all_repairable_findings_and_only_explicit_targets(owne
             field="bottleneck_coverage",
         ),
     )
-    assert (
-        SolutionRepairTarget(option="organizational", field="expected_value")
-        not in plan.targets
-    )
+    assert SolutionRepairTarget(option="organizational", field="expected_value") not in plan.targets
 
 
 @pytest.mark.django_db
