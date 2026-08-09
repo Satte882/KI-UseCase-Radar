@@ -397,10 +397,13 @@ def test_repair_reservation_is_one_shot_and_reuses_ap3_state_machine(owner, busi
     assert reservation.run.input_hash == critic.input_hash
     assert reservation.run.prompt_version == REPAIR_PROMPT_VERSION
     assert reservation.run.output_schema_version == REPAIR_SCHEMA_VERSION
-    assert SolutionQualityRun.objects.filter(
-        solution_generation_run=run,
-        step_type=SolutionQualityRun.StepType.REPAIR,
-    ).count() == 1
+    assert (
+        SolutionQualityRun.objects.filter(
+            solution_generation_run=run,
+            step_type=SolutionQualityRun.StepType.REPAIR,
+        ).count()
+        == 1
+    )
 
     with pytest.raises(SolutionRepairContractError) as exc_info:
         reserve_solution_repair_attempt(
@@ -409,7 +412,10 @@ def test_repair_reservation_is_one_shot_and_reuses_ap3_state_machine(owner, busi
         )
 
     assert exc_info.value.code == "repair_attempt_consumed"
-    assert SolutionQualityRun.objects.filter(
-        solution_generation_run=run,
-        step_type=SolutionQualityRun.StepType.REPAIR,
-    ).count() == 1
+    assert (
+        SolutionQualityRun.objects.filter(
+            solution_generation_run=run,
+            step_type=SolutionQualityRun.StepType.REPAIR,
+        ).count()
+        == 1
+    )
