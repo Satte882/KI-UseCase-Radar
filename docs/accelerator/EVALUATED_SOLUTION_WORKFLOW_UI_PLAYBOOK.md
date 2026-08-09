@@ -1,52 +1,88 @@
-# Evaluated Solution Workflow – UI-Playbook nach AP5
+# Evaluated Solution Workflow – UI-Playbook nach AP9
 
-Stand: AP5 – Initial Critic, Quoten-/Provider-Integration und Failure Preservation
+Stand: AP9 – Preview-UI, Findings, Repair-Aktion und Human Review
 
 ## Zweck
 
-Dieser Zwischenstand prüft den ersten vollständigen erweiterten Pfad ohne Repair:
+Dieser Zwischenstand prüft den vollständigen nutzersichtbaren Quality-Control-Pfad in der bestehenden Block-7-Preview:
 
-`Generate -> deterministic Validate -> Initial Critic -> Human Review`
+`Generate -> deterministic Validate -> Initial Critic -> optional exactly one Repair -> deterministic Validate -> Final Critic -> Human Review`
 
-Die bestehende Block-7-Preview bleibt die maßgebliche Nutzeroberfläche. AP5 fügt bewusst noch keine Finding-Darstellung und keinen Repair-Button hinzu.
+Es entsteht keine neue Hauptnavigation, keine neue Lösungsvergleichsseite und kein zusätzliches Governance- oder Auswahl-Gate. Die bestehenden Human-Edit- und Adoption-Aktionen bleiben verwendbar.
 
 ## Voraussetzungen
 
-- lokaler Stack läuft auf dem aktuellen `main` nach Merge von AP5;
+- lokaler Stack läuft auf dem aktuellen Stand nach Merge von AP9;
 - eine Prozessanalyse erfüllt die bestehende Block-7-Readiness;
-- OpenRouter ist für einen normalen Generierungs- und Critic-Aufruf konfiguriert.
+- OpenRouter ist für Generation, Critic und optional Repair konfiguriert;
+- die testende Person besitzt die bestehenden Bearbeitungsrechte für den Value Stream.
 
-## Playbook A – erfolgreicher erweiterter Pfad
+## Playbook A – Initial Critic ohne reparierbare Findings
 
 1. Eine für Block 7 bereite Prozessanalyse öffnen.
 2. „3 Lösungsentwürfe mit KI erstellen“ starten.
 3. Nach erfolgreicher Generierung die bestehende Preview öffnen.
-4. Prüfen, dass weiterhin genau die drei bekannten Lösungsrichtungen mit Original, Quelle, Annahmen/offener Evidenz und Unsicherheit angezeigt werden.
-5. Prüfen, dass keine Lösung automatisch ausgewählt, bewertet, priorisiert oder in Governance-/Delivery-Felder übernommen wurde.
-6. Die Preview normal für die menschliche Prüfung weiterverwenden.
+4. Im Bereich „KI-Qualitätsprüfung“ prüfen, dass Findings nach Lösungsrichtung und Kriterium dargestellt werden.
+5. Pro Finding Option, optional betroffenes Feld, Begründung, referenzierte Sources und „Manuell prüfen“ kontrollieren.
+6. Prüfen, dass kein Repair-Button angeboten wird.
+7. Prüfen, dass „Human Review“ sichtbar ist.
+8. Bestehende manuelle Bearbeitung und Übernahme weiterhin verwenden können.
 
-Erwartung: Die deterministisch valide Preview wird zuerst gespeichert. Der Initial Critic läuft anschließend automatisch als eigener Quality-Step. Ein zusätzlicher Critic-Startbutton existiert nicht.
+Erwartung: Nicht reparierbare Findings führen direkt zu Human Review. Sie blockieren weder Human Edits noch den bestehenden Adoption-Pfad.
 
-## Playbook B – Failure Preservation
+## Playbook B – genau ein gezielter Repair
 
-Mit einer Testkonfiguration, in der der Critic nach erfolgreicher Generierung wegen Provider-/Quota-Verfügbarkeit nicht ausgeführt werden kann:
+1. Einen Generation-Run mit mindestens einem aktuellen reparierbaren Initial-Critic-Finding öffnen.
+2. Prüfen, dass das Finding als „Maschinell reparierbar“ gekennzeichnet ist.
+3. Prüfen, dass genau eine Aktion „Reparierbare Findings einmalig korrigieren“ angeboten wird.
+4. Die Aktion einmal auslösen.
+5. Nach erfolgreichem Repair die Preview erneut prüfen.
+6. Kontrollieren, dass der Repair-Button nicht erneut angeboten wird.
+7. Falls der Final Critic noch läuft, den Status „Final Critic ausstehend“ prüfen.
+8. Nach terminalem Final Critic prüfen, dass der maschinelle Pfad in „Human Review“ endet – unabhängig davon, ob finale Findings verbleiben.
+9. Prüfen, dass manuelle Bearbeitung und bestehende Übernahme weiterhin verfügbar bleiben, solange der bestehende Block-7-Preview-Zustand dies erlaubt.
 
-1. Die Generierung bis zur erfolgreichen Preview durchführen.
-2. Die Preview erneut öffnen bzw. aktualisieren.
-3. Prüfen, dass die drei zuvor erzeugten Lösungsrichtungen vollständig erhalten bleiben.
-4. Prüfen, dass die menschliche Review der Preview weiterhin möglich ist.
-5. Prüfen, dass kein automatischer Domain Write, keine Auswahl und keine Governance-Wirkung entstanden ist.
+Erwartung: Alle aktuellen reparierbaren Findings werden in einem einzigen, serverseitig gebundenen Repair-Versuch verarbeitet. Ein zweiter Repair ist nicht möglich.
 
-Erwartung: Ein Critic-, Quota-, Provider-, Output- oder Critic-Contract-Fehler darf die bereits erfolgreiche Generation weder auf `failed` zurücksetzen noch deren Preview leeren oder verändern.
+## Playbook C – CAS-Stale nach Human Edit
 
-## In AP5 bewusst noch nicht klickbar
+1. Einen Generation-Run mit erfolgreichem Initial Critic und reparierbarem Finding öffnen.
+2. Vor dem Repair mindestens ein Preview-Feld manuell verändern und speichern.
+3. Die Preview erneut öffnen.
+4. Prüfen, dass die Findings weiterhin sichtbar sind.
+5. Prüfen, dass der Repair-Button nicht mehr angeboten wird.
+6. Den expliziten Hinweis prüfen: „Vorschau wurde seit der Prüfung bearbeitet, Reparatur nicht mehr möglich.“
+7. Die fachliche Prüfung manuell fortsetzen.
 
-Folgende Punkte gehören erst zu AP9 und sind in diesem Zwischenstand **nicht** über die UI abnehmbar:
+Erwartung: Der Whole-Preview-CAS verhindert einen Repair auf verändertem Quality-Snapshot. Beim Anzeigen der stale Preview entsteht kein Provider-Aufruf.
 
-- Anzeige einzelner Critic-Findings;
-- Kennzeichnung reparierbarer Findings;
-- Repair-Aktion;
-- Stale-/CAS-Hinweis bei nachträglich geänderter Preview;
-- explizite Human-Review-Statusdarstellung des Quality-Workflows.
+## Playbook D – Quellstand nach Critic verändert
 
-Diese Abgrenzung ist beabsichtigt und kein fehlender AP5-Umfang.
+1. Einen Generation-Run mit bereits erfolgtem Initial Critic öffnen.
+2. Die zugrunde liegenden Prozessdaten nachträglich fachlich ändern.
+3. Die alte Preview erneut öffnen.
+4. Den bestehenden Hinweis „Veralteter Quellstand“ prüfen.
+5. Prüfen, dass Bearbeitung und Übernahme wie bereits in Block 7 gesperrt sind.
+6. Prüfen, dass kein Repair-Button angeboten wird.
+7. Neu generieren, statt den alten Quality-Snapshot weiterzuverwenden.
+
+Erwartung: Der bestehende Block-7-Stale-Vertrag bleibt führend. Das reine Öffnen der Preview löst weder Critic noch Repair aus.
+
+## Playbook E – Critic-/Repair-/Final-Critic-Ausfall
+
+Für jeden der drei Quality Steps separat einen terminalen Provider-/Quota-/Contract-Fehler erzeugen:
+
+1. Die Preview nach dem Fehler öffnen.
+2. Prüfen, dass der letzte deterministisch valide Preview-Zustand vollständig erhalten ist.
+3. Prüfen, dass kein automatischer Retry angeboten oder ausgelöst wird.
+4. Bei Initial-Critic-Ausfall direkt Human Review prüfen.
+5. Bei Repair-Ausfall prüfen, dass der einmalige Versuch verbraucht ist und Human Review erfolgt.
+6. Bei Final-Critic-Ausfall prüfen, dass die deterministisch valide reparierte Preview erhalten bleibt und Human Review erfolgt.
+
+Erwartung: Quality-Control-Fehler zerstören keine valide Preview und erzeugen weder Bewertung, Empfehlung noch Domain-/Governance-Writes.
+
+## Abgrenzung
+
+Der Bereich „KI-Qualitätsprüfung“ ist ausschließlich Quality Control. Er bewertet weder Machbarkeit noch Integrationsaufwand, erzeugt kein Ranking, wählt keine bevorzugte Lösung und ersetzt keine fachliche Entscheidung.
+
+AP10 konsolidiert anschließend die vollständige Security-/Failure-/Gate-Regression und den Abschluss von #212. Die gemeinsame Real-DEMO-/adversariale End-to-End-Abnahme mit #211 bleibt #213 vorbehalten.
