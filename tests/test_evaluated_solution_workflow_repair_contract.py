@@ -342,15 +342,17 @@ def test_repair_contract_version_drift_is_bound_to_snapshot(owner, business_unit
     run = _make_generation_run(owner, business_unit)
     critic = _make_initial_critic(run)
 
-    with patch(
-        "ki_radar.accelerator.solution_quality_snapshot.REPAIR_PROMPT_VERSION",
-        "9.9",
+    with (
+        patch(
+            "ki_radar.accelerator.solution_quality_snapshot.REPAIR_PROMPT_VERSION",
+            "9.9",
+        ),
+        pytest.raises(SolutionRepairContractError) as exc_info,
     ):
-        with pytest.raises(SolutionRepairContractError) as exc_info:
-            build_solution_repair_plan(
-                generation_run=run,
-                initial_critic_run=critic,
-            )
+        build_solution_repair_plan(
+            generation_run=run,
+            initial_critic_run=critic,
+        )
 
     assert exc_info.value.code == "repair_stale"
     assert exc_info.value.stale_reason == "quality_snapshot_changed"
