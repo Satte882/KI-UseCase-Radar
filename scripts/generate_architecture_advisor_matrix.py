@@ -82,9 +82,7 @@ def classify_complete_answers(answers: tuple[str, str, str, str]) -> tuple[str, 
     raise AssertionError(f"Uncovered complete answer combination: {answers!r}")
 
 
-def _binary_completions(
-    answers: tuple[str, str, str, str],
-) -> list[tuple[str, str, str, str]]:
+def _binary_completions(answers: tuple[str, str, str, str]) -> list[tuple[str, str, str, str]]:
     unknown_indexes = [index for index, value in enumerate(answers) if value == "unclear"]
     completions: list[tuple[str, str, str, str]] = []
 
@@ -97,9 +95,7 @@ def _binary_completions(
     return completions
 
 
-def classify_contract_answers(
-    answers: tuple[str, str, str, str],
-) -> tuple[str, list[str]]:
+def classify_contract_answers(answers: tuple[str, str, str, str]) -> tuple[str, list[str]]:
     """Apply symmetric unknown handling for the reviewable V1 contract.
 
     An unclear answer is mode-irrelevant only when every binary completion yields
@@ -115,8 +111,7 @@ def classify_contract_answers(
         return classify_complete_answers(answers)
 
     outcomes = [
-        classify_complete_answers(completion)
-        for completion in _binary_completions(answers)
+        classify_complete_answers(completion) for completion in _binary_completions(answers)
     ]
     modes = {mode for mode, _ in outcomes}
 
@@ -134,9 +129,7 @@ def classify_contract_answers(
     for _, reason_codes in outcomes[1:]:
         common_reasons.intersection_update(reason_codes)
 
-    invariant_open_reasons = common_reasons.intersection(
-        {REASON_CONTRADICTORY, REASON_BOUNDARY}
-    )
+    invariant_open_reasons = common_reasons.intersection({REASON_CONTRADICTORY, REASON_BOUNDARY})
     if invariant_open_reasons:
         return MODE_ASSESSMENT_OPEN, _ordered_reason_codes(invariant_open_reasons)
 
@@ -172,11 +165,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Generate the Architecture Advisor V1 decision-matrix fixture."
     )
-    parser.add_argument(
-        "--output",
-        type=Path,
-        help="Write JSON to this path instead of stdout.",
-    )
+    parser.add_argument("--output", type=Path, help="Write JSON to this path instead of stdout.")
     args = parser.parse_args()
     rendered = serialize_matrix()
 
