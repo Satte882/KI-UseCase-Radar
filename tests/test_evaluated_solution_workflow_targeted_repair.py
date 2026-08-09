@@ -439,15 +439,17 @@ def test_provider_failure_preserves_original_preview_and_consumes_one_shot(owner
     assert failed.error_code == "timeout"
     assert run.preview_payload == preview_before
 
-    with patch(
-        "ki_radar.accelerator.solution_repair_service.request_openrouter",
-        return_value=_provider_result(),
-    ) as retry_mock:
-        with pytest.raises(SolutionRepairContractError) as exc_info:
-            run_targeted_solution_repair(
-                solution_generation_run_id=run.pk,
-                actor=owner,
-            )
+    with (
+        patch(
+            "ki_radar.accelerator.solution_repair_service.request_openrouter",
+            return_value=_provider_result(),
+        ) as retry_mock,
+        pytest.raises(SolutionRepairContractError) as exc_info,
+    ):
+        run_targeted_solution_repair(
+            solution_generation_run_id=run.pk,
+            actor=owner,
+        )
 
     assert exc_info.value.code == "repair_attempt_consumed"
     assert retry_mock.call_count == 0
