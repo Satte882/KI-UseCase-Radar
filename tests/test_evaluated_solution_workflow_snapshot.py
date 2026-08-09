@@ -2,7 +2,6 @@ from copy import deepcopy
 
 import pytest
 
-from ki_radar.accelerator import solution_quality_snapshot as quality_snapshot_module
 from ki_radar.accelerator.solution_generation_contract import (
     GENERATED_OPTION_FIELDS,
     GENERATION_PROMPT_VERSION,
@@ -199,7 +198,10 @@ def test_quality_snapshot_becomes_stale_when_critic_contract_version_changes(
         source_context=source_context(),
     )
 
-    monkeypatch.setattr(quality_snapshot_module, "CRITIC_PROMPT_VERSION", "2.0")
+    monkeypatch.setattr(
+        "ki_radar.accelerator.solution_quality_snapshot.CRITIC_PROMPT_VERSION",
+        "2.0",
+    )
     after = build_solution_quality_snapshot(
         preview_payload=payload,
         source_context=source_context(),
