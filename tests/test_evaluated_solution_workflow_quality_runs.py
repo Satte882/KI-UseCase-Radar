@@ -320,7 +320,10 @@ def test_parallel_reservation_is_one_shot(owner, business_unit) -> None:
 
     assert sum(result.created for result in results) == 1
     assert len({result.run.pk for result in results}) == 1
-    assert SolutionQualityRun.objects.filter(
-        solution_generation_run=generation_run,
-        step_type=SolutionQualityRun.StepType.INITIAL_CRITIC,
-    ).count() == 1
+    assert (
+        SolutionQualityRun.objects.filter(
+            solution_generation_run=generation_run,
+            step_type=SolutionQualityRun.StepType.INITIAL_CRITIC,
+        ).count()
+        == 1
+    )
