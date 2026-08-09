@@ -181,9 +181,7 @@ def build_validated_effective_solution_payload(
     machine_repair = normalize_solution_generation_machine_repair(preview_payload)
     if machine_repair is not None:
         for patch in machine_repair["patches"]:
-            validated["options"][patch["option"]][patch["field"]] = deepcopy(
-                patch["statement"]
-            )
+            validated["options"][patch["option"]][patch["field"]] = deepcopy(patch["statement"])
         try:
             validated = validate_solution_generation_payload(validated, source_context)
         except SolutionGenerationContractError as exc:
