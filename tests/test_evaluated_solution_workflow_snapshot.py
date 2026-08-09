@@ -14,8 +14,8 @@ from ki_radar.accelerator.solution_generation_effective import (
 )
 from ki_radar.accelerator.solution_generation_sources import (
     SOURCE_SCHEMA_VERSION,
-    SourceFact,
     SolutionGenerationSourceContext,
+    SourceFact,
 )
 from ki_radar.accelerator.solution_quality_snapshot import build_solution_quality_snapshot
 from ki_radar.accelerator.solution_quality_versions import (
