@@ -79,7 +79,7 @@ def reserve(run, owner, *, step_type=SolutionQualityRun.StepType.INITIAL_CRITIC)
 
 
 @pytest.mark.django_db
-def test_quality_step_types_are_fixed_to_three() -> None:
+def test_quality_step_types_are_fixed() -> None:
     assert tuple(SolutionQualityRun.StepType.values) == (
         "initial_critic",
         "repair",
@@ -88,7 +88,7 @@ def test_quality_step_types_are_fixed_to_three() -> None:
 
 
 @pytest.mark.django_db
-def test_reservation_persists_running_step_before_provider_call(owner, business_unit) -> None:
+def test_reservation_records_running_step(owner, business_unit) -> None:
     generation_run = make_generation_run(owner, business_unit)
 
     reservation = reserve(generation_run, owner)
@@ -107,10 +107,7 @@ def test_reservation_persists_running_step_before_provider_call(owner, business_
 
 
 @pytest.mark.django_db
-def test_duplicate_reservation_is_idempotent_and_never_overwrites_first_snapshot(
-    owner,
-    business_unit,
-) -> None:
+def test_duplicate_reservation_keeps_first_snapshot(owner, business_unit) -> None:
     generation_run = make_generation_run(owner, business_unit)
     first = reserve(generation_run, owner)
 
@@ -136,7 +133,7 @@ def test_duplicate_reservation_is_idempotent_and_never_overwrites_first_snapshot
 
 
 @pytest.mark.django_db
-def test_each_fixed_step_can_be_reserved_once(owner, business_unit) -> None:
+def test_each_fixed_step_is_one_shot(owner, business_unit) -> None:
     generation_run = make_generation_run(owner, business_unit)
 
     reservations = [
@@ -154,57 +151,48 @@ def test_each_fixed_step_can_be_reserved_once(owner, business_unit) -> None:
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize(
-    ("step_type", "input_hash", "expected_code"),
-    [
-        ("unknown", "b" * 64, "invalid_quality_step"),
-        (SolutionQualityRun.StepType.INITIAL_CRITIC, "not-a-hash", "invalid_quality_input_hash"),
-    ],
-)
-def test_invalid_reservation_contract_is_rejected_without_row(
-    owner,
-    business_unit,
-    step_type,
-    input_hash,
-    expected_code,
-) -> None:
+def test_invalid_reservation_contract_creates_no_row(owner, business_unit) -> None:
     generation_run = make_generation_run(owner, business_unit)
+    cases = (
+        ("unknown", "b" * 64, "invalid_quality_step"),
+        (
+            SolutionQualityRun.StepType.INITIAL_CRITIC,
+            "not-a-hash",
+            "invalid_quality_input_hash",
+        ),
+    )
 
-    with pytest.raises(SolutionQualityRunError) as exc_info:
-        reserve_solution_quality_step(
-            solution_generation_run_id=generation_run.pk,
-            actor=owner,
-            step_type=step_type,
-            input_hash=input_hash,
-            prompt_version="1.0",
-            output_schema_version="1.0",
-        )
+    for step_type, input_hash, expected_code in cases:
+        with pytest.raises(SolutionQualityRunError) as exc_info:
+            reserve_solution_quality_step(
+                solution_generation_run_id=generation_run.pk,
+                actor=owner,
+                step_type=step_type,
+                input_hash=input_hash,
+                prompt_version="1.0",
+                output_schema_version="1.0",
+            )
+        assert exc_info.value.code == expected_code
 
-    assert exc_info.value.code == expected_code
     assert not SolutionQualityRun.objects.filter(solution_generation_run=generation_run).exists()
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize(
-    "status",
-    [SolutionGenerationRun.Status.RUNNING, SolutionGenerationRun.Status.FAILED],
-)
-def test_non_successful_generation_cannot_reserve_quality_step(
-    owner,
-    business_unit,
-    status,
-) -> None:
-    generation_run = make_generation_run(owner, business_unit, status=status)
+def test_non_success_generation_is_rejected(owner, business_unit) -> None:
+    for status in (SolutionGenerationRun.Status.RUNNING, SolutionGenerationRun.Status.FAILED):
+        generation_run = make_generation_run(owner, business_unit, status=status)
 
-    with pytest.raises(SolutionQualityRunError) as exc_info:
-        reserve(generation_run, owner)
+        with pytest.raises(SolutionQualityRunError) as exc_info:
+            reserve(generation_run, owner)
 
-    assert exc_info.value.code == "quality_preview_unavailable"
-    assert not SolutionQualityRun.objects.filter(solution_generation_run=generation_run).exists()
+        assert exc_info.value.code == "quality_preview_unavailable"
+        assert not SolutionQualityRun.objects.filter(
+            solution_generation_run=generation_run
+        ).exists()
 
 
 @pytest.mark.django_db
-def test_empty_success_preview_cannot_reserve_quality_step(owner, business_unit) -> None:
+def test_empty_success_preview_is_rejected(owner, business_unit) -> None:
     generation_run = make_generation_run(owner, business_unit)
     generation_run.preview_payload = {}
     generation_run.save(update_fields=["preview_payload", "updated_at"])
@@ -216,7 +204,7 @@ def test_empty_success_preview_cannot_reserve_quality_step(owner, business_unit)
 
 
 @pytest.mark.django_db
-def test_failed_step_is_terminal_and_consumes_its_one_shot(owner, business_unit) -> None:
+def test_failed_step_consumes_one_shot(owner, business_unit) -> None:
     generation_run = make_generation_run(owner, business_unit)
     reservation = reserve(generation_run, owner)
 
@@ -236,7 +224,7 @@ def test_failed_step_is_terminal_and_consumes_its_one_shot(owner, business_unit)
 
 
 @pytest.mark.django_db
-def test_success_transition_persists_auditable_provider_metadata(owner, business_unit) -> None:
+def test_success_stores_provider_metadata(owner, business_unit) -> None:
     generation_run = make_generation_run(owner, business_unit)
     reservation = reserve(generation_run, owner)
 
@@ -265,7 +253,7 @@ def test_success_transition_persists_auditable_provider_metadata(owner, business
 
 
 @pytest.mark.django_db
-def test_terminal_step_cannot_be_finalized_twice(owner, business_unit) -> None:
+def test_terminal_step_cannot_finalize_twice(owner, business_unit) -> None:
     generation_run = make_generation_run(owner, business_unit)
     reservation = reserve(generation_run, owner)
     mark_solution_quality_step_failed(run_id=reservation.run.pk, error_code="timeout")
@@ -280,7 +268,7 @@ def test_terminal_step_cannot_be_finalized_twice(owner, business_unit) -> None:
 
 
 @pytest.mark.django_db
-def test_database_rejects_duplicate_step_directly(owner, business_unit) -> None:
+def test_database_rejects_duplicate_step(owner, business_unit) -> None:
     generation_run = make_generation_run(owner, business_unit)
     first = reserve(generation_run, owner).run
 
@@ -296,7 +284,7 @@ def test_database_rejects_duplicate_step_directly(owner, business_unit) -> None:
 
 
 @pytest.mark.django_db
-def test_database_rejects_terminal_status_without_finished_at(owner, business_unit) -> None:
+def test_database_rejects_invalid_terminal_state(owner, business_unit) -> None:
     generation_run = make_generation_run(owner, business_unit)
 
     with pytest.raises(IntegrityError), transaction.atomic():
@@ -312,10 +300,7 @@ def test_database_rejects_terminal_status_without_finished_at(owner, business_un
 
 
 @pytest.mark.django_db(transaction=True)
-def test_parallel_reservation_creates_exactly_one_provider_eligible_step(
-    owner,
-    business_unit,
-) -> None:
+def test_parallel_reservation_is_one_shot(owner, business_unit) -> None:
     generation_run = make_generation_run(owner, business_unit)
     barrier = Barrier(2)
 
@@ -336,7 +321,8 @@ def test_parallel_reservation_creates_exactly_one_provider_eligible_step(
             close_old_connections()
 
     with ThreadPoolExecutor(max_workers=2) as executor:
-        results = [future.result() for future in [executor.submit(reserve_once) for _ in range(2)]]
+        futures = [executor.submit(reserve_once) for _ in range(2)]
+        results = [future.result() for future in futures]
 
     assert sum(result.created for result in results) == 1
     assert len({result.run.pk for result in results}) == 1
