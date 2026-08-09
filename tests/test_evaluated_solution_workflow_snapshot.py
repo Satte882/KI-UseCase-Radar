@@ -189,9 +189,7 @@ def test_quality_snapshot_binds_all_v1_contract_versions() -> None:
     assert "model_name" not in snapshot.document
 
 
-def test_quality_snapshot_becomes_stale_when_critic_contract_version_changes(
-    monkeypatch,
-) -> None:
+def test_quality_snapshot_becomes_stale_when_critic_contract_version_changes(monkeypatch) -> None:
     payload = preview_payload()
     before = build_solution_quality_snapshot(
         preview_payload=payload,
