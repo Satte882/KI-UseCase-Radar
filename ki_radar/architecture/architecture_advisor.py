@@ -79,8 +79,7 @@ WHY_NO_AGENT_BY_MODE = {
 
 OPEN_POINT_BY_REASON = {
     REASON_CONTRADICTORY: (
-        "Die Antworten enthalten fachlich widersprüchliche Anforderungen und müssen geklärt "
-        "werden."
+        "Die Antworten enthalten fachlich widersprüchliche Anforderungen und müssen geklärt werden."
     ),
     REASON_INSUFFICIENT: "Mindestens eine unklare Antwort kann den Architecture Mode verändern.",
     REASON_BOUNDARY: (
