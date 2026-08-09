@@ -38,6 +38,7 @@ from ki_radar.accelerator.solution_quality_versions import (
     REPAIR_PROMPT_VERSION,
     REPAIR_SCHEMA_VERSION,
 )
+from ki_radar.accelerator.solution_repair_contract import SolutionRepairContractError
 from ki_radar.accelerator.solution_repair_service import run_targeted_solution_repair
 from ki_radar.architecture.models import (
     ProcessAnalysis,
@@ -463,14 +464,15 @@ def test_repair_http_exception_and_quota_failures_preserve_preview_and_one_shot(
                 solution_generation_run_id=run.pk,
                 actor=owner,
             )
-            second = run_targeted_solution_repair(
-                solution_generation_run_id=run.pk,
-                actor=owner,
-            )
+            with pytest.raises(SolutionRepairContractError) as consumed:
+                run_targeted_solution_repair(
+                    solution_generation_run_id=run.pk,
+                    actor=owner,
+                )
 
         run.refresh_from_db()
         assert request_mock.call_count == 1
-        assert first.pk == second.pk
+        assert consumed.value.code == "repair_attempt_consumed"
         assert first.status == SolutionQualityRun.Status.FAILED
         assert first.error_code == expected_code
         assert run.preview_payload == preview_before
