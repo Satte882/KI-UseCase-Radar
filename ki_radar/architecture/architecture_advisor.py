@@ -82,9 +82,7 @@ OPEN_POINT_BY_REASON = {
         "Die Antworten enthalten fachlich widersprüchliche Anforderungen und müssen geklärt "
         "werden."
     ),
-    REASON_INSUFFICIENT: (
-        "Mindestens eine unklare Antwort kann den Architecture Mode verändern."
-    ),
+    REASON_INSUFFICIENT: "Mindestens eine unklare Antwort kann den Architecture Mode verändern.",
     REASON_BOUNDARY: (
         "Die Aufgabe liegt außerhalb der V1-LLM-Taxonomie: Eine einfachere Lösung reicht "
         "nicht aus, semantisches LLM-Reasoning ist aber ebenfalls nicht erforderlich."
