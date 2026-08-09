@@ -78,7 +78,7 @@ def test_effective_preview_applies_human_edits_without_mutating_original() -> No
     payload["edits"] = {
         "assistant": {
             "description": "Menschlich präzisierter Assistenzentwurf.",
-        }
+        },
     }
 
     effective = build_validated_effective_solution_payload(payload, source_context())
@@ -105,7 +105,7 @@ def test_effective_preview_revalidates_human_edit_against_block7_contract() -> N
     payload["edits"] = {
         "assistant": {
             "description": "Der Assistenzentwurf verbessert den Ablauf um 50 Prozent.",
-        }
+        },
     }
 
     with pytest.raises(SolutionGenerationEffectivePayloadError) as exc_info:
@@ -142,7 +142,7 @@ def test_quality_snapshot_changes_when_effective_preview_changes() -> None:
     changed["edits"] = {
         "assistant": {
             "description": "Menschlich geänderter Assistenzentwurf.",
-        }
+        },
     }
 
     original_snapshot = build_solution_quality_snapshot(
