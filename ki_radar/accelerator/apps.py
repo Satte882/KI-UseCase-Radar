@@ -9,3 +9,4 @@ class AcceleratorConfig(AppConfig):
 
     def ready(self):
         import_module("ki_radar.accelerator.structured_models")
+        import_module("ki_radar.accelerator.solution_quality_signals")
