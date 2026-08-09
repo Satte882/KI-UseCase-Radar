@@ -187,7 +187,10 @@ def test_saving_advisor_has_no_selection_gate_or_downstream_side_effects(
 
     primary.refresh_from_db()
     process.refresh_from_db()
-    assert assessment.architecture_mode == SolutionArchitectureAssessment.ArchitectureMode.CONTROLLED_LLM
+    assert (
+        assessment.architecture_mode
+        == SolutionArchitectureAssessment.ArchitectureMode.CONTROLLED_LLM
+    )
     assert _option_snapshot(primary) == option_before
     assert (process.status, process.version) == process_before
     assert comparison_blockers([primary, secondary]) == blockers_before == []
