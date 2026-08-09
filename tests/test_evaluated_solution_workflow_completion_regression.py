@@ -480,11 +480,11 @@ def test_repair_http_exception_and_quota_failures_preserve_preview_and_one_shot(
     quota_run = _make_run(owner, business_unit, suffix="repair-quota")
     _make_initial_critic(quota_run, repairable=True)
     preview_before = copy.deepcopy(quota_run.preview_payload)
-    AcceleratorLLMQuota.objects.create(
+    AcceleratorLLMQuota.objects.update_or_create(
         scope=AcceleratorLLMQuota.Scope.USER,
         quota_date=timezone.localdate(),
         user=owner,
-        calls=10,
+        defaults={"calls": 10},
     )
     with patch("ki_radar.accelerator.solution_repair_service.request_openrouter") as request_mock:
         failed = run_targeted_solution_repair(
