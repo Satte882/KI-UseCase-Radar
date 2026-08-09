@@ -67,6 +67,7 @@
         <tr><th scope="row">Technologieleitplanken</th>{% for option in options %}<td class="text-preline">{{ option.technology_constraints|default:"–" }}</td>{% endfor %}</tr>
         <tr><th scope="row">Risiken</th>{% for option in options %}<td class="text-preline">{{ option.risks|default:"–" }}</td>{% endfor %}</tr>
         <tr><th scope="row">Passung zu Zielbild und Leitplanken</th>{% for option in options %}<td class="text-preline">{{ option.architecture_fit|default:"–" }}</td>{% endfor %}</tr>
+        <tr><th scope="row">Architecture Mode</th>{% for option in options %}<td>{% if option.architecture_assessment %}{{ option.architecture_assessment.get_architecture_mode_display }}{% else %}<span class="text-muted">Nicht eingeschätzt</span>{% endif %}</td>{% endfor %}</tr>
         <tr><th scope="row">Entscheidungsstatus</th>{% for option in options %}<td>{{ option.get_recommendation_display }}</td>{% endfor %}</tr>
         {% if can_select %}
         <tr>
