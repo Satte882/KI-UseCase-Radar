@@ -28,7 +28,7 @@ SOLUTION_REPAIR_SYSTEM_PROMPT = (
     "passe die Unsicherheit entsprechend an.\n"
     f"- {QUANTITATIVE_GROUNDING_RULE}\n"
     f"- {EXPECTED_VALUE_RULE}\n"
-    "- Erzeuge keine Rangfolge, Präferenz, Lösungsauswahl, Machbarkeitsbewertung, Governance-" 
+    "- Erzeuge keine Rangfolge, Präferenz, Lösungsauswahl, Machbarkeitsbewertung, Governance-"
     "Entscheidung oder Freigabe.\n"
     "- Gib ausschließlich das JSON-Dokument des vorgegebenen Repair-Schemas zurück."
 )
