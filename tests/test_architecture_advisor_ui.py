@@ -24,18 +24,19 @@ def solution_option(db, business_unit, owner):
         scope_in="Testumfang",
         created_by=owner,
     )
-    focus = value_stream.focus
-    focus.business_domain = BusinessDomain.OTHER
-    focus.capability = "Dokumentenprüfung"
-    focus.strategic_impact = ScreeningLevel.HIGH
-    focus.economic_potential = ScreeningLevel.MEDIUM
-    focus.pain_intensity = ScreeningLevel.HIGH
-    focus.data_accessibility = ScreeningLevel.MEDIUM
-    focus.change_effort = ScreeningLevel.MEDIUM
-    focus.status = ValueStreamFocus.Status.SELECTED
-    focus.rationale = "Für den Advisor-UI-Test ausgewählt."
-    focus.updated_by = owner
-    focus.save()
+    ValueStreamFocus.objects.create(
+        value_stream=value_stream,
+        business_domain=BusinessDomain.OTHER,
+        capability="Dokumentenprüfung",
+        strategic_impact=ScreeningLevel.HIGH,
+        economic_potential=ScreeningLevel.MEDIUM,
+        pain_intensity=ScreeningLevel.HIGH,
+        data_accessibility=ScreeningLevel.MEDIUM,
+        change_effort=ScreeningLevel.MEDIUM,
+        status=ValueStreamFocus.Status.SELECTED,
+        rationale="Für den Advisor-UI-Test ausgewählt.",
+        updated_by=owner,
+    )
 
     stage = ValueStreamStage.objects.create(
         value_stream=value_stream,
