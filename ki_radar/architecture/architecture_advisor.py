@@ -189,7 +189,10 @@ def _classify_answers(answers: tuple[str, str, str, str]) -> tuple[str, tuple[st
     return MODE_ASSESSMENT_OPEN, (REASON_INSUFFICIENT,)
 
 
-def explain_architecture(mode: str, reason_codes: tuple[str, ...] | list[str]) -> ArchitectureExplanation:
+def explain_architecture(
+    mode: str,
+    reason_codes: tuple[str, ...] | list[str],
+) -> ArchitectureExplanation:
     if mode not in MODE_LABELS:
         raise ValueError(f"Unsupported Architecture Mode: {mode!r}.")
 
@@ -207,7 +210,9 @@ def explain_architecture(mode: str, reason_codes: tuple[str, ...] | list[str]) -
         )
     else:
         if len(normalized_reasons) != 1 or normalized_reasons[0] not in WHY_PATTERN_BY_REASON:
-            raise ValueError("A classified Architecture Mode requires exactly one positive reason code.")
+            raise ValueError(
+                "A classified Architecture Mode requires exactly one positive reason code."
+            )
         why_pattern = WHY_PATTERN_BY_REASON[normalized_reasons[0]]
         open_points = ()
 
