@@ -119,9 +119,7 @@ def test_quality_snapshot_is_canonical_across_input_key_order() -> None:
     reordered = deepcopy(payload)
     reordered["options"] = dict(reversed(list(reordered["options"].items())))
     for lane in OPTION_LANES:
-        reordered["options"][lane] = dict(
-            reversed(list(reordered["options"][lane].items()))
-        )
+        reordered["options"][lane] = dict(reversed(list(reordered["options"][lane].items())))
 
     first = build_solution_quality_snapshot(
         preview_payload=payload,
