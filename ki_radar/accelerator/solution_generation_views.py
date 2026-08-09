@@ -11,7 +11,7 @@ from django.views.decorators.http import require_POST
 from ki_radar.architecture.models import ProcessAnalysis
 from ki_radar.architecture.permissions import can_edit_value_stream
 
-from .models import SolutionGenerationRun
+from .models import SolutionGenerationRun, SolutionQualityRun
 from .solution_generation_adoption import (
     SolutionGenerationAdoptionError,
     adopt_solution_generation_bundle,
@@ -29,9 +29,21 @@ from .solution_generation_forms import (
 from .solution_generation_preview import (
     SolutionGenerationPreviewError,
     build_solution_generation_preview_state,
+    build_solution_quality_preview_state,
     update_solution_generation_preview_edits,
 )
 from .solution_generation_service import SolutionGenerationError, generate_solution_preview
+from .solution_repair_contract import SolutionRepairContractError
+from .solution_repair_service import run_targeted_solution_repair
+
+CRITIC_CRITERION_LABELS = {
+    "distinctiveness": "Abgrenzung der Optionen",
+    "bottleneck_fit": "Passung zum Engpass",
+    "grounding_consistency": "Konsistenz mit Quellen",
+    "evidence_discipline": "Evidenzdisziplin",
+    "complexity_proportionality": "Verhältnismäßigkeit der Komplexität",
+}
+CRITIC_CRITERION_ORDER = tuple(CRITIC_CRITERION_LABELS)
 
 
 def _generation_error_message(exc: SolutionGenerationError) -> str:
@@ -86,7 +98,7 @@ def _process_queryset():
 def _run_queryset():
     return SolutionGenerationRun.objects.select_related(
         "process_analysis__stage__value_stream__owner",
-    ).prefetch_related("process_analysis__validations")
+    ).prefetch_related("process_analysis__validations", "quality_runs")
 
 
 @login_required
@@ -164,6 +176,62 @@ def solution_generation_adopt(request, run_id):
     return redirect("architecture:solution_option_compare", pk=process_analysis.pk)
 
 
+@login_required
+@require_POST
+def solution_generation_repair(request, run_id):
+    run = get_object_or_404(
+        _run_queryset(),
+        pk=run_id,
+        status=SolutionGenerationRun.Status.SUCCESS,
+    )
+    process_analysis = run.process_analysis
+    if not can_edit_value_stream(request.user, process_analysis.stage.value_stream):
+        raise PermissionDenied
+
+    preview_state = build_solution_generation_preview_state(run)
+    if not preview_state.editable:
+        messages.warning(
+            request,
+            "Diese Vorschau ist nicht mehr für einen Repair verfügbar. Bitte neu generieren.",
+        )
+        return HttpResponseRedirect(
+            f"{reverse('accelerator:solution_generation_preview', args=[run.pk])}"
+            "#solution-generation-quality"
+        )
+
+    try:
+        repair_run = run_targeted_solution_repair(
+            solution_generation_run_id=run.pk,
+            actor=request.user,
+        )
+    except SolutionRepairContractError as exc:
+        if exc.code in {"repair_stale", "human_edit_conflict"}:
+            messages.warning(
+                request,
+                "Vorschau wurde seit der Prüfung bearbeitet, Reparatur nicht mehr möglich.",
+            )
+        else:
+            messages.warning(request, str(exc))
+    else:
+        if repair_run.status == SolutionQualityRun.Status.SUCCESS:
+            messages.success(
+                request,
+                "Reparierbare Findings wurden einmalig korrigiert. "
+                "Die finale Qualitätsprüfung läuft automatisch.",
+            )
+        else:
+            messages.warning(
+                request,
+                "Der einmalige Repair konnte nicht angewendet werden. "
+                "Die letzte deterministisch valide Vorschau bleibt erhalten; bitte fachlich prüfen.",
+            )
+
+    return HttpResponseRedirect(
+        f"{reverse('accelerator:solution_generation_preview', args=[run.pk])}"
+        "#solution-generation-quality"
+    )
+
+
 def _preview_source_facts(preview_payload: dict) -> list[dict[str, str]]:
     facts = preview_payload.get("source_context", {}).get("facts", [])
     return [
@@ -222,6 +290,45 @@ def _preview_options(preview_payload: dict, form) -> list[dict[str, object]]:
     return result
 
 
+def _quality_findings(findings) -> list[dict[str, object]]:
+    result: list[dict[str, object]] = []
+    for finding in findings:
+        option = str(finding.get("option") or "")
+        criterion = str(finding.get("criterion") or "")
+        field_name = str(finding.get("field") or "")
+        source_ids = finding.get("source_ids", [])
+        result.append(
+            {
+                "finding_id": finding.get("finding_id", ""),
+                "option": option,
+                "option_label": LANE_LABELS.get(option, option),
+                "criterion": criterion,
+                "criterion_label": CRITIC_CRITERION_LABELS.get(criterion, criterion),
+                "field_label": FIELD_LABELS.get(field_name, field_name) if field_name else "",
+                "finding": finding.get("finding", ""),
+                "repairable": finding.get("repairable") is True,
+                "sources": [
+                    {
+                        "source_id": source_id,
+                        "label": SOURCE_LABELS.get(source_id, source_id),
+                    }
+                    for source_id in source_ids
+                    if isinstance(source_id, str)
+                ],
+            }
+        )
+    return sorted(
+        result,
+        key=lambda item: (
+            OPTION_LANES.index(item["option"]) if item["option"] in OPTION_LANES else 999,
+            CRITIC_CRITERION_ORDER.index(item["criterion"])
+            if item["criterion"] in CRITIC_CRITERION_ORDER
+            else 999,
+            str(item["field_label"]),
+        ),
+    )
+
+
 @login_required
 def solution_generation_preview(request, run_id):
     run = get_object_or_404(
@@ -233,6 +340,7 @@ def solution_generation_preview(request, run_id):
     value_stream = process_analysis.stage.value_stream
     can_edit = can_edit_value_stream(request.user, value_stream)
     state = build_solution_generation_preview_state(run)
+    quality_state = build_solution_quality_preview_state(run, preview_state=state)
     editable = can_edit and state.editable
 
     form = SolutionGenerationPreviewEditForm(
@@ -272,6 +380,9 @@ def solution_generation_preview(request, run_id):
             "run": run,
             "process_analysis": process_analysis,
             "state": state,
+            "quality_state": quality_state,
+            "quality_findings": _quality_findings(quality_state.findings),
+            "repair_action_available": editable and quality_state.repair_available,
             "editable": editable,
             "form": form,
             "preview_options": _preview_options(
