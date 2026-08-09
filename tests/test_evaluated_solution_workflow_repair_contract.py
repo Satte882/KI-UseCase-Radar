@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import copy
 from datetime import timedelta
-from unittest.mock import patch
 
 import pytest
 from django.utils import timezone
@@ -21,7 +20,9 @@ from ki_radar.accelerator.solution_generation_preview import (
 from ki_radar.accelerator.solution_generation_sources import (
     build_solution_generation_source_context,
 )
-from ki_radar.accelerator.solution_generation_validation import validate_solution_generation_payload
+from ki_radar.accelerator.solution_generation_validation import (
+    validate_solution_generation_payload,
+)
 from ki_radar.accelerator.solution_quality_snapshot import build_solution_quality_snapshot
 from ki_radar.accelerator.solution_quality_versions import (
     CRITIC_PROMPT_VERSION,
@@ -333,17 +334,15 @@ def test_critic_contract_version_change_is_explicitly_stale(owner, business_unit
 
 
 @pytest.mark.django_db
-def test_repair_contract_version_drift_is_bound_to_snapshot(owner, business_unit):
+def test_repair_contract_version_drift_is_bound_to_snapshot(owner, business_unit, monkeypatch):
     run = _make_generation_run(owner, business_unit)
     critic = _make_initial_critic(run)
 
-    with (
-        patch(
-            "ki_radar.accelerator.solution_quality_snapshot.REPAIR_PROMPT_VERSION",
-            "9.9",
-        ),
-        pytest.raises(SolutionRepairContractError) as exc_info,
-    ):
+    monkeypatch.setattr(
+        "ki_radar.accelerator.solution_quality_snapshot.REPAIR_PROMPT_VERSION",
+        "9.9",
+    )
+    with pytest.raises(SolutionRepairContractError) as exc_info:
         build_solution_repair_plan(
             generation_run=run,
             initial_critic_run=critic,
