@@ -18,9 +18,7 @@ from scripts.generate_architecture_advisor_matrix import (
     serialize_matrix,
 )
 
-FIXTURE_PATH = (
-    Path(__file__).parent / "fixtures" / "architecture_advisor_matrix_v1.json"
-)
+FIXTURE_PATH = Path(__file__).parent / "fixtures" / "architecture_advisor_matrix_v1.json"
 
 
 def test_generated_matrix_matches_committed_fixture_byte_for_byte():
@@ -33,10 +31,7 @@ def test_matrix_contains_all_81_unique_answer_combinations():
     assert matrix["ruleset_version"] == RULESET_VERSION
     assert len(matrix["entries"]) == 81
 
-    combinations = {
-        tuple(entry["answers"].values())
-        for entry in matrix["entries"]
-    }
+    combinations = {tuple(entry["answers"].values()) for entry in matrix["entries"]}
     assert len(combinations) == 81
 
 
