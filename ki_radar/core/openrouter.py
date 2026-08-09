@@ -75,19 +75,45 @@ def _schema_provider_unavailable(payload: dict[str, Any]) -> bool:
     message = str(error.get("message") or "").casefold()
     metadata = error.get("metadata")
     error_type = ""
+    raw_error = ""
     if isinstance(metadata, dict):
-        error_type = str(metadata.get("error_type") or "").casefold()
+        error_type = str(
+            metadata.get("error_type") or metadata.get("provider_error_code") or ""
+        ).casefold()
+        raw_error = str(metadata.get("raw") or "").casefold()
     markers = (
         "routing requirements",
         "requested parameters",
         "support the requested parameters",
         "structured output",
         "json schema",
+        "invalid schema",
+        "invalid_json_schema",
         "no endpoints found",
     )
-    return error_type in {"no_available_provider", "provider_routing_error"} or any(
-        marker in message for marker in markers
-    )
+    return error_type in {
+        "invalid_json_schema",
+        "no_available_provider",
+        "provider_routing_error",
+    } or any(marker in f"{message}\n{raw_error}" for marker in markers)
+
+
+def _message_content(message: object) -> str:
+    if not isinstance(message, dict):
+        return ""
+    content = message.get("content")
+    if isinstance(content, str):
+        return content.strip()
+    if not isinstance(content, list):
+        return ""
+    parts: list[str] = []
+    for block in content:
+        if not isinstance(block, dict):
+            continue
+        text = block.get("text")
+        if isinstance(text, str) and text.strip():
+            parts.append(text.strip())
+    return "\n".join(parts).strip()
 
 
 def _api_url() -> str:
@@ -174,7 +200,7 @@ def request_openrouter(
             code = "unauthorized"
             message = "OpenRouter ist nicht korrekt autorisiert."
         elif (
-            exc.code == 503
+            exc.code in {400, 422, 503}
             and _requires_json_schema(response_format, provider)
             and _schema_provider_unavailable(error_payload)
         ):
@@ -209,7 +235,7 @@ def request_openrouter(
     usage = _usage_metadata(payload)
     try:
         choice = payload["choices"][0]
-        content = choice["message"]["content"].strip()
+        content = _message_content(choice["message"])
         finish_reason = str(choice.get("finish_reason") or "")
     except (KeyError, IndexError, TypeError, AttributeError) as exc:
         raise OpenRouterUnavailable(

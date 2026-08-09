@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Iterable
 from typing import Any
 
 from .solution_generation_contract import GENERATED_OPTION_FIELDS, OPTION_LANES
@@ -181,7 +182,7 @@ def _validate_finding(
         errors=errors,
     )
     primary_field = ""
-    if "field" in finding:
+    if "field" in finding and finding["field"] is not None:
         primary_field = _enum_text(
             finding.get("field"),
             allowed=GENERATED_OPTION_FIELDS,
@@ -212,9 +213,6 @@ def _validate_finding(
             continue
         key = (normalized["option"], normalized["field"])
         if key in seen_targets:
-            errors.append(
-                f"{path}.related_targets[{target_index}]: Ziel {key[0]}.{key[1]} ist doppelt."
-            )
             continue
         seen_targets.add(key)
         related_targets.append(normalized)
@@ -309,21 +307,25 @@ def _target_schema() -> dict[str, object]:
     }
 
 
-def build_solution_critic_json_schema() -> dict[str, object]:
+def build_solution_critic_json_schema(
+    *, allowed_source_ids: Iterable[str] = ALLOWED_SOURCE_IDS
+) -> dict[str, object]:
+    source_ids = sorted(set(allowed_source_ids))
     finding_properties: dict[str, object] = {
         "criterion": {"type": "string", "enum": list(CRITIC_CRITERIA)},
         "option": {"type": "string", "enum": list(OPTION_LANES)},
-        "field": {"type": "string", "enum": list(GENERATED_OPTION_FIELDS)},
+        "field": {
+            "type": ["string", "null"],
+            "enum": [*GENERATED_OPTION_FIELDS, None],
+        },
         "finding": {"type": "string", "minLength": 1},
         "source_ids": {
             "type": "array",
-            "uniqueItems": True,
-            "items": {"type": "string", "enum": sorted(ALLOWED_SOURCE_IDS)},
+            "items": {"type": "string", "enum": source_ids},
         },
         "repairable": {"type": "boolean"},
         "related_targets": {
             "type": "array",
-            "uniqueItems": True,
             "items": _target_schema(),
         },
     }
@@ -340,7 +342,7 @@ def build_solution_critic_json_schema() -> dict[str, object]:
                 "items": {
                     "type": "object",
                     "additionalProperties": False,
-                    "required": sorted(FINDING_REQUIRED_FIELDS),
+                    "required": sorted(FINDING_ALLOWED_FIELDS),
                     "properties": finding_properties,
                 },
             },

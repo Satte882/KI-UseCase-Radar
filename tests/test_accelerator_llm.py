@@ -63,6 +63,7 @@ def test_policy_parses_valid_settings():
     assert policy.max_input_chars == 5000
     assert policy.max_output_tokens == 400
     assert policy.max_calls_per_context == 3
+    assert policy.solution_critic_max_input_chars == 100000
 
 
 @pytest.mark.parametrize(
@@ -70,6 +71,7 @@ def test_policy_parses_valid_settings():
     [
         ("ACCELERATOR_LLM_TIMEOUT_SECONDS", "nicht-numerisch", "ganze Zahl"),
         ("ACCELERATOR_LLM_MAX_INPUT_CHARS", "0", "zwischen"),
+        ("ACCELERATOR_SOLUTION_CRITIC_MAX_INPUT_CHARS", "100001", "zwischen"),
         ("ACCELERATOR_LLM_MAX_OUTPUT_TOKENS", "5000", "zwischen"),
     ],
 )
@@ -400,6 +402,31 @@ def test_transport_omits_optional_temperature(monkeypatch):
     OPENROUTER_API_URL="https://openrouter.example/v1/chat/completions",
     **VALID_LIMITS,
 )
+def test_transport_accepts_text_content_blocks(monkeypatch):
+    payload = _success_payload()
+    payload["choices"][0]["message"]["content"] = [
+        {"type": "text", "text": '{"schema_version":"1.0"}'},
+    ]
+    monkeypatch.setattr(
+        openrouter.urllib.request,
+        "urlopen",
+        lambda *args, **kwargs: FakeResponse(payload),
+    )
+
+    result = openrouter.request_openrouter(
+        messages=[{"role": "user", "content": "test"}],
+        max_tokens=100,
+        timeout_seconds=5,
+    )
+
+    assert result.content == '{"schema_version":"1.0"}'
+
+
+@override_settings(
+    OPENROUTER_API_KEY="test-key",
+    OPENROUTER_API_URL="https://openrouter.example/v1/chat/completions",
+    **VALID_LIMITS,
+)
 def test_transport_classifies_missing_schema_provider(monkeypatch):
     error_payload = {
         "error": {
@@ -420,6 +447,54 @@ def test_transport_classifies_missing_schema_provider(monkeypatch):
         raise http_error
 
     monkeypatch.setattr(openrouter.urllib.request, "urlopen", raise_schema_error)
+
+    with pytest.raises(openrouter.OpenRouterUnavailable) as exc_info:
+        openrouter.request_openrouter(
+            messages=[{"role": "user", "content": "test"}],
+            max_tokens=100,
+            timeout_seconds=5,
+            response_format={
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "test",
+                    "strict": True,
+                    "schema": {"type": "object"},
+                },
+            },
+            provider={"require_parameters": True},
+        )
+
+    assert exc_info.value.code == "provider_schema_unsupported"
+
+
+@override_settings(
+    OPENROUTER_API_KEY="test-key",
+    OPENROUTER_API_URL="https://openrouter.example/v1/chat/completions",
+    **VALID_LIMITS,
+)
+def test_transport_classifies_provider_invalid_json_schema(monkeypatch):
+    error_payload = {
+        "error": {
+            "code": 400,
+            "message": "Provider returned error",
+            "metadata": {
+                "provider_error_code": "invalid_json_schema",
+                "raw": "Invalid schema for response_format",
+            },
+        }
+    }
+    http_error = openrouter.urllib.error.HTTPError(
+        "https://openrouter.example/v1/chat/completions",
+        400,
+        "Bad Request",
+        {},
+        io.BytesIO(json.dumps(error_payload).encode("utf-8")),
+    )
+    monkeypatch.setattr(
+        openrouter.urllib.request,
+        "urlopen",
+        lambda *args, **kwargs: (_ for _ in ()).throw(http_error),
+    )
 
     with pytest.raises(openrouter.OpenRouterUnavailable) as exc_info:
         openrouter.request_openrouter(

@@ -108,7 +108,7 @@ def test_generation_uses_exactly_one_structured_openrouter_call(owner, business_
     assert kwargs["messages"] == prepared.messages
     assert kwargs["max_tokens"] == 8192
     assert kwargs["timeout_seconds"] == 17
-    assert kwargs["temperature"] == 0.0
+    assert kwargs["temperature"] is None
     assert kwargs["provider"] == {"require_parameters": True}
     assert kwargs["response_format"]["type"] == "json_schema"
     assert kwargs["response_format"]["json_schema"]["strict"] is True

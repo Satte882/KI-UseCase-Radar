@@ -71,16 +71,22 @@ def test_statement_schema_restricts_sources_and_requires_provenance_path():
     ]
 
     assert statement["properties"]["source_ids"]["items"]["enum"] == sorted(ALLOWED_SOURCE_IDS)
-    assert statement["properties"]["source_ids"]["uniqueItems"] is True
+    assert "uniqueItems" not in statement["properties"]["source_ids"]
     assert statement["additionalProperties"] is False
     assert {"text", "source_ids", "assumptions", "open_evidence", "uncertainty"} == set(
         statement["required"]
     )
-    assert statement["anyOf"] == [
-        {"properties": {"source_ids": {"minItems": 1}}},
-        {"properties": {"assumptions": {"minItems": 1}}},
-        {"properties": {"open_evidence": {"minItems": 1}}},
-    ]
+    assert len(statement["anyOf"]) == 3
+    for branch, provenance_field in zip(
+        statement["anyOf"],
+        ("source_ids", "assumptions", "open_evidence"),
+        strict=True,
+    ):
+        assert branch["type"] == "object"
+        assert branch["additionalProperties"] is False
+        assert set(branch["required"]) == set(statement["required"])
+        assert set(branch["properties"]) == set(statement["properties"])
+        assert branch["properties"][provenance_field]["minItems"] == 1
 
 
 def test_schema_versions_are_server_fixed():
