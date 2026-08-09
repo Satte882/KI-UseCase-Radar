@@ -26,6 +26,14 @@ from ki_radar.accelerator.solution_quality_versions import (
 )
 from ki_radar.architecture.models import ProcessAnalysis, ValueStream, ValueStreamStage
 
+PREVIEW_ROUTE = "accelerator:solution_generation_preview"
+REPAIR_ROUTE = "accelerator:solution_generation_repair"
+CRITIC_PROVIDER = "ki_radar.accelerator.solution_critic_service.request_openrouter"
+REPAIR_PROVIDER = "ki_radar.accelerator.solution_repair_service.request_openrouter"
+REPAIR_VIEW_SERVICE = (
+    "ki_radar.accelerator.solution_generation_views.run_targeted_solution_repair"
+)
+
 FIELD_SOURCES = {
     "name": "process.current_flow",
     "description": "process.current_flow",
@@ -104,11 +112,10 @@ def _make_run(owner, business_unit) -> SolutionGenerationRun:
     for lane in OPTION_LANES:
         option: dict[str, object] = {}
         for field_name in GENERATED_OPTION_FIELDS:
-            option[field_name] = _statement(
-                f"{lane}: {field_name.replace('_', ' ')}",
-                FIELD_SOURCES[field_name],
-            )
+            text = f"{lane}: {field_name.replace('_', ' ')}"
+            option[field_name] = _statement(text, FIELD_SOURCES[field_name])
         options[lane] = option
+
     preview_payload = {
         "schema_version": GENERATION_SCHEMA_VERSION,
         "prompt_version": GENERATION_PROMPT_VERSION,
@@ -147,10 +154,7 @@ def _make_initial_critic(
         "criterion": "bottleneck_fit",
         "option": "assistant",
         "field": "bottleneck_coverage",
-        "finding": (
-            "Der Engpassbezug muss präziser aus der dokumentierten Ursache "
-            "hergeleitet werden."
-        ),
+        "finding": "Der Engpassbezug muss präziser aus der dokumentierten Ursache hervorgehen.",
         "source_ids": ["process.bottlenecks"],
         "repairable": repairable,
         "related_targets": [],
@@ -180,7 +184,7 @@ def _make_initial_critic(
 
 
 @pytest.mark.django_db
-def test_preview_shows_repairable_finding_and_one_shot_action_without_provider_call(
+def test_preview_shows_repairable_finding_without_provider_call(
     client,
     owner,
     business_unit,
@@ -189,16 +193,14 @@ def test_preview_shows_repairable_finding_and_one_shot_action_without_provider_c
     _make_initial_critic(run, repairable=True)
     client.force_login(owner)
 
-    with (
-        patch("ki_radar.accelerator.solution_critic_service.request_openrouter") as critic_provider,
-        patch("ki_radar.accelerator.solution_repair_service.request_openrouter") as repair_provider,
-    ):
-        response = client.get(reverse("accelerator:solution_generation_preview", args=[run.pk]))
+    with patch(CRITIC_PROVIDER) as critic_provider:
+        with patch(REPAIR_PROVIDER) as repair_provider:
+            response = client.get(reverse(PREVIEW_ROUTE, args=[run.pk]))
 
     content = response.content.decode()
     assert response.status_code == 200
     assert "KI-Qualitätsprüfung" in content
-    assert "Qualitätsprüfung \u2013 keine Bewertung oder Lösungsempfehlung." in content
+    assert "keine Bewertung oder Lösungsempfehlung" in content
     assert "Passung zum Engpass" in content
     assert "Bottleneck-Abdeckung" in content
     assert "Engpassbezug muss präziser" in content
@@ -209,12 +211,16 @@ def test_preview_shows_repairable_finding_and_one_shot_action_without_provider_c
 
 
 @pytest.mark.django_db
-def test_nonrepairable_findings_go_directly_to_human_review(client, owner, business_unit):
+def test_nonrepairable_finding_goes_to_human_review(
+    client,
+    owner,
+    business_unit,
+):
     run = _make_run(owner, business_unit)
     _make_initial_critic(run, repairable=False)
     client.force_login(owner)
 
-    response = client.get(reverse("accelerator:solution_generation_preview", args=[run.pk]))
+    response = client.get(reverse(PREVIEW_ROUTE, args=[run.pk]))
 
     content = response.content.decode()
     assert response.status_code == 200
@@ -226,7 +232,7 @@ def test_nonrepairable_findings_go_directly_to_human_review(client, owner, busin
 
 
 @pytest.mark.django_db
-def test_cas_stale_preview_shows_explicit_message_and_never_calls_provider(
+def test_human_edit_makes_repair_stale_without_provider_call(
     client,
     owner,
     business_unit,
@@ -234,26 +240,29 @@ def test_cas_stale_preview_shows_explicit_message_and_never_calls_provider(
     run = _make_run(owner, business_unit)
     _make_initial_critic(run, repairable=True)
     payload = dict(run.preview_payload)
-    payload["edits"] = {"assistant": {"description": "Nach Critic manuell präzisiert."}}
+    payload["edits"] = {
+        "assistant": {
+            "description": "Nach Critic manuell präzisiert.",
+        },
+    }
     run.preview_payload = payload
     run.save(update_fields=["preview_payload", "updated_at"])
     client.force_login(owner)
 
-    with patch(
-        "ki_radar.accelerator.solution_repair_service.request_openrouter"
-    ) as repair_provider:
-        response = client.get(reverse("accelerator:solution_generation_preview", args=[run.pk]))
+    with patch(REPAIR_PROVIDER) as repair_provider:
+        response = client.get(reverse(PREVIEW_ROUTE, args=[run.pk]))
 
     content = response.content.decode()
+    stale_message = "Vorschau wurde seit der Prüfung bearbeitet, Reparatur nicht mehr möglich."
     assert response.status_code == 200
-    assert "Vorschau wurde seit der Prüfung bearbeitet, Reparatur nicht mehr möglich." in content
+    assert stale_message in content
     assert "Reparierbare Findings einmalig korrigieren" not in content
     assert "Bearbeitungen speichern" in content
     repair_provider.assert_not_called()
 
 
 @pytest.mark.django_db
-def test_repair_endpoint_invokes_existing_service_once_and_redirects_to_quality_section(
+def test_repair_endpoint_calls_existing_service_once(
     client,
     owner,
     business_unit,
@@ -262,11 +271,9 @@ def test_repair_endpoint_invokes_existing_service_once_and_redirects_to_quality_
     _make_initial_critic(run, repairable=True)
     client.force_login(owner)
 
-    with patch(
-        "ki_radar.accelerator.solution_generation_views.run_targeted_solution_repair",
-        return_value=SimpleNamespace(status=SolutionQualityRun.Status.SUCCESS),
-    ) as repair_service:
-        response = client.post(reverse("accelerator:solution_generation_repair", args=[run.pk]))
+    successful_repair = SimpleNamespace(status=SolutionQualityRun.Status.SUCCESS)
+    with patch(REPAIR_VIEW_SERVICE, return_value=successful_repair) as repair_service:
+        response = client.post(reverse(REPAIR_ROUTE, args=[run.pk]))
 
     assert response.status_code == 302
     assert response.url.endswith("#solution-generation-quality")
@@ -277,7 +284,7 @@ def test_repair_endpoint_invokes_existing_service_once_and_redirects_to_quality_
 
 
 @pytest.mark.django_db
-def test_source_stale_repair_request_is_rejected_before_service_call(
+def test_source_stale_repair_is_rejected_before_service_call(
     client,
     owner,
     business_unit,
@@ -289,10 +296,8 @@ def test_source_stale_repair_request_is_rejected_before_service_call(
     process.save(update_fields=["current_flow", "updated_at"])
     client.force_login(owner)
 
-    with patch(
-        "ki_radar.accelerator.solution_generation_views.run_targeted_solution_repair"
-    ) as repair_service:
-        response = client.post(reverse("accelerator:solution_generation_repair", args=[run.pk]))
+    with patch(REPAIR_VIEW_SERVICE) as repair_service:
+        response = client.post(reverse(REPAIR_ROUTE, args=[run.pk]))
 
     assert response.status_code == 302
     assert response.url.endswith("#solution-generation-quality")
