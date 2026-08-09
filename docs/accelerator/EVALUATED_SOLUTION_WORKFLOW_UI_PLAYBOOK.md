@@ -1,10 +1,10 @@
-# Evaluated Solution Workflow – UI-Playbook nach AP9
+# Evaluated Solution Workflow – UI-Playbook
 
-Stand: AP9 – Preview-UI, Findings, Repair-Aktion und Human Review
+Stand: AP10 – Abschluss von #212
 
 ## Zweck
 
-Dieser Zwischenstand prüft den vollständigen nutzersichtbaren Quality-Control-Pfad in der bestehenden Block-7-Preview:
+Dieses Playbook prüft den nutzersichtbaren Quality-Control-Pfad in der bestehenden Block-7-Preview:
 
 `Generate -> deterministic Validate -> Initial Critic -> optional exactly one Repair -> deterministic Validate -> Final Critic -> Human Review`
 
@@ -12,7 +12,7 @@ Es entsteht keine neue Hauptnavigation, keine neue Lösungsvergleichsseite und k
 
 ## Voraussetzungen
 
-- lokaler Stack läuft auf dem aktuellen Stand nach Merge von AP9;
+- lokaler Stack läuft auf dem aktuellen `main`;
 - eine Prozessanalyse erfüllt die bestehende Block-7-Readiness;
 - OpenRouter ist für Generation, Critic und optional Repair konfiguriert;
 - die testende Person besitzt die bestehenden Bearbeitungsrechte für den Value Stream.
@@ -81,8 +81,22 @@ Für jeden der drei Quality Steps separat einen terminalen Provider-/Quota-/Cont
 
 Erwartung: Quality-Control-Fehler zerstören keine valide Preview und erzeugen weder Bewertung, Empfehlung noch Domain-/Governance-Writes.
 
+## Playbook F – Berechtigungsgrenze
+
+1. Eine valide Preview mit reparierbarem Finding als berechtigte Person öffnen.
+2. Den Repair-Endpunkt mit einem Benutzer ohne Bearbeitungsrecht am Value Stream aufrufen.
+3. Prüfen, dass der Request abgewiesen wird.
+4. Als berechtigte Person die Preview erneut öffnen und den unveränderten Zustand prüfen.
+
+Erwartung: Der Quality-Control-Pfad erweitert die bestehenden Block-7-Berechtigungen nicht.
+
+## Bekannte V1-Grenzen
+
+- Ein persistierter Quality-Step ist one-shot. Ein Prozessabbruch nach Reservierung und vor terminaler Statusspeicherung kann einen Step im Zustand `running` hinterlassen; #212 enthält bewusst keinen Recovery-Worker oder automatischen Retry.
+- Ein fehlgeschlagener Critic-, Repair- oder Final-Critic-Step wird innerhalb derselben Generation nicht erneut ausgeführt. Die valide Preview bleibt für Human Review erhalten.
+- Semantische Zusammenführung konkurrierender Human-/Machine-Edits ist kein V1-Ziel; Whole-Preview-CAS lehnt den Repair stattdessen als stale ab.
+- Die gemeinsame Real-DEMO-/adversariale End-to-End-Abnahme von Architecture Advisor und Evaluated Solution Workflow bleibt #213 vorbehalten.
+
 ## Abgrenzung
 
 Der Bereich „KI-Qualitätsprüfung“ ist ausschließlich Quality Control. Er bewertet weder Machbarkeit noch Integrationsaufwand, erzeugt kein Ranking, wählt keine bevorzugte Lösung und ersetzt keine fachliche Entscheidung.
-
-AP10 konsolidiert anschließend die vollständige Security-/Failure-/Gate-Regression und den Abschluss von #212. Die gemeinsame Real-DEMO-/adversariale End-to-End-Abnahme mit #211 bleibt #213 vorbehalten.
