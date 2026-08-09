@@ -189,7 +189,11 @@ def test_invalid_reservation_contract_is_rejected_without_row(
     "status",
     [SolutionGenerationRun.Status.RUNNING, SolutionGenerationRun.Status.FAILED],
 )
-def test_non_successful_generation_cannot_reserve_quality_step(owner, business_unit, status) -> None:
+def test_non_successful_generation_cannot_reserve_quality_step(
+    owner,
+    business_unit,
+    status,
+) -> None:
     generation_run = make_generation_run(owner, business_unit, status=status)
 
     with pytest.raises(SolutionQualityRunError) as exc_info:
@@ -308,7 +312,10 @@ def test_database_rejects_terminal_status_without_finished_at(owner, business_un
 
 
 @pytest.mark.django_db(transaction=True)
-def test_parallel_reservation_creates_exactly_one_provider_eligible_step(owner, business_unit) -> None:
+def test_parallel_reservation_creates_exactly_one_provider_eligible_step(
+    owner,
+    business_unit,
+) -> None:
     generation_run = make_generation_run(owner, business_unit)
     barrier = Barrier(2)
 
