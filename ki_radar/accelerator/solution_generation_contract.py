@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from django.views.decorators.debug import sensitive_variables
 
 from .solution_generation_sources import ALLOWED_SOURCE_IDS, SolutionGenerationSourceContext
@@ -77,6 +79,68 @@ SOLUTION_GENERATION_SYSTEM_PROMPT = (
 
 
 def _statement_schema() -> dict[str, object]:
+    required = [
+        "text",
+        "source_ids",
+        "assumptions",
+        "open_evidence",
+        "uncertainty",
+    ]
+    properties: dict[str, object] = {
+        "text": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Nicht-leerer fachlicher Text des Feldes.",
+        },
+        "source_ids": {
+            "type": "array",
+            "description": "Belegende Source-IDs; falls keine vorhanden sind, [].",
+            "items": {
+                "type": "string",
+                "enum": sorted(ALLOWED_SOURCE_IDS),
+            },
+        },
+        "assumptions": {
+            "type": "array",
+            "description": "Explizite Annahmen; falls keine vorhanden sind, [].",
+            "items": {"type": "string", "minLength": 1},
+        },
+        "open_evidence": {
+            "type": "array",
+            "description": "Offene Evidenzbedarfe; falls keine vorhanden sind, [].",
+            "items": {"type": "string", "minLength": 1},
+        },
+        "uncertainty": {
+            "type": "object",
+            "description": "Unsicherheitsstufe mit kurzer Begründung; niemals weglassen.",
+            "additionalProperties": False,
+            "required": ["level", "reason"],
+            "properties": {
+                "level": {
+                    "type": "string",
+                    "enum": list(UNCERTAINTY_LEVELS),
+                },
+                "reason": {"type": "string", "minLength": 1},
+            },
+        },
+    }
+
+    provenance_branches: list[dict[str, object]] = []
+    for field_name in ("source_ids", "assumptions", "open_evidence"):
+        branch_properties = deepcopy(properties)
+        branch_field = branch_properties[field_name]
+        if not isinstance(branch_field, dict):
+            raise TypeError(f"Statement-Schema für {field_name} muss ein Objekt sein.")
+        branch_field["minItems"] = 1
+        provenance_branches.append(
+            {
+                "type": "object",
+                "additionalProperties": False,
+                "required": required,
+                "properties": branch_properties,
+            }
+        )
+
     return {
         "type": "object",
         "description": (
@@ -84,57 +148,9 @@ def _statement_schema() -> dict[str, object]:
             "leere Listen werden als [] ausgegeben und nie weggelassen."
         ),
         "additionalProperties": False,
-        "required": [
-            "text",
-            "source_ids",
-            "assumptions",
-            "open_evidence",
-            "uncertainty",
-        ],
-        "properties": {
-            "text": {
-                "type": "string",
-                "minLength": 1,
-                "description": "Nicht-leerer fachlicher Text des Feldes.",
-            },
-            "source_ids": {
-                "type": "array",
-                "description": "Belegende Source-IDs; falls keine vorhanden sind, [].",
-                "uniqueItems": True,
-                "items": {
-                    "type": "string",
-                    "enum": sorted(ALLOWED_SOURCE_IDS),
-                },
-            },
-            "assumptions": {
-                "type": "array",
-                "description": "Explizite Annahmen; falls keine vorhanden sind, [].",
-                "items": {"type": "string", "minLength": 1},
-            },
-            "open_evidence": {
-                "type": "array",
-                "description": "Offene Evidenzbedarfe; falls keine vorhanden sind, [].",
-                "items": {"type": "string", "minLength": 1},
-            },
-            "uncertainty": {
-                "type": "object",
-                "description": "Unsicherheitsstufe mit kurzer Begründung; niemals weglassen.",
-                "additionalProperties": False,
-                "required": ["level", "reason"],
-                "properties": {
-                    "level": {
-                        "type": "string",
-                        "enum": list(UNCERTAINTY_LEVELS),
-                    },
-                    "reason": {"type": "string", "minLength": 1},
-                },
-            },
-        },
-        "anyOf": [
-            {"properties": {"source_ids": {"minItems": 1}}},
-            {"properties": {"assumptions": {"minItems": 1}}},
-            {"properties": {"open_evidence": {"minItems": 1}}},
-        ],
+        "required": required,
+        "properties": properties,
+        "anyOf": provenance_branches,
     }
 
 

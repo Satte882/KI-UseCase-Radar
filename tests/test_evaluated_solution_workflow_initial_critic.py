@@ -39,6 +39,7 @@ VALID_LIMITS = {
     "ACCELERATOR_LLM_MAX_CALLS_GLOBAL_DAY": "20",
     "ACCELERATOR_SOLUTION_GENERATION_MAX_OUTPUT_TOKENS": "8192",
     "ACCELERATOR_SOLUTION_GENERATION_MAX_CALLS_PER_CONTEXT": "4",
+    "ACCELERATOR_SOLUTION_CRITIC_MAX_INPUT_CHARS": "100000",
     "ACCELERATOR_CAPTURE_COMPLETED_RETENTION_DAYS": "30",
 }
 
@@ -218,10 +219,16 @@ def test_initial_critic_uses_one_structured_provider_call_and_persists_findings(
     kwargs = request_mock.call_args.kwargs
     assert kwargs["max_tokens"] == 4096
     assert kwargs["timeout_seconds"] == 17
-    assert kwargs["temperature"] == 0.0
+    assert kwargs["temperature"] is None
     assert kwargs["provider"] == {"require_parameters": True}
     assert kwargs["response_format"]["type"] == "json_schema"
     assert kwargs["response_format"]["json_schema"]["strict"] is True
+    source_id_enum = kwargs["response_format"]["json_schema"]["schema"]["properties"]["findings"][
+        "items"
+    ]["properties"]["source_ids"]["items"]["enum"]
+    assert source_id_enum == sorted(
+        fact["source_id"] for fact in generation_run.preview_payload["source_context"]["facts"]
+    )
 
     quality_run.refresh_from_db()
     generation_run.refresh_from_db()
@@ -328,6 +335,27 @@ def test_user_quota_failure_rolls_back_partial_quota_and_preserves_preview(owner
         user=owner,
     )
     assert user_quota.calls == 5
+
+
+@pytest.mark.django_db
+@override_settings(
+    **{
+        **VALID_LIMITS,
+        "ACCELERATOR_LLM_MAX_INPUT_CHARS": "1",
+        "ACCELERATOR_SOLUTION_CRITIC_MAX_INPUT_CHARS": "100000",
+    }
+)
+def test_initial_critic_uses_its_dedicated_validated_snapshot_limit(owner, business_unit):
+    generation_run = make_generation_run(owner, business_unit)
+
+    with patch(
+        "ki_radar.accelerator.solution_critic_service.request_openrouter",
+        return_value=provider_result(),
+    ) as request_mock:
+        quality_run = run_initial_solution_critic(solution_generation_run_id=generation_run.pk)
+
+    assert request_mock.call_count == 1
+    assert quality_run.status == SolutionQualityRun.Status.SUCCESS
 
 
 @pytest.mark.django_db

@@ -22,6 +22,7 @@ class AcceleratorLLMPolicy:
     max_calls_global_day: int
     solution_generation_max_output_tokens: int
     solution_generation_max_calls_per_context: int
+    solution_critic_max_input_chars: int
 
 
 _SETTING_BOUNDS = {
@@ -34,6 +35,7 @@ _SETTING_BOUNDS = {
     "ACCELERATOR_LLM_MAX_CALLS_GLOBAL_DAY": (1, 100_000),
     "ACCELERATOR_SOLUTION_GENERATION_MAX_OUTPUT_TOKENS": (4_096, 16_384),
     "ACCELERATOR_SOLUTION_GENERATION_MAX_CALLS_PER_CONTEXT": (1, 50),
+    "ACCELERATOR_SOLUTION_CRITIC_MAX_INPUT_CHARS": (1, 100_000),
 }
 
 
@@ -106,4 +108,5 @@ def get_accelerator_llm_policy() -> AcceleratorLLMPolicy:
             "ACCELERATOR_SOLUTION_GENERATION_MAX_OUTPUT_TOKENS"
         ],
         solution_generation_max_calls_per_context=solution_context_limit,
+        solution_critic_max_input_chars=values["ACCELERATOR_SOLUTION_CRITIC_MAX_INPUT_CHARS"],
     )

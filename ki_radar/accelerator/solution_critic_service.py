@@ -228,7 +228,7 @@ def run_initial_solution_critic(*, solution_generation_run_id) -> SolutionQualit
     except LLMConfigurationError:
         return _failed_quality_step(run_id=quality_run.pk, error_code="invalid_configuration")
 
-    if input_chars > policy.max_input_chars:
+    if input_chars > policy.solution_critic_max_input_chars:
         return _failed_quality_step(run_id=quality_run.pk, error_code="input_too_large")
 
     try:
@@ -238,13 +238,15 @@ def run_initial_solution_critic(*, solution_generation_run_id) -> SolutionQualit
     except InitialSolutionCriticError as exc:
         return _failed_quality_step(run_id=quality_run.pk, error_code=exc.code)
 
-    response_schema = build_solution_critic_json_schema()
+    response_schema = build_solution_critic_json_schema(
+        allowed_source_ids=(fact.source_id for fact in source_context.facts)
+    )
     try:
         result = request_openrouter(
             messages=messages,
             max_tokens=policy.max_output_tokens,
             timeout_seconds=policy.timeout_seconds,
-            temperature=0.0,
+            temperature=None,
             response_format={
                 "type": "json_schema",
                 "json_schema": {
@@ -289,7 +291,14 @@ def run_initial_solution_critic(*, solution_generation_run_id) -> SolutionQualit
 
     try:
         validated = validate_solution_critic_payload(payload, source_context)
-    except SolutionCriticContractError:
+    except SolutionCriticContractError as exc:
+        logger.warning(
+            "initial_solution_critic contract_failure generation_run_id=%s "
+            "quality_run_id=%s validation_errors=%s",
+            generation_run.pk,
+            quality_run.pk,
+            exc.errors,
+        )
         return _failed_quality_step(
             run_id=quality_run.pk,
             error_code="invalid_critic_payload",

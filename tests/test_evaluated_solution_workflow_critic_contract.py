@@ -4,6 +4,7 @@ import pytest
 
 from ki_radar.accelerator.solution_critic_contract import (
     CRITIC_CRITERIA,
+    FINDING_ALLOWED_FIELDS,
     SolutionCriticContractError,
     build_solution_critic_json_schema,
     validate_solution_critic_payload,
@@ -174,13 +175,13 @@ def test_unknown_critic_references_are_rejected(override, expected) -> None:
     assert expected in str(exc_info.value)
 
 
-def test_duplicate_target_is_rejected() -> None:
+def test_duplicate_primary_target_is_normalized_away() -> None:
     duplicated = finding(related_targets=[{"option": "assistant", "field": "bottleneck_coverage"}])
 
-    with pytest.raises(SolutionCriticContractError) as exc_info:
-        validate_solution_critic_payload(payload_with([duplicated]), source_context())
+    validated = validate_solution_critic_payload(payload_with([duplicated]), source_context())
 
-    assert "ist doppelt" in str(exc_info.value)
+    assert validated["findings"][0]["related_targets"] == []
+    assert validated["findings"][0]["field"] == "bottleneck_coverage"
 
 
 def test_identical_findings_are_rejected_as_ambiguous_repair_references() -> None:
@@ -209,7 +210,41 @@ def test_schema_contains_only_critic_fields_and_no_quality_score() -> None:
     assert "severity" not in serialized
     assert "confidence" not in serialized
     assert set(finding_schema["properties"]["option"]["enum"]) == set(OPTION_LANES)
-    assert set(finding_schema["properties"]["field"]["enum"]) == set(GENERATED_OPTION_FIELDS)
+    assert set(finding_schema["properties"]["field"]["enum"]) == {
+        *GENERATED_OPTION_FIELDS,
+        None,
+    }
+
+
+def test_provider_schema_restricts_source_ids_to_the_current_snapshot() -> None:
+    schema = build_solution_critic_json_schema(
+        allowed_source_ids=("process.systems", "process.bottlenecks")
+    )
+    source_id_schema = schema["properties"]["findings"]["items"]["properties"]["source_ids"][
+        "items"
+    ]
+
+    assert source_id_schema["enum"] == ["process.bottlenecks", "process.systems"]
+
+
+def test_provider_schema_requires_nullable_optional_field() -> None:
+    schema = build_solution_critic_json_schema()
+    finding_schema = schema["properties"]["findings"]["items"]
+
+    assert set(finding_schema["required"]) == set(FINDING_ALLOWED_FIELDS)
+    assert finding_schema["properties"]["field"]["type"] == ["string", "null"]
+    assert None in finding_schema["properties"]["field"]["enum"]
+    assert "uniqueItems" not in finding_schema["properties"]["source_ids"]
+    assert "uniqueItems" not in finding_schema["properties"]["related_targets"]
+
+    without_primary_field = finding()
+    without_primary_field["field"] = None
+    without_primary_field["repairable"] = False
+    validated = validate_solution_critic_payload(
+        payload_with([without_primary_field]), source_context()
+    )
+
+    assert "field" not in validated["findings"][0]
 
 
 def test_critic_prompt_is_separate_adversarial_and_non_decisional() -> None:
@@ -223,19 +258,45 @@ def test_critic_prompt_is_separate_adversarial_and_non_decisional() -> None:
 
 
 def test_critic_messages_include_frozen_preview_and_source_context() -> None:
+    statement = {
+        "text": "Die manuelle Angebotsprüfung wird gezielt unterstützt.",
+        "source_ids": ["process.bottlenecks"],
+        "assumptions": [],
+        "open_evidence": ["Die konkrete Ausgestaltung ist noch offen."],
+        "uncertainty": {"level": "medium", "reason": "Die Ausgestaltung ist offen."},
+    }
     snapshot = SolutionQualitySnapshot(
         snapshot_hash="b" * 64,
-        document={"effective_payload": {"options": {"frozen": True}}},
+        document={
+            "effective_payload": {
+                "options": {
+                    lane: {field_name: statement for field_name in GENERATED_OPTION_FIELDS}
+                    for lane in OPTION_LANES
+                }
+            }
+        },
     )
 
     messages = build_solution_critic_messages(snapshot, source_context())
     user_document = json.loads(messages[1]["content"])
 
     assert messages[0] == {"role": "system", "content": SOLUTION_CRITIC_SYSTEM_PROMPT}
-    assert user_document["task"] == "semantic_solution_quality_critic"
-    assert user_document["critic_schema_version"] == CRITIC_SCHEMA_VERSION
-    assert user_document["critic_prompt_version"] == CRITIC_PROMPT_VERSION
-    assert user_document["criteria"] == list(CRITIC_CRITERIA)
-    assert user_document["quality_snapshot_hash"] == "b" * 64
-    assert user_document["effective_preview"] == {"options": {"frozen": True}}
-    assert user_document["source_data"]["facts"][0]["source_id"] == "process.bottlenecks"
+    assert user_document["lanes"] == list(OPTION_LANES)
+    assert user_document["fields"] == list(GENERATED_OPTION_FIELDS)
+    assert user_document["columns"] == [
+        "text",
+        "source_ids",
+        "assumptions",
+        "open_evidence",
+    ]
+    assistant_index = user_document["lanes"].index("assistant")
+    description_index = user_document["fields"].index("description")
+    assert user_document["options"][assistant_index][description_index] == [
+        statement["text"],
+        ["process.bottlenecks"],
+        [],
+        statement["open_evidence"],
+    ]
+    assert user_document["sources"] == {
+        "process.bottlenecks": ("Die manuelle Angebotsprüfung ist der dokumentierte Engpass.")
+    }
