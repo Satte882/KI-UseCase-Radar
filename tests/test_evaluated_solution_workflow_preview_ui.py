@@ -225,7 +225,7 @@ def test_nonrepairable_finding_goes_to_human_review(
     assert "Human Review" in content
     assert "Reparierbare Findings einmalig korrigieren" not in content
     assert "Bearbeitungen speichern" in content
-    assert "ausgewählte KI-Lösungsoptionen hinzufügen" in content.lower()
+    assert "ausgewählte ki-lösungsoptionen hinzufügen" in content.lower()
 
 
 @pytest.mark.django_db
