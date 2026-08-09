@@ -105,7 +105,7 @@ def test_existing_solution_option_page_shows_exactly_four_architecture_questions
     assert content.count("Semantisches Reasoning erforderlich?") == 1
     assert content.count("Mehrere bekannte KI-Schritte erforderlich?") == 1
     assert content.count("Dynamische Orchestrierung erforderlich?") == 1
-    assert "Architecture Mode" not in content
+    assert "Warum dieses Muster?" not in content
 
 
 @pytest.mark.django_db
