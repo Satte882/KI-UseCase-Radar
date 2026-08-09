@@ -99,7 +99,10 @@ def test_stored_ruleset_and_mode_are_not_automatically_reclassified(solution_opt
     assessment.save(update_fields=["version", "updated_at"])
     assessment.refresh_from_db()
 
-    assert assessment.architecture_mode == SolutionArchitectureAssessment.ArchitectureMode.NO_LLM_REQUIRED
+    assert (
+        assessment.architecture_mode
+        == SolutionArchitectureAssessment.ArchitectureMode.NO_LLM_REQUIRED
+    )
     assert assessment.reason_codes == ["legacy_reason"]
     assert assessment.ruleset_version == "architecture-advisor-legacy-v0"
     assert assessment.version == 2
