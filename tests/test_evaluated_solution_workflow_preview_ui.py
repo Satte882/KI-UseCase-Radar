@@ -193,9 +193,11 @@ def test_preview_shows_repairable_finding_without_provider_call(
     _make_initial_critic(run, repairable=True)
     client.force_login(owner)
 
-    with patch(CRITIC_PROVIDER) as critic_provider:
-        with patch(REPAIR_PROVIDER) as repair_provider:
-            response = client.get(reverse(PREVIEW_ROUTE, args=[run.pk]))
+    with (
+        patch(CRITIC_PROVIDER) as critic_provider,
+        patch(REPAIR_PROVIDER) as repair_provider,
+    ):
+        response = client.get(reverse(PREVIEW_ROUTE, args=[run.pk]))
 
     content = response.content.decode()
     assert response.status_code == 200
