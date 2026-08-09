@@ -484,9 +484,7 @@ def test_repair_http_exception_and_quota_failures_preserve_preview_and_one_shot(
         user=owner,
         calls=10,
     )
-    with patch(
-        "ki_radar.accelerator.solution_repair_service.request_openrouter"
-    ) as request_mock:
+    with patch("ki_radar.accelerator.solution_repair_service.request_openrouter") as request_mock:
         failed = run_targeted_solution_repair(
             solution_generation_run_id=quota_run.pk,
             actor=owner,
@@ -553,9 +551,7 @@ def test_final_critic_http_exception_and_quota_failures_preserve_repaired_previe
     )
     user_quota.calls = 10
     user_quota.save(update_fields=["calls", "updated_at"])
-    with patch(
-        "ki_radar.accelerator.solution_critic_service.request_openrouter"
-    ) as request_mock:
+    with patch("ki_radar.accelerator.solution_critic_service.request_openrouter") as request_mock:
         failed = run_final_solution_critic(solution_generation_run_id=quota_run.pk)
 
     quota_run.refresh_from_db()
