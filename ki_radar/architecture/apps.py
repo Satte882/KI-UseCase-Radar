@@ -8,6 +8,7 @@ class ArchitectureConfig(AppConfig):
 
     def ready(self):
         from . import (
+            architecture_assessment_models,  # noqa: F401
             focus,  # noqa: F401
             retirement_models,  # noqa: F401
             stage_focus,  # noqa: F401
