@@ -46,6 +46,12 @@ class InitialSolutionCriticError(RuntimeError):
         self.code = code
 
 
+class FinalSolutionCriticError(RuntimeError):
+    def __init__(self, message: str, *, code: str) -> None:
+        super().__init__(message)
+        self.code = code
+
+
 def _source_context_from_generation_run(
     generation_run: SolutionGenerationRun,
 ) -> SolutionGenerationSourceContext:
@@ -177,7 +183,7 @@ def _reserve_critic_quotas(*, generation_run: SolutionGenerationRun, policy) -> 
     actor = generation_run.requested_by
     if actor is None:
         raise InitialSolutionCriticError(
-            "Der Initial Critic kann keinem Benutzer zugeordnet werden.",
+            "Der Critic kann keinem Benutzer zugeordnet werden.",
             code="critic_actor_unavailable",
         )
     with transaction.atomic():
@@ -189,8 +195,57 @@ def _reserve_critic_quotas(*, generation_run: SolutionGenerationRun, policy) -> 
         )
 
 
+def _successful_repair_run(generation_run: SolutionGenerationRun) -> SolutionQualityRun:
+    try:
+        repair_run = SolutionQualityRun.objects.get(
+            solution_generation_run=generation_run,
+            step_type=SolutionQualityRun.StepType.REPAIR,
+        )
+    except SolutionQualityRun.DoesNotExist as exc:
+        raise FinalSolutionCriticError(
+            "Der Final Critic benötigt einen erfolgreichen Repair.",
+            code="final_critic_repair_unavailable",
+        ) from exc
+    if repair_run.status != SolutionQualityRun.Status.SUCCESS:
+        raise FinalSolutionCriticError(
+            "Der Final Critic darf nur nach einem erfolgreichen Repair laufen.",
+            code="final_critic_repair_unavailable",
+        )
+    return repair_run
+
+
+def _repair_output_snapshot_hash(
+    *,
+    generation_run: SolutionGenerationRun,
+    repair_run: SolutionQualityRun,
+) -> str:
+    machine_repair = generation_run.preview_payload.get("machine_repair")
+    if not isinstance(machine_repair, dict) or machine_repair.get("quality_run_id") != str(
+        repair_run.pk
+    ):
+        raise FinalSolutionCriticError(
+            "Die reparierte Preview ist nicht an den erfolgreichen Repair-Run gebunden.",
+            code="final_critic_repair_binding_invalid",
+        )
+    result_payload = repair_run.result_payload
+    output_snapshot_hash = (
+        result_payload.get("output_snapshot_hash") if isinstance(result_payload, dict) else None
+    )
+    if not isinstance(output_snapshot_hash, str) or len(output_snapshot_hash) != 64:
+        raise FinalSolutionCriticError(
+            "Der erfolgreiche Repair enthält keinen gültigen Output-Snapshot.",
+            code="final_critic_repair_binding_invalid",
+        )
+    return output_snapshot_hash
+
+
 @sensitive_variables("source_context", "snapshot", "messages", "result", "payload")
-def run_initial_solution_critic(*, solution_generation_run_id) -> SolutionQualityRun:
+def _run_solution_critic(
+    *,
+    solution_generation_run_id,
+    step_type: str,
+    expected_input_hash: str | None = None,
+) -> SolutionQualityRun:
     generation_run = SolutionGenerationRun.objects.select_related(
         "process_analysis", "requested_by"
     ).get(pk=solution_generation_run_id)
@@ -199,7 +254,7 @@ def run_initial_solution_critic(*, solution_generation_run_id) -> SolutionQualit
         or not generation_run.preview_payload
     ):
         raise InitialSolutionCriticError(
-            "Der Initial Critic benötigt eine persistierte valide Lösungs-Preview.",
+            "Der Critic benötigt eine persistierte valide Lösungs-Preview.",
             code="critic_preview_unavailable",
         )
 
@@ -213,7 +268,7 @@ def run_initial_solution_critic(*, solution_generation_run_id) -> SolutionQualit
     reservation = reserve_solution_quality_step(
         solution_generation_run_id=generation_run.pk,
         actor=generation_run.requested_by,
-        step_type=SolutionQualityRun.StepType.INITIAL_CRITIC,
+        step_type=step_type,
         input_hash=snapshot.snapshot_hash,
         prompt_version=CRITIC_PROMPT_VERSION,
         output_schema_version=CRITIC_SCHEMA_VERSION,
@@ -223,6 +278,9 @@ def run_initial_solution_critic(*, solution_generation_run_id) -> SolutionQualit
         return reservation.run
 
     quality_run = reservation.run
+    if expected_input_hash is not None and snapshot.snapshot_hash != expected_input_hash:
+        return _failed_quality_step(run_id=quality_run.pk, error_code="final_critic_stale")
+
     try:
         policy = get_accelerator_llm_policy()
     except LLMConfigurationError:
@@ -261,9 +319,10 @@ def run_initial_solution_critic(*, solution_generation_run_id) -> SolutionQualit
         return _failed_quality_step(run_id=quality_run.pk, error_code=exc.code)
     except Exception:
         logger.exception(
-            "initial_solution_critic provider_failure generation_run_id=%s quality_run_id=%s",
+            "solution_critic provider_failure generation_run_id=%s quality_run_id=%s step_type=%s",
             generation_run.pk,
             quality_run.pk,
+            step_type,
         )
         return _failed_quality_step(run_id=quality_run.pk, error_code="internal_error")
 
@@ -293,10 +352,11 @@ def run_initial_solution_critic(*, solution_generation_run_id) -> SolutionQualit
         validated = validate_solution_critic_payload(payload, source_context)
     except SolutionCriticContractError as exc:
         logger.warning(
-            "initial_solution_critic contract_failure generation_run_id=%s "
-            "quality_run_id=%s validation_errors=%s",
+            "solution_critic contract_failure generation_run_id=%s quality_run_id=%s "
+            "step_type=%s validation_errors=%s",
             generation_run.pk,
             quality_run.pk,
+            step_type,
             exc.errors,
         )
         return _failed_quality_step(
@@ -305,3 +365,24 @@ def run_initial_solution_critic(*, solution_generation_run_id) -> SolutionQualit
             result=result,
         )
     return _success_quality_step(run_id=quality_run.pk, payload=validated, result=result)
+
+
+def run_initial_solution_critic(*, solution_generation_run_id) -> SolutionQualityRun:
+    return _run_solution_critic(
+        solution_generation_run_id=solution_generation_run_id,
+        step_type=SolutionQualityRun.StepType.INITIAL_CRITIC,
+    )
+
+
+def run_final_solution_critic(*, solution_generation_run_id) -> SolutionQualityRun:
+    generation_run = SolutionGenerationRun.objects.get(pk=solution_generation_run_id)
+    repair_run = _successful_repair_run(generation_run)
+    expected_input_hash = _repair_output_snapshot_hash(
+        generation_run=generation_run,
+        repair_run=repair_run,
+    )
+    return _run_solution_critic(
+        solution_generation_run_id=solution_generation_run_id,
+        step_type=SolutionQualityRun.StepType.FINAL_CRITIC,
+        expected_input_hash=expected_input_hash,
+    )
