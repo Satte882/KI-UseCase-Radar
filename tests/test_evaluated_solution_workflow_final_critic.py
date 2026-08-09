@@ -370,12 +370,14 @@ def test_final_critic_requires_successful_repair_before_any_provider_call(owner,
     )
     mark_solution_quality_step_failed(run_id=reservation.run.pk, error_code="timeout")
 
-    with patch(
-        "ki_radar.accelerator.solution_critic_service.request_openrouter",
-        return_value=_critic_provider_result(),
-    ) as request_mock:
-        with pytest.raises(FinalSolutionCriticError) as exc_info:
-            run_final_solution_critic(solution_generation_run_id=run.pk)
+    with (
+        patch(
+            "ki_radar.accelerator.solution_critic_service.request_openrouter",
+            return_value=_critic_provider_result(),
+        ) as request_mock,
+        pytest.raises(FinalSolutionCriticError) as exc_info,
+    ):
+        run_final_solution_critic(solution_generation_run_id=run.pk)
 
     assert exc_info.value.code == "final_critic_repair_unavailable"
     assert request_mock.call_count == 0
@@ -469,15 +471,17 @@ def test_remaining_final_findings_end_in_human_review_without_second_repair(owne
     assert final_run.status == SolutionQualityRun.Status.SUCCESS
     assert final_run.result_payload["findings"][0]["repairable"] is True
 
-    with patch(
-        "ki_radar.accelerator.solution_repair_service.request_openrouter",
-        return_value=_repair_provider_result(),
-    ) as repair_mock:
-        with pytest.raises(SolutionRepairContractError) as exc_info:
-            run_targeted_solution_repair(
-                solution_generation_run_id=run.pk,
-                actor=owner,
-            )
+    with (
+        patch(
+            "ki_radar.accelerator.solution_repair_service.request_openrouter",
+            return_value=_repair_provider_result(),
+        ) as repair_mock,
+        pytest.raises(SolutionRepairContractError) as exc_info,
+    ):
+        run_targeted_solution_repair(
+            solution_generation_run_id=run.pk,
+            actor=owner,
+        )
 
     assert exc_info.value.code == "repair_attempt_consumed"
     assert repair_mock.call_count == 0
@@ -500,12 +504,14 @@ def test_successful_repair_persistence_schedules_exactly_one_final_critic(owner,
     assert initial_signal_mock.call_count == 1
     _make_initial_critic(run)
 
-    with patch(
-        "ki_radar.accelerator.solution_critic_service.request_openrouter",
-        return_value=_critic_provider_result(_critic_payload(repairable=False)),
-    ) as request_mock:
-        with transaction.atomic():
-            repair_run = _persist_successful_repair(run)
+    with (
+        patch(
+            "ki_radar.accelerator.solution_critic_service.request_openrouter",
+            return_value=_critic_provider_result(_critic_payload(repairable=False)),
+        ) as request_mock,
+        transaction.atomic(),
+    ):
+        repair_run = _persist_successful_repair(run)
 
     assert repair_run.status == SolutionQualityRun.Status.SUCCESS
     assert request_mock.call_count == 1
@@ -531,14 +537,16 @@ def test_failed_repair_persistence_never_schedules_final_critic(owner, business_
         actor=owner,
     )
 
-    with patch(
-        "ki_radar.accelerator.solution_quality_signals.run_final_solution_critic"
-    ) as final_signal_mock:
-        with transaction.atomic():
-            failed = mark_solution_quality_step_failed(
-                run_id=reservation.run.pk,
-                error_code="timeout",
-            )
+    with (
+        patch(
+            "ki_radar.accelerator.solution_quality_signals.run_final_solution_critic"
+        ) as final_signal_mock,
+        transaction.atomic(),
+    ):
+        failed = mark_solution_quality_step_failed(
+            run_id=reservation.run.pk,
+            error_code="timeout",
+        )
 
     assert failed.status == SolutionQualityRun.Status.FAILED
     assert final_signal_mock.call_count == 0
