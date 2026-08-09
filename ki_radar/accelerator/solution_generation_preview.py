@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from django.db import transaction
 from django.utils import timezone
 
-from .models import SolutionGenerationRun
+from .models import SolutionGenerationRun, SolutionQualityRun
 from .solution_generation_contract import GENERATED_OPTION_FIELDS, OPTION_LANES
 from .solution_generation_sources import build_solution_generation_source_context
+from .solution_repair_contract import SolutionRepairContractError, build_solution_repair_plan
 
 
 class SolutionGenerationPreviewError(RuntimeError):
@@ -29,6 +31,16 @@ class SolutionGenerationPreviewState:
         return not self.stale and not self.expired and self.current_ready and not self.adopted
 
 
+@dataclass(frozen=True)
+class SolutionQualityPreviewState:
+    status: str
+    findings: tuple[dict[str, Any], ...]
+    repair_available: bool
+    human_review: bool
+    repair_consumed: bool
+    stale: bool
+
+
 def build_solution_generation_preview_state(
     run: SolutionGenerationRun,
 ) -> SolutionGenerationPreviewState:
@@ -45,6 +57,150 @@ def build_solution_generation_preview_state(
         current_ready=current_context.is_ready,
         validation_state=current_context.validation_state,
         adopted=adopted,
+    )
+
+
+def _critic_findings(run: SolutionQualityRun | None) -> tuple[dict[str, Any], ...]:
+    if run is None or run.status != SolutionQualityRun.Status.SUCCESS:
+        return ()
+    payload = run.result_payload if isinstance(run.result_payload, dict) else {}
+    findings = payload.get("findings", [])
+    if not isinstance(findings, list):
+        return ()
+    return tuple(item for item in findings if isinstance(item, dict))
+
+
+def build_solution_quality_preview_state(
+    run: SolutionGenerationRun,
+    *,
+    preview_state: SolutionGenerationPreviewState,
+) -> SolutionQualityPreviewState:
+    quality_runs = {quality_run.step_type: quality_run for quality_run in run.quality_runs.all()}
+    initial = quality_runs.get(SolutionQualityRun.StepType.INITIAL_CRITIC)
+    repair = quality_runs.get(SolutionQualityRun.StepType.REPAIR)
+    final = quality_runs.get(SolutionQualityRun.StepType.FINAL_CRITIC)
+    repair_consumed = repair is not None
+
+    if initial is None or initial.status == SolutionQualityRun.Status.RUNNING:
+        return SolutionQualityPreviewState(
+            status="initial_pending",
+            findings=(),
+            repair_available=False,
+            human_review=False,
+            repair_consumed=repair_consumed,
+            stale=preview_state.stale,
+        )
+
+    if initial.status == SolutionQualityRun.Status.FAILED:
+        return SolutionQualityPreviewState(
+            status="human_review",
+            findings=(),
+            repair_available=False,
+            human_review=True,
+            repair_consumed=repair_consumed,
+            stale=preview_state.stale,
+        )
+
+    initial_findings = _critic_findings(initial)
+
+    if repair is not None:
+        if repair.status == SolutionQualityRun.Status.RUNNING:
+            return SolutionQualityPreviewState(
+                status="repair_running",
+                findings=initial_findings,
+                repair_available=False,
+                human_review=False,
+                repair_consumed=True,
+                stale=preview_state.stale,
+            )
+        if repair.status == SolutionQualityRun.Status.FAILED:
+            return SolutionQualityPreviewState(
+                status="human_review",
+                findings=initial_findings,
+                repair_available=False,
+                human_review=True,
+                repair_consumed=True,
+                stale=preview_state.stale,
+            )
+
+        if final is None or final.status == SolutionQualityRun.Status.RUNNING:
+            return SolutionQualityPreviewState(
+                status="final_pending",
+                findings=initial_findings,
+                repair_available=False,
+                human_review=False,
+                repair_consumed=True,
+                stale=preview_state.stale,
+            )
+        if final.status == SolutionQualityRun.Status.FAILED:
+            return SolutionQualityPreviewState(
+                status="human_review",
+                findings=initial_findings,
+                repair_available=False,
+                human_review=True,
+                repair_consumed=True,
+                stale=preview_state.stale,
+            )
+        return SolutionQualityPreviewState(
+            status="human_review",
+            findings=_critic_findings(final),
+            repair_available=False,
+            human_review=True,
+            repair_consumed=True,
+            stale=preview_state.stale,
+        )
+
+    if not initial_findings:
+        return SolutionQualityPreviewState(
+            status="human_review",
+            findings=(),
+            repair_available=False,
+            human_review=True,
+            repair_consumed=False,
+            stale=preview_state.stale,
+        )
+
+    if preview_state.stale:
+        return SolutionQualityPreviewState(
+            status="repair_stale",
+            findings=initial_findings,
+            repair_available=False,
+            human_review=True,
+            repair_consumed=False,
+            stale=True,
+        )
+
+    try:
+        build_solution_repair_plan(
+            generation_run=run,
+            initial_critic_run=initial,
+        )
+    except SolutionRepairContractError as exc:
+        if exc.code == "no_repairable_findings":
+            status = "human_review"
+            stale = False
+        elif exc.code in {"repair_stale", "human_edit_conflict"}:
+            status = "repair_stale"
+            stale = True
+        else:
+            status = "human_review"
+            stale = False
+        return SolutionQualityPreviewState(
+            status=status,
+            findings=initial_findings,
+            repair_available=False,
+            human_review=True,
+            repair_consumed=False,
+            stale=stale,
+        )
+
+    return SolutionQualityPreviewState(
+        status="repair_available",
+        findings=initial_findings,
+        repair_available=True,
+        human_review=False,
+        repair_consumed=False,
+        stale=False,
     )
 
 
