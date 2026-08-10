@@ -336,9 +336,7 @@ def test_concurrent_repair_triggers_create_one_reservation_and_one_provider_call
         outcomes = list(executor.map(lambda _: trigger_repair(), range(2)))
 
     assert sorted(status for status, _ in outcomes) == ["error", "success"]
-    assert [code for status, code in outcomes if status == "error"] == [
-        "repair_attempt_consumed"
-    ]
+    assert [code for status, code in outcomes if status == "error"] == ["repair_attempt_consumed"]
     assert provider_calls == 1
     repair_runs = SolutionQualityRun.objects.filter(
         solution_generation_run=run,
@@ -355,9 +353,7 @@ def test_concurrent_repair_triggers_create_one_reservation_and_one_provider_call
     assert final.status == SolutionQualityRun.Status.SUCCESS
 
     with (
-        patch(
-            "ki_radar.accelerator.solution_repair_service.request_openrouter"
-        ) as second_provider,
+        patch("ki_radar.accelerator.solution_repair_service.request_openrouter") as second_provider,
         pytest.raises(SolutionRepairContractError) as exc_info,
     ):
         run_targeted_solution_repair(
