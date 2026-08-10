@@ -192,10 +192,7 @@ class DeterministicRealDemoProvider:
         if not isinstance(messages, list):
             raise AssertionError(f"Unexpected {stage} provider input: messages missing")
         canonical_input = json.dumps(
-            messages,
-            ensure_ascii=False,
-            sort_keys=True,
-            separators=(",", ":"),
+            messages, ensure_ascii=False, sort_keys=True, separators=(",", ":")
         )
         input_hash = hashlib.sha256(canonical_input.encode("utf-8")).hexdigest()
         output = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
