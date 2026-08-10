@@ -558,3 +558,93 @@ def test_repair_input_limit_fails_before_provider_and_preserves_preview(owner, b
     assert failed.status == SolutionQualityRun.Status.FAILED
     assert failed.error_code == "input_too_large"
     assert run.preview_payload == preview_before
+
+
+@pytest.mark.django_db
+@override_settings(**VALID_LIMITS)
+def test_repair_truncated_output_is_terminal_and_preserves_preview(owner, business_unit):
+    run = _make_generation_run(owner, business_unit)
+    _make_initial_critic(run)
+    preview_before = copy.deepcopy(run.preview_payload)
+
+    with patch(
+        "ki_radar.accelerator.solution_repair_service.request_openrouter",
+        return_value=_provider_result(finish_reason="length"),
+    ) as request_mock:
+        failed = run_targeted_solution_repair(
+            solution_generation_run_id=run.pk,
+            actor=owner,
+        )
+
+    run.refresh_from_db()
+    assert request_mock.call_count == 1
+    assert failed.status == SolutionQualityRun.Status.FAILED
+    assert failed.error_code == "output_truncated"
+    assert run.preview_payload == preview_before
+    assert "machine_repair" not in run.preview_payload
+
+    with (
+        patch(
+            "ki_radar.accelerator.solution_repair_service.request_openrouter",
+            return_value=_provider_result(),
+        ) as retry_mock,
+        pytest.raises(SolutionRepairContractError) as exc_info,
+    ):
+        run_targeted_solution_repair(
+            solution_generation_run_id=run.pk,
+            actor=owner,
+        )
+
+    assert exc_info.value.code == "repair_attempt_consumed"
+    assert retry_mock.call_count == 0
+
+
+@pytest.mark.django_db
+@override_settings(**VALID_LIMITS)
+@pytest.mark.parametrize("content", ["{", "[]"])
+def test_repair_invalid_response_is_terminal_and_preserves_preview(
+    owner,
+    business_unit,
+    content,
+):
+    run = _make_generation_run(owner, business_unit)
+    _make_initial_critic(run)
+    preview_before = copy.deepcopy(run.preview_payload)
+    invalid_result = OpenRouterResult(
+        content=content,
+        model="test/repair",
+        usage={},
+        output_chars=len(content),
+        finish_reason="stop",
+    )
+
+    with patch(
+        "ki_radar.accelerator.solution_repair_service.request_openrouter",
+        return_value=invalid_result,
+    ) as request_mock:
+        failed = run_targeted_solution_repair(
+            solution_generation_run_id=run.pk,
+            actor=owner,
+        )
+
+    run.refresh_from_db()
+    assert request_mock.call_count == 1
+    assert failed.status == SolutionQualityRun.Status.FAILED
+    assert failed.error_code == "invalid_response"
+    assert run.preview_payload == preview_before
+    assert "machine_repair" not in run.preview_payload
+
+    with (
+        patch(
+            "ki_radar.accelerator.solution_repair_service.request_openrouter",
+            return_value=_provider_result(),
+        ) as retry_mock,
+        pytest.raises(SolutionRepairContractError) as exc_info,
+    ):
+        run_targeted_solution_repair(
+            solution_generation_run_id=run.pk,
+            actor=owner,
+        )
+
+    assert exc_info.value.code == "repair_attempt_consumed"
+    assert retry_mock.call_count == 0
