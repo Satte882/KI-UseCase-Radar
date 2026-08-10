@@ -471,10 +471,13 @@ def test_architecture_real_demo_runs_productive_paths_with_deterministic_provide
     assert len(provider.calls) == 4
     assert len(provider.responses_by_input) == 4
     assert SolutionQualityRun.objects.filter(solution_generation_run=generation).count() == 3
-    assert SolutionQualityRun.objects.filter(
-        solution_generation_run=generation,
-        step_type=SolutionQualityRun.StepType.REPAIR,
-    ).count() == 1
+    assert (
+        SolutionQualityRun.objects.filter(
+            solution_generation_run=generation,
+            step_type=SolutionQualityRun.StepType.REPAIR,
+        ).count()
+        == 1
+    )
 
     process.refresh_from_db()
     process.stage.value_stream.refresh_from_db()
