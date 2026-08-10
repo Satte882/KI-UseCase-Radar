@@ -326,12 +326,14 @@ def test_concurrent_repair_triggers_create_one_reservation_and_one_provider_call
         finally:
             close_old_connections()
 
-    with patch(
-        "ki_radar.accelerator.solution_repair_service.request_openrouter",
-        side_effect=repair_provider,
+    with (
+        patch(
+            "ki_radar.accelerator.solution_repair_service.request_openrouter",
+            side_effect=repair_provider,
+        ),
+        ThreadPoolExecutor(max_workers=2) as executor,
     ):
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            outcomes = list(executor.map(lambda _: trigger_repair(), range(2)))
+        outcomes = list(executor.map(lambda _: trigger_repair(), range(2)))
 
     assert sorted(status for status, _ in outcomes) == ["error", "success"]
     assert [code for status, code in outcomes if status == "error"] == [
@@ -352,14 +354,16 @@ def test_concurrent_repair_triggers_create_one_reservation_and_one_provider_call
         final = run_final_solution_critic(solution_generation_run_id=run.pk)
     assert final.status == SolutionQualityRun.Status.SUCCESS
 
-    with patch(
-        "ki_radar.accelerator.solution_repair_service.request_openrouter"
-    ) as second_provider:
-        with pytest.raises(SolutionRepairContractError) as exc_info:
-            run_targeted_solution_repair(
-                solution_generation_run_id=run.pk,
-                actor=owner,
-            )
+    with (
+        patch(
+            "ki_radar.accelerator.solution_repair_service.request_openrouter"
+        ) as second_provider,
+        pytest.raises(SolutionRepairContractError) as exc_info,
+    ):
+        run_targeted_solution_repair(
+            solution_generation_run_id=run.pk,
+            actor=owner,
+        )
     assert exc_info.value.code == "repair_attempt_consumed"
     second_provider.assert_not_called()
     assert repair_runs.count() == 1
