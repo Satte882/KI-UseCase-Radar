@@ -224,7 +224,7 @@ def _seed_initial_critic(run: SolutionGenerationRun) -> SolutionQualityRun:
         _critic_payload(repairable=True),
         source_context,
     )
-    quality_run, _created = SolutionQualityRun.objects.update_or_create(
+    return SolutionQualityRun.objects.update_or_create(
         solution_generation_run=run,
         step_type=SolutionQualityRun.StepType.INITIAL_CRITIC,
         defaults={
@@ -238,8 +238,7 @@ def _seed_initial_critic(run: SolutionGenerationRun) -> SolutionQualityRun:
             "finished_at": timezone.now(),
             "result_payload": result_payload,
         },
-    )
-    return quality_run
+    )[0]
 
 
 def _repair_payload() -> dict[str, object]:
