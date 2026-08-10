@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from copy import deepcopy
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
@@ -17,6 +19,7 @@ from .solution_generation_adoption import (
     adopt_solution_generation_bundle,
 )
 from .solution_generation_contract import GENERATED_OPTION_FIELDS, OPTION_LANES
+from .solution_generation_effective import build_validated_effective_solution_payload
 from .solution_generation_forms import (
     FIELD_LABELS,
     LANE_LABELS,
@@ -33,6 +36,7 @@ from .solution_generation_preview import (
     update_solution_generation_preview_edits,
 )
 from .solution_generation_service import SolutionGenerationError, generate_solution_preview
+from .solution_generation_sources import build_solution_generation_source_context
 from .solution_repair_contract import SolutionRepairContractError
 from .solution_repair_service import run_targeted_solution_repair
 
@@ -305,6 +309,7 @@ def _quality_findings(findings) -> list[dict[str, object]]:
                 "option_label": LANE_LABELS.get(option, option),
                 "criterion": criterion,
                 "criterion_label": CRITIC_CRITERION_LABELS.get(criterion, criterion),
+                "field": field_name,
                 "field_label": FIELD_LABELS.get(field_name, field_name) if field_name else "",
                 "finding": finding.get("finding", ""),
                 "repairable": finding.get("repairable") is True,
@@ -344,9 +349,17 @@ def solution_generation_preview(request, run_id):
     quality_state = build_solution_quality_preview_state(run, preview_state=state)
     editable = can_edit and state.editable
 
+    current_source_context = build_solution_generation_source_context(process_analysis)
+    effective_payload = build_validated_effective_solution_payload(
+        run.preview_payload,
+        current_source_context,
+    )
+    effective_preview_payload = deepcopy(run.preview_payload)
+    effective_preview_payload["options"] = effective_payload["options"]
+
     form = SolutionGenerationPreviewEditForm(
         request.POST or None,
-        preview_payload=run.preview_payload,
+        preview_payload=effective_preview_payload,
     )
     if request.method == "POST":
         if not can_edit:
@@ -359,9 +372,15 @@ def solution_generation_preview(request, run_id):
             return redirect("accelerator:solution_generation_preview", run_id=run.pk)
         if form.is_valid():
             try:
+                machine_repaired_preview_payload = deepcopy(run.preview_payload)
+                machine_repaired_preview_payload["edits"] = {}
+                machine_repaired_payload = build_validated_effective_solution_payload(
+                    machine_repaired_preview_payload,
+                    current_source_context,
+                )
                 update_solution_generation_preview_edits(
                     run_id=run.pk,
-                    edits=form.normalized_edits(run.preview_payload),
+                    edits=form.normalized_edits(machine_repaired_payload),
                 )
             except SolutionGenerationPreviewError as exc:
                 messages.error(request, str(exc))
@@ -372,8 +391,8 @@ def solution_generation_preview(request, run_id):
                 )
             return redirect("accelerator:solution_generation_preview", run_id=run.pk)
 
-    source_context = run.preview_payload.get("source_context", {})
-    frozen_validation_state = source_context.get("validation_state", "")
+    frozen_source_context = run.preview_payload.get("source_context", {})
+    frozen_validation_state = frozen_source_context.get("validation_state", "")
     return render(
         request,
         "accelerator/solution_generation_preview.html",
@@ -387,7 +406,7 @@ def solution_generation_preview(request, run_id):
             "editable": editable,
             "form": form,
             "preview_options": _preview_options(
-                run.preview_payload,
+                effective_preview_payload,
                 form if editable else None,
             ),
             "source_facts": _preview_source_facts(run.preview_payload),

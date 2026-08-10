@@ -23,6 +23,8 @@ from ki_radar.accelerator.solution_quality_snapshot import build_solution_qualit
 from ki_radar.accelerator.solution_quality_versions import (
     CRITIC_PROMPT_VERSION,
     CRITIC_SCHEMA_VERSION,
+    REPAIR_PROMPT_VERSION,
+    REPAIR_SCHEMA_VERSION,
 )
 from ki_radar.architecture.models import ProcessAnalysis, ValueStream, ValueStreamStage
 
@@ -181,6 +183,47 @@ def _make_initial_critic(
     )
 
 
+def _apply_machine_repair(
+    run: SolutionGenerationRun,
+    initial_critic: SolutionQualityRun,
+) -> str:
+    repaired_text = (
+        "Adressiert den dokumentierten Engpass durch eine assistierende Prüfung "
+        "und weist die verbleibende fachliche Unsicherheit ausdrücklich aus."
+    )
+    repair_run = SolutionQualityRun.objects.create(
+        solution_generation_run=run,
+        requested_by=run.requested_by,
+        step_type=SolutionQualityRun.StepType.REPAIR,
+        status=SolutionQualityRun.Status.SUCCESS,
+        provider="openrouter",
+        model_name="test/repair",
+        prompt_version=REPAIR_PROMPT_VERSION,
+        output_schema_version=REPAIR_SCHEMA_VERSION,
+        input_hash=initial_critic.input_hash,
+        started_at=timezone.now() - timedelta(seconds=1),
+        finished_at=timezone.now(),
+        result_payload={},
+    )
+    preview_payload = dict(run.preview_payload)
+    preview_payload["machine_repair"] = {
+        "quality_run_id": str(repair_run.pk),
+        "input_hash": initial_critic.input_hash,
+        "prompt_version": REPAIR_PROMPT_VERSION,
+        "schema_version": REPAIR_SCHEMA_VERSION,
+        "patches": [
+            {
+                "option": "assistant",
+                "field": "bottleneck_coverage",
+                "statement": _statement(repaired_text, "process.bottlenecks"),
+            }
+        ],
+    }
+    run.preview_payload = preview_payload
+    run.save(update_fields=["preview_payload", "updated_at"])
+    return repaired_text
+
+
 @pytest.mark.django_db
 def test_preview_shows_repairable_finding_without_provider_call(
     client,
@@ -205,6 +248,83 @@ def test_preview_shows_repairable_finding_without_provider_call(
     assert "Reparierbare Findings einmalig korrigieren" in content
     critic_provider.assert_not_called()
     repair_provider.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_preview_renders_machine_repair_with_structured_finding_binding(
+    client,
+    owner,
+    business_unit,
+):
+    run = _make_run(owner, business_unit)
+    initial_critic = _make_initial_critic(run, repairable=True)
+    repaired_text = _apply_machine_repair(run, initial_critic)
+    client.force_login(owner)
+
+    response = client.get(reverse(PREVIEW_ROUTE, args=[run.pk]))
+
+    assert response.status_code == 200
+    assert response.context["form"]["assistant__bottleneck_coverage"].value() == repaired_text
+    assistant_preview = next(
+        option for option in response.context["preview_options"] if option["lane"] == "assistant"
+    )
+    bottleneck_field = next(
+        field for field in assistant_preview["fields"] if field["name"] == "bottleneck_coverage"
+    )
+    assert bottleneck_field["text"] == repaired_text
+    assert bottleneck_field["sources"] == [
+        {
+            "source_id": "process.bottlenecks",
+            "label": "Bottlenecks",
+        }
+    ]
+    finding = response.context["quality_findings"][0]
+    assert finding["option"] == "assistant"
+    assert finding["field"] == "bottleneck_coverage"
+    assert finding["field_label"] == "Bottleneck-Abdeckung"
+    assert finding["sources"] == bottleneck_field["sources"]
+    assert repaired_text in response.content.decode()
+
+
+@pytest.mark.django_db
+def test_human_edit_after_repair_uses_repaired_baseline_and_preserves_binding(
+    client,
+    owner,
+    business_unit,
+):
+    run = _make_run(owner, business_unit)
+    initial_critic = _make_initial_critic(run, repairable=True)
+    repaired_text = _apply_machine_repair(run, initial_critic)
+    client.force_login(owner)
+
+    preview_response = client.get(reverse(PREVIEW_ROUTE, args=[run.pk]))
+    form_data = {
+        field_name: preview_response.context["form"][field_name].value()
+        for field_name in preview_response.context["form"].fields
+    }
+    human_edit = "Der erwartete Beitrag wurde im Human Review präzisiert."
+    form_data["assistant__expected_value"] = human_edit
+
+    response = client.post(reverse(PREVIEW_ROUTE, args=[run.pk]), data=form_data)
+
+    assert response.status_code == 302
+    run.refresh_from_db()
+    assert run.preview_payload["edits"] == {
+        "assistant": {
+            "expected_value": human_edit,
+        }
+    }
+    assert run.preview_payload["machine_repair"]["patches"][0]["statement"]["text"] == (
+        repaired_text
+    )
+
+    follow_up = client.get(reverse(PREVIEW_ROUTE, args=[run.pk]))
+    finding = follow_up.context["quality_findings"][0]
+    assert finding["option"] == "assistant"
+    assert finding["field"] == "bottleneck_coverage"
+    assert finding["sources"][0]["source_id"] == "process.bottlenecks"
+    assert follow_up.context["form"]["assistant__bottleneck_coverage"].value() == repaired_text
+    assert follow_up.context["form"]["assistant__expected_value"].value() == human_edit
 
 
 @pytest.mark.django_db
