@@ -21,6 +21,9 @@ from ki_radar.accelerator.solution_generation_contract import (
     GENERATION_SCHEMA_VERSION,
     OPTION_LANES,
 )
+from ki_radar.accelerator.solution_generation_effective import (
+    build_validated_effective_solution_payload,
+)
 from ki_radar.accelerator.solution_generation_service import generate_solution_preview
 from ki_radar.accelerator.solution_generation_sources import (
     build_solution_generation_source_context,
@@ -207,8 +210,18 @@ class DeterministicRealDemoProvider:
         messages = kwargs.get("messages")
         if not isinstance(messages, list) or len(messages) != 2:
             raise AssertionError("Unexpected generation provider input")
-        user_content = str(messages[1].get("content", ""))
-        if "Synthetische Angebotsklärung" not in user_content:
+        try:
+            document = json.loads(str(messages[1]["content"]))
+            facts = {
+                fact["source_id"]: fact["value"]
+                for fact in document["untrusted_source_data"]["facts"]
+            }
+        except (KeyError, TypeError, json.JSONDecodeError) as exc:
+            raise AssertionError("Unknown generation input rejected fail-closed") from exc
+        if (
+            document.get("task") != "solution_option_drafts"
+            or facts.get("process.name") != "Synthetischer Angebotsvergleich"
+        ):
             raise AssertionError("Unknown generation input rejected fail-closed")
         return self._record(stage="generation", kwargs=kwargs, payload=_generation_payload())
 
@@ -345,7 +358,7 @@ def _gate_counts() -> dict[str, int]:
     }
 
 
-def _validate_preview(run, process: ProcessAnalysis) -> dict[str, object]:
+def _validated_raw_preview(run, process: ProcessAnalysis) -> dict[str, object]:
     source_context = build_solution_generation_source_context(process)
     return validate_solution_generation_payload(
         {
@@ -364,7 +377,9 @@ def test_architecture_real_demo_runs_productive_paths_with_deterministic_provide
     business_unit,
 ):
     fixture = _fixture()
-    assert fixture["data_policy"]["synthetic_only"] is True
+    assert fixture["data_classification"] == "synthetic_anonymized"
+    assert fixture["real_demo"]["synthetic"] is True
+    assert fixture["real_demo"]["contains_personal_data"] is False
 
     process = _make_process(owner, business_unit)
     options = [
@@ -377,11 +392,11 @@ def test_architecture_real_demo_runs_productive_paths_with_deterministic_provide
     stream_before = model_to_dict(process.stage.value_stream)
     gates_before = _gate_counts()
 
-    advisor_cases = {case["id"]: case for case in fixture["advisor_cases"]}
+    advisor_cases = {case["case_id"]: case for case in fixture["advisor_cases"]}
     selected_case_ids = (
-        "canonical_controlled_llm",
-        "high_complexity_fixed_flow",
-        "dynamic_claim_with_otherwise_fixed_flow",
+        "advisor_canonical_controlled_llm",
+        "advisor_adversarial_high_complexity_fixed_workflow",
+        "advisor_adversarial_dynamic_claim_fixed_flow",
     )
     explanations = []
     for option, case_id in zip(options, selected_case_ids, strict=True):
@@ -391,8 +406,8 @@ def test_architecture_real_demo_runs_productive_paths_with_deterministic_provide
             answers=case["answers"],
             actor=owner,
         )
-        assert assessment.architecture_mode == case["expected_mode"]
-        assert assessment.reason_codes == case["expected_reason_codes"]
+        assert assessment.architecture_mode == case["expected"]["mode"]
+        assert assessment.reason_codes == case["expected"]["reason_codes"]
         explanations.append(
             explain_architecture(assessment.architecture_mode, assessment.reason_codes)
         )
@@ -404,6 +419,15 @@ def test_architecture_real_demo_runs_productive_paths_with_deterministic_provide
     assert explanations[2].mode == "assessment_open"
     assert explanations[2].why_pattern
     assert explanations[2].open_points
+
+    quality_cases = {case["case_id"]: case for case in fixture["quality_cases"]}
+    assert quality_cases["quality_full_path_call_cap"]["expected"]["provider_calls_max"] == 4
+    assert (
+        quality_cases["quality_remaining_final_finding_human_review"]["expected"][
+            "human_review_required"
+        ]
+        is True
+    )
 
     provider = DeterministicRealDemoProvider()
     with (
@@ -424,7 +448,7 @@ def test_architecture_real_demo_runs_productive_paths_with_deterministic_provide
             actor=owner,
             process_analysis_id=process.pk,
         )
-        validated_before = _validate_preview(generation, process)
+        validated_before = _validated_raw_preview(generation, process)
         preview_before_repair = deepcopy(generation.preview_payload)
 
         initial = run_initial_solution_critic(solution_generation_run_id=generation.pk)
@@ -444,21 +468,26 @@ def test_architecture_real_demo_runs_productive_paths_with_deterministic_provide
         assert repair.status == SolutionQualityRun.Status.SUCCESS
 
         generation.refresh_from_db()
-        validated_after = _validate_preview(generation, process)
-        assert validated_before["schema_version"] == validated_after["schema_version"]
+        validated_after_raw = _validated_raw_preview(generation, process)
+        source_context = build_solution_generation_source_context(process)
+        validated_after_effective = build_validated_effective_solution_payload(
+            generation.preview_payload,
+            source_context,
+        )
+        assert validated_before == validated_after_raw
+        assert generation.preview_payload["options"] == preview_before_repair["options"]
+        assert "machine_repair" in generation.preview_payload
         assert (
-            generation.preview_payload["options"]["assistant"]["bottleneck_coverage"]["text"]
+            validated_after_effective["options"]["assistant"]["bottleneck_coverage"]["text"]
             == REPAIRED_BOTTLENECK_TEXT
         )
-        assert generation.preview_payload != preview_before_repair
 
         final = run_final_solution_critic(solution_generation_run_id=generation.pk)
         assert final.status == SolutionQualityRun.Status.SUCCESS
         final_findings = final.result_payload["findings"]
         assert len(final_findings) == 1
         assert final_findings[0]["repairable"] is False
-        human_review_required = bool(final_findings)
-        assert human_review_required is True
+        assert bool(final_findings) is True
 
         with pytest.raises(SolutionRepairContractError) as exc_info:
             run_targeted_solution_repair(
