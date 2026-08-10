@@ -104,6 +104,7 @@ def test_ap7_assessment_open_report_provenance_remains_explicit():
 
 def test_ap7_methodological_limits_are_explicit_without_hashing_free_text():
     document = DRIFT_CONTRACT_PATH.read_text(encoding="utf-8")
+    normalized_document = " ".join(document.replace("**", "").split())
     required_statements = (
         "expert-informed",
         "nicht empirisch kalibriert",
@@ -116,4 +117,4 @@ def test_ap7_methodological_limits_are_explicit_without_hashing_free_text():
     )
 
     for statement in required_statements:
-        assert statement in document
+        assert statement in normalized_document
