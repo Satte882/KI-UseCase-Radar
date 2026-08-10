@@ -51,7 +51,7 @@ def _build_assessment_report(cases: list[dict[str, object]]) -> str:
     reason_counts = Counter(code for _, result in open_results for code in result.reason_codes)
 
     lines = [
-        "# Architecture Real-DEMO – Assessment-open-Bericht",
+        "# Architecture Real-DEMO - Assessment-open-Bericht",
         "",
         "Issue: #213  ",
         "Fixture: `tests/fixtures/architecture_real_demo_v1.json`  ",
@@ -77,7 +77,7 @@ def _build_assessment_report(cases: list[dict[str, object]]) -> str:
     lines.extend(["", "### Offene Fälle", ""])
     for case, result in open_results:
         reason_text = ", ".join(f"`{code}`" for code in result.reason_codes)
-        lines.append(f"- `{case['case_id']}` – {case['name']}: {reason_text}")
+        lines.append(f"- `{case['case_id']}` - {case['name']}: {reason_text}")
 
     case_by_id = {case["case_id"]: (case, result) for case, result in evaluated}
     complex_case, complex_result = case_by_id[

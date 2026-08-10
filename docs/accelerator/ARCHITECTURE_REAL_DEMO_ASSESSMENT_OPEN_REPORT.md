@@ -1,4 +1,4 @@
-# Architecture Real-DEMO – Assessment-open-Bericht
+# Architecture Real-DEMO - Assessment-open-Bericht
 
 Issue: #213  
 Fixture: `tests/fixtures/architecture_real_demo_v1.json`  
@@ -26,12 +26,12 @@ Ruleset: `architecture-advisor-v1`
 
 ### Offene Fälle
 
-- `advisor_canonical_assessment_open` – Unklare Zahl benötigter KI-Schritte: `insufficient_information`
-- `advisor_adversarial_simpler_and_semantic` – Deterministisch ausreichend und LLM zugleich erforderlich: `contradictory_answers`
-- `advisor_adversarial_fixed_steps_and_dynamic` – Fester Mehrschritt und dynamische Orchestrierung zugleich: `contradictory_answers`
-- `advisor_adversarial_taxonomy_boundary` – Keine einfachere Lösung und kein semantisches Reasoning: `architecture_boundary_unclear`
-- `advisor_adversarial_dynamic_claim_fixed_flow` – Dynamische Toolwahl bei vollständig festem Ablauf behauptet: `contradictory_answers`
-- `advisor_adversarial_all_unclear` – Alle entscheidenden Antworten unklar: `insufficient_information`
+- `advisor_canonical_assessment_open` - Unklare Zahl benötigter KI-Schritte: `insufficient_information`
+- `advisor_adversarial_simpler_and_semantic` - Deterministisch ausreichend und LLM zugleich erforderlich: `contradictory_answers`
+- `advisor_adversarial_fixed_steps_and_dynamic` - Fester Mehrschritt und dynamische Orchestrierung zugleich: `contradictory_answers`
+- `advisor_adversarial_taxonomy_boundary` - Keine einfachere Lösung und kein semantisches Reasoning: `architecture_boundary_unclear`
+- `advisor_adversarial_dynamic_claim_fixed_flow` - Dynamische Toolwahl bei vollständig festem Ablauf behauptet: `contradictory_answers`
+- `advisor_adversarial_all_unclear` - Alle entscheidenden Antworten unklar: `insufficient_information`
 
 ## Kontrollnachweise
 
