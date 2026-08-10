@@ -9,9 +9,7 @@ from ki_radar.accelerator.solution_generation_contract import GENERATED_OPTION_F
 
 ROOT = Path(__file__).parents[1]
 FIXTURE_PATH = ROOT / "tests/fixtures/architecture_real_demo_v1.json"
-ASSESSMENT_REPORT_PATH = (
-    ROOT / "docs/accelerator/ARCHITECTURE_REAL_DEMO_ASSESSMENT_OPEN_REPORT.md"
-)
+ASSESSMENT_REPORT_PATH = ROOT / "docs/accelerator/ARCHITECTURE_REAL_DEMO_ASSESSMENT_OPEN_REPORT.md"
 DRIFT_CONTRACT_PATH = ROOT / "docs/accelerator/ARCHITECTURE_REAL_DEMO_DRIFT_CONTRACT.md"
 
 EXPECTED_CRITIC_CRITERIA = (
