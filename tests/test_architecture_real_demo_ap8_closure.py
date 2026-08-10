@@ -15,7 +15,7 @@ REQUIRED_EVIDENCE = (
     "test_architecture_real_demo_ap6_e2e.py",
     "ARCHITECTURE_REAL_DEMO_DRIFT_CONTRACT.md",
     "generation -> initial_critic -> repair -> final_critic",
-    "#1451 – success",
+    "#1451 \u2013 success",
 )
 
 
