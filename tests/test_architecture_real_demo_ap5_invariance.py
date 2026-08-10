@@ -224,19 +224,22 @@ def _seed_initial_critic(run: SolutionGenerationRun) -> SolutionQualityRun:
         _critic_payload(repairable=True),
         source_context,
     )
-    return SolutionQualityRun.objects.create(
+    quality_run, _created = SolutionQualityRun.objects.update_or_create(
         solution_generation_run=run,
-        requested_by=run.requested_by,
         step_type=SolutionQualityRun.StepType.INITIAL_CRITIC,
-        status=SolutionQualityRun.Status.SUCCESS,
-        provider="deterministic-test-prerequisite",
-        model_name="contract-seed",
-        prompt_version=CRITIC_PROMPT_VERSION,
-        output_schema_version=CRITIC_SCHEMA_VERSION,
-        input_hash=snapshot.snapshot_hash,
-        finished_at=timezone.now(),
-        result_payload=result_payload,
+        defaults={
+            "requested_by": run.requested_by,
+            "status": SolutionQualityRun.Status.SUCCESS,
+            "provider": "deterministic-test-prerequisite",
+            "model_name": "contract-seed",
+            "prompt_version": CRITIC_PROMPT_VERSION,
+            "output_schema_version": CRITIC_SCHEMA_VERSION,
+            "input_hash": snapshot.snapshot_hash,
+            "finished_at": timezone.now(),
+            "result_payload": result_payload,
+        },
     )
+    return quality_run
 
 
 def _repair_payload() -> dict[str, object]:
