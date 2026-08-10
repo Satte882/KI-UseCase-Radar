@@ -78,6 +78,10 @@ jobs:
       - name: Apply migrations
         run: uv run python manage.py migrate --noinput
 
+      - name: Run Architecture Real-DEMO E2E
+        timeout-minutes: 3
+        run: uv run pytest -q tests/test_architecture_real_demo_ap6_e2e.py
+
       - name: Run tests
         run: uv run pytest -q
 
