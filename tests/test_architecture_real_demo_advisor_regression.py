@@ -76,9 +76,7 @@ def _build_assessment_report(cases: list[dict[str, object]]) -> str:
         lines.append(f"- `{case['case_id']}` - {case['name']}: {reason_text}")
 
     case_by_id = {case["case_id"]: (case, result) for case, result in evaluated}
-    complex_case, complex_result = case_by_id[
-        "advisor_adversarial_high_complexity_fixed_workflow"
-    ]
+    complex_case, complex_result = case_by_id["advisor_adversarial_high_complexity_fixed_workflow"]
     dynamic_case, dynamic_result = case_by_id["advisor_adversarial_dynamic_countercontrol"]
 
     lines.extend(
