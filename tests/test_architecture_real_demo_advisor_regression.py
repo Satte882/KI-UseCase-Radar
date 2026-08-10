@@ -16,13 +16,9 @@ from ki_radar.architecture.architecture_advisor import (
     classify_architecture,
 )
 
-FIXTURE_PATH = Path(__file__).parent / "fixtures" / "architecture_real_demo_v1.json"
-REPORT_PATH = (
-    Path(__file__).parents[1]
-    / "docs"
-    / "accelerator"
-    / "ARCHITECTURE_REAL_DEMO_ASSESSMENT_OPEN_REPORT.md"
-)
+ROOT = Path(__file__).parents[1]
+FIXTURE_PATH = ROOT / "tests/fixtures/architecture_real_demo_v1.json"
+REPORT_PATH = ROOT / "docs/accelerator/ARCHITECTURE_REAL_DEMO_ASSESSMENT_OPEN_REPORT.md"
 
 
 def _load_advisor_cases() -> list[dict[str, object]]:
@@ -48,9 +44,7 @@ def _build_assessment_report(cases: list[dict[str, object]]) -> str:
     open_results = [item for item in evaluated if item[1].mode == MODE_ASSESSMENT_OPEN]
     classified_count = len(evaluated) - len(open_results)
     mode_counts = Counter(result.mode for _, result in evaluated)
-    reason_counts = Counter(
-        code for _, result in open_results for code in result.reason_codes
-    )
+    reason_counts = Counter(code for _, result in open_results for code in result.reason_codes)
 
     lines = [
         "# Architecture Real-DEMO - Assessment-open-Bericht",
@@ -85,9 +79,7 @@ def _build_assessment_report(cases: list[dict[str, object]]) -> str:
     complex_case, complex_result = case_by_id[
         "advisor_adversarial_high_complexity_fixed_workflow"
     ]
-    dynamic_case, dynamic_result = case_by_id[
-        "advisor_adversarial_dynamic_countercontrol"
-    ]
+    dynamic_case, dynamic_result = case_by_id["advisor_adversarial_dynamic_countercontrol"]
 
     lines.extend(
         [
@@ -168,9 +160,7 @@ def test_complexity_alone_never_creates_bounded_agent():
 def test_assessment_open_frequency_and_reason_distribution_are_explicit():
     results = [_classify_case(case) for case in ADVISOR_CASES]
     open_results = [result for result in results if result.mode == MODE_ASSESSMENT_OPEN]
-    reason_counts = Counter(
-        code for result in open_results for code in result.reason_codes
-    )
+    reason_counts = Counter(code for result in open_results for code in result.reason_codes)
 
     assert len(ADVISOR_CASES) == 12
     assert len(results) - len(open_results) == 6
