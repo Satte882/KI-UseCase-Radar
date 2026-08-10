@@ -224,10 +224,11 @@ def _seed_initial_critic(run: SolutionGenerationRun) -> SolutionQualityRun:
         _critic_payload(repairable=True),
         source_context,
     )
-    existing = SolutionQualityRun.objects.filter(
+    existing_runs = SolutionQualityRun.objects.filter(
         solution_generation_run=run,
         step_type=SolutionQualityRun.StepType.INITIAL_CRITIC,
-    ).first()
+    )
+    existing = existing_runs.first()
     if existing is not None:
         return existing
     return SolutionQualityRun.objects.create(
