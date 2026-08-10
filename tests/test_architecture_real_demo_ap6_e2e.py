@@ -317,7 +317,7 @@ def _make_option(process: ProcessAnalysis, owner, *, name: str) -> SolutionOptio
         process_analysis=process,
         name=name,
         option_type=SolutionOption.OptionType.ASSISTANT,
-        recommendation=SolutionOption.Recommendation.PREFERRED,
+        recommendation=SolutionOption.Recommendation.CANDIDATE,
         evaluation_status=SolutionOption.EvaluationStatus.ASSESSED,
         description="Synthetische bestehende Vergleichsoption.",
         expected_value="Synthetisch dokumentierter Nutzen.",
