@@ -396,3 +396,73 @@ def test_successful_generation_persistence_schedules_initial_critic(owner, busin
     )
     assert generation_run.status == SolutionGenerationRun.Status.SUCCESS
     assert quality_run.status == SolutionQualityRun.Status.SUCCESS
+
+
+@pytest.mark.django_db
+@override_settings(**VALID_LIMITS)
+def test_initial_critic_truncated_output_is_terminal_and_preserves_preview(owner, business_unit):
+    generation_run = make_generation_run(owner, business_unit)
+    preview_before = copy.deepcopy(generation_run.preview_payload)
+
+    with patch(
+        "ki_radar.accelerator.solution_critic_service.request_openrouter",
+        return_value=provider_result(finish_reason="length"),
+    ) as request_mock:
+        failed = run_initial_solution_critic(solution_generation_run_id=generation_run.pk)
+
+    generation_run.refresh_from_db()
+    assert request_mock.call_count == 1
+    assert failed.status == SolutionQualityRun.Status.FAILED
+    assert failed.error_code == "output_truncated"
+    assert generation_run.preview_payload == preview_before
+
+    with patch(
+        "ki_radar.accelerator.solution_critic_service.request_openrouter",
+        return_value=provider_result(),
+    ) as retry_mock:
+        repeated = run_initial_solution_critic(solution_generation_run_id=generation_run.pk)
+
+    assert retry_mock.call_count == 0
+    assert repeated.pk == failed.pk
+    assert repeated.status == SolutionQualityRun.Status.FAILED
+
+
+@pytest.mark.django_db
+@override_settings(**VALID_LIMITS)
+@pytest.mark.parametrize("content", ["{", "[]"])
+def test_initial_critic_invalid_response_is_terminal_and_preserves_preview(
+    owner,
+    business_unit,
+    content,
+):
+    generation_run = make_generation_run(owner, business_unit)
+    preview_before = copy.deepcopy(generation_run.preview_payload)
+    invalid_result = OpenRouterResult(
+        content=content,
+        model="test/critic",
+        usage={},
+        output_chars=len(content),
+        finish_reason="stop",
+    )
+
+    with patch(
+        "ki_radar.accelerator.solution_critic_service.request_openrouter",
+        return_value=invalid_result,
+    ) as request_mock:
+        failed = run_initial_solution_critic(solution_generation_run_id=generation_run.pk)
+
+    generation_run.refresh_from_db()
+    assert request_mock.call_count == 1
+    assert failed.status == SolutionQualityRun.Status.FAILED
+    assert failed.error_code == "invalid_response"
+    assert generation_run.preview_payload == preview_before
+
+    with patch(
+        "ki_radar.accelerator.solution_critic_service.request_openrouter",
+        return_value=provider_result(),
+    ) as retry_mock:
+        repeated = run_initial_solution_critic(solution_generation_run_id=generation_run.pk)
+
+    assert retry_mock.call_count == 0
+    assert repeated.pk == failed.pk
+    assert repeated.status == SolutionQualityRun.Status.FAILED
