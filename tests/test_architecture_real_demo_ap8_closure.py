@@ -57,7 +57,7 @@ def test_ap8_closure_keeps_methodological_non_claims_explicit():
         "expert-informed",
         "nicht empirisch an einer breiten Menge realer Unternehmensfälle kalibriert",
         "keine objektive Architekturwahrheit",
-        "kein Framework-Benchmark",
+        "keinen Framework-Benchmark",
         "kein Multi-Agent-System",
         "kein Domain-, Governance-, Selection- oder Lifecycle-Gate",
         "keinen zweiten Repair-Versuch",
