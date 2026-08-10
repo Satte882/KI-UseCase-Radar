@@ -328,7 +328,8 @@ def test_concurrent_repair_triggers_create_one_reservation_and_one_provider_call
     owner,
     business_unit,
 ):
-    run = _make_generation_run(owner, business_unit, suffix="repair-race")
+    with patch("ki_radar.accelerator.solution_quality_signals.run_initial_solution_critic"):
+        run = _make_generation_run(owner, business_unit, suffix="repair-race")
     initial = _seed_initial_critic(run)
     assert initial.status == SolutionQualityRun.Status.SUCCESS
 
@@ -361,6 +362,7 @@ def test_concurrent_repair_triggers_create_one_reservation_and_one_provider_call
             "ki_radar.accelerator.solution_repair_service.request_openrouter",
             side_effect=repair_provider,
         ),
+        patch("ki_radar.accelerator.solution_quality_signals.run_final_solution_critic"),
         ThreadPoolExecutor(max_workers=2) as executor,
     ):
         outcomes = list(executor.map(lambda _: trigger_repair(), range(2)))
