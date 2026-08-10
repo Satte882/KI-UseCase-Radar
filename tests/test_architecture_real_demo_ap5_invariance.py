@@ -14,6 +14,7 @@ from django.test import override_settings
 from django.utils import timezone
 
 from ki_radar.accelerator.models import SolutionGenerationRun, SolutionQualityRun
+from ki_radar.accelerator.solution_critic_contract import validate_solution_critic_payload
 from ki_radar.accelerator.solution_critic_service import (
     run_final_solution_critic,
     run_initial_solution_critic,
@@ -30,6 +31,7 @@ from ki_radar.accelerator.solution_generation_sources import (
 from ki_radar.accelerator.solution_generation_validation import (
     validate_solution_generation_payload,
 )
+from ki_radar.accelerator.solution_quality_snapshot import build_solution_quality_snapshot
 from ki_radar.accelerator.solution_quality_versions import (
     CRITIC_PROMPT_VERSION,
     CRITIC_SCHEMA_VERSION,
@@ -212,6 +214,31 @@ def _critic_payload(*, repairable: bool) -> dict[str, object]:
     }
 
 
+def _seed_initial_critic(run: SolutionGenerationRun) -> SolutionQualityRun:
+    source_context = build_solution_generation_source_context(run.process_analysis)
+    snapshot = build_solution_quality_snapshot(
+        preview_payload=run.preview_payload,
+        source_context=source_context,
+    )
+    result_payload = validate_solution_critic_payload(
+        _critic_payload(repairable=True),
+        source_context,
+    )
+    return SolutionQualityRun.objects.create(
+        solution_generation_run=run,
+        requested_by=run.requested_by,
+        step_type=SolutionQualityRun.StepType.INITIAL_CRITIC,
+        status=SolutionQualityRun.Status.SUCCESS,
+        provider="deterministic-test-prerequisite",
+        model_name="contract-seed",
+        prompt_version=CRITIC_PROMPT_VERSION,
+        output_schema_version=CRITIC_SCHEMA_VERSION,
+        input_hash=snapshot.snapshot_hash,
+        finished_at=timezone.now(),
+        result_payload=result_payload,
+    )
+
+
 def _repair_payload() -> dict[str, object]:
     return {
         "schema_version": REPAIR_SCHEMA_VERSION,
@@ -295,11 +322,7 @@ def test_concurrent_repair_triggers_create_one_reservation_and_one_provider_call
     business_unit,
 ):
     run = _make_generation_run(owner, business_unit, suffix="repair-race")
-    with patch(
-        "ki_radar.accelerator.solution_critic_service.request_openrouter",
-        return_value=_provider_result(_critic_payload(repairable=True), model="test/critic"),
-    ):
-        initial = run_initial_solution_critic(solution_generation_run_id=run.pk)
+    initial = _seed_initial_critic(run)
     assert initial.status == SolutionQualityRun.Status.SUCCESS
 
     barrier = Barrier(2)
