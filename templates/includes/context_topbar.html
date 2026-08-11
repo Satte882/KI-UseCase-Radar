@@ -1,9 +1,7 @@
 {% load workflow_tags %}
 {% if request.resolver_match.namespace == 'use_cases' and request.resolver_match.url_name == 'detail' %}
 {# The migrated work-object workspace owns DecisionState, Next Action and LifecycleRail locally. #}
-{% elif request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'portfolio' %}
-{# Portfolio is a cross-sectional view and intentionally has no pseudo-linear lifecycle topbar. #}
-{% else %}
+{% elif journey or request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'outcome_workspace' %}
 {% workflow_steps journey request as workflow %}
 <header class="app-topbar app-topbar-journey" aria-label="Arbeitsfortschritt">
   <div class="journey-topbar-main">
@@ -13,9 +11,10 @@
       <strong>{% if journey %}{{ journey.path_label }}{% else %}Use Case auswählen{% endif %}</strong>
       {% else %}
       <span class="journey-topbar-kicker">End-to-End-Arbeitsmodell · Arbeitsraum 1 · Auswahl &amp; Freigabe</span>
-      <strong>{% if journey %}{{ journey.path_label }}{% else %}Von der Discovery bis zur umsetzbaren Übergabe{% endif %}</strong>
+      <strong>{{ journey.path_label }}</strong>
       {% endif %}
     </div>
+    {% if workflow %}
     <nav class="journey-progress" aria-label="Phasen des Arbeitsmodells">
       {% for step in workflow %}
       {% if step.divider_before %}<span class="journey-progress-divider" aria-hidden="true"></span>{% endif %}
@@ -27,6 +26,7 @@
       </a>
       {% endfor %}
     </nav>
+    {% endif %}
   </div>
 
   {% if request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'outcome_workspace' %}
