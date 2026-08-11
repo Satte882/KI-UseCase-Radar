@@ -103,8 +103,8 @@ def test_global_lifecycle_requires_real_work_context_instead_of_list_fallbacks()
 def test_lifecycle_navigation_is_scroll_free_on_desktop_and_compact_on_mobile():
     assert "{% workflow_steps journey request as workflow %}" in LIFECYCLE_RAIL
     assert 'href="{{ step.url }}"' in LIFECYCLE_RAIL
-    assert "aria-current=\"page\"" in LIFECYCLE_RAIL
-    assert "aria-current=\"step\"" in LIFECYCLE_RAIL
+    assert 'aria-current="page"' in LIFECYCLE_RAIL
+    assert 'aria-current="step"' in LIFECYCLE_RAIL
     assert "cr-lifecycle-step--{{ step.state }}" in LIFECYCLE_RAIL
     assert ".ui-control-room .cr-lifecycle-rail__steps" in PRIMITIVES
     assert "overflow-x: auto" not in PRIMITIVES
