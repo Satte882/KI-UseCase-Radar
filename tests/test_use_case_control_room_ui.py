@@ -35,7 +35,7 @@ def test_decision_workspace_hierarchy_places_decisions_before_secondary_informat
         "copilot-title",
         "decision-history-title",
     )
-    positions = [TEMPLATE.index(marker) for marker in expected_order]
+    positions = [TEMPLATE.index(f'id="{element_id}"') for element_id in expected_order]
     assert positions == sorted(positions)
 
 
@@ -63,7 +63,8 @@ def test_all_existing_use_case_actions_remain_reachable_with_existing_permission
 def test_lifecycle_is_local_orientation_and_keeps_true_link_semantics():
     assert ".app-topbar-journey" in CSS
     assert "display: none" in CSS
-    assert "{{ step.url }}" in JOURNEY
+    assert "{% workflow_steps journey request as workflow %}" in JOURNEY
+    assert 'href="{{ step.url }}"' in JOURNEY
     assert "includes/journey_stepper.html" in TEMPLATE
     assert "journey-stepper" in CSS
 
@@ -72,8 +73,8 @@ def test_blocker_links_and_second_approval_remain_true_links():
     assert "{{ first_blocker.target_href }}" in TEMPLATE
     assert "{{ blocker.target_href }}" in TEMPLATE
     assert "use_cases:second_approval_review" in TEMPLATE
-    readiness = TEMPLATE.index("decision-readiness")
-    assessment = TEMPLATE.index("assessment")
+    readiness = TEMPLATE.index('id="decision-readiness"')
+    assessment = TEMPLATE.index('id="assessment"')
     assert "disabled" not in TEMPLATE[readiness:assessment]
 
 

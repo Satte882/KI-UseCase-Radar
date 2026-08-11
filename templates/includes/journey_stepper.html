@@ -1,4 +1,26 @@
-{# Die Journey wird zentral in includes/context_topbar.html dargestellt. #}
+{% load workflow_tags %}
+{% workflow_steps journey request as workflow %}
+{% if workflow %}
+<div class="journey-flow">
+  <nav class="journey-stepper d-flex flex-wrap" aria-label="Phasen des Arbeitsmodells">
+    {% for step in workflow %}
+    <a class="journey-step d-flex flex-fill align-items-center gap-2 border text-decoration-none journey-progress-{{ step.state }}{% if step.view_active %} journey-progress-view-active{% endif %}" href="{{ step.url }}"{% if step.view_active %} aria-current="page"{% elif step.state == 'current' %} aria-current="step"{% endif %}>
+      <span class="journey-step-marker journey-progress-marker" aria-hidden="true">
+        {% if step.state == 'complete' %}✓{% elif step.state == 'current' %}●{% elif step.state == 'blocked' %}!{% elif step.state == 'optional' %}–{% else %}○{% endif %}
+      </span>
+      <span class="journey-step-label journey-progress-label">{{ step.label }}</span>
+    </a>
+    {% endfor %}
+  </nav>
+  {% if journey.completion_message %}
+  <div class="journey-completion">
+    <strong>Journey abgeschlossen</strong>
+    <span>{{ journey.completion_message }}</span>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
 {% if use_case.classification %}
 <div class="d-flex flex-wrap gap-2 mb-4" aria-label="Fachliche Einordnung">
   <span class="badge badge-soft">Fachdomäne: {{ use_case.classification.get_business_domain_display }}</span>

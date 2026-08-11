@@ -10,7 +10,8 @@ MIGRATION = (ROOT / "docs" / "UI_CONTROL_ROOM_MIGRATION.md").read_text(encoding=
 def test_body_class_hook_supports_incremental_page_level_migration():
     assert '<body class="ui-vnext {% block body_class %}{% endblock %}">' in BASE
     assert "{% block body_class %}ui-control-room page-portfolio{% endblock %}" in PORTFOLIO
-    assert "ui-control-room" not in USE_CASE_DETAIL
+    use_case_class = "{% block body_class %}ui-control-room page-use-case{% endblock %}"
+    assert use_case_class in USE_CASE_DETAIL
 
 
 def test_migration_contract_keeps_control_room_rules_page_scoped():
