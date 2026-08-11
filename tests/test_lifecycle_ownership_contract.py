@@ -61,8 +61,8 @@ def test_audit_distinguishes_duplicates_from_real_subworkflows():
 def test_value_stream_reference_owns_next_action_and_lifecycle_locally():
     assert "ui-control-room page-value-stream" in VALUE_STREAM
     assert "css/ui-control-room-primitives.css" in VALUE_STREAM
-    assert VALUE_STREAM.count('includes/next_action.html') == 1
-    assert VALUE_STREAM.count('includes/lifecycle_rail.html') == 1
+    assert VALUE_STREAM.count("includes/next_action.html") == 1
+    assert VALUE_STREAM.count("includes/lifecycle_rail.html") == 1
     assert "includes/journey_stepper.html" not in VALUE_STREAM
     assert 'class="cr-next-action"' in VALUE_STREAM
     assert 'data-testid="primary-next-action-control"' not in VALUE_STREAM
@@ -116,8 +116,8 @@ def test_context_topbar_explicitly_yields_value_stream_ownership():
 def test_canonical_lifecycle_keeps_true_links_focus_and_responsive_layout():
     assert "workflow_steps journey request as workflow" in LIFECYCLE
     assert 'href="{{ step.url }}"' in LIFECYCLE
-    assert "aria-current=\"page\"" in LIFECYCLE
-    assert "aria-current=\"step\"" in LIFECYCLE
+    assert 'aria-current="page"' in LIFECYCLE
+    assert 'aria-current="step"' in LIFECYCLE
     assert ".cr-lifecycle-step:focus-visible" in PRIMITIVES
     assert "@media (max-width: 760px)" in PRIMITIVES
     assert "@media (max-width: 520px)" in PRIMITIVES
