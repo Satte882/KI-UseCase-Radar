@@ -37,6 +37,21 @@ def test_dashboard_replaces_card_wall_with_flat_hierarchy():
     assert positions == sorted(positions)
 
 
+def test_dashboard_prioritizes_immediate_steering_metrics_in_status_strip():
+    stat_strip = TEMPLATE.split('<dl class="cr-stat-strip dashboard-stat-strip"', 1)[1].split(
+        "</dl>", 1
+    )[0]
+    order = (
+        "Überfällig",
+        "Blockiert",
+        "Aktive Vorhaben",
+        "Nutzen gemessen",
+        "Ziel erreicht",
+    )
+    positions = [stat_strip.index(label) for label in order]
+    assert positions == sorted(positions)
+
+
 def test_dashboard_preserves_metrics_actions_and_worklist_sources():
     for value in (
         "active_total",
