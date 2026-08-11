@@ -32,19 +32,26 @@
       <span><strong>KI-Radar</strong><small>Business Architecture</small></span>
     </a>
     <nav class="sidebar-nav">
-      <div class="nav-caption">Arbeitsbereich</div>
+      <div class="nav-caption">Steuerung</div>
+      <a class="sidebar-link {% if request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'reporting:dashboard' %}">
+        <span class="nav-icon">⌁</span> Arbeitsvorrat
+      </a>
+      <a class="sidebar-link {% if request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'portfolio' %}active{% endif %}" href="{% url 'reporting:portfolio' %}">
+        <span class="nav-icon">◈</span> Portfolio <small>Querschnitt</small>
+      </a>
+      {% if nav_is_coordinator %}
+      <a class="sidebar-link {% if request.resolver_match.namespace == 'reviews' %}active{% endif %}" href="{% url 'reviews:monthly' %}">
+        <span class="nav-icon">✓</span> Monatsreview
+      </a>
+      {% endif %}
+
+      <div class="nav-caption">Vorhaben</div>
       <a class="sidebar-link {% if request.resolver_match.namespace == 'architecture' %}active{% endif %}" href="{% url 'architecture:value_stream_list' %}">
         <span class="nav-icon">⇢</span> Analyse
       </a>
       {% if journey and request.resolver_match.namespace == 'architecture' %}
       {% analysis_sidebar %}
       {% endif %}
-      <a class="sidebar-link {% if request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'portfolio' %}active{% endif %}" href="{% url 'reporting:portfolio' %}">
-        <span class="nav-icon">◈</span> Portfolio <small>Querschnitt</small>
-      </a>
-      <a class="sidebar-link {% if request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'reporting:dashboard' %}">
-        <span class="nav-icon">⌁</span> Arbeitsvorrat
-      </a>
       <a class="sidebar-link {% if request.resolver_match.namespace == 'use_cases' or request.resolver_match.namespace == 'governance' %}active{% endif %}" href="{% url 'use_cases:list' %}">
         <span class="nav-icon">◫</span> Use Cases
       </a>
@@ -72,11 +79,6 @@
         {% if step.url and step.action_method != 'post' %}</a>{% else %}</span>{% endif %}
         {% endif %}{% endfor %}
       </div>
-      {% endif %}
-      {% if nav_is_coordinator %}
-      <a class="sidebar-link {% if request.resolver_match.namespace == 'reviews' %}active{% endif %}" href="{% url 'reviews:monthly' %}">
-        <span class="nav-icon">✓</span> Monatsreview
-      </a>
       {% endif %}
 
       <div class="sidebar-workspace-separator" role="separator" aria-label="Trennung der Arbeitsräume"></div>

@@ -9,6 +9,7 @@ def _read(*parts):
 
 BASE = _read("templates", "base.html")
 LOGIN = _read("templates", "accounts", "login.html")
+SETTINGS = _read("config", "settings", "base.py")
 TOKENS = _read("static", "css", "ui-vnext-tokens.css")
 LISTS = _read("static", "css", "ui-control-room-lists.css")
 WORKSPACES = _read("static", "css", "ui-control-room-workspaces.css")
@@ -23,6 +24,24 @@ def test_control_room_is_the_single_normal_application_state():
     assert not ROOT.joinpath("templates", "includes", "journey_stepper.html").exists()
     for path in ROOT.joinpath("templates").rglob("*.html"):
         assert "{% block body_class %}ui-control-room" not in path.read_text(encoding="utf-8")
+
+
+def test_sidebar_starts_with_steering_then_follows_the_workflow():
+    labels = (
+        "Steuerung",
+        "Arbeitsvorrat",
+        "Portfolio",
+        "Monatsreview",
+        "Vorhaben",
+        "Analyse",
+        "Use Cases",
+        "Delivery",
+        "Wirkung &amp; Betrieb",
+    )
+    positions = [BASE.index(label) for label in labels]
+    assert positions == sorted(positions)
+    assert "href=\"{% url 'reporting:dashboard' %}\"" in BASE
+    assert 'LOGIN_REDIRECT_URL = "reporting:dashboard"' in SETTINGS
 
 
 def test_lifecycle_template_library_has_one_authoritative_registration():
