@@ -228,6 +228,10 @@
     align-items: flex-start;
     flex-direction: column;
   }
+
+  .ui-control-room.page-portfolio .portfolio-unclassified-row > div {
+    width: 100%;
+  }
 }
 
 @media (max-width: 520px) {

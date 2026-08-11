@@ -46,7 +46,7 @@ CSS = ROOT.joinpath("static", "css", "ui-control-room-workspaces.css").read_text
 
 def test_migrated_work_objects_share_one_local_lifecycle_owner():
     for name, template in WORK_OBJECTS.items():
-        assert "ui-control-room page-" in template, name
+        assert "{% block body_class %}page-" in template, name
         assert "css/ui-control-room-primitives.css" in template, name
         assert "css/ui-control-room-workspaces.css" in template, name
         assert template.count("includes/lifecycle_rail.html") == 1, name
@@ -106,7 +106,7 @@ def test_workspace_css_is_scoped_responsive_and_accessible():
 def test_remaining_detail_workspaces_use_shared_control_room_primitives():
     for parts in REMAINING_DETAILS:
         template = _template(*parts)
-        assert "ui-control-room page-detail-workspace" in template, parts
+        assert "{% block body_class %}page-detail-workspace" in template, parts
         assert "css/ui-control-room-primitives.css" in template, parts
         assert "css/ui-control-room-workspaces.css" in template, parts
 
@@ -114,7 +114,7 @@ def test_remaining_detail_workspaces_use_shared_control_room_primitives():
 def test_remaining_forms_and_true_wizards_use_shared_control_room_primitives():
     for parts in REMAINING_FORMS:
         template = _template(*parts)
-        assert "ui-control-room page-form-workspace" in template, parts
+        assert "{% block body_class %}page-form-workspace" in template, parts
         assert "css/ui-control-room-primitives.css" in template, parts
         assert "css/ui-control-room-workspaces.css" in template, parts
         assert 'method="post"' in template, parts

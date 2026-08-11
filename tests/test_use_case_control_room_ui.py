@@ -18,7 +18,7 @@ README = read_repo_text("README.md")
 
 
 def test_use_case_detail_composes_shared_work_object_patterns():
-    assert "ui-control-room page-use-case" in TEMPLATE
+    assert "{% block body_class %}page-use-case{% endblock %}" in TEMPLATE
     assert "includes/decision_state.html" in TEMPLATE
     assert "includes/lifecycle_rail.html" in TEMPLATE
     assert "includes/next_action.html" not in TEMPLATE

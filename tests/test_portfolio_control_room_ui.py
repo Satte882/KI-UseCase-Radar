@@ -9,7 +9,7 @@ SHARED_CSS = (ROOT / "static" / "css" / "ui-control-room-primitives.css").read_t
 
 
 def test_portfolio_opts_into_control_room_without_changing_global_shell():
-    assert "{% block body_class %}ui-control-room page-portfolio{% endblock %}" in TEMPLATE
+    assert "{% block body_class %}page-portfolio{% endblock %}" in TEMPLATE
     assert "ui-control-room-primitives.css" in TEMPLATE
     assert "ui-control-room-portfolio.css" in TEMPLATE
     assert ".ui-control-room.page-portfolio .app-topbar" in CSS
@@ -48,3 +48,5 @@ def test_portfolio_styles_are_scoped_and_responsive_after_primitive_extraction()
     assert "@media (max-width: 760px)" in CSS
     assert "@media (max-width: 520px)" in CSS
     assert "overflow: auto" in CSS
+    assert ".portfolio-unclassified-row > div" in CSS
+    assert "width: 100%" in CSS

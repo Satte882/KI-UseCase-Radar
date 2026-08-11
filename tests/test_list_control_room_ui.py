@@ -30,7 +30,7 @@ def test_all_ap6_list_pages_opt_into_shared_control_room_patterns():
 
     for name, page_class in expected_pages.items():
         template = TEMPLATES[name]
-        assert f"ui-control-room {page_class}" in template
+        assert f"{{% block body_class %}}{page_class}{{% endblock %}}" in template
         assert "css/ui-control-room-primitives.css" in template
         assert "css/ui-control-room-lists.css" in template
         assert "cr-page-header" in template

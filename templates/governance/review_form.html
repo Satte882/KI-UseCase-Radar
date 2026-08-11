@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}{{ review_label }} – {{ use_case.short_id }}{% endblock %}
-{% block body_class %}ui-control-room page-governance-review{% endblock %}
+{% block body_class %}page-governance-review{% endblock %}
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/ui-control-room-primitives.css' %}"><link rel="stylesheet" href="{% static 'css/ui-control-room-workspaces.css' %}">{% endblock %}
 {% block content %}
 {% include "includes/lifecycle_rail.html" with lifecycle_variant="header" lifecycle_columns="7" lifecycle_kicker="Arbeitsmodell" lifecycle_title="Auswahl und Freigabe" lifecycle_context="Governance · Fachprüfung" %}

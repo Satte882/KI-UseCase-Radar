@@ -134,3 +134,10 @@ Das bestätigte Design wird über kleine AP-Branches in
 übertragen. `main` bleibt bis zur finalen Abnahme unangetastet. Auf `main` sind
 Selbst-Ausnahmen nicht zulässig; dort braucht jede Abweichung von diesem Dokument
 eine ausdrückliche Freigabe.
+
+## Abgeschlossene UI-Migration
+
+- `ui-vnext` bleibt das globale Grundsystem für Tokens, Shell, Fokus und reduzierte Bewegung.
+- `ui-control-room` ist der Normalzustand der Anwendung und wird zentral am `body` gesetzt; Seitenklassen beschreiben nur noch den jeweiligen Archetyp.
+- Es gibt keinen parallelen Legacy-Stepper mehr. `lifecycle_rail.html` ist die einzige lokale primäre Lifecycle-Darstellung; echte Wizard- und Sektionsabläufe bleiben ausdrücklich untergeordnet.
+- Neue produktive Seiten müssen die gemeinsame Shell verwenden. Eine zweite CSS- oder Template-Welt benötigt eine ausdrückliche Designentscheidung.
