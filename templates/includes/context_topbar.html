@@ -3,18 +3,15 @@
 {# The migrated Use Case workspace owns DecisionState, Next Action and LifecycleRail locally. #}
 {% elif request.resolver_match.namespace == 'architecture' and request.resolver_match.url_name == 'value_stream_detail' %}
 {# The migrated Value Stream workspace owns Next Action and LifecycleRail locally. #}
-{% elif journey or request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'outcome_workspace' %}
+{% elif request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'outcome_workspace' %}
+{# Wirkung & Betrieb owns its subordinate outcome lifecycle locally. #}
+{% elif journey %}
 {% workflow_steps journey request as workflow %}
 <header class="app-topbar app-topbar-journey" aria-label="Arbeitsfortschritt">
   <div class="journey-topbar-main">
     <div class="journey-topbar-heading">
-      {% if request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'outcome_workspace' %}
-      <span class="journey-topbar-kicker">End-to-End-Arbeitsmodell · Wirkung &amp; Betrieb</span>
-      <strong>{% if journey %}{{ journey.path_label }}{% else %}Use Case auswählen{% endif %}</strong>
-      {% else %}
       <span class="journey-topbar-kicker">End-to-End-Arbeitsmodell · Arbeitsraum 1 · Auswahl &amp; Freigabe</span>
       <strong>{{ journey.path_label }}</strong>
-      {% endif %}
     </div>
     {% if workflow %}
     <nav class="journey-progress" aria-label="Phasen des Arbeitsmodells">
@@ -31,8 +28,7 @@
     {% endif %}
   </div>
 
-  {% if request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'outcome_workspace' %}
-  {% elif journey.next_action %}
+  {% if journey.next_action %}
   {% with action=journey.next_action %}
   <div class="journey-topbar-next journey-topbar-next-{{ action.state }}" data-testid="journey-next-action-context">
     <div class="journey-topbar-next-copy">

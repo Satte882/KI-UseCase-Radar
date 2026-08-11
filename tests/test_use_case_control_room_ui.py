@@ -88,11 +88,9 @@ def test_next_action_is_owned_once_by_decision_state_on_migrated_work_object():
 
 
 def test_global_lifecycle_requires_real_work_context_instead_of_list_fallbacks():
-    work_context_guard = (
-        "{% elif journey or request.resolver_match.namespace == 'reporting' "
-        "and request.resolver_match.url_name == 'outcome_workspace' %}"
-    )
+    work_context_guard = "{% elif journey %}"
     assert work_context_guard in CONTEXT_TOPBAR
+    assert "Wirkung & Betrieb owns its subordinate outcome lifecycle locally" in CONTEXT_TOPBAR
     assert "url_name == 'portfolio'" not in CONTEXT_TOPBAR
     assert "Von der Discovery bis zur umsetzbaren Übergabe" not in CONTEXT_TOPBAR
     assert CONTEXT_TOPBAR.index(work_context_guard) < CONTEXT_TOPBAR.index(
@@ -102,7 +100,8 @@ def test_global_lifecycle_requires_real_work_context_instead_of_list_fallbacks()
 
 def test_lifecycle_navigation_is_scroll_free_on_desktop_and_compact_on_mobile():
     assert "{% workflow_steps journey request as workflow %}" in LIFECYCLE_RAIL
-    assert 'href="{{ step.url }}"' in LIFECYCLE_RAIL
+    assert 'href="{{ step.local_url }}"' in LIFECYCLE_RAIL
+    assert "cr-lifecycle-step--static" in LIFECYCLE_RAIL
     assert 'aria-current="page"' in LIFECYCLE_RAIL
     assert 'aria-current="step"' in LIFECYCLE_RAIL
     assert "cr-lifecycle-step--{{ step.state }}" in LIFECYCLE_RAIL

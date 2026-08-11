@@ -24,7 +24,7 @@ Dieser Audit trennt echte Lifecycle-Redundanz von fachlich eigenständigen Subwo
 | Governance Review `governance/review_form.html` | `build_use_case_journey` → globaler Topbar und lokaler `journey_stepper.html` | `duplicate-same-source` | In breitem AP7-Rollout konsolidieren. |
 | Bewertung `use_cases/assessment_form.html` | `build_use_case_journey` → globaler Topbar und lokaler `journey_stepper.html` | `duplicate-same-source` | In breitem AP7-Rollout konsolidieren. |
 | Freigabeentscheidung `use_cases/decision_form.html` | `build_use_case_journey` → globaler Topbar und lokaler `journey_stepper.html` | `duplicate-same-source` | In breitem AP7-Rollout konsolidieren. |
-| Wirkung & Betrieb `reporting/outcome_workspace.html` | globaler Lifecycle im speziell behandelten `context_topbar.html`; kein lokaler Journey-Renderer | `global-only` | Kein Doppel-Stepper. Im AP7-Rollout erst migrieren, wenn lokaler Work-Object-Owner definiert ist. |
+| Wirkung & Betrieb `reporting/outcome_workspace.html` | `journey` → lokaler `lifecycle_rail.html`; globaler Topbar und doppelte Sidebar-Stufen unterdrückt | `global-only` → `local-only` | Der Arbeitsraum besitzt seine sechs untergeordneten Outcome-Stufen lokal in der oberen Orientierungshierarchie. |
 | Use-Case-Aufnahme `use_cases/intake_wizard.html` | lokale `step_states` des Intake-Wizards | `semantic-subworkflow` | Kein Ersatz für die Makro-Journey; Wizard-Schritte bleiben als eigener, benannter Ablauf erhalten. |
 | Accelerator Capture `accelerator/capture_wizard.html` | lokale `step_states` der Capture Session | `semantic-subworkflow` | Eigenständige Erfassungsgranularität; erhalten. |
 | Delivery Package Edit `delivery/package_form.html` | `section_rows` / „Sektionsworkflow“ innerhalb des Delivery Packages | `semantic-subworkflow` | Fachlich untergeordneter Sektionsablauf; nicht mit Lifecycle gleichsetzen oder entfernen. |
@@ -83,3 +83,30 @@ Der Value Stream übernimmt analog zum Use Case Detail die lokale Ownership:
 4. Die kanonische Next Action wird lokal genau einmal als primäre Aktion gerendert; kontextuelle Sekundäraktionen dürfen erhalten bleiben, aber dieselbe Journey-Aktion wird nicht nochmals als Primäraktion dupliziert.
 5. Desktop verwendet keine horizontale Lifecycle-Scrollfläche; Tablet/Mobile nutzen die responsive Grid-Darstellung des gemeinsamen Primitives.
 6. Nach vollständigem CI-Lauf folgt die visuelle Abnahme an einem fortgeschrittenen und einem blockierten/unvollständigen Value Stream. Erst danach wird das Muster auf die übrigen `duplicate-same-source`-Seiten ausgerollt.
+
+## Visuelle Nachschärfung nach Referenzabnahme
+
+Die Referenzprüfung hat zwei Hierarchieprobleme sichtbar gemacht, ohne die
+fachliche Ownership-Entscheidung infrage zu stellen:
+
+1. Der lokale Lifecycle stand unter der Next Action und wirkte dadurch wie ein
+   nachgelagerter Inhaltsblock. Der gemeinsame Renderer wird deshalb in die obere
+   Orientierungshierarchie vor Seitentitel und Next Action verschoben.
+2. `Wirkung & Betrieb` wiederholte seine sechs lokalen Stufen im globalen Topbar
+   und in der Sidebar. Der Arbeitsraum übernimmt diese Journey lokal; die Sidebar
+   enthält nur noch den einen Arbeitsraum-Einstieg `Wirkung & Betrieb`.
+
+Die zentrale `JourneyState`-/`workflow_steps`-Quelle, Status, Gates und
+Next-Action-Logik bleiben unverändert. Die lokale Linkprojektion wird dagegen
+bewusst verschärft: Sie verwendet nur konkrete Objekte oder ausführbare Aktionen
+und niemals die globalen Listen-Fallbacks des Kontext-Renderers. Zukünftige und
+optionale Schritte bleiben statisch. Die sechs Outcome-Stufen sind die eng
+begrenzte Ausnahme, weil ihre Links lediglich die Ansicht innerhalb desselben
+Arbeitsraums wechseln.
+
+Die lokale Analyseschritt-Navigation (`Value Stream → Fokus → Prozessanalyse →
+Lösungsoption`) ist gegenüber dem Makro-Lifecycle eine echte, untergeordnete
+Granularität. Sie bleibt erhalten, besitzt auf Desktop aber ausschließlich in der
+Sidebar ihren persistenten Owner. Die zusätzliche Vor-/Zurück-Leiste am Seitenende
+wird dort ausgeblendet und nur auf schmalen Viewports angeboten, auf denen die
+Sidebar-Tiefe entfällt.

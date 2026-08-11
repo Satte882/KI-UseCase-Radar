@@ -345,7 +345,7 @@ def test_selected_view_is_marked_independently_from_lifecycle_state(
     )
     content = response.content.decode()
 
-    assert content.count("journey-progress-view-active") == 1
-    assert "journey-progress-step journey-progress-complete journey-progress-view-active" in content
+    assert content.count("cr-lifecycle-step--active") == 1
+    assert "cr-lifecycle-step--complete cr-lifecycle-step--active" in content
     assert 'aria-current="page"' in content
-    assert "journey-progress-step journey-progress-current" in content
+    assert "cr-lifecycle-step--current" in content
