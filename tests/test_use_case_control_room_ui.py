@@ -19,10 +19,10 @@ README = read_repo_text("README.md")
 
 def test_use_case_detail_composes_shared_work_object_patterns():
     assert "ui-control-room page-use-case" in TEMPLATE
-    assert 'includes/decision_state.html' in TEMPLATE
-    assert 'includes/lifecycle_rail.html' in TEMPLATE
-    assert 'includes/next_action.html' not in TEMPLATE
-    assert 'includes/journey_stepper.html' not in TEMPLATE
+    assert "includes/decision_state.html" in TEMPLATE
+    assert "includes/lifecycle_rail.html" in TEMPLATE
+    assert "includes/next_action.html" not in TEMPLATE
+    assert "includes/journey_stepper.html" not in TEMPLATE
 
     shared = "css/ui-control-room-primitives.css"
     page = "css/ui-control-room-use-case.css"
@@ -74,9 +74,9 @@ def test_all_existing_use_case_actions_remain_reachable_with_existing_permission
 
 
 def test_next_action_is_owned_once_by_decision_state_on_migrated_work_object():
-    assert DECISION_STATE.count('includes/next_action.html') == 1
+    assert DECISION_STATE.count("includes/next_action.html") == 1
     assert 'id="next-action"' in DECISION_STATE
-    assert 'includes/next_action.html' not in TEMPLATE
+    assert "includes/next_action.html" not in TEMPLATE
 
     use_case_guard = "request.resolver_match.namespace == 'use_cases'"
     detail_guard = "request.resolver_match.url_name == 'detail'"
