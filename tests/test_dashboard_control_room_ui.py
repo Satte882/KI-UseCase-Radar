@@ -89,6 +89,7 @@ def test_dashboard_status_strip_and_switch_are_responsive_without_page_scroll():
     assert "grid-template-columns: repeat(5, minmax(0, 1fr))" in CSS
     assert "grid-template-columns: repeat(3, minmax(0, 1fr))" in CSS
     assert "grid-template-columns: 1fr" in CSS
+    assert ".dashboard-stat-strip .cr-stat:nth-child(3)" in CSS
     assert "@media (max-width: 1180px)" in CSS
     assert "@media (max-width: 760px)" in CSS
     assert ".dashboard-view-switch__button:focus-visible" in CSS
