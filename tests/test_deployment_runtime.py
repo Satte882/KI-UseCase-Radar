@@ -16,5 +16,5 @@ def test_production_serves_collected_static_files(monkeypatch):
 def test_container_start_command_uses_render_port_with_local_fallback():
     start_script = Path("scripts/start-web.sh").read_text(encoding="utf-8")
 
-    assert '0.0.0.0:${PORT:-8000}' in start_script
+    assert "0.0.0.0:${PORT:-8000}" in start_script
     assert '"${WEB_CONCURRENCY:-3}"' in start_script
