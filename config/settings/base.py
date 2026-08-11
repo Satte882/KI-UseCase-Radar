@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from urllib.parse import unquote, urlsplit
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 
@@ -117,18 +118,34 @@ TEMPLATES = [
 ]
 WSGI_APPLICATION = "config.wsgi.application"
 
-DATABASES = {
-    "default": {
+database_url = env("DATABASE_URL")
+if database_url:
+    parsed_database_url = urlsplit(database_url)
+    database_config = {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": unquote(parsed_database_url.path.lstrip("/")),
+        "USER": unquote(parsed_database_url.username or ""),
+        "PASSWORD": unquote(parsed_database_url.password or ""),
+        "HOST": parsed_database_url.hostname or "localhost",
+        "PORT": str(parsed_database_url.port or 5432),
+    }
+else:
+    database_config = {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": env("POSTGRES_DB", "ki_radar"),
         "USER": env("POSTGRES_USER", "ki_radar"),
         "PASSWORD": env("POSTGRES_PASSWORD", "ki_radar_local"),
         "HOST": env("POSTGRES_HOST", "localhost"),
         "PORT": env("POSTGRES_PORT", "5432"),
+    }
+
+database_config.update(
+    {
         "CONN_MAX_AGE": int(env("DB_CONN_MAX_AGE", "60")),
         "OPTIONS": {"connect_timeout": 5},
     }
-}
+)
+DATABASES = {"default": database_config}
 
 AUTH_USER_MODEL = "accounts.User"
 AUTHENTICATION_BACKENDS = [
