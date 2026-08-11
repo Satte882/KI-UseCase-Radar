@@ -65,8 +65,8 @@ def test_shared_primitives_are_scoped_and_use_semantic_color_tokens():
 
 
 def test_each_extracted_pattern_has_a_real_second_consumer():
-    assert 'class="page-header' in DASHBOARD
-    assert "metric-grid" in DASHBOARD
+    assert "cr-page-header" in DASHBOARD
+    assert "cr-stat-strip" in DASHBOARD
     assert "outcome-page-header" in OUTCOME
     assert "outcome-summary-grid" in OUTCOME
     assert 'class="filter-deck"' in USE_CASE_LIST
