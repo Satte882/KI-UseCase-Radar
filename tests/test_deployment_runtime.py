@@ -18,3 +18,9 @@ def test_container_start_command_uses_render_port_with_local_fallback():
 
     assert "0.0.0.0:${PORT:-8000}" in start_script
     assert '"${WEB_CONCURRENCY:-3}"' in start_script
+
+
+def test_container_bootstraps_optional_superuser():
+    entrypoint = Path("scripts/entrypoint.sh").read_text(encoding="utf-8")
+
+    assert "python manage.py bootstrap_superuser" in entrypoint
