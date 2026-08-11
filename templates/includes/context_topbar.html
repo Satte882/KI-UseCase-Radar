@@ -1,18 +1,20 @@
 {% load workflow_tags %}
+{% if request.resolver_match.namespace == 'use_cases' and request.resolver_match.url_name == 'detail' %}
+{# The migrated work-object workspace owns DecisionState, Next Action and LifecycleRail locally. #}
+{% elif journey or request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'outcome_workspace' %}
 {% workflow_steps journey request as workflow %}
 <header class="app-topbar app-topbar-journey" aria-label="Arbeitsfortschritt">
   <div class="journey-topbar-main">
     <div class="journey-topbar-heading">
       {% if request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'outcome_workspace' %}
-      <span class="journey-topbar-kicker">
-        End-to-End-Arbeitsmodell · Wirkung &amp; Betrieb
-      </span>
+      <span class="journey-topbar-kicker">End-to-End-Arbeitsmodell · Wirkung &amp; Betrieb</span>
       <strong>{% if journey %}{{ journey.path_label }}{% else %}Use Case auswählen{% endif %}</strong>
       {% else %}
       <span class="journey-topbar-kicker">End-to-End-Arbeitsmodell · Arbeitsraum 1 · Auswahl &amp; Freigabe</span>
-      <strong>{% if journey %}{{ journey.path_label }}{% elif request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'portfolio' %}Portfolio · Querschnitt über alle Phasen{% else %}Von der Discovery bis zur umsetzbaren Übergabe{% endif %}</strong>
+      <strong>{{ journey.path_label }}</strong>
       {% endif %}
     </div>
+    {% if workflow %}
     <nav class="journey-progress" aria-label="Phasen des Arbeitsmodells">
       {% for step in workflow %}
       {% if step.divider_before %}<span class="journey-progress-divider" aria-hidden="true"></span>{% endif %}
@@ -24,6 +26,7 @@
       </a>
       {% endfor %}
     </nav>
+    {% endif %}
   </div>
 
   {% if request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'outcome_workspace' %}
@@ -46,13 +49,6 @@
     </div>
     <span class="badge state-ready">Abgeschlossen</span>
   </div>
-  {% elif request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'portfolio' %}
-  <div class="journey-topbar-next journey-topbar-context-note">
-    <div class="journey-topbar-next-copy">
-      <span class="journey-topbar-kicker">Querschnittssicht</span>
-      <strong>Portfolio</strong>
-      <span class="journey-topbar-next-reason">Use Cases über Bewertung, Freigabe und Delivery vergleichen.</span>
-    </div>
-  </div>
   {% endif %}
 </header>
+{% endif %}
