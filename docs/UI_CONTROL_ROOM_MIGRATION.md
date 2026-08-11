@@ -32,6 +32,8 @@ Der Portfolio-Umbau erfolgt in #281 direkt und pragmatisch. Wiederverwendbare Qu
 
 Der erste AP7-Work-Object-Rollout überträgt diese Hierarchie auf Prozessanalyse, Delivery Package, Governance-Screening und -Fachprüfung sowie Bewertung und Freigabeentscheidung. Diese Seiten besitzen jeweils genau eine lokale Lifecycle-Leiste; Prozessanalyse und Delivery zeigen zusätzlich genau eine kanonische Next Action. Echte, untergeordnete Teilworkflows wie die Delivery-Sektionsprüfung bleiben erhalten.
 
+Der zweite AP7-Rollout schließt die übrigen Detail-, Prüf- und Formularseiten an dieselben scoped Primitives an. Lösungsvergleich, Accelerator-Prüfräume, Zweitprüfung, Architektur- und Delivery-Formulare, Review- und Nachweisformulare sowie die methodische Referenz teilen damit Header-, Dichte-, Fokus- und Responsive-Regeln. Intake- und Capture-Wizard behalten ihren eigenen Schrittfortschritt als echten, untergeordneten Mikro-Workflow; sie erzeugen keine zweite End-to-End-Lifecycle-Darstellung.
+
 Decision-State- und Lifecycle-Primitives werden erst nach bestandenem Screenshot-Gate B in #284 abstrahiert.
 
 ## Koexistenzvertrag
