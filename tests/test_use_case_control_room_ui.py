@@ -62,7 +62,7 @@ def test_lifecycle_is_local_orientation_and_keeps_true_link_semantics():
     assert ".app-topbar-journey" in CSS
     assert "display: none" in CSS
     assert 'href="{{ step.url }}"' in JOURNEY
-    assert "{% include \"includes/journey_stepper.html\" %}" in TEMPLATE
+    assert '{% include "includes/journey_stepper.html" %}' in TEMPLATE
     assert "journey-stepper" in CSS
 
 
