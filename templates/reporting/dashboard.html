@@ -26,17 +26,17 @@
 </header>
 
 <dl class="cr-stat-strip dashboard-stat-strip" aria-label="Status des Arbeitsvorrats">
-  <div class="cr-stat">
-    <dt>Aktive Vorhaben</dt>
-    <dd><strong>{{ active_total }}</strong><span>Prüfung, Pilot und Betrieb</span></dd>
+  <div class="cr-stat dashboard-stat--danger">
+    <dt>Überfällig</dt>
+    <dd><strong>{{ overdue_total }}</strong><span>Entscheidungstermin überschritten</span></dd>
   </div>
   <div class="cr-stat cr-stat--attention">
     <dt>Blockiert</dt>
     <dd><strong>{{ blocked_total }}</strong><span>Pflichtangaben oder Freigaben fehlen</span></dd>
   </div>
-  <div class="cr-stat dashboard-stat--danger">
-    <dt>Überfällig</dt>
-    <dd><strong>{{ overdue_total }}</strong><span>Entscheidungstermin überschritten</span></dd>
+  <div class="cr-stat">
+    <dt>Aktive Vorhaben</dt>
+    <dd><strong>{{ active_total }}</strong><span>Prüfung, Pilot und Betrieb</span></dd>
   </div>
   <div class="cr-stat">
     <dt>Nutzen gemessen</dt>
