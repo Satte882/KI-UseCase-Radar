@@ -47,21 +47,21 @@
 .journey-progress {
   min-width: 0;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  overflow-x: auto;
-  scrollbar-width: thin;
+  gap: 6px 8px;
+  overflow: visible;
   padding: 4px 2px;
 }
 
 .journey-progress-step {
-  flex: 0 0 auto;
+  min-width: 0;
+  flex: 0 1 auto;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   color: var(--muted);
   text-decoration: none;
-  white-space: nowrap;
 }
 
 .journey-progress-step:not(:last-child)::after {
@@ -103,8 +103,11 @@
 }
 
 .journey-progress-label {
+  min-width: 0;
   font-size: .72rem;
   font-weight: 680;
+  line-height: 1.25;
+  white-space: normal;
 }
 
 .journey-progress-complete {
@@ -182,7 +185,7 @@
 @media (max-width: 1250px) {
   .journey-topbar-main {
     grid-template-columns: 1fr;
-    gap: 4px;
+    gap: 6px;
   }
 
   .journey-topbar-heading {
@@ -204,6 +207,27 @@
   .app-topbar-journey {
     flex-direction: column;
     gap: 8px;
+  }
+
+  .journey-progress {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+    gap: 5px;
+  }
+
+  .journey-progress-step {
+    display: grid;
+    grid-template-columns: 23px minmax(0, 1fr);
+    align-items: center;
+    min-height: 34px;
+    padding: 5px 6px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .journey-progress-step:not(:last-child)::after {
+    display: none;
   }
 
   .journey-topbar-next {
@@ -255,9 +279,7 @@
   }
 
   .journey-progress {
-    width: 100%;
-    max-width: 100%;
-    margin-inline: -2px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .journey-progress-label {
@@ -268,5 +290,11 @@
     min-width: 0;
     max-width: 100%;
     align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .journey-progress {
+    grid-template-columns: 1fr;
   }
 }
