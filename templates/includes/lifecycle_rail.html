@@ -1,12 +1,12 @@
 {% load workflow_tags %}
 {% workflow_steps journey request as workflow %}
 {% if workflow or use_case.classification %}
-<section class="cr-lifecycle-rail" id="lifecycle-orientation" aria-labelledby="lifecycle-orientation-title">
+<section class="cr-lifecycle-rail" id="lifecycle-orientation" aria-label="Lifecycle-Orientierung">
   {% if workflow %}
   <header class="cr-lifecycle-rail__heading">
     <div>
       <div class="cr-lifecycle-rail__kicker">Prozesskontext</div>
-      <h2 id="lifecycle-orientation-title">Lifecycle</h2>
+      <h2>Lifecycle</h2>
     </div>
     {% if journey.path_label %}<span>{{ journey.path_label }}</span>{% endif %}
   </header>
