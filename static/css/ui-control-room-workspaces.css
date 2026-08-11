@@ -1,0 +1,200 @@
+/* Shared presentation layer for migrated detail and decision workspaces. */
+
+.ui-control-room .cr-work-header {
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.ui-control-room .cr-work-header__summary {
+  max-width: 76ch;
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: .78rem;
+  line-height: 1.55;
+}
+
+.ui-control-room .cr-work-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  max-width: 52%;
+}
+
+.ui-control-room .cr-work-header__actions .btn {
+  white-space: nowrap;
+}
+
+.ui-control-room:is(.page-detail-workspace, .page-form-workspace) .page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+  padding: 2px 2px 20px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.ui-control-room:is(.page-detail-workspace, .page-form-workspace) .page-header > div:first-child {
+  min-width: 0;
+}
+
+.ui-control-room:is(.page-detail-workspace, .page-form-workspace) .page-title {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(1.85rem, 2.2vw, 2.35rem);
+  font-weight: 680;
+  letter-spacing: -.04em;
+}
+
+.ui-control-room:is(.page-detail-workspace, .page-form-workspace) .page-subtitle {
+  max-width: 78ch;
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: .78rem;
+  line-height: 1.55;
+}
+
+.ui-control-room.page-detail-workspace .app-card,
+.ui-control-room.page-form-workspace .app-card {
+  border-color: var(--line-soft);
+  box-shadow: none;
+}
+
+.ui-control-room.page-form-workspace .form-section {
+  margin-bottom: 18px;
+  padding: 18px 20px;
+  border: 1px solid var(--line-soft);
+  border-left: 2px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--surface-1) 54%, transparent);
+}
+
+.ui-control-room.page-form-workspace form[method="post"] :is(input, select, textarea):focus-visible,
+.ui-control-room:is(.page-detail-workspace, .page-form-workspace) .page-header .btn:focus-visible {
+  outline: 2px solid var(--ice);
+  outline-offset: 2px;
+}
+
+.ui-control-room.page-form-workspace .wizard-stepper {
+  padding: 10px 0;
+  border-block: 1px solid var(--line-soft);
+  background: transparent;
+}
+
+.ui-control-room.page-form-workspace .progress {
+  height: 3px;
+  border-radius: 0;
+  background: var(--line-soft);
+}
+
+.ui-control-room.page-form-workspace .progress-bar {
+  background: var(--ice);
+}
+
+.ui-control-room.page-process-analysis .architecture-summary-grid,
+.ui-control-room.page-delivery-package .kpi-strip {
+  margin-top: 24px;
+}
+
+.ui-control-room.page-process-analysis .app-card,
+.ui-control-room.page-delivery-package .app-card,
+.ui-control-room.page-governance-form .app-card,
+.ui-control-room.page-governance-review .app-card,
+.ui-control-room.page-assessment-form .app-card,
+.ui-control-room.page-decision-form .app-card {
+  border-color: var(--line-soft);
+  box-shadow: none;
+}
+
+.ui-control-room .cr-work-form > .app-card,
+.ui-control-room .cr-work-form.app-card {
+  border-top: 2px solid var(--line);
+}
+
+.ui-control-room .cr-work-form .card-header {
+  background: color-mix(in srgb, var(--surface-1) 72%, transparent);
+}
+
+.ui-control-room .cr-work-form .card-footer {
+  border-top-color: var(--line-soft);
+  background: color-mix(in srgb, var(--surface-1) 58%, transparent);
+}
+
+.ui-control-room.page-governance-form .cr-work-form > .card-body,
+.ui-control-room.page-governance-review .cr-work-form > .card-body,
+.ui-control-room.page-assessment-form .cr-work-form .card-body,
+.ui-control-room.page-decision-form .cr-work-form .card-body {
+  padding-block: 20px;
+}
+
+.ui-control-room.page-assessment-form .cr-work-form > .d-flex:last-child {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  margin-top: 8px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line-soft);
+  background: color-mix(in srgb, var(--surface-0) 92%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.ui-control-room .cr-work-form :is(input, select, textarea):focus-visible,
+.ui-control-room .cr-work-header__actions .btn:focus-visible {
+  outline: 2px solid var(--ice);
+  outline-offset: 2px;
+}
+
+@media (max-width: 900px) {
+  .ui-control-room .cr-work-header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .ui-control-room .cr-work-header__actions {
+    justify-content: flex-start;
+    max-width: none;
+  }
+
+  .ui-control-room:is(.page-detail-workspace, .page-form-workspace) .page-header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 520px) {
+  .ui-control-room .cr-work-header__actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .ui-control-room .cr-work-header__actions .btn,
+  .ui-control-room:is(.page-detail-workspace, .page-form-workspace) .page-header .btn,
+  .ui-control-room .cr-work-form .card-footer .btn,
+  .ui-control-room.page-form-workspace form[method="post"] .card-footer .btn,
+  .ui-control-room .cr-work-form > .d-flex:last-child .btn {
+    width: 100%;
+    min-height: 42px;
+  }
+
+  .ui-control-room .cr-work-form .card-footer,
+  .ui-control-room.page-form-workspace form[method="post"] .card-footer,
+  .ui-control-room .cr-work-form > .d-flex:last-child {
+    align-items: stretch !important;
+    flex-direction: column;
+  }
+
+  .ui-control-room .cr-work-form .card-footer .me-auto {
+    margin-right: 0 !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-control-room .cr-work-form *,
+  .ui-control-room .cr-work-header * {
+    scroll-behavior: auto;
+    transition-duration: .01ms !important;
+  }
+}

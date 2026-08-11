@@ -1,21 +1,27 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Meine Erfassungen – KI-Radar{% endblock %}
+{% block body_class %}page-capture-list{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/ui-control-room-primitives.css' %}">
+<link rel="stylesheet" href="{% static 'css/ui-control-room-lists.css' %}">
+{% endblock %}
 {% block content %}
-<div class="page-header">
-  <div>
+<header class="cr-page-header cr-list-header">
+  <div class="cr-page-header__copy">
     <div class="eyebrow mb-2">Accelerator · Persönlicher Arbeitsbereich</div>
-    <h1 class="page-title">Meine Erfassungen</h1>
-    <p class="page-subtitle">Eigene Entwürfe fortsetzen und abgeschlossene Arbeitsstände nachvollziehen.</p>
+    <h1 class="cr-page-header__title">Meine Erfassungen</h1>
+    <p class="cr-page-header__summary">Eigene Entwürfe fortsetzen und abgeschlossene Arbeitsstände nachvollziehen.</p>
   </div>
-  <div class="d-flex gap-2 flex-wrap">
+  <div class="cr-list-header__actions">
     {% if can_start_value_stream %}<a class="btn btn-outline-secondary" href="{% url 'accelerator:value_stream_start' %}">Value Stream geführt erfassen</a>{% endif %}
     {% if can_start_use_case %}<a class="btn btn-primary" href="{% url 'accelerator:use_case_start' %}">Use Case geführt erfassen</a>{% endif %}
   </div>
-</div>
+</header>
 
-<div class="app-card">
-  <div class="table-responsive capture-session-table-wrap">
-    <table class="table align-middle mb-0 capture-session-table">
+<section class="cr-section cr-list-section" aria-label="Eigene Erfassungen">
+  <div class="table-responsive cr-list-table-wrap capture-session-table-wrap">
+    <table class="table cr-list-table align-middle mb-0 capture-session-table">
       <thead>
         <tr>
           <th scope="col">Erfassung</th>
@@ -48,10 +54,10 @@
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="7" class="text-muted capture-session-empty">Noch keine eigenen Erfassungen vorhanden.</td></tr>
+        <tr><td colspan="7" class="capture-session-empty"><p class="cr-empty-state">Noch keine eigenen Erfassungen vorhanden.</p></td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
-</div>
+</section>
 {% endblock %}

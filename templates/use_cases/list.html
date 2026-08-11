@@ -1,15 +1,20 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}Use Cases – KI-Radar{% endblock %}
+{% block body_class %}page-use-case-list{% endblock %}
 {% block content_class %}use-case-register-page{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/ui-control-room-primitives.css' %}">
+<link rel="stylesheet" href="{% static 'css/ui-control-room-lists.css' %}">
+{% endblock %}
 {% block content %}
-<section class="register-hero" aria-labelledby="register-title">
-  <div class="register-heading">
+<section class="cr-page-header cr-list-header register-hero" aria-labelledby="register-title">
+  <div class="cr-page-header__copy register-heading">
     <div class="register-kicker"><span aria-hidden="true"></span> Entscheidungsregister</div>
-    <h1 class="page-title" id="register-title">KI-Use-Cases</h1>
-    <p class="page-subtitle">Initiativen nach Domäne und Entscheidungsstand einordnen, überfliegen und direkt öffnen.</p>
+    <h1 class="cr-page-header__title" id="register-title">KI-Use-Cases</h1>
+    <p class="cr-page-header__summary">Initiativen nach Domäne und Entscheidungsstand einordnen, überfliegen und direkt öffnen.</p>
   </div>
-  <div class="register-actions">
+  <div class="cr-list-header__actions register-actions">
     <a class="btn btn-outline-secondary register-export" href="{% url 'use_cases:export_csv' %}">CSV exportieren</a>
     {% if can_create %}
     {% if capture_draft_count %}<a class="btn btn-outline-secondary" href="{% url 'accelerator:capture_list' %}">Meine Erfassungen ({{ capture_draft_count }})</a>{% endif %}
@@ -27,36 +32,36 @@
 </section>
 
 {% if can_create and capture_use_case_draft_count %}
-<div class="alert alert-secondary mb-4">
+<div class="cr-inline-note">
   <strong>{% if capture_use_case_draft_count == 1 %}1 offener Use-Case-Entwurf{% else %}{{ capture_use_case_draft_count }} offene Use-Case-Entwürfe{% endif %}:</strong>
   <a href="{% url 'accelerator:capture_list' %}">Erfassungen fortsetzen</a>.
 </div>
 {% endif %}
 
-<section class="filter-deck" aria-label="Use Cases filtern">
-  <form method="get" class="register-filters">
-    <div class="filter-field filter-search">
+<section class="cr-filter-deck filter-deck" aria-label="Use Cases filtern">
+  <form method="get" class="cr-filter-grid register-filters">
+    <div class="cr-filter-field filter-field filter-search">
       <label class="form-label" for="filter-query">Suche</label>
       <div class="search-control">
         <span aria-hidden="true">⌕</span>
         <input class="form-control" id="filter-query" name="q" value="{{ request.GET.q }}" placeholder="Titel, ID, Problem oder Capability">
       </div>
     </div>
-    <div class="filter-field filter-primary">
+    <div class="cr-filter-field filter-field filter-primary">
       <label class="form-label" for="filter-domain">Fachdomäne</label>
       <select class="form-select" id="filter-domain" name="business_domain">
         <option value="">Alle Domänen</option>
         {% for value,label in business_domain_choices %}<option value="{{ value }}" {% if request.GET.business_domain == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
       </select>
     </div>
-    <div class="filter-field filter-primary">
+    <div class="cr-filter-field filter-field filter-primary">
       <label class="form-label" for="filter-status">Status</label>
       <select class="form-select" id="filter-status" name="status">
         <option value="">Alle Status</option>
         {% for value,label in status_choices %}<option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
       </select>
     </div>
-    <div class="filter-field">
+    <div class="cr-filter-field filter-field">
       <label class="form-label" for="filter-review">Review</label>
       <select class="form-select" id="filter-review" name="review_state">
         <option value="">Alle Termine</option>
@@ -65,30 +70,30 @@
         <option value="missing" {% if request.GET.review_state == 'missing' %}selected{% endif %}>Ohne Termin</option>
       </select>
     </div>
-    <div class="filter-field">
+    <div class="cr-filter-field filter-field">
       <label class="form-label" for="filter-value">Geschäftswert</label>
       <select class="form-select" id="filter-value" name="business_value">
         <option value="">Alle Werte</option>
         {% for value,label in level_choices %}<option value="{{ value }}" {% if request.GET.business_value == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
       </select>
     </div>
-    <div class="filter-actions">
+    <div class="cr-filter-submit filter-actions">
       <button class="btn btn-primary" type="submit">Filtern</button>
-      <a class="filter-reset" href="{% url 'use_cases:list' %}">Zurücksetzen</a>
+      <a class="cr-filter-reset filter-reset" href="{% url 'use_cases:list' %}">Zurücksetzen</a>
     </div>
   </form>
 </section>
 
-<section class="register-results" aria-labelledby="results-title">
-  <div class="results-heading">
+<section class="cr-section cr-list-section register-results" aria-labelledby="results-title">
+  <div class="cr-section-heading results-heading">
     <div>
       <div class="register-kicker">Aktueller Bestand</div>
       <h2 id="results-title">{{ use_cases|length }} Use Case{{ use_cases|length|pluralize:"s" }}</h2>
     </div>
     <span class="results-hint"><span aria-hidden="true">↗</span> Zeile zum Öffnen auswählen</span>
   </div>
-  <div class="register-table-wrap" tabindex="0" aria-label="Use-Case-Tabelle, horizontal scrollbar">
-    <table class="table register-table align-middle">
+  <div class="cr-list-table-wrap register-table-wrap" tabindex="0" aria-label="Use-Case-Tabelle, horizontal scrollbar">
+    <table class="table cr-list-table register-table align-middle">
       <colgroup>
         <col class="col-use-case"><col class="col-classification"><col class="col-phase">
         <col class="col-decision"><col class="col-maturity"><col class="col-owner"><col class="col-due">
@@ -125,7 +130,7 @@
           <td class="due-cell">{% if item.decision_due %}<time datetime="{{ item.decision_due|date:'Y-m-d' }}">{{ item.decision_due|date:"d.m.Y" }}</time>{% else %}–{% endif %}</td>
         </tr>
         {% empty %}
-        <tr class="empty-row"><td colspan="7">Keine Use Cases gefunden.<span>Filter zurücksetzen oder Suchbegriff anpassen.</span></td></tr>
+        <tr class="empty-row"><td colspan="7"><p class="cr-empty-state">Keine Use Cases gefunden.<span>Filter zurücksetzen oder Suchbegriff anpassen.</span></p></td></tr>
         {% endfor %}
       </tbody>
     </table>

@@ -1,17 +1,20 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Bewertung – {{ use_case.short_id }}{% endblock %}
+{% block body_class %}page-assessment-form{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/ui-control-room-primitives.css' %}"><link rel="stylesheet" href="{% static 'css/ui-control-room-workspaces.css' %}">{% endblock %}
 {% block content %}
-<div class="page-header">
-  <div>
+{% include "includes/lifecycle_rail.html" with lifecycle_variant="header" lifecycle_columns="7" lifecycle_kicker="Arbeitsmodell" lifecycle_title="Auswahl und Freigabe" lifecycle_context="Bewertung · Evidenz und Empfehlung" %}
+<header class="cr-page-header cr-work-header">
+  <div class="cr-page-header__copy">
     <div class="eyebrow mb-2">{{ journey.path_label }} · {{ use_case.short_id }} · Strukturierte Bewertung</div>
-    <h1 class="page-title">{{ use_case.title }}</h1>
-    <p class="page-subtitle">Confidence wird aus Evidenzqualität, Aktualität, Abdeckung, unabhängiger Prüfung und geklärten Annahmen hergeleitet.</p>
+    <h1 class="cr-page-header__title">{{ use_case.title }}</h1>
+    <p class="cr-work-header__summary">Confidence wird aus Evidenzqualität, Aktualität, Abdeckung, unabhängiger Prüfung und geklärten Annahmen hergeleitet.</p>
   </div>
-</div>
-{% include "includes/journey_stepper.html" %}
+</header>
 {% include "includes/status_dimensions.html" %}
 <div class="alert alert-info"><strong>Governance-Screening statt Fachprüfung.</strong> Die Bewertung kann Governance-Themen identifizieren, ersetzt aber keine formalen Datenschutz-, Security- oder Rechtsprüfungen. Diese werden anschließend in separaten Prüfartefakten dokumentiert.</div>
-<form method="post">{% csrf_token %}<input type="hidden" name="return_to" value="{{ return_to }}">
+<form method="post" class="cr-work-form">{% csrf_token %}<input type="hidden" name="return_to" value="{{ return_to }}">
   <div class="app-card mb-4">
     <div class="card-header"><strong>Fachliche Bewertung</strong></div>
     <div class="card-body"><div class="row g-3">

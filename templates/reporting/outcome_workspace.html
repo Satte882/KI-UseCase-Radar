@@ -1,60 +1,33 @@
 {% extends "base.html" %}
-{% load metric_tags %}
+{% load static metric_tags %}
 
-{% block title %}Wirkung & Betrieb · KI-Radar{% endblock %}
+{% block title %}{{ active_stage_copy.title }} · Wirkung & Betrieb · KI-Radar{% endblock %}
+{% block body_class %}page-outcome-workspace{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/ui-control-room-primitives.css' %}?v=ap7-lifecycle-unification">
+{% endblock %}
 {% block content_class %}app-content-wide outcome-workspace-content{% endblock %}
 
 {% block content %}
+{% include "includes/lifecycle_rail.html" with lifecycle_variant="header" lifecycle_columns="6" lifecycle_kicker="Teilprozess" lifecycle_title="Wirkung & Betrieb" lifecycle_context=selected_use_case.short_id %}
+
 <div class="page-header outcome-page-header">
   <div>
-    <div class="outcome-eyebrow">Review- und Entscheidungsinformationen</div>
-    <h1 class="page-title">Wirkung &amp; Betrieb</h1>
-    <p class="page-subtitle">Wirkung, Ergebnisentscheidung und Betrieb werden mit bestehenden Use-Case-, Metrik- und Delivery-Daten zusammengeführt.</p>
+    <div class="outcome-eyebrow">Wirkung &amp; Betrieb · Review- und Entscheidungsinformationen</div>
+    <h1 class="page-title">{{ active_stage_copy.title }}</h1>
+    <p class="page-subtitle">{{ active_stage_copy.purpose }}</p>
   </div>
 </div>
 
 <section class="outcome-workbench">
-  {% if selected_use_case %}
-  {% metric_set selected_use_case as metric %}
-  <div class="app-card outcome-use-case-card">
+  <div class="app-card outcome-control-card outcome-control-card--primary">
     <div class="card-body">
-      <div class="outcome-use-case-heading">
+      <div class="outcome-control-heading">
         <div>
-          <div class="outcome-eyebrow">{{ selected_use_case.short_id }} · {{ selected_use_case.get_status_display }}</div>
-          <h2>{{ selected_use_case.title }}</h2>
-          <p>{{ selected_use_case.summary|default:selected_use_case.problem_statement }}</p>
+          <div class="outcome-eyebrow">Steuerung</div>
+          <h2>Status und nächste Handlung</h2>
         </div>
-        <a class="btn btn-outline-secondary btn-sm" href="{{ selected_use_case.get_absolute_url }}#use-case-overview">Vollständige Metrikdetails öffnen</a>
-      </div>
-
-      <div class="outcome-metric-grid">
-        <div><small>Baseline</small><strong>{{ metric.baseline.display }}</strong></div>
-        <div><small>Ziel</small><strong>{{ metric.target.display }}</strong></div>
-        <div><small>Ist</small><strong>{{ metric.actual.display }}</strong></div>
-        <div><small>Ergebnis</small><strong>{{ selected_use_case.metric_result_label }}</strong></div>
-      </div>
-
-      <dl class="outcome-facts">
-        <div><dt>Business Owner</dt><dd>{{ selected_use_case.business_owner.get_display_name }}</dd></div>
-        <div><dt>Technical Owner</dt><dd>{% if selected_use_case.technical_owner %}{{ selected_use_case.technical_owner.get_display_name }}{% else %}Nicht zugeordnet{% endif %}</dd></div>
-        <div><dt>Nächster Review</dt><dd>{{ selected_use_case.next_review_date|default:"Nicht geplant" }}</dd></div>
-        <div><dt>Delivery</dt><dd>{% if selected_use_case.latest_delivery %}v{{ selected_use_case.latest_delivery.version }} · {{ selected_use_case.latest_delivery.get_status_display }}{% else %}Kein Package{% endif %}</dd></div>
-      </dl>
-    </div>
-  </div>
-  {% else %}
-  <div class="app-card outcome-empty-state"><div class="card-body"><h2>Keine Use Cases vorhanden</h2><p>Nach dem Anlegen oder Einspielen von Daten werden Review- und Entscheidungsinformationen hier zusammengeführt.</p></div></div>
-  {% endif %}
-
-  <div class="app-card outcome-control-card">
-    <div class="card-body">
-      <div class="d-flex justify-content-between gap-3 align-items-start mb-3">
-        <div>
-          <div class="outcome-eyebrow">Aktiver Bereich</div>
-          <h2>{{ active_stage_copy.title }}</h2>
-          <p>{{ active_stage_copy.purpose }}</p>
-        </div>
-        <span class="badge badge-soft">Wirkung &amp; Betrieb</span>
+        <span class="badge badge-soft">{{ active_stage_copy.title }}</span>
       </div>
 
       <form method="get" class="outcome-use-case-picker">
@@ -73,7 +46,7 @@
       </form>
 
       {% if active_stage_action %}
-      <div class="outcome-stage-action">
+      <div class="outcome-stage-action" data-testid="outcome-primary-action">
         <div class="outcome-stage-action-copy">
           <div class="outcome-eyebrow">{% if active_stage_action.url %}Nächster Schritt{% else %}Status{% endif %}</div>
           <strong>{% if active_stage_action.url %}Handlung verfügbar{% else %}Kein Handlungsbedarf{% endif %}</strong>
@@ -93,6 +66,42 @@
       </div>
     </div>
   </div>
+
+  {% if selected_use_case %}
+  {% metric_set selected_use_case as metric %}
+  <div class="app-card outcome-use-case-card">
+    <div class="card-body">
+      <div class="outcome-use-case-heading">
+        <div>
+          <div class="outcome-eyebrow">{{ selected_use_case.short_id }} · {{ selected_use_case.get_status_display }}</div>
+          <h2>{{ selected_use_case.title }}</h2>
+        </div>
+        <a class="btn btn-outline-secondary btn-sm" href="{{ selected_use_case.get_absolute_url }}#use-case-overview">Vollständige Metrikdetails öffnen</a>
+      </div>
+
+      <details class="outcome-use-case-context">
+        <summary>Use-Case-Kontext anzeigen</summary>
+        <p>{{ selected_use_case.summary|default:selected_use_case.problem_statement }}</p>
+      </details>
+
+      <div class="outcome-metric-grid">
+        <div><small>Baseline</small><strong>{{ metric.baseline.display }}</strong></div>
+        <div><small>Ziel</small><strong>{{ metric.target.display }}</strong></div>
+        <div><small>Ist</small><strong>{{ metric.actual.display }}</strong></div>
+        <div><small>Ergebnis</small><strong>{{ selected_use_case.metric_result_label }}</strong></div>
+      </div>
+
+      <dl class="outcome-facts">
+        <div><dt>Business Owner</dt><dd>{{ selected_use_case.business_owner.get_display_name }}</dd></div>
+        <div><dt>Technical Owner</dt><dd>{% if selected_use_case.technical_owner %}{{ selected_use_case.technical_owner.get_display_name }}{% else %}Nicht zugeordnet{% endif %}</dd></div>
+        <div><dt>Nächster Review</dt><dd>{{ selected_use_case.next_review_date|default:"Nicht geplant" }}</dd></div>
+        <div><dt>Delivery</dt><dd>{% if selected_use_case.latest_delivery %}v{{ selected_use_case.latest_delivery.version }} · {{ selected_use_case.latest_delivery.get_status_display }}{% else %}Kein Package{% endif %}</dd></div>
+      </dl>
+    </div>
+  </div>
+  {% else %}
+  <div class="app-card outcome-empty-state"><div class="card-body"><h2>Keine Use Cases vorhanden</h2><p>Nach dem Anlegen oder Einspielen von Daten werden Review- und Entscheidungsinformationen hier zusammengeführt.</p></div></div>
+  {% endif %}
 </section>
 
 <section class="app-card outcome-boundary-compact" aria-labelledby="system-boundary-heading">

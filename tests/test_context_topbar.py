@@ -23,7 +23,7 @@ def test_base_uses_contextual_topbar_instead_of_static_status():
 
 def test_context_topbar_contains_permanent_workflow_and_next_action():
     topbar = (ROOT / "templates" / "includes" / "context_topbar.html").read_text(encoding="utf-8")
-    tags = (ROOT / "ki_radar" / "use_cases" / "templatetags" / "workflow_tags.py").read_text(
+    tags = (ROOT / "ki_radar" / "core" / "templatetags" / "workflow_tags.py").read_text(
         encoding="utf-8"
     )
     stylesheet = (ROOT / "static" / "css" / "context-topbar.css").read_text(encoding="utf-8")
@@ -47,7 +47,7 @@ def test_context_topbar_contains_permanent_workflow_and_next_action():
     assert "journey-topbar-next" in stylesheet
 
 
-def test_outcome_workspace_topbar_does_not_repeat_the_stage_action():
+def test_outcome_workspace_yields_topbar_ownership_to_local_lifecycle():
     request = RequestFactory().get("/wirkung-betrieb/?stage=pilot")
     request.user = AnonymousUser()
     request.resolver_match = SimpleNamespace(
@@ -74,6 +74,6 @@ def test_outcome_workspace_topbar_does_not_repeat_the_stage_action():
         request=request,
     )
 
+    assert rendered.strip() == ""
     assert "Pilotübersicht öffnen" not in rendered
-    assert "journey-topbar-next" not in rendered
-    assert 'aria-label="Phasen des Arbeitsmodells"' in rendered
+    assert "journey-topbar" not in rendered

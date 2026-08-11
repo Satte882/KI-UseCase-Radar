@@ -1,6 +1,8 @@
 {% extends "base.html" %}
-{% load delivery_markdown %}
+{% load static delivery_markdown %}
 {% block title %}Vorgehensmodell – KI-Radar{% endblock %}
+{% block body_class %}page-detail-workspace page-methodology-reference{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/ui-control-room-primitives.css' %}"><link rel="stylesheet" href="{% static 'css/ui-control-room-workspaces.css' %}">{% endblock %}
 {% block content %}
 <div class="page-header">
   <div>

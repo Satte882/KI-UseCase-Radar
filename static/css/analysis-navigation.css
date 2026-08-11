@@ -37,6 +37,12 @@
   color: var(--text);
 }
 
+@media (min-width: 1101px) {
+  .analysis-step-actions {
+    display: none;
+  }
+}
+
 #value-stream,
 #fokus-priorisierung,
 #prozessanalyse,

@@ -1,5 +1,8 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}{{ title }} – KI-Radar{% endblock %}
+{% block body_class %}page-form-workspace page-stage-form{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/ui-control-room-primitives.css' %}"><link rel="stylesheet" href="{% static 'css/ui-control-room-workspaces.css' %}">{% endblock %}
 {% block content %}
 <div class="page-header">
   <div>
@@ -9,7 +12,7 @@
   </div>
   <a class="btn btn-outline-secondary" href="{{ value_stream.get_absolute_url }}">Abbrechen</a>
 </div>
-<form method="post" class="app-card">
+<form method="post" class="app-card cr-work-form">
   {% csrf_token %}
   <div class="card-header"><strong>Value-Stream-Phase</strong></div>
   <div class="card-body">

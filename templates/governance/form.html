@@ -1,21 +1,24 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Governance-Screening – KI-Radar{% endblock %}
+{% block body_class %}page-governance-form{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/ui-control-room-primitives.css' %}"><link rel="stylesheet" href="{% static 'css/ui-control-room-workspaces.css' %}">{% endblock %}
 {% block content %}
-<div class="page-header">
-  <div>
+{% include "includes/lifecycle_rail.html" with lifecycle_variant="header" lifecycle_columns="7" lifecycle_kicker="Arbeitsmodell" lifecycle_title="Auswahl und Freigabe" lifecycle_context="Governance · Screening" %}
+<header class="cr-page-header cr-work-header">
+  <div class="cr-page-header__copy">
     <div class="eyebrow mb-2">{{ journey.path_label }} · Governance-Screening</div>
-    <h1 class="page-title">Governance-Screening</h1>
-    <p class="page-subtitle">{{ use_case.short_id }} – {{ use_case.title }}</p>
+    <h1 class="cr-page-header__title">Governance-Screening</h1>
+    <p class="cr-work-header__summary">{{ use_case.short_id }} – {{ use_case.title }}</p>
   </div>
-</div>
-{% include "includes/journey_stepper.html" %}
+</header>
 {% include "includes/status_dimensions.html" %}
 <div class="alert alert-warning"><strong>Screening, keine formale Fachprüfung.</strong> Dieses Artefakt identifiziert den Prüfbedarf. Es ersetzt weder eine Datenschutz-, Security- oder Rechtsprüfung noch deren Nachweise.</div>
 <div class="app-card mb-4">
   <div class="card-header"><strong>Geführter Prüfpfad</strong></div>
   <div class="card-body small">Screening → begründeter Status je Fachprüfung (<strong>offen</strong> oder <strong>nicht relevant</strong>) → formales Prüfartefakt → Freigabeentscheidung</div>
 </div>
-<form method="post" class="app-card">
+<form method="post" class="app-card cr-work-form">
   {% csrf_token %}
   <div class="card-header"><strong>Screening-Artefakt dokumentieren</strong><div class="small text-muted mt-1">Beim Speichern wird für Datenschutz, Informationssicherheit und Recht jeweils ein nachvollziehbares Statusartefakt erzeugt.</div></div>
   <div class="card-body">

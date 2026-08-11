@@ -191,7 +191,8 @@ def test_guided_components_are_visible_on_detail_pages(client, seeded_demo):
     assert use_case_response.status_code == 200
     assert process_response.status_code == 200
     assert dashboard_response.status_code == 200
-    assert "End-to-End-Arbeitsmodell" in use_case_response.content.decode()
-    assert "Fokus &amp; Priorisierung" in use_case_response.content.decode()
+    use_case_content = use_case_response.content.decode()
+    assert 'id="decision-state"' in use_case_content
+    assert 'id="lifecycle-orientation"' in use_case_content
     assert "Nächster Schritt" in process_response.content.decode()
     assert "Meine Aufgaben" in dashboard_response.content.decode()

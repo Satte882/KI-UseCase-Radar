@@ -1,22 +1,28 @@
 {% extends "base.html" %}
-{% load architecture_focus %}
+{% load static architecture_focus %}
 {% block title %}{{ process_analysis.name }} – KI-Radar{% endblock %}
+{% block body_class %}page-process-analysis{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/ui-control-room-primitives.css' %}">
+<link rel="stylesheet" href="{% static 'css/ui-control-room-workspaces.css' %}">
+{% endblock %}
 {% block content %}
-<div class="page-header">
-  <div>
+{% include "includes/lifecycle_rail.html" with lifecycle_variant="header" lifecycle_columns="7" lifecycle_kicker="Arbeitsmodell" lifecycle_title="Systematische Discovery" lifecycle_context="Prozessanalyse · Auswahl und Freigabe" %}
+
+<header class="cr-page-header cr-work-header">
+  <div class="cr-page-header__copy">
     <div class="eyebrow mb-2">{{ process_analysis.stage.value_stream.name }} · {{ process_analysis.stage.name }}</div>
-    <h1 class="page-title">{{ process_analysis.name }}</h1>
-    <p class="page-subtitle">{{ process_analysis.get_status_display }} · Ist-Prozess, Architekturkontext und Lösungsoptionen.</p>
+    <h1 class="cr-page-header__title">{{ process_analysis.name }}</h1>
+    <p class="cr-work-header__summary">{{ process_analysis.get_status_display }} · Ist-Prozess, Architekturkontext und Lösungsoptionen.</p>
   </div>
-  <div class="d-flex gap-2 flex-wrap">
+  <div class="cr-work-header__actions">
     <a class="btn btn-outline-secondary" href="{{ process_analysis.stage.value_stream.get_absolute_url }}">Zum Value Stream</a>
     {% if can_validate and process_analysis.status != 'validated' %}<a class="btn btn-outline-secondary" href="{% url 'architecture:process_analysis_validate' process_analysis.pk %}">Ist-Prozess validieren</a>{% endif %}
     {% if can_edit %}<a class="btn btn-outline-secondary" href="{% url 'architecture:process_analysis_update' process_analysis.pk %}">Bearbeiten</a>{% endif %}
   </div>
-</div>
+</header>
 
-{% include "includes/next_action.html" %}
-{% include "includes/journey_stepper.html" %}
+<div class="cr-next-action" id="next-action">{% include "includes/next_action.html" %}</div>
 
 {% if not process_analysis.stage.value_stream.focus.is_selected %}<div class="alert alert-warning"><strong>Prozessdetailanalyse nicht freigegeben:</strong> Der übergeordnete Value Stream muss zuerst vollständig bewertet und für die Vertiefung ausgewählt werden.</div>{% endif %}
 
@@ -113,7 +119,6 @@
     <div><strong>Lösungsoptionen vergleichen</strong><div class="small text-muted mt-1">Alternativen anhand identischer Kriterien prüfen und die Auswahl getrennt auditieren. Methodik: Opportunities &amp; Solutions (ADM Phase E).</div></div>
     {% if can_edit and process_analysis.stage.value_stream.focus.is_selected %}
       <div class="d-flex gap-2 flex-wrap">
-        {% if journey.next_action.key == 'solution' and journey.next_action.url %}<a class="btn btn-sm btn-primary" href="{{ journey.next_action.url }}" data-testid="primary-next-action-control">{{ journey.next_action.action_label|default:"Lösungsoptionen bearbeiten" }} →</a>{% endif %}
         {% if process_analysis.solution_options.all %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'architecture:solution_option_create' process_analysis.pk %}">Weitere Option ergänzen</a>{% endif %}
         {% if generation_entry.generation_ready %}
           <form method="post" action="{% url 'accelerator:solution_generation_start' process_analysis.pk %}" class="m-0">
@@ -163,8 +168,7 @@
         </dl>
         {% if can_edit %}<a class="btn btn-sm btn-outline-secondary w-100 mt-3" href="{% url 'architecture:solution_option_update' option.pk %}">Option bearbeiten</a>{% endif %}
         {% if can_create_use_case and process_analysis.stage.value_stream.focus.is_selected and option.recommendation == 'preferred' and option.starts_ai_use_case %}
-        {% if journey.next_action.key == 'use_case' %}<a class="btn btn-sm btn-primary w-100 mt-2" href="{{ journey.next_action.url }}" data-testid="primary-next-action-control">{{ journey.next_action.action_label|default:"Bevorzugte Option als Use Case prüfen" }} →</a>
-        {% else %}<a class="btn btn-sm btn-outline-secondary w-100 mt-2" href="{% url 'architecture:solution_option_start_use_case' option.pk %}">Bevorzugte Option als Use Case prüfen</a>{% endif %}
+        {% if journey.next_action.key != 'use_case' %}<a class="btn btn-sm btn-outline-secondary w-100 mt-2" href="{% url 'architecture:solution_option_start_use_case' option.pk %}">Bevorzugte Option als Use Case prüfen</a>{% endif %}
         {% endif %}
       </section>
       {% empty %}<p class="text-muted mb-0">Noch keine Lösungsoptionen dokumentiert. Prüfen Sie organisatorische und regelbasierte Alternativen ebenso wie KI.</p>{% endfor %}

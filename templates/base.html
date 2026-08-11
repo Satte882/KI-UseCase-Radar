@@ -11,11 +11,11 @@
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
   <link rel="stylesheet" href="{% static 'css/context-topbar.css' %}">
   <link rel="stylesheet" href="{% static 'css/sidebar-journey.css' %}">
-  <link rel="stylesheet" href="{% static 'css/analysis-navigation.css' %}">
+  <link rel="stylesheet" href="{% static 'css/analysis-navigation.css' %}?v=ap7-lifecycle-unification">
   <link rel="stylesheet" href="{% static 'css/form-guidance.css' %}">
   <link rel="stylesheet" href="{% static 'css/architecture.css' %}">
   <link rel="stylesheet" href="{% static 'css/delivery.css' %}">
-  <link rel="stylesheet" href="{% static 'css/outcome-workspace.css' %}">
+  <link rel="stylesheet" href="{% static 'css/outcome-workspace.css' %}?v=ap7-lifecycle-unification">
   <link rel="stylesheet" href="{% static 'css/mobile-overflow.css' %}">
   <link rel="stylesheet" href="{% static 'css/ui-vnext-tokens.css' %}">
   <link rel="stylesheet" href="{% static 'css/ui-vnext-shell.css' %}">
@@ -23,7 +23,7 @@
   <link rel="stylesheet" href="{% static 'css/ui-vnext-pages.css' %}">
   {% block extra_css %}{% endblock %}
 </head>
-<body class="ui-vnext {% block body_class %}{% endblock %}">
+<body class="ui-vnext ui-control-room {% block body_class %}{% endblock %}">
 {% if user.is_authenticated %}
 <div class="app-shell">
   <aside class="app-sidebar">
@@ -32,19 +32,26 @@
       <span><strong>KI-Radar</strong><small>Business Architecture</small></span>
     </a>
     <nav class="sidebar-nav">
-      <div class="nav-caption">Arbeitsbereich</div>
+      <div class="nav-caption">Steuerung</div>
+      <a class="sidebar-link {% if request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'reporting:dashboard' %}">
+        <span class="nav-icon">⌁</span> Arbeitsvorrat
+      </a>
+      <a class="sidebar-link {% if request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'portfolio' %}active{% endif %}" href="{% url 'reporting:portfolio' %}">
+        <span class="nav-icon">◈</span> Portfolio <small>Querschnitt</small>
+      </a>
+      {% if nav_is_coordinator %}
+      <a class="sidebar-link {% if request.resolver_match.namespace == 'reviews' %}active{% endif %}" href="{% url 'reviews:monthly' %}">
+        <span class="nav-icon">✓</span> Monatsreview
+      </a>
+      {% endif %}
+
+      <div class="nav-caption">Vorhaben</div>
       <a class="sidebar-link {% if request.resolver_match.namespace == 'architecture' %}active{% endif %}" href="{% url 'architecture:value_stream_list' %}">
         <span class="nav-icon">⇢</span> Analyse
       </a>
       {% if journey and request.resolver_match.namespace == 'architecture' %}
       {% analysis_sidebar %}
       {% endif %}
-      <a class="sidebar-link {% if request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'portfolio' %}active{% endif %}" href="{% url 'reporting:portfolio' %}">
-        <span class="nav-icon">◈</span> Portfolio <small>Querschnitt</small>
-      </a>
-      <a class="sidebar-link {% if request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'reporting:dashboard' %}">
-        <span class="nav-icon">⌁</span> Arbeitsvorrat
-      </a>
       <a class="sidebar-link {% if request.resolver_match.namespace == 'use_cases' or request.resolver_match.namespace == 'governance' %}active{% endif %}" href="{% url 'use_cases:list' %}">
         <span class="nav-icon">◫</span> Use Cases
       </a>
@@ -73,33 +80,13 @@
         {% endif %}{% endfor %}
       </div>
       {% endif %}
-      {% if nav_is_coordinator %}
-      <a class="sidebar-link {% if request.resolver_match.namespace == 'reviews' %}active{% endif %}" href="{% url 'reviews:monthly' %}">
-        <span class="nav-icon">✓</span> Monatsreview
-      </a>
-      {% endif %}
 
       <div class="sidebar-workspace-separator" role="separator" aria-label="Trennung der Arbeitsräume"></div>
       <div class="nav-caption nav-caption-workspace">
         <span>Wirkung &amp; Betrieb</span>
       </div>
-      <a class="sidebar-link {% if request.resolver_match.url_name == 'outcome_workspace' and active_stage == 'handover' %}active{% endif %}" href="{% url 'reporting:outcome_workspace' %}?stage=handover{% if selected_use_case %}&amp;use_case={{ selected_use_case.pk }}{% endif %}">
-        <span class="nav-icon">⇥</span> Übergabe
-      </a>
-      <a class="sidebar-link {% if request.resolver_match.url_name == 'outcome_workspace' and active_stage == 'pilot' %}active{% endif %}" href="{% url 'reporting:outcome_workspace' %}?stage=pilot{% if selected_use_case %}&amp;use_case={{ selected_use_case.pk }}{% endif %}">
-        <span class="nav-icon">▶</span> Pilot
-      </a>
-      <a class="sidebar-link {% if request.resolver_match.url_name == 'outcome_workspace' and active_stage == 'effect' %}active{% endif %}" href="{% url 'reporting:outcome_workspace' %}?stage=effect{% if selected_use_case %}&amp;use_case={{ selected_use_case.pk }}{% endif %}">
-        <span class="nav-icon">◎</span> Wirkung
-      </a>
-      <a class="sidebar-link {% if request.resolver_match.url_name == 'outcome_workspace' and active_stage == 'decision' %}active{% endif %}" href="{% url 'reporting:outcome_workspace' %}?stage=decision{% if selected_use_case %}&amp;use_case={{ selected_use_case.pk }}{% endif %}">
-        <span class="nav-icon">◇</span> Ergebnisentscheidung
-      </a>
-      <a class="sidebar-link {% if request.resolver_match.url_name == 'outcome_workspace' and active_stage == 'operation' %}active{% endif %}" href="{% url 'reporting:outcome_workspace' %}?stage=operation{% if selected_use_case %}&amp;use_case={{ selected_use_case.pk }}{% endif %}">
-        <span class="nav-icon">⚙</span> Betrieb
-      </a>
-      <a class="sidebar-link {% if request.resolver_match.url_name == 'outcome_workspace' and active_stage == 'closure' %}active{% endif %}" href="{% url 'reporting:outcome_workspace' %}?stage=closure{% if selected_use_case %}&amp;use_case={{ selected_use_case.pk }}{% endif %}">
-        <span class="nav-icon">■</span> Abschluss
+      <a class="sidebar-link {% if request.resolver_match.url_name == 'outcome_workspace' %}active{% endif %}" href="{% url 'reporting:outcome_workspace' %}?stage={% if active_stage %}{{ active_stage }}{% else %}pilot{% endif %}{% if selected_use_case %}&amp;use_case={{ selected_use_case.pk }}{% endif %}">
+        <span class="nav-icon">◎</span> Wirkung &amp; Betrieb{% if active_stage_copy %} <small>{{ active_stage_copy.title }}</small>{% endif %}
       </a>
     </nav>
 
