@@ -78,7 +78,8 @@ def test_contract_keeps_primitives_presentational_and_defers_work_objects():
     assert "keine View-Logik" in CONTRACT
     assert "keine fachlichen Entscheidungen" in CONTRACT
     assert "keine neuen Template-Partials" in CONTRACT
-    assert "nicht optisch migriert" in CONTRACT
+    assert "Die zweiten Verbraucher" in CONTRACT
+    assert "Adoption erfolgt" in CONTRACT
     assert "LifecycleRail" in CONTRACT
     assert "DecisionState" in CONTRACT
     assert "nicht generalisiert" in CONTRACT
