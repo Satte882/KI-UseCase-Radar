@@ -1,25 +1,31 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Delivery – KI-Radar{% endblock %}
+{% block body_class %}ui-control-room page-delivery-list{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/ui-control-room-primitives.css' %}">
+<link rel="stylesheet" href="{% static 'css/ui-control-room-lists.css' %}">
+{% endblock %}
 {% block content %}
-<div class="page-header">
-  <div>
+<header class="cr-page-header cr-list-header">
+  <div class="cr-page-header__copy">
     <div class="eyebrow mb-2">Delivery Handover</div>
-    <h1 class="page-title">Delivery Packages</h1>
-    <p class="page-subtitle">Final freigegebene Use Cases in einen umsetzbaren Scope für Delivery übersetzen.</p>
+    <h1 class="cr-page-header__title">Delivery Packages</h1>
+    <p class="cr-page-header__summary">Final freigegebene Use Cases in einen umsetzbaren Scope für Delivery übersetzen.</p>
   </div>
-  <div class="d-flex gap-2 flex-wrap">
+  <div class="cr-list-header__actions">
     <a class="btn btn-outline-secondary" href="{% url 'delivery:methodology_reference' %}">Vorgehensmodell</a>
     <a class="btn btn-outline-secondary" href="{% url 'delivery:methodology_download' %}">Vorgehensmodell herunterladen</a>
   </div>
-</div>
+</header>
 
-<div class="alert alert-secondary mb-4">
+<div class="cr-inline-note">
   <strong>Klare Systemgrenze:</strong> KI-Radar definiert Kontext, Anforderungen, MVP und Abnahme. Umsetzung, Sprints und Ressourcen bleiben in Jira, Azure DevOps, GitHub oder einem anderen Delivery-System.
 </div>
 
-<div class="app-card table-card">
-  <div class="table-responsive">
-    <table class="table align-middle">
+<section class="cr-section cr-list-section" aria-label="Delivery Packages">
+  <div class="table-responsive cr-list-table-wrap">
+    <table class="table cr-list-table align-middle mb-0">
       <thead><tr><th>Use Case</th><th>Organisation</th><th>Freigabe</th><th>Delivery Package</th><th>Aktion</th></tr></thead>
       <tbody>
         {% for row in rows %}
@@ -36,9 +42,9 @@
             {% elif not row.eligible %}<span class="small text-warning">{{ row.eligibility_reason }}</span>{% else %}–{% endif %}
           </td>
         </tr>
-        {% empty %}<tr><td colspan="5" class="text-center text-muted py-5">Noch keine final freigegebenen Use Cases.</td></tr>{% endfor %}
+        {% empty %}<tr><td colspan="5"><p class="cr-empty-state">Noch keine final freigegebenen Use Cases.</p></td></tr>{% endfor %}
       </tbody>
     </table>
   </div>
-</div>
+</section>
 {% endblock %}

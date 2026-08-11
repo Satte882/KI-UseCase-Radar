@@ -69,9 +69,9 @@ def test_each_extracted_pattern_has_a_real_second_consumer():
     assert "cr-stat-strip" in DASHBOARD
     assert "outcome-page-header" in OUTCOME
     assert "outcome-summary-grid" in OUTCOME
-    assert 'class="filter-deck"' in USE_CASE_LIST
-    assert 'class="register-filters"' in USE_CASE_LIST
-    assert "empty-row" in USE_CASE_LIST
+    assert "cr-filter-deck" in USE_CASE_LIST
+    assert "cr-filter-grid" in USE_CASE_LIST
+    assert "cr-empty-state" in USE_CASE_LIST
 
 
 def test_contract_keeps_primitives_presentational_and_defers_work_objects():

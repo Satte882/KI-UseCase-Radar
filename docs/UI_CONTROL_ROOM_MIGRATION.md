@@ -102,6 +102,20 @@ Includes und Partials sind keine eigenständigen Migrationsseiten; sie werden mi
 - **Gate B nach #283:** Use-Case-Screenshot-Review auf Desktop/Tablet/Mobile sowie Normal-, Blocker-, Zweitprüfungs-, Freigabe- und Read-only-Zustand. Kein #284 vor Freigabe.
 - **Final Gate nach #287:** vollständige fachliche, visuelle, responsive und Accessibility-Abnahme des Integrationsbranches. Kein Merge auf `main` vor expliziter Freigabe.
 
+## AP6 – migrierte Querschnitts- und Listenseiten
+
+Nach der Dashboard-Referenz verwenden die verbleibenden produktiven Listen aus
+#285 dieselbe Control-Room-Hierarchie:
+
+- Use-Case-Liste mit gemeinsamem Header, Filterdeck, Datentabelle und Empty State,
+- Value-Stream-Liste als scanbares Link-Grid ohne pseudo-linearen Lifecycle,
+- Delivery-Liste und persönliche Erfassungen mit gemeinsamer Tabellenstruktur,
+- Monatsreview als priorisierte Arbeitsliste ohne Card-Wall.
+
+Die Migration ändert keine Query-Parameter, Links, Form-Aktionen, Rollen oder
+serverseitigen Gates. Datentabellen dürfen innerhalb ihres eigenen Containers
+horizontal scrollen; die Seite selbst bleibt auf Desktop und Mobile überlauffrei.
+
 ## CI-Regel
 
 Bei einem fehlgeschlagenen CI-Lauf wird der komplette Lauf abgewartet. Danach werden alle fehlgeschlagenen Jobs und deren Logs vollständig geprüft und ausschließlich auf Basis der vorliegenden Log-Hinweise gesammelt. Alle identifizierten Fehler werden in einem Sammel-Fix-Commit behoben; erst danach wird ein neuer Lauf ausgelöst.
