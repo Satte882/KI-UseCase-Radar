@@ -7,19 +7,19 @@ USE_CASE_DETAIL = (ROOT / "templates" / "use_cases" / "detail.html").read_text(e
 MIGRATION = (ROOT / "docs" / "UI_CONTROL_ROOM_MIGRATION.md").read_text(encoding="utf-8")
 
 
-def test_body_class_hook_supports_incremental_page_level_migration():
-    assert '<body class="ui-vnext {% block body_class %}{% endblock %}">' in BASE
-    assert "{% block body_class %}ui-control-room page-portfolio{% endblock %}" in PORTFOLIO
-    use_case_class = "{% block body_class %}ui-control-room page-use-case{% endblock %}"
+def test_control_room_is_the_normal_application_shell():
+    assert '<body class="ui-vnext ui-control-room {% block body_class %}{% endblock %}">' in BASE
+    assert "{% block body_class %}page-portfolio{% endblock %}" in PORTFOLIO
+    use_case_class = "{% block body_class %}page-use-case{% endblock %}"
     assert use_case_class in USE_CASE_DETAIL
 
 
-def test_migration_contract_keeps_control_room_rules_page_scoped():
+def test_migration_contract_records_the_completed_normalization():
     assert "`body_class`" in MIGRATION
-    assert "{% block body_class %}ui-control-room{% endblock %}" in MIGRATION
+    assert "Control Room ist der Normalzustand" in MIGRATION
     assert "unter `.ui-control-room` gescoped" in MIGRATION
     assert "keine Runtime-Feature-Flags" in MIGRATION
-    assert "temporär" in MIGRATION
+    assert "temporäre Koexistenz ist beendet" in MIGRATION
 
 
 def test_migration_contract_contains_reference_pages_and_acceptance_gates():

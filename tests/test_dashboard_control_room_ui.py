@@ -12,7 +12,7 @@ CSS = read_repo_text("static", "css", "ui-control-room-dashboard.css")
 
 
 def test_dashboard_opts_into_control_room_cross_section_pattern():
-    assert "ui-control-room page-dashboard" in TEMPLATE
+    assert "{% block body_class %}page-dashboard{% endblock %}" in TEMPLATE
     assert "css/ui-control-room-primitives.css" in TEMPLATE
     assert "css/ui-control-room-dashboard.css" in TEMPLATE
     assert TEMPLATE.index("css/ui-control-room-primitives.css") < TEMPLATE.index(

@@ -5,8 +5,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.template.loader import render_to_string
 from django.test import RequestFactory
 
-from ki_radar.core.templatetags.workflow_tags import workflow_steps as core_workflow_steps
-from ki_radar.use_cases.templatetags.workflow_tags import workflow_steps
+from ki_radar.core.templatetags.workflow_tags import workflow_steps
 from ki_radar.use_cases.workflow import JourneyState, JourneyStep
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -64,7 +63,7 @@ def test_audit_distinguishes_duplicates_from_real_subworkflows():
 
 
 def test_value_stream_reference_owns_next_action_and_lifecycle_locally():
-    assert "ui-control-room page-value-stream" in VALUE_STREAM
+    assert "{% block body_class %}page-value-stream{% endblock %}" in VALUE_STREAM
     assert "css/ui-control-room-primitives.css" in VALUE_STREAM
     assert VALUE_STREAM.count("includes/next_action.html") == 1
     assert VALUE_STREAM.count("includes/lifecycle_rail.html") == 1
@@ -122,7 +121,7 @@ def test_context_topbar_explicitly_yields_value_stream_ownership():
 
 
 def test_outcome_workspace_owns_subordinate_lifecycle_once_and_locally():
-    assert "ui-control-room page-outcome-workspace" in OUTCOME
+    assert "{% block body_class %}page-outcome-workspace{% endblock %}" in OUTCOME
     assert OUTCOME.count("includes/lifecycle_rail.html") == 1
     assert OUTCOME.index("includes/lifecycle_rail.html") < OUTCOME.index('class="page-header')
     assert 'lifecycle_kicker="Teilprozess"' in OUTCOME
@@ -201,15 +200,14 @@ def test_local_value_stream_lifecycle_never_uses_global_fallback_links():
         next_action=None,
     )
 
-    for step_builder in (workflow_steps, core_workflow_steps):
-        steps = {step["key"]: step for step in step_builder(journey, request)}
+    steps = {step["key"]: step for step in workflow_steps(journey, request)}
 
-        assert steps["discovery"]["local_url"] == "/architecture/value-streams/example/"
-        assert steps["focus"]["local_url"] == "/architecture/value-streams/example/"
-        assert steps["use_cases"]["local_label"] == "Prozessanalyse"
-        assert steps["use_cases"]["local_url"] == "/architecture/processes/example/edit/"
-        for key in ("assessment", "governance", "approval", "delivery"):
-            assert steps[key]["local_url"] == ""
+    assert steps["discovery"]["local_url"] == "/architecture/value-streams/example/"
+    assert steps["focus"]["local_url"] == "/architecture/value-streams/example/"
+    assert steps["use_cases"]["local_label"] == "Prozessanalyse"
+    assert steps["use_cases"]["local_url"] == "/architecture/processes/example/edit/"
+    for key in ("assessment", "governance", "approval", "delivery"):
+        assert steps[key]["local_url"] == ""
 
 
 def test_outcome_lifecycle_links_remain_local_workspace_view_switches():
@@ -219,9 +217,8 @@ def test_outcome_lifecycle_links_remain_local_workspace_view_switches():
         url_name="outcome_workspace",
     )
 
-    for step_builder in (workflow_steps, core_workflow_steps):
-        steps = step_builder(None, request)
+    steps = workflow_steps(None, request)
 
-        assert len(steps) == 6
-        assert all(step["local_url"].startswith("/wirkung-betrieb/?") for step in steps)
-        assert all("use_case=example" in step["local_url"] for step in steps)
+    assert len(steps) == 6
+    assert all(step["local_url"].startswith("/wirkung-betrieb/?") for step in steps)
+    assert all("use_case=example" in step["local_url"] for step in steps)

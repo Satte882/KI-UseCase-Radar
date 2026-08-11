@@ -1,6 +1,6 @@
 # UI Control Room – Migrationsvertrag
 
-Status: AP 1 / Referenz-Audit
+Status: AP 8 / Hardening abgeschlossen, Final Gate ausstehend
 Parent: #279
 Arbeitsauftrag: #280
 
@@ -12,12 +12,12 @@ Die Migration ist rein präsentationsseitig. Bestehende URLs, Views, Querysets, 
 
 ## Referenz-Audit
 
-### Globale Shell
+### Globale Shell (Ausgangslage)
 
 - `templates/base.html` lädt Bootstrap sowie die bestehenden `ui-vnext-*`-Styles global und stellt mit `{% block body_class %}` bereits einen seitenweisen CSS-Opt-in bereit.
 - `templates/includes/context_topbar.html` kombiniert derzeit Kontext, permanenten End-to-End-Fortschritt und teilweise die nächste Aktion. Auf Querschnittsseiten entsteht dadurch fachliche Redundanz.
 - `templates/includes/next_action.html` erzeugt auf dem Use-Case-Detail zusätzlich eine dominante Next-Action-Fläche.
-- `templates/includes/journey_stepper.html` bildet einen weiteren Journey-Kontext ab.
+- `templates/includes/journey_stepper.html` bildete einen weiteren Journey-Kontext ab und wurde nach vollständiger Ablösung entfernt.
 - `static/css/ui-vnext-tokens.css`, `ui-vnext-shell.css`, `ui-vnext-components.css` und `ui-vnext-pages.css` bilden bereits eine vNext-Styling-Schicht; die Template-Komponentisierung ist dagegen bewusst dünn.
 
 ### Referenzseite 1 – Portfolio
@@ -36,22 +36,25 @@ Der zweite AP7-Rollout schließt die übrigen Detail-, Prüf- und Formularseiten
 
 Decision-State- und Lifecycle-Primitives werden erst nach bestandenem Screenshot-Gate B in #284 abstrahiert.
 
-## Koexistenzvertrag
+## Abgeschlossene Normalisierung
 
-Die bestehende `body_class`-Extension in `base.html` ist der einzige technische Opt-in-Mechanismus. Migrierte Seiten setzen:
+Die temporäre Koexistenz ist beendet. Control Room ist der Normalzustand der Anwendung und wird in `base.html` zentral gesetzt:
 
 ```django
-{% block body_class %}ui-control-room{% endblock %}
+<body class="ui-vnext ui-control-room {% block body_class %}{% endblock %}">
 ```
 
-Regeln:
+`ui-vnext` bleibt das gemeinsame Grundsystem für Tokens, Shell, Fokus und reduzierte Bewegung. `ui-control-room` bezeichnet die verbindliche Informationshierarchie und die gemeinsamen Arbeitsflächen. Der `body_class`-Block enthält nur noch seiten- beziehungsweise archetypspezifische Klassen; die frühere redundante Migrationsklasse ist aus allen Seitentemplates entfernt.
 
-1. Neue Control-Room-Regeln müssen unter `.ui-control-room` gescoped sein, solange die Migration nicht abgeschlossen ist.
-2. Eine Seite wird erst opt-in gesetzt, wenn ihr Arbeitspaket sie tatsächlich migriert.
-3. Nicht migrierte Seiten dürfen durch Control-Room-Änderungen keine unbeabsichtigten visuellen Änderungen erhalten.
+Verbindliche Regeln:
+
+1. Neue Control-Room-Regeln bleiben unter `.ui-control-room` gescoped.
+2. Alle produktiven Seiten verwenden die gemeinsame Shell; es gibt keinen seitenweisen Opt-in mehr.
+3. Neue Seiten erhalten nur ihren Archetyp beziehungsweise ihre Seitenklasse.
 4. Es gibt keine Runtime-Feature-Flags, keine zweite View, keine duplizierten Querysets und keine doppelte Backend-Logik.
 5. Bestehende echte Links, Formulare, Berechtigungen, POST-Aktionen und serverseitige Gates bleiben erhalten.
-6. Die Koexistenz ist temporär. #287 entfernt beziehungsweise normalisiert die Migrationsklasse und ungenutzte Legacy-Regeln.
+6. Der ungenutzte Legacy-Stepper und seine ausschließlich dafür vorhandenen Use-Case-Regeln sind entfernt.
+7. Die Template-Tag-Bibliothek `workflow_tags` existiert nur einmal zentral in `ki_radar.core`; die frühere doppelte Registrierung und Django-Warnung sind entfernt.
 
 ## UI-Archetypen und Rollout
 

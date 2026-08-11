@@ -23,7 +23,7 @@
   <link rel="stylesheet" href="{% static 'css/ui-vnext-pages.css' %}">
   {% block extra_css %}{% endblock %}
 </head>
-<body class="ui-vnext {% block body_class %}{% endblock %}">
+<body class="ui-vnext ui-control-room {% block body_class %}{% endblock %}">
 {% if user.is_authenticated %}
 <div class="app-shell">
   <aside class="app-sidebar">

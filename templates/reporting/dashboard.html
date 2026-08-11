@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static worklist_tags %}
 {% block title %}Arbeitsvorrat – KI-Radar{% endblock %}
-{% block body_class %}ui-control-room page-dashboard{% endblock %}
+{% block body_class %}page-dashboard{% endblock %}
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/ui-control-room-primitives.css' %}">
 <link rel="stylesheet" href="{% static 'css/ui-control-room-dashboard.css' %}">
@@ -16,7 +16,7 @@
       <span aria-hidden="true">·</span>
       <strong>{{ decision_queue|length }}</strong> anstehende Entscheidungen
       <span aria-hidden="true">·</span>
-      Stand {{ today|date:"d.m.Y" }}
+      Stand <time datetime="{{ today|date:'Y-m-d' }}">{{ today|date:"d.m.Y" }}</time>
     </p>
   </div>
   <div class="dashboard-header__actions">
@@ -78,7 +78,7 @@
             <td><span class="badge badge-soft">{{ row.action.label }}</span><div class="dashboard-table__meta">Priorität {{ row.priority_class }}</div></td>
             <td class="dashboard-table__task"><strong>{{ row.action.action_label|default:row.action.label }}</strong></td>
             <td class="dashboard-table__reason">{{ row.action.reason }}</td>
-            <td class="dashboard-table__due">{% if row.due %}<span class="{% if row.overdue %}text-danger fw-semibold{% endif %}">{{ row.due|date:"d.m.Y" }}</span>{% else %}<span class="text-muted">–</span>{% endif %}</td>
+            <td class="dashboard-table__due">{% if row.due %}<time datetime="{{ row.due|date:'Y-m-d' }}" class="{% if row.overdue %}text-danger fw-semibold{% endif %}">{{ row.due|date:"d.m.Y" }}</time>{% else %}<span class="text-muted">–</span>{% endif %}</td>
             <td class="dashboard-table__action"><a class="btn btn-sm {% if row.action.state == 'blocked' %}btn-outline-danger{% else %}btn-primary{% endif %}" href="{{ row.action_url }}">{{ row.action.action_label|default:"Öffnen" }}</a></td>
           </tr>
           {% empty %}<tr><td colspan="6"><p class="cr-empty-state">Für deine Rolle sind aktuell keine ausführbaren Aufgaben offen.</p></td></tr>{% endfor %}
@@ -88,7 +88,7 @@
     </div>
 
     <div class="tab-pane fade" id="decisions-pane" role="tabpanel" aria-labelledby="decisions-tab" tabindex="0">
-      <div class="cr-inline-note dashboard-sort-note"><strong>Entscheidungsreife</strong><span>Sortiert nach Überfälligkeit, Blockern und Fälligkeit. Stand {{ today|date:"d.m.Y" }}.</span></div>
+      <div class="cr-inline-note dashboard-sort-note"><strong>Entscheidungsreife</strong><span>Sortiert nach Überfälligkeit, Blockern und Fälligkeit. Stand <time datetime="{{ today|date:'Y-m-d' }}">{{ today|date:"d.m.Y" }}</time>.</span></div>
       <div class="table-responsive dashboard-table-wrap">
         <table class="table dashboard-table align-middle mb-0">
           <thead><tr><th scope="col">Use Case</th><th scope="col">Phase</th><th scope="col">Anstehende Entscheidung</th><th scope="col">Reife</th><th scope="col">Offene Voraussetzungen</th><th scope="col">Fällig</th><th scope="col">Owner</th></tr></thead>
@@ -100,7 +100,7 @@
             <td class="dashboard-table__task"><strong>{{ item.decision_check.title }}</strong></td>
             <td><span class="badge state-{{ item.decision_check.state }}">{{ item.decision_check.state_label }}</span></td>
             <td class="dashboard-table__reason">{% if item.blocker_details %}<strong>{{ item.blocker_details|length }} offen</strong><div class="dashboard-table__meta">{{ item.blocker_details.0.label }}</div><a href="{{ item.blocker_details.0.target_href }}">Ersten Punkt bearbeiten</a>{% elif item.decision_check.warnings %}{{ item.decision_check.warnings.0 }}{% else %}<span class="text-muted">Keine offenen Blocker</span>{% endif %}</td>
-            <td class="dashboard-table__due">{% if item.decision_due %}{{ item.decision_due|date:"d.m.Y" }}{% else %}<span class="text-muted">–</span>{% endif %}</td>
+            <td class="dashboard-table__due">{% if item.decision_due %}<time datetime="{{ item.decision_due|date:'Y-m-d' }}">{{ item.decision_due|date:"d.m.Y" }}</time>{% else %}<span class="text-muted">–</span>{% endif %}</td>
             <td>{{ item.business_owner.get_display_name }}</td>
           </tr>
           {% empty %}<tr><td colspan="7"><p class="cr-empty-state">Keine aktiven Entscheidungen vorhanden.</p></td></tr>{% endfor %}

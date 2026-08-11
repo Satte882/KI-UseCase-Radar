@@ -46,6 +46,8 @@ Fachdomäne und Business Capability
 
 Die Gesamtstrecke wird in der Oberfläche kontextbezogen dargestellt. Auf konkreten Arbeitsobjekten zeigt eine kompakte Lifecycle-Orientierung den tatsächlichen Zustand und die nächste relevante Entscheidung; Querschnitts- und Listensichten wie Portfolio verzichten bewusst auf eine pseudo-lineare Journey. Die linke Navigation öffnet zusätzlich die lokale Tiefe des aktiven Bereichs.
 
+Die Oberfläche folgt durchgängig einem Business- und Decision-Control-Room-Muster. Das gemeinsame Grundsystem stellt sichtbaren Tastaturfokus, semantische Statusbezeichnungen, responsive Arbeitsflächen, mobile Touchziele und reduzierte Bewegung bereit. Große Datentabellen scrollen bei Bedarf innerhalb ihres eigenen Containers; die Seite selbst bleibt ohne horizontalen Überlauf.
+
 Der Discovery- und Architecture-Pfad bleibt optional. Bereits bekannte Vorhaben können direkt über den Use-Case-Intake erfasst werden. Systematisch abgeleitete Vorhaben erhalten zusätzlich eine nachvollziehbare Herkunftskette vom Value Stream über die Fokusentscheidung und Lösungsoption bis zum Use Case.
 
 Portfolio ist kein einmaliger linearer Schritt. Es ist eine Querschnittssicht über Use Cases, Bewertung, Freigabe und Delivery.
