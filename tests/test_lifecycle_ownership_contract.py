@@ -5,7 +5,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.template.loader import render_to_string
 from django.test import RequestFactory
 
-from ki_radar.use_cases.journey import JourneyState, JourneyStep
+from ki_radar.use_cases.workflow import JourneyState, JourneyStep
 
 ROOT = Path(__file__).resolve().parents[1]
 
