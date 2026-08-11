@@ -1,6 +1,8 @@
 {% load workflow_tags %}
 {% if request.resolver_match.namespace == 'use_cases' and request.resolver_match.url_name == 'detail' %}
-{# The migrated work-object workspace owns DecisionState, Next Action and LifecycleRail locally. #}
+{# The migrated Use Case workspace owns DecisionState, Next Action and LifecycleRail locally. #}
+{% elif request.resolver_match.namespace == 'architecture' and request.resolver_match.url_name == 'value_stream_detail' %}
+{# The migrated Value Stream workspace owns Next Action and LifecycleRail locally. #}
 {% elif journey or request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'outcome_workspace' %}
 {% workflow_steps journey request as workflow %}
 <header class="app-topbar app-topbar-journey" aria-label="Arbeitsfortschritt">
