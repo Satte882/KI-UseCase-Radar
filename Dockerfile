@@ -14,7 +14,9 @@ RUN groupadd --gid 10001 app && useradd --uid 10001 --gid app --create-home app
 WORKDIR /app
 COPY --from=builder --chown=app:app /app/.venv /app/.venv
 COPY --chown=app:app . /app
-RUN chmod +x /app/scripts/*.sh && mkdir -p /app/staticfiles /app/var && chown -R app:app /app
+RUN chmod +x /app/scripts/*.sh \
+    && mkdir -p /app/staticfiles /app/var \
+    && chown -R app:app /app/staticfiles /app/var
 USER app
 ENTRYPOINT ["/app/scripts/entrypoint.sh"]
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "60", "--access-logfile", "-", "--error-logfile", "-"]
+CMD ["/app/scripts/start-web.sh"]
