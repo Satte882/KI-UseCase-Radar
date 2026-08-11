@@ -49,6 +49,16 @@ Es beschreibt Produktqualität, nicht eine austauschbare Landingpage-Ästhetik.
 - Mobile stapelt Bedienelemente und erlaubt horizontales Scrollen großer Datentabellen.
 - Inhaltsbreite und Abstände müssen auch bei 5 und bei 60 Zeilen funktionieren.
 
+## Lifecycle und Prozesskontext
+
+- Eine Journey/Datenquelle darf pro Arbeitsobjekt nur eine primäre Lifecycle-Darstellung besitzen. Ein echter Subworkflow ist nur zulässig, wenn er semantisch eine andere Granularität besitzt, ausdrücklich bezeichnet und visuell untergeordnet ist.
+- Migrierte Arbeitsobjekte besitzen ihren Lifecycle lokal im fachlichen Workspace; ein globaler Kontextbereich darf dieselbe Journey dort nicht erneut rendern.
+- Querschnitts- und Listenseiten erhalten keinen pseudo-linearen Lifecycle.
+- Die kanonische Next Action erscheint pro Arbeitsobjekt genau einmal dominant. Weitere Aktionen dürfen nur als fachlich eigenständige Sekundäraktionen erscheinen.
+- Lifecycle-Schritte bleiben echte Links, wenn sie navigierbar sind; aktueller Schritt bzw. aktuelle Ansicht werden mit `aria-current` gekennzeichnet und besitzen sichtbaren Tastaturfokus.
+- Desktop-Lifecycle darf bei normalen Viewports keine horizontale Scrollfläche erzeugen. Tablet und Mobile verwenden eine kompakte, umbrechende Darstellung.
+- Phasen-, Reife- und Blockerzustände verwenden ausschließlich die bestehenden semantischen Tokens und Statusfarben.
+
 ## Datenlisten
 
 - Tabellen bleiben Tabellen, wenn zeilenweises Überfliegen die Hauptaufgabe ist.
