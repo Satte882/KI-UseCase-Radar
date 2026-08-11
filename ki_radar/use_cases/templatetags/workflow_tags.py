@@ -34,6 +34,15 @@ OUTCOME_STAGE_TO_STEP = {
     "operation": "operation",
     "closure": "closure",
 }
+CONTEXT_STEP_PREFERENCE = {
+    "discovery": ("value_stream",),
+    "focus": ("focus",),
+    "use_cases": ("use_case", "solution", "process"),
+    "assessment": ("assessment",),
+    "governance": ("governance",),
+    "approval": ("approval",),
+    "delivery": ("delivery",),
+}
 
 
 def _aggregate_state(raw_steps, keys):
@@ -186,6 +195,50 @@ def _links(request):
     }
 
 
+def _contextual_step(raw_steps, workflow_key):
+    preferred_keys = CONTEXT_STEP_PREFERENCE.get(workflow_key, ())
+    candidates = [step for step in raw_steps if step.key in preferred_keys]
+    actionable = next(
+        (
+            step
+            for step in candidates
+            if step.state in {"current", "blocked"} and step.url and step.action_method != "post"
+        ),
+        None,
+    )
+    if actionable is not None:
+        return actionable
+    for preferred_key in preferred_keys:
+        completed = next(
+            (
+                step
+                for step in candidates
+                if step.key == preferred_key
+                and step.state == "complete"
+                and step.url
+                and step.action_method != "post"
+            ),
+            None,
+        )
+        if completed is not None:
+            return completed
+    return None
+
+
+def _local_label(workflow_key, default_label, raw_steps, contextual_step):
+    if workflow_key != "use_cases":
+        return default_label
+    if contextual_step is not None:
+        return contextual_step.label
+    if any(step.key == "use_case" and step.state == "complete" for step in raw_steps):
+        return "Use Case"
+    if any(step.key == "solution" and step.state == "complete" for step in raw_steps):
+        return "Lösungsoption"
+    if any(step.key == "process" and step.state == "complete" for step in raw_steps):
+        return "Prozessanalyse"
+    return "Prozess & Use Case"
+
+
 @register.simple_tag
 def workflow_steps(journey, request):
     definitions = _workflow_definition(journey, request)
@@ -203,12 +256,20 @@ def workflow_steps(journey, request):
             state = selection_states[key]
         else:
             state = outcome_states[key]
+        contextual_step = None if is_outcome_workspace else _contextual_step(raw_steps, key)
+        local_url = ""
+        if is_outcome_workspace:
+            local_url = links[key]
+        elif state in {"complete", "current", "blocked"} and contextual_step is not None:
+            local_url = contextual_step.url
         result.append(
             {
                 "key": key,
                 "label": label,
                 "state": state,
                 "url": links[key],
+                "local_url": local_url,
+                "local_label": _local_label(key, label, raw_steps, contextual_step),
                 "divider_before": divider_before,
                 "view_active": is_outcome_workspace and key == selected_outcome_step,
             }

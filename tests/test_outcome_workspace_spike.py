@@ -37,6 +37,7 @@ def test_outcome_workspace_assets_document_scope_and_final_navigation():
 
     assert "sidebar-workspace-separator" in base
     assert "Wirkung &amp; Betrieb" in base
+    assert base.count("reporting:outcome_workspace") == 1
     assert "css/outcome-workspace.css" in base
     assert "Entscheidungsrelevanter Review-Snapshot" in template
     assert "B · Gesamtleiste" not in template
@@ -98,10 +99,12 @@ def test_outcome_workspace_renders_only_outcome_lifecycle_segment(
         assert response.status_code == 200
         assert response.context["active_stage"] == "effect"
         assert response.context["journey"].path_label.endswith("Wirkung & Betrieb")
-        assert "End-to-End-Arbeitsmodell · Wirkung &amp; Betrieb" in content
-        assert 'class="journey-progress-label">Discovery</span>' not in content
-        assert 'class="journey-progress-label">Fokus &amp; Priorisierung</span>' not in content
+        assert "cr-lifecycle-rail--header" in content
+        assert ">Teilprozess<" in content
+        assert 'class="cr-lifecycle-step__label">Discovery</span>' not in content
+        assert 'class="cr-lifecycle-step__label">Fokus &amp; Priorisierung</span>' not in content
         assert "Ergebnisentscheidung" in content
+        assert content.index("cr-lifecycle-rail--header") < content.index('class="page-header')
         assert "Entscheidungsrelevanter Review-Snapshot" in content
         assert "Externes Delivery-System" in content
         assert "B · Gesamtleiste" not in content

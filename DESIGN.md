@@ -53,9 +53,13 @@ Es beschreibt Produktqualität, nicht eine austauschbare Landingpage-Ästhetik.
 
 - Eine Journey/Datenquelle darf pro Arbeitsobjekt nur eine primäre Lifecycle-Darstellung besitzen. Ein echter Subworkflow ist nur zulässig, wenn er semantisch eine andere Granularität besitzt, ausdrücklich bezeichnet und visuell untergeordnet ist.
 - Migrierte Arbeitsobjekte besitzen ihren Lifecycle lokal im fachlichen Workspace; ein globaler Kontextbereich darf dieselbe Journey dort nicht erneut rendern.
+- Der primäre Lifecycle steht in der oberen Orientierungshierarchie des Workspaces vor Seitentitel, Next Action und Arbeitsinhalt. Er darf nicht als nachgelagerter Inhaltsblock zwischen Arbeitskarten erscheinen.
+- `Wirkung & Betrieb` ist ein eigener Arbeitsraum. Seine Stufen `Übergabe → Pilot → Wirkung → Ergebnisentscheidung → Betrieb → Abschluss` werden lokal als ausdrücklich untergeordneter Ablauf dargestellt und nicht zusätzlich in der globalen Sidebar wiederholt.
 - Querschnitts- und Listenseiten erhalten keinen pseudo-linearen Lifecycle.
 - Die kanonische Next Action erscheint pro Arbeitsobjekt genau einmal dominant. Weitere Aktionen dürfen nur als fachlich eigenständige Sekundäraktionen erscheinen.
-- Lifecycle-Schritte bleiben echte Links, wenn sie navigierbar sind; aktueller Schritt bzw. aktuelle Ansicht werden mit `aria-current` gekennzeichnet und besitzen sichtbaren Tastaturfokus.
+- In einem lokalen Arbeitsobjekt ist ein Lifecycle-Schritt nur dann ein echter Link, wenn ein konkretes Objekt oder eine konkrete ausführbare Aktion existiert. Zukünftige, optionale oder lediglich global auflösbare Schritte bleiben Statusanzeigen; globale Listen-Fallbacks gehören nicht in den lokalen Lifecycle.
+- Eine ausdrücklich als Teilprozess ausgewiesene Ansichtsfolge innerhalb desselben Arbeitsraums darf ihre lokalen Stufen als View-Wechsel verlinken. Aktueller Schritt bzw. aktuelle Ansicht werden mit `aria-current` gekennzeichnet und besitzen sichtbaren Tastaturfokus.
+- Eine untergeordnete Analyseschritt-Navigation besitzt auf Desktop genau einen persistenten Owner. Eine zusätzliche Vor-/Zurück-Leiste ist dort auszublenden und bleibt nur erhalten, wenn die persistente Navigation auf kleinen Viewports entfällt.
 - Desktop-Lifecycle darf bei normalen Viewports keine horizontale Scrollfläche erzeugen. Tablet und Mobile verwenden eine kompakte, umbrechende Darstellung.
 - Phasen-, Reife- und Blockerzustände verwenden ausschließlich die bestehenden semantischen Tokens und Statusfarben.
 
@@ -125,6 +129,8 @@ Es beschreibt Produktqualität, nicht eine austauschbare Landingpage-Ästhetik.
 
 ## Branch-Regel
 
-Das bestätigte Design wird auf `agent/ui-vnext-full` konsistent auf alle Seiten
-übertragen. Auf `main` sind Selbst-Ausnahmen nicht zulässig; dort braucht jede
-Abweichung von diesem Dokument eine ausdrückliche Freigabe.
+Das bestätigte Design wird über kleine AP-Branches in
+`agent/ui-control-room-integration` integriert und dort konsistent auf alle Seiten
+übertragen. `main` bleibt bis zur finalen Abnahme unangetastet. Auf `main` sind
+Selbst-Ausnahmen nicht zulässig; dort braucht jede Abweichung von diesem Dokument
+eine ausdrückliche Freigabe.

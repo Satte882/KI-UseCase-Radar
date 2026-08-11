@@ -90,7 +90,7 @@ def test_handover_has_its_own_workspace_context(client, coordinator, owner, busi
     assert response.context["active_stage"] == "handover"
     assert action["action_label"] == "An Delivery übergeben"
     assert action["url"] == package.get_absolute_url()
-    assert "Aktiver Bereich" in content
+    assert "Status und nächste Handlung" in content
     assert "Übergabe" in content
 
 
@@ -277,7 +277,7 @@ def test_outcome_workspace_css_preserves_readable_hierarchy():
     css_path = Path(__file__).resolve().parents[1] / "static/css/outcome-workspace.css"
     css = css_path.read_text(encoding="utf-8")
 
-    assert "minmax(520px, 1.5fr) minmax(330px, .8fr)" in css
+    assert "minmax(330px, .78fr) minmax(520px, 1.42fr)" in css
     assert "grid-template-columns: repeat(2, minmax(0, 1fr));" in css
     assert "-webkit-line-clamp" not in css
     assert "font-size: .64rem" not in css
