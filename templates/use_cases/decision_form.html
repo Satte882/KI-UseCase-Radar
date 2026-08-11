@@ -1,14 +1,17 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Entscheidung – {{ use_case.short_id }}{% endblock %}
+{% block body_class %}ui-control-room page-decision-form{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/ui-control-room-primitives.css' %}"><link rel="stylesheet" href="{% static 'css/ui-control-room-workspaces.css' %}">{% endblock %}
 {% block content %}
-<div class="page-header">
-  <div>
+{% include "includes/lifecycle_rail.html" with lifecycle_variant="header" lifecycle_columns="7" lifecycle_kicker="Arbeitsmodell" lifecycle_title="Auswahl und Freigabe" lifecycle_context="Freigabe · Verbindliche Entscheidung" %}
+<header class="cr-page-header cr-work-header">
+  <div class="cr-page-header__copy">
     <div class="eyebrow mb-2">{{ journey.path_label }} · {{ use_case.short_id }} · Verbindliche Entscheidung</div>
-    <h1 class="page-title">{{ use_case.title }}</h1>
-    <p class="page-subtitle">Bewertung und Entscheidung sind personell getrennt. Positive Entscheidungen werden zusätzlich gegen Pflicht-Evidenz und Governance-Prüfungen validiert.</p>
+    <h1 class="cr-page-header__title">{{ use_case.title }}</h1>
+    <p class="cr-work-header__summary">Bewertung und Entscheidung sind personell getrennt. Positive Entscheidungen werden zusätzlich gegen Pflicht-Evidenz und Governance-Prüfungen validiert.</p>
   </div>
-</div>
-{% include "includes/journey_stepper.html" %}
+</header>
 {% include "includes/status_dimensions.html" %}
 
 <div class="app-card mb-4" id="governance-artifacts">
@@ -86,7 +89,7 @@
   </div>
   <div class="col-xl-7">
     {% if decision_form_enabled %}
-    <form method="post" id="decision-form" data-initially-dirty="{% if form.is_bound %}true{% else %}false{% endif %}">
+    <form method="post" class="cr-work-form" id="decision-form" data-initially-dirty="{% if form.is_bound %}true{% else %}false{% endif %}">
       {% csrf_token %}<input type="hidden" name="return_to" value="{{ return_to }}">
       <div class="app-card" id="binding-decision">
         <div class="card-header"><strong>Verbindliche Entscheidung</strong><div class="small text-muted mt-1">{% if selected_status == assessment.recommendation %}Die Vorauswahl „{{ selected_status_label }}“ stammt aus der Bewertungsempfehlung. Sie ist ein Vorschlag und wird erst durch das Speichern verbindlich.{% else %}Ausgewählter Prüfpfad: {{ selected_status_label }}. Die Entscheidung wird erst nach erneuter serverseitiger Gate-Prüfung gespeichert.{% endif %}</div></div>

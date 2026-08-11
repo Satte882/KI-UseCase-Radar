@@ -5,6 +5,14 @@
 {# The migrated Value Stream workspace owns Next Action and LifecycleRail locally. #}
 {% elif request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'outcome_workspace' %}
 {# Wirkung & Betrieb owns its subordinate outcome lifecycle locally. #}
+{% elif request.resolver_match.namespace == 'architecture' and request.resolver_match.url_name == 'process_analysis_detail' %}
+{# The migrated Process Analysis workspace owns Next Action and LifecycleRail locally. #}
+{% elif request.resolver_match.namespace == 'delivery' and request.resolver_match.url_name == 'package_detail' %}
+{# The migrated Delivery Package workspace owns Next Action and LifecycleRail locally. #}
+{% elif request.resolver_match.namespace == 'governance' and request.resolver_match.url_name == 'create' or request.resolver_match.namespace == 'governance' and request.resolver_match.url_name == 'review' %}
+{# Migrated Governance forms own LifecycleRail locally. #}
+{% elif request.resolver_match.namespace == 'use_cases' and request.resolver_match.url_name == 'assessment_create' or request.resolver_match.namespace == 'use_cases' and request.resolver_match.url_name == 'approval_decision_create' %}
+{# Migrated assessment and decision forms own LifecycleRail locally. #}
 {% elif journey %}
 {% workflow_steps journey request as workflow %}
 <header class="app-topbar app-topbar-journey" aria-label="Arbeitsfortschritt">
