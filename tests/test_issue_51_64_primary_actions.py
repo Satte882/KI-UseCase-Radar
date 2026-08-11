@@ -128,7 +128,8 @@ def test_use_case_detail_hides_duplicate_current_actions(
     assert content.count('data-testid="primary-next-action-control"') == 1
     assert f'href="{action.url}"' in content
     assert f'class="dropdown-item" href="{action.url}">Bewertung anlegen</a>' not in content
-    assert 'data-testid="journey-next-action-context"' in content
+    assert 'id="next-action"' in content
+    assert 'data-testid="journey-next-action-context"' not in content
 
 
 def test_second_approval_action_points_to_actual_review():

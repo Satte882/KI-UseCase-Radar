@@ -37,7 +37,7 @@ def test_decision_workspace_hierarchy_places_decisions_before_secondary_informat
         "use-case-overview",
         "includes/decision_state.html",
         "includes/lifecycle_rail.html",
-        "assessment",
+        'id="assessment"',
         "metric-title",
         "business-context-title",
         "copilot-title",
