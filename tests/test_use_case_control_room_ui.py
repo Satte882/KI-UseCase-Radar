@@ -13,6 +13,7 @@ LIFECYCLE_RAIL = read_repo_text("templates", "includes", "lifecycle_rail.html")
 CONTEXT_TOPBAR = read_repo_text("templates", "includes", "context_topbar.html")
 CSS = read_repo_text("static", "css", "ui-control-room-use-case.css")
 PRIMITIVES = read_repo_text("static", "css", "ui-control-room-primitives.css")
+TOPBAR_CSS = read_repo_text("static", "css", "context-topbar.css")
 README = read_repo_text("README.md")
 
 
@@ -86,16 +87,20 @@ def test_next_action_is_owned_once_by_decision_state_on_migrated_work_object():
     )
 
 
-def test_cross_section_portfolio_has_no_global_pseudo_linear_lifecycle():
-    portfolio_guard = "request.resolver_match.url_name == 'portfolio'"
-    assert portfolio_guard in CONTEXT_TOPBAR
-    assert "cross-sectional view" in CONTEXT_TOPBAR
-    assert CONTEXT_TOPBAR.index(portfolio_guard) < CONTEXT_TOPBAR.index(
+def test_global_lifecycle_requires_real_work_context_instead_of_list_fallbacks():
+    work_context_guard = (
+        "{% elif journey or request.resolver_match.namespace == 'reporting' "
+        "and request.resolver_match.url_name == 'outcome_workspace' %}"
+    )
+    assert work_context_guard in CONTEXT_TOPBAR
+    assert "url_name == 'portfolio'" not in CONTEXT_TOPBAR
+    assert "Von der Discovery bis zur umsetzbaren Übergabe" not in CONTEXT_TOPBAR
+    assert CONTEXT_TOPBAR.index(work_context_guard) < CONTEXT_TOPBAR.index(
         "{% workflow_steps journey request as workflow %}"
     )
 
 
-def test_lifecycle_rail_keeps_true_links_and_is_scroll_free():
+def test_lifecycle_navigation_is_scroll_free_on_desktop_and_compact_on_mobile():
     assert "{% workflow_steps journey request as workflow %}" in LIFECYCLE_RAIL
     assert 'href="{{ step.url }}"' in LIFECYCLE_RAIL
     assert "aria-current=\"page\"" in LIFECYCLE_RAIL
@@ -105,6 +110,12 @@ def test_lifecycle_rail_keeps_true_links_and_is_scroll_free():
     assert "overflow-x: auto" not in PRIMITIVES
     assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in PRIMITIVES
     assert "grid-template-columns: 1fr" in PRIMITIVES
+
+    assert ".journey-progress" in TOPBAR_CSS
+    assert "overflow-x: auto" not in TOPBAR_CSS
+    assert "flex-wrap: wrap" in TOPBAR_CSS
+    assert "grid-template-columns: repeat(3, minmax(0, 1fr))" in TOPBAR_CSS
+    assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in TOPBAR_CSS
 
 
 def test_blocker_links_and_second_approval_remain_true_links():
