@@ -1,18 +1,24 @@
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PORTFOLIO = (ROOT / "templates" / "reporting" / "portfolio.html").read_text(encoding="utf-8")
+PORTFOLIO = (ROOT / "templates" / "reporting" / "portfolio.html").read_text(
+    encoding="utf-8"
+)
 PORTFOLIO_CSS = (ROOT / "static" / "css" / "ui-control-room-portfolio.css").read_text(
     encoding="utf-8"
 )
 PRIMITIVES = (ROOT / "static" / "css" / "ui-control-room-primitives.css").read_text(
     encoding="utf-8"
 )
-DASHBOARD = (ROOT / "templates" / "reporting" / "dashboard.html").read_text(encoding="utf-8")
+DASHBOARD = (ROOT / "templates" / "reporting" / "dashboard.html").read_text(
+    encoding="utf-8"
+)
 OUTCOME = (ROOT / "templates" / "reporting" / "outcome_workspace.html").read_text(
     encoding="utf-8"
 )
-USE_CASE_LIST = (ROOT / "templates" / "use_cases" / "list.html").read_text(encoding="utf-8")
+USE_CASE_LIST = (ROOT / "templates" / "use_cases" / "list.html").read_text(
+    encoding="utf-8"
+)
 CONTRACT = (ROOT / "docs" / "UI_CONTROL_ROOM_PRIMITIVES.md").read_text(encoding="utf-8")
 
 
