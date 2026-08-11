@@ -15,6 +15,30 @@ WORK_OBJECTS = {
     "assessment": _template("use_cases", "assessment_form.html"),
     "decision": _template("use_cases", "decision_form.html"),
 }
+REMAINING_DETAILS = (
+    ("architecture", "solution_option_compare.html"),
+    ("accelerator", "analysis_detail.html"),
+    ("accelerator", "capture_review.html"),
+    ("accelerator", "solution_generation_preview.html"),
+    ("accelerator", "structured_review.html"),
+    ("use_cases", "second_approval_review.html"),
+    ("delivery", "methodology_reference.html"),
+)
+REMAINING_FORMS = (
+    ("use_cases", "form.html"),
+    ("use_cases", "intake_wizard.html"),
+    ("architecture", "process_analysis_form.html"),
+    ("architecture", "process_validation_form.html"),
+    ("architecture", "solution_option_form.html"),
+    ("architecture", "stage_focus_form.html"),
+    ("architecture", "stage_form.html"),
+    ("architecture", "value_stream_form.html"),
+    ("delivery", "package_form.html"),
+    ("reviews", "form.html"),
+    ("notifications", "evidence_form.html"),
+    ("accelerator", "capture_start.html"),
+    ("accelerator", "capture_wizard.html"),
+)
 TOPBAR = _template("includes", "context_topbar.html")
 NEXT_ACTION = _template("includes", "next_action.html")
 CSS = ROOT.joinpath("static", "css", "ui-control-room-workspaces.css").read_text(encoding="utf-8")
@@ -77,3 +101,28 @@ def test_workspace_css_is_scoped_responsive_and_accessible():
     assert ":focus-visible" in CSS
     assert "@media (prefers-reduced-motion: reduce)" in CSS
     assert "overflow-x" not in CSS
+
+
+def test_remaining_detail_workspaces_use_shared_control_room_primitives():
+    for parts in REMAINING_DETAILS:
+        template = _template(*parts)
+        assert "ui-control-room page-detail-workspace" in template, parts
+        assert "css/ui-control-room-primitives.css" in template, parts
+        assert "css/ui-control-room-workspaces.css" in template, parts
+
+
+def test_remaining_forms_and_true_wizards_use_shared_control_room_primitives():
+    for parts in REMAINING_FORMS:
+        template = _template(*parts)
+        assert "ui-control-room page-form-workspace" in template, parts
+        assert "css/ui-control-room-primitives.css" in template, parts
+        assert "css/ui-control-room-workspaces.css" in template, parts
+        assert 'method="post"' in template, parts
+        assert "{% csrf_token %}" in template, parts
+
+    for wizard in (
+        _template("use_cases", "intake_wizard.html"),
+        _template("accelerator", "capture_wizard.html"),
+    ):
+        assert "wizard-stepper" in wizard
+        assert 'role="progressbar"' in wizard
