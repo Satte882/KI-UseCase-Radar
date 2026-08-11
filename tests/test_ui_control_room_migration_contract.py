@@ -7,9 +7,9 @@ USE_CASE_DETAIL = (ROOT / "templates" / "use_cases" / "detail.html").read_text(e
 MIGRATION = (ROOT / "docs" / "UI_CONTROL_ROOM_MIGRATION.md").read_text(encoding="utf-8")
 
 
-def test_existing_body_class_block_is_the_page_level_migration_hook():
+def test_body_class_hook_supports_incremental_page_level_migration():
     assert '<body class="ui-vnext {% block body_class %}{% endblock %}">' in BASE
-    assert "ui-control-room" not in PORTFOLIO
+    assert "{% block body_class %}ui-control-room page-portfolio{% endblock %}" in PORTFOLIO
     assert "ui-control-room" not in USE_CASE_DETAIL
 
 
