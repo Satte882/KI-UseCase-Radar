@@ -70,7 +70,9 @@ def test_blocker_links_and_second_approval_remain_true_links():
     assert 'href="{{ first_blocker.target_href }}"' in TEMPLATE
     assert 'href="{{ blocker.target_href }}"' in TEMPLATE
     assert "use_cases:second_approval_review" in TEMPLATE
-    assert "disabled" not in TEMPLATE[TEMPLATE.index('id="decision-readiness"') : TEMPLATE.index('id="assessment"')]
+    readiness = TEMPLATE.index('id="decision-readiness"')
+    assessment = TEMPLATE.index('id="assessment"')
+    assert "disabled" not in TEMPLATE[readiness:assessment]
 
 
 def test_work_object_patterns_remain_page_local_until_gate_b():
