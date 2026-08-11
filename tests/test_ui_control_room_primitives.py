@@ -1,28 +1,22 @@
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PORTFOLIO = (ROOT / "templates" / "reporting" / "portfolio.html").read_text(
-    encoding="utf-8"
-)
-PORTFOLIO_CSS = (ROOT / "static" / "css" / "ui-control-room-portfolio.css").read_text(
-    encoding="utf-8"
-)
-PRIMITIVES = (ROOT / "static" / "css" / "ui-control-room-primitives.css").read_text(
-    encoding="utf-8"
-)
-DASHBOARD = (ROOT / "templates" / "reporting" / "dashboard.html").read_text(
-    encoding="utf-8"
-)
-OUTCOME = (ROOT / "templates" / "reporting" / "outcome_workspace.html").read_text(
-    encoding="utf-8"
-)
-USE_CASE_LIST = (ROOT / "templates" / "use_cases" / "list.html").read_text(
-    encoding="utf-8"
-)
-CONTRACT = (ROOT / "docs" / "UI_CONTROL_ROOM_PRIMITIVES.md").read_text(encoding="utf-8")
 
 
-def test_portfolio_loads_shared_primitives_before_page_specific_styles():
+def read_repo_text(*parts):
+    return ROOT.joinpath(*parts).read_text(encoding="utf-8")
+
+
+PORTFOLIO = read_repo_text("templates", "reporting", "portfolio.html")
+PORTFOLIO_CSS = read_repo_text("static", "css", "ui-control-room-portfolio.css")
+PRIMITIVES = read_repo_text("static", "css", "ui-control-room-primitives.css")
+DASHBOARD = read_repo_text("templates", "reporting", "dashboard.html")
+OUTCOME = read_repo_text("templates", "reporting", "outcome_workspace.html")
+USE_CASE_LIST = read_repo_text("templates", "use_cases", "list.html")
+CONTRACT = read_repo_text("docs", "UI_CONTROL_ROOM_PRIMITIVES.md")
+
+
+def test_portfolio_loads_shared_primitives_before_page_styles():
     shared = "css/ui-control-room-primitives.css"
     page = "css/ui-control-room-portfolio.css"
 
@@ -80,7 +74,7 @@ def test_each_extracted_pattern_has_a_real_second_consumer():
     assert "empty-row" in USE_CASE_LIST
 
 
-def test_contract_keeps_primitives_presentation_only_and_defers_work_object_patterns():
+def test_contract_keeps_primitives_presentational_and_defers_work_objects():
     assert "keine View-Logik" in CONTRACT
     assert "keine fachlichen Entscheidungen" in CONTRACT
     assert "keine neuen Template-Partials" in CONTRACT
