@@ -246,6 +246,20 @@ def evaluate_delivery_readiness(package: DeliveryPackage) -> list[ReadinessFindi
                     ),
                 )
             )
+        elif review.has_role_collapse:
+            findings.append(
+                ReadinessFinding(
+                    section_key,
+                    "INDEPENDENT_CONFIRMATION_MISSING",
+                    "blocker",
+                    (
+                        f"Für „{section_label}“ wurden fachliche und technische "
+                        "Bestätigung durch dieselbe Person erteilt. Vor der Übergabe "
+                        "ist eine unabhängige Bestätigung durch eine zweite Person "
+                        "erforderlich."
+                    ),
+                )
+            )
 
     for section_key, field_names in READY_REQUIRED_FIELDS.items():
         for field_name in field_names:

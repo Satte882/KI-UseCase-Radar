@@ -422,6 +422,23 @@ def test_technical_admin_can_use_audited_same_person_exception(
     assert review.business_confirmation_role == "Admin-Sonderbestätigung"
     assert review.technical_confirmation_role == "Admin-Sonderbestätigung"
     assert review.role_collapse_reason.startswith("Vollständiger administrativer Test")
+    assert "INDEPENDENT_CONFIRMATION_MISSING" in {
+        finding.code for finding in evaluate_delivery_readiness(package)
+    }
+
+    review_delivery_section(
+        package=package,
+        section_key="solution_direction",
+        action="confirm_technical",
+        actor=coordinator,
+    )
+    review.refresh_from_db()
+
+    assert review.admin_override_confirmed is False
+    assert review.has_role_collapse is False
+    assert "INDEPENDENT_CONFIRMATION_MISSING" not in {
+        finding.code for finding in evaluate_delivery_readiness(package)
+    }
 
 
 @pytest.mark.django_db

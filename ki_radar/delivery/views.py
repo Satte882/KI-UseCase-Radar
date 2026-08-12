@@ -138,13 +138,21 @@ def _section_rows(
                     review
                     and "business" in roles
                     and "business" in required
-                    and review.business_confirmed_at is None
+                    and (
+                        review.business_confirmed_at is None
+                        or (review.has_role_collapse and review.business_confirmed_by_id != user.id)
+                    )
                 ),
                 "can_confirm_technical": bool(
                     review
                     and "technical" in roles
                     and "technical" in required
-                    and review.technical_confirmed_at is None
+                    and (
+                        review.technical_confirmed_at is None
+                        or (
+                            review.has_role_collapse and review.technical_confirmed_by_id != user.id
+                        )
+                    )
                 ),
                 "show_admin_override_reason": bool(
                     shared_section and can_use_admin_confirmation_override(user)

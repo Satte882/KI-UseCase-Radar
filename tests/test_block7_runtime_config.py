@@ -33,6 +33,8 @@ def test_block7_prompt_explicitly_caps_verbosity_without_dropping_comparison_fie
     OPENROUTER_API_KEY="test-key",
     OPENROUTER_MODEL="test/model",
     OPENROUTER_API_URL="https://openrouter.ai/api/v1/chat/completions",
+    OPENROUTER_MAX_RESPONSE_BYTES="8000000",
+    OPENROUTER_REASONING_EXCLUDE=True,
 )
 def test_runtime_policy_command_exposes_effective_solution_generation_and_provider_config():
     output = StringIO()
@@ -44,4 +46,7 @@ def test_runtime_policy_command_exposes_effective_solution_generation_and_provid
     assert "openrouter_api_key_configured=yes" in rendered
     assert "openrouter_model=test/model" in rendered
     assert "openrouter_api_url=https://openrouter.ai/api/v1/chat/completions" in rendered
+    assert "capture_max_output_tokens=32768" in rendered
+    assert "max_response_bytes=8000000" in rendered
+    assert "reasoning_response_excluded=yes" in rendered
     assert "test-key" not in rendered

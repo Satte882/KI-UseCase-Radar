@@ -2,6 +2,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from ki_radar.core.llm_policy import get_accelerator_llm_policy
+from ki_radar.core.openrouter import max_response_bytes, reasoning_response_excluded
 
 
 class Command(BaseCommand):
@@ -15,6 +16,7 @@ class Command(BaseCommand):
         self.stdout.write(f"timeout_seconds={policy.timeout_seconds}")
         self.stdout.write(f"max_input_chars={policy.max_input_chars}")
         self.stdout.write(f"shared_max_output_tokens={policy.max_output_tokens}")
+        self.stdout.write(f"capture_max_output_tokens={policy.capture_max_output_tokens}")
         self.stdout.write(
             f"solution_generation_max_output_tokens={policy.solution_generation_max_output_tokens}"
         )
@@ -27,3 +29,7 @@ class Command(BaseCommand):
         self.stdout.write(f"openrouter_api_key_configured={api_key_configured}")
         self.stdout.write(f"openrouter_model={model}")
         self.stdout.write(f"openrouter_api_url={settings.OPENROUTER_API_URL}")
+        self.stdout.write(f"max_response_bytes={max_response_bytes()}")
+        self.stdout.write(
+            f"reasoning_response_excluded={'yes' if reasoning_response_excluded() else 'no'}"
+        )

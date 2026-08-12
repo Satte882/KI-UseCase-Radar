@@ -155,6 +155,7 @@ def test_copilot_uses_shared_timeout_output_limit_and_returned_model(monkeypatch
     assert captured["timeout"] == 15
     assert captured["body"]["max_tokens"] == 400
     assert captured["body"]["model"] == "test/model"
+    assert captured["body"]["reasoning"] == {"exclude": True}
     assert "provider" not in captured["body"]
     assert "response_format" not in captured["body"]
 
@@ -249,14 +250,14 @@ def test_copilot_rejects_empty_response(monkeypatch):
 @override_settings(
     OPENROUTER_API_KEY="test-key",
     OPENROUTER_API_URL="https://openrouter.example/v1/chat/completions",
+    OPENROUTER_MAX_RESPONSE_BYTES="1000000",
     **VALID_LIMITS,
 )
 def test_transport_rejects_oversized_raw_response(monkeypatch):
-    monkeypatch.setattr(openrouter, "MAX_OPENROUTER_RESPONSE_BYTES", 20)
     monkeypatch.setattr(
         openrouter.urllib.request,
         "urlopen",
-        lambda *args, **kwargs: FakeResponse(b"x" * 21),
+        lambda *args, **kwargs: FakeResponse(b"x" * 1_000_001),
     )
 
     with pytest.raises(openrouter.OpenRouterUnavailable) as exc_info:
@@ -267,6 +268,14 @@ def test_transport_rejects_oversized_raw_response(monkeypatch):
         )
 
     assert exc_info.value.code == "response_too_large"
+
+
+@override_settings(OPENROUTER_MAX_RESPONSE_BYTES="999999")
+def test_transport_rejects_unsafe_response_limit():
+    with pytest.raises(openrouter.OpenRouterUnavailable) as exc_info:
+        openrouter.max_response_bytes()
+
+    assert exc_info.value.code == "invalid_configuration"
 
 
 @override_settings(
