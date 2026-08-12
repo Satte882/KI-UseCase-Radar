@@ -10,7 +10,9 @@ from typing import Any
 
 from django.conf import settings
 
-MAX_OPENROUTER_RESPONSE_BYTES = 2_000_000
+DEFAULT_MAX_OPENROUTER_RESPONSE_BYTES = 8_000_000
+MIN_OPENROUTER_RESPONSE_BYTES = 1_000_000
+MAX_OPENROUTER_RESPONSE_BYTES = 16_000_000
 
 
 class OpenRouterUnavailable(RuntimeError):
@@ -32,6 +34,35 @@ def _setting(name: str, default: str = "") -> str:
     return str(getattr(settings, name, os.getenv(name, default)) or "")
 
 
+def max_response_bytes() -> int:
+    raw = _setting(
+        "OPENROUTER_MAX_RESPONSE_BYTES",
+        str(DEFAULT_MAX_OPENROUTER_RESPONSE_BYTES),
+    ).strip()
+    try:
+        value = int(raw)
+    except ValueError as exc:
+        raise OpenRouterUnavailable(
+            "OPENROUTER_MAX_RESPONSE_BYTES muss eine ganze Zahl sein.",
+            code="invalid_configuration",
+        ) from exc
+    if not MIN_OPENROUTER_RESPONSE_BYTES <= value <= MAX_OPENROUTER_RESPONSE_BYTES:
+        raise OpenRouterUnavailable(
+            "OPENROUTER_MAX_RESPONSE_BYTES muss zwischen 1000000 und 16000000 liegen.",
+            code="invalid_configuration",
+        )
+    return value
+
+
+def reasoning_response_excluded() -> bool:
+    return _setting("OPENROUTER_REASONING_EXCLUDE", "true").casefold() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+
 def _usage_metadata(payload: object) -> dict[str, object]:
     if not isinstance(payload, dict):
         return {}
@@ -43,11 +74,12 @@ def _usage_metadata(payload: object) -> dict[str, object]:
 
 
 def _http_error_payload(exc: urllib.error.HTTPError) -> dict[str, Any]:
+    response_limit = max_response_bytes()
     try:
-        raw = exc.read(MAX_OPENROUTER_RESPONSE_BYTES + 1)
+        raw = exc.read(response_limit + 1)
     except (AttributeError, OSError):
         return {}
-    if not raw or len(raw) > MAX_OPENROUTER_RESPONSE_BYTES:
+    if not raw or len(raw) > response_limit:
         return {}
     try:
         payload = json.loads(raw.decode("utf-8"))
@@ -143,8 +175,9 @@ def _headers(api_key: str) -> dict[str, str]:
 
 
 def _read_bounded(response) -> bytes:
-    payload = response.read(MAX_OPENROUTER_RESPONSE_BYTES + 1)
-    if len(payload) > MAX_OPENROUTER_RESPONSE_BYTES:
+    response_limit = max_response_bytes()
+    payload = response.read(response_limit + 1)
+    if len(payload) > response_limit:
         raise OpenRouterUnavailable(
             "OpenRouter hat eine zu große Antwort zurückgegeben.",
             code="response_too_large",
@@ -170,6 +203,8 @@ def request_openrouter(
 
     model = _setting("OPENROUTER_MODEL")
     body: dict[str, Any] = {"max_tokens": max_tokens, "messages": messages}
+    if reasoning_response_excluded():
+        body["reasoning"] = {"exclude": True}
     if temperature is not None:
         body["temperature"] = temperature
     if model:

@@ -60,6 +60,7 @@ REVIEW_CODES = {
     "SECTION_NEEDS_REVIEW",
     "REQUIRED_CONFIRMATION_MISSING",
     "NOT_APPLICABLE_REASON_MISSING",
+    "INDEPENDENT_CONFIRMATION_MISSING",
 }
 CONDITION_CODES = {
     "CONDITION_OWNER_MISSING",
@@ -171,6 +172,10 @@ def _finding_rule(code: str, field_name: str) -> str:
         ),
         "NOT_APPLICABLE_REASON_MISSING": (
             "Nichtanwendbarkeit ist nur mit einer konkreten Begründung zulässig."
+        ),
+        "INDEPENDENT_CONFIRMATION_MISSING": (
+            "Fachliche und technische Bestätigung müssen von zwei verschiedenen "
+            "Personen stammen; eine Admin-Sonderbestätigung reicht für die Übergabe nicht aus."
         ),
         "CONDITION_OWNER_MISSING": (
             "Jede verbindliche Auflage benötigt eine verantwortliche Person."
