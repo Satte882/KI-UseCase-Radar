@@ -16,9 +16,7 @@ class Command(BaseCommand):
         self.stdout.write(f"timeout_seconds={policy.timeout_seconds}")
         self.stdout.write(f"max_input_chars={policy.max_input_chars}")
         self.stdout.write(f"shared_max_output_tokens={policy.max_output_tokens}")
-        self.stdout.write(
-            f"capture_max_output_tokens={policy.capture_max_output_tokens}"
-        )
+        self.stdout.write(f"capture_max_output_tokens={policy.capture_max_output_tokens}")
         self.stdout.write(
             f"solution_generation_max_output_tokens={policy.solution_generation_max_output_tokens}"
         )
@@ -33,6 +31,5 @@ class Command(BaseCommand):
         self.stdout.write(f"openrouter_api_url={settings.OPENROUTER_API_URL}")
         self.stdout.write(f"max_response_bytes={max_response_bytes()}")
         self.stdout.write(
-            "reasoning_response_excluded="
-            f"{'yes' if reasoning_response_excluded() else 'no'}"
+            f"reasoning_response_excluded={'yes' if reasoning_response_excluded() else 'no'}"
         )

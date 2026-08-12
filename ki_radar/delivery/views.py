@@ -140,10 +140,7 @@ def _section_rows(
                     and "business" in required
                     and (
                         review.business_confirmed_at is None
-                        or (
-                            review.has_role_collapse
-                            and review.business_confirmed_by_id != user.id
-                        )
+                        or (review.has_role_collapse and review.business_confirmed_by_id != user.id)
                     )
                 ),
                 "can_confirm_technical": bool(
@@ -153,8 +150,7 @@ def _section_rows(
                     and (
                         review.technical_confirmed_at is None
                         or (
-                            review.has_role_collapse
-                            and review.technical_confirmed_by_id != user.id
+                            review.has_role_collapse and review.technical_confirmed_by_id != user.id
                         )
                     )
                 ),
