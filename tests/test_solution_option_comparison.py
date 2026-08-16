@@ -70,6 +70,9 @@ def comparison_process(owner, business_unit):
         systems="ERP und Dateiablage",
         data_objects="Angebote und Kriterien",
         bottlenecks="Manuelle Übertragung verursacht Wartezeit.",
+        diagnostic_observations="Der Angebotsvergleich benötigt fünf Tage und viele Rückfragen.",
+        cause_hypotheses="Uneinheitliche Formate verursachen zusätzliche Übertragungsschritte.",
+        confirmed_causes="Angebotsdaten liegen nicht strukturiert vor und werden manuell übertragen.",
         baseline_metrics="Fünf Tage",
         analyzed_by=owner,
     )
