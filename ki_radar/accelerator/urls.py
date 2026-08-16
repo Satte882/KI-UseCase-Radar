@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import adoption_views, solution_generation_views, structured_views, views
+from . import adoption_views, methodology_views, solution_generation_views, structured_views, views
 from .models import CaptureSession
 
 app_name = "accelerator"
@@ -12,6 +12,11 @@ urlpatterns = [
         views.start_capture,
         {"capture_type": CaptureSession.CaptureType.VALUE_STREAM},
         name="value_stream_start",
+    ),
+    path(
+        "value-stream/methodology/download/",
+        methodology_views.value_stream_methodology_download,
+        name="value_stream_methodology_download",
     ),
     path(
         "use-case/start/",

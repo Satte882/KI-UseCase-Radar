@@ -10,7 +10,12 @@
     <h1 class="page-title">{{ capture_label }}-Entwurf starten</h1>
     <p class="page-subtitle">Der Entwurf wird persistent gespeichert und legt noch kein reguläres Fachobjekt an.</p>
   </div>
+  {% if capture_type == 'value_stream' %}
+  <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#value-stream-methodology-modal">Methodik &amp; Beispiel</button>
+  {% endif %}
 </div>
+
+{% if capture_type == 'value_stream' %}{% include "accelerator/_value_stream_methodology_modal.html" %}{% endif %}
 
 <div class="app-card mb-4">
   <form method="post">
