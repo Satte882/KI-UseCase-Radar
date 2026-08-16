@@ -1,6 +1,6 @@
 # KI-Radar Produkt-Roadmap
 
-**Stand:** 23.07.2026  
+**Stand:** 16.08.2026  
 **Status:** verbindliche fachliche Reihenfolge, kein Terminversprechen  
 **Pflege:** Nach jedem relevanten Merge werden Status, Datum und nächster verbindlicher Umfang aktualisiert.
 
@@ -113,9 +113,12 @@ Der erste Rückfluss aus Jira, Azure DevOps, GitHub oder einem anderen Delivery-
 
 ## 2. Nächster verbindlicher Umfang
 
-**Dokumentierte Reihenfolge-Ausnahme:** Issue #311 wird als P1-Hardening des bestehenden
-Delivery-Handover vorgezogen. Die fachliche Reihenfolge der Folgeinkremente bleibt unverändert;
-„Versionierte Wirkungsmessungen“ ist danach weiterhin der nächste verbindliche Produktumfang.
+**Dokumentierte Reihenfolge-Ausnahmen:**
+
+- Issue #311 wird als P1-Hardening des bestehenden Delivery-Handover vorgezogen.
+- Issue #308 wird aufgrund expliziter Produktpriorisierung als methodisches Hardening der bestehenden Value-Stream-Journey vorgezogen.
+
+Beide Ausnahmen ändern die fachliche Reihenfolge der Folgeinkremente nicht; „Versionierte Wirkungsmessungen“ bleibt anschließend der nächste verbindliche Produktumfang.
 
 ### Versionierte Wirkungsmessungen
 
