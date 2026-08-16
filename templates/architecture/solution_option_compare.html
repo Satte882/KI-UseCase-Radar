@@ -61,7 +61,7 @@
       <tbody>
         <tr><th scope="row">Lösungsbeschreibung</th>{% for option in options %}<td class="text-preline">{{ option.description }}</td>{% endfor %}</tr>
         <tr><th scope="row">Erwarteter Beitrag</th>{% for option in options %}<td class="text-preline">{{ option.expected_value }}</td>{% endfor %}</tr>
-        <tr><th scope="row">Bottleneck-Abdeckung</th>{% for option in options %}<td class="text-preline">{{ option.bottleneck_coverage|default:"–" }}</td>{% endfor %}</tr>
+        <tr><th scope="row">Diagnose-Abdeckung (Problem / bestätigte Ursache)</th>{% for option in options %}<td class="text-preline">{{ option.bottleneck_coverage|default:"–" }}</td>{% endfor %}</tr>
         <tr><th scope="row">Machbarkeit</th>{% for option in options %}<td>{{ option.get_feasibility_display }}</td>{% endfor %}</tr>
         <tr><th scope="row">Datenanforderungen</th>{% for option in options %}<td class="text-preline">{{ option.data_requirements|default:"–" }}</td>{% endfor %}</tr>
         <tr><th scope="row">Anwendungsauswirkung</th>{% for option in options %}<td class="text-preline">{{ option.application_impact|default:"–" }}</td>{% endfor %}</tr>
