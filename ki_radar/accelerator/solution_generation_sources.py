@@ -23,6 +23,10 @@ OPTIONAL_PROCESS_FIELDS = (
     "handoffs",
     "exceptions",
     "target_state_principles",
+    "diagnostic_observations",
+    "cause_hypotheses",
+    "confirmed_causes",
+    "constraints",
 )
 
 PROCESS_SOURCE_FIELDS = REQUIRED_PROCESS_FIELDS + OPTIONAL_PROCESS_FIELDS
