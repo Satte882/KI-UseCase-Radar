@@ -61,11 +61,7 @@ def make_process(owner, business_unit, *, with_diagnosis=False, validated=False)
     return ProcessAnalysis.objects.create(
         stage=stage,
         name="Angebotsvergleich",
-        status=(
-            ProcessAnalysis.Status.VALIDATED
-            if validated
-            else ProcessAnalysis.Status.DRAFT
-        ),
+        status=ProcessAnalysis.Status.VALIDATED if validated else ProcessAnalysis.Status.DRAFT,
         scope_start="Angebote liegen vor",
         scope_end="Auswahl ist dokumentiert",
         trigger="Angebotsfrist endet",
