@@ -325,7 +325,8 @@ class ProcessAnalysisForm(StyledModelForm):
         }
         help_texts = {
             "diagnostic_observations": (
-                "Beschreibe das beobachtbare Symptom oder Problem, ohne eine Ursache zu unterstellen."
+                "Beschreibe das beobachtbare Symptom oder Problem, ohne eine Ursache "
+                "zu unterstellen."
             ),
             "cause_hypotheses": (
                 "Vermutete Ursache; Hypothesen bleiben ausdrücklich als unbestätigt gekennzeichnet."
