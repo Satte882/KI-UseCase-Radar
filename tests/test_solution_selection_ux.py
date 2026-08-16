@@ -51,6 +51,9 @@ def make_process(owner, business_unit):
         systems="ERP",
         data_objects="Angebote und Kriterien",
         bottlenecks="Manuelle Übertragung.",
+        diagnostic_observations="Der manuelle Vergleich benötigt fünf Tage.",
+        cause_hypotheses="Uneinheitliche Angebotsformate erhöhen den Übertragungsaufwand.",
+        confirmed_causes="Fehlende strukturierte Angebotsdaten erzwingen manuelle Übertragung.",
         baseline_metrics="Fünf Tage",
         analyzed_by=owner,
     )
