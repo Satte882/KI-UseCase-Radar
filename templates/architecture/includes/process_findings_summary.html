@@ -16,7 +16,7 @@
           <div class="text-preline">{{ process_analysis.diagnostic_observations|default:"Noch nicht dokumentiert" }}</div>
         </section>
         <section id="analysis-cause-hypotheses">
-          <div class="d-flex align-items-center gap-2 mb-1"><strong>Ursachenhypothese</strong><span class="badge state-review">Hypothese / nicht bestätigt</span></div>
+          <div class="d-flex align-items-center gap-2 mb-1"><strong>Ursachenhypothese</strong>{% if process_analysis.cause_hypotheses %}<span class="badge state-review">Hypothese / nicht bestätigt</span>{% endif %}</div>
           <div class="text-preline">{{ process_analysis.cause_hypotheses|default:"Keine offene Hypothese dokumentiert" }}</div>
         </section>
         <section id="analysis-confirmed-causes">

@@ -201,6 +201,23 @@ def test_confirmed_diagnosis_allows_preference_without_constraint(owner, busines
 
     assert process.constraints == ""
     assert decision.selected_option == first
+    assert decision.process_version == process.version
+    assert decision.diagnosis_snapshot == {
+        "diagnostic_observations": process.diagnostic_observations,
+        "cause_hypotheses": process.cause_hypotheses,
+        "confirmed_causes": process.confirmed_causes,
+        "constraints": "",
+    }
+
+    ProcessAnalysis.objects.filter(pk=process.pk).update(
+        version=process.version + 1,
+        confirmed_causes="Eine später bestätigte andere Ursache.",
+    )
+    decision.refresh_from_db()
+    assert decision.process_version == process.version
+    assert decision.diagnosis_snapshot["confirmed_causes"] == (
+        "Angebotsdaten liegen nicht strukturiert vor."
+    )
 
 
 @pytest.mark.django_db
@@ -220,6 +237,14 @@ def test_compare_view_surfaces_actionable_diagnosis_blocker(client, owner, busin
     )
     client.force_login(owner)
     url = reverse("architecture:solution_option_compare", kwargs={"pk": process.pk})
+
+    initial_response = client.get(url)
+    initial_content = initial_response.content.decode()
+    assert initial_response.status_code == 200
+    assert "Vor einer verbindlichen Präferenz" in initial_content
+    assert "Es fehlen: Beobachtung/Problem, bestätigte Ursache" in initial_content
+    assert "Diagnose ergänzen" in initial_content
+    assert "Bevorzugte Option auswählen</button>" not in initial_content
 
     response = client.post(
         url,
@@ -247,6 +272,8 @@ def test_process_analysis_form_exposes_optional_diagnosis_semantics():
     assert form.fields["diagnostic_observations"].label == "Beobachtung / Problem"
     assert "unbestätigt" in form.fields["cause_hypotheses"].help_text
     assert "bestätigte" in form.fields["confirmed_causes"].help_text
+    assert "Gesamtfluss" in form.fields["constraints"].help_text
+    assert "nicht automatisch ein Constraint" in form.fields["constraints"].help_text
 
 
 @pytest.mark.django_db

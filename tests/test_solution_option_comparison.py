@@ -256,6 +256,11 @@ def test_selection_is_auditable_and_updates_statuses(comparison_process, owner):
     assert organizational.recommendation == SolutionOption.Recommendation.REJECTED
     assert assistant.recommendation == SolutionOption.Recommendation.PREFERRED
     assert decision.decided_by == owner
+    assert decision.process_version == comparison_process.version
+    assert decision.diagnosis_snapshot["diagnostic_observations"] == (
+        comparison_process.diagnostic_observations
+    )
+    assert decision.diagnosis_snapshot["confirmed_causes"] == comparison_process.confirmed_causes
     assert decision.comparison_snapshot[0]["name"] == organizational.name
     assert len(decision.comparison_snapshot) == 2
 
@@ -330,6 +335,14 @@ def test_comparison_page_selects_and_shows_history(client, comparison_process, o
     history = client.get(url).content.decode()
     assert "Auswahlhistorie" in history
     assert "Die organisatorische Alternative" in history
+    assert f"Prozessversion v{comparison_process.version}" in history
+    assert "Diagnosestand der Entscheidung" in history
+
+
+def test_solution_option_form_uses_german_option_type_label():
+    form = SolutionOptionForm()
+
+    assert form.fields["option_type"].label == "Lösungstyp"
 
 
 @pytest.mark.django_db

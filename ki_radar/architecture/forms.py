@@ -333,7 +333,8 @@ class ProcessAnalysisForm(StyledModelForm):
             ),
             "confirmed_causes": "Nur fachlich oder durch Evidenz bestätigte Ursachen eintragen.",
             "constraints": (
-                "Optional: relevante Randbedingung oder Engpass, der die Lösungswahl begrenzt."
+                "Optional: Nur eintragen, wenn eine Randbedingung oder ein Engpass den "
+                "Gesamtfluss begrenzt; ein lokales Problem ist nicht automatisch ein Constraint."
             ),
         }
 
@@ -407,6 +408,9 @@ class SolutionOptionForm(StyledModelForm):
             "risks",
             "architecture_fit",
         ]
+        labels = {
+            "option_type": "Lösungstyp",
+        }
         widgets = {
             "description": forms.Textarea(attrs={"rows": 5}),
             "expected_value": forms.Textarea(attrs={"rows": 4}),

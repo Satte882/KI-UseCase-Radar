@@ -15,6 +15,7 @@ from .permissions import can_edit_value_stream
 from .solution_retirement import retire_solution_option
 from .solution_selection import (
     comparison_blockers,
+    diagnosis_readiness_blockers,
     ordered_solution_options,
     select_preferred_solution,
 )
@@ -36,14 +37,25 @@ def solution_option_compare(request, pk):
     )
     options = ordered_solution_options(process_analysis)
     blockers = comparison_blockers(options)
+    diagnosis_blockers = diagnosis_readiness_blockers(process_analysis)
     incomplete_options = [option for option in options if not option.comparison_complete]
     can_select = can_edit_value_stream(
         request.user,
         process_analysis.stage.value_stream,
     )
     generation_entry = build_solution_generation_entry_context(process_analysis)
+    selection_history = process_analysis.solution_selection_decisions.all()
+    latest_selection = selection_history.first()
 
-    form = SolutionSelectionForm(request.POST or None, options=options)
+    form = SolutionSelectionForm(
+        request.POST or None,
+        options=options,
+        initial={
+            "selected_option": latest_selection.selected_option_id,
+        }
+        if latest_selection
+        else None,
+    )
     if request.method == "POST":
         if not can_select:
             raise PermissionDenied
@@ -68,7 +80,6 @@ def solution_option_compare(request, pk):
                 )
                 return redirect(f"{comparison_url}#selection-result")
 
-    selection_history = process_analysis.solution_selection_decisions.all()
     return render(
         request,
         "architecture/solution_option_compare.html",
@@ -76,12 +87,13 @@ def solution_option_compare(request, pk):
             "process_analysis": process_analysis,
             "options": options,
             "blockers": blockers,
+            "diagnosis_blockers": diagnosis_blockers,
             "incomplete_options": incomplete_options,
             "needs_more_options": len(options) < 2,
             "form": form,
             "can_select": can_select,
             "selection_history": selection_history,
-            "latest_selection": selection_history.first(),
+            "latest_selection": latest_selection,
             **generation_entry,
         },
     )

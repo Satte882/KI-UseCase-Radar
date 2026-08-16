@@ -350,6 +350,8 @@ class SolutionSelectionDecision(TimeStampedModel):
     )
     rationale = models.TextField(verbose_name="Auswahlbegründung")
     comparison_snapshot = models.JSONField(default=list, editable=False)
+    process_version = models.PositiveIntegerField(null=True, blank=True, editable=False)
+    diagnosis_snapshot = models.JSONField(default=dict, blank=True, editable=False)
     decided_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,

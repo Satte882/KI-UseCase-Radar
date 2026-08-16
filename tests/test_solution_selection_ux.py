@@ -159,3 +159,5 @@ def test_preferred_selection_returns_to_visible_result(client, owner, business_u
     content = client.get(url).content.decode()
     assert "Aktuell bevorzugt: KI-Assistenz" in content
     assert "Die Entscheidung ist in der Auswahlhistorie auditierbar." in content
+    selected_value = client.get(url).context["form"]["selected_option"].value()
+    assert str(selected_value) == str(assistant.pk)

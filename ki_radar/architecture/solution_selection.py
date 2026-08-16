@@ -81,6 +81,15 @@ def build_comparison_snapshot(options: list[SolutionOption]) -> list[dict]:
     ]
 
 
+def build_diagnosis_snapshot(process_analysis: ProcessAnalysis) -> dict:
+    return {
+        "diagnostic_observations": process_analysis.diagnostic_observations,
+        "cause_hypotheses": process_analysis.cause_hypotheses,
+        "confirmed_causes": process_analysis.confirmed_causes,
+        "constraints": process_analysis.constraints,
+    }
+
+
 @transaction.atomic
 def select_preferred_solution(
     *,
@@ -123,6 +132,8 @@ def select_preferred_solution(
         selected_option=selected,
         rationale=reason,
         comparison_snapshot=build_comparison_snapshot(options),
+        process_version=process_analysis.version,
+        diagnosis_snapshot=build_diagnosis_snapshot(process_analysis),
         decided_by=actor,
     )
     active_ids = [option.pk for option in options]

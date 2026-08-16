@@ -238,3 +238,21 @@ def test_process_detail_separates_hypothesis_from_confirmed_cause(
     assert "Bestätigte Ursache" in content
     assert "Unstrukturierte Bottleneck- und Ursachenangaben" in content
     assert "wird nicht automatisch" in content
+
+
+@pytest.mark.django_db
+def test_short_path_does_not_show_unconfirmed_badge_without_hypothesis(
+    client,
+    owner,
+    business_unit,
+):
+    process = make_process(owner, business_unit)
+    process.diagnostic_observations = "Der Vergleich benötigt fünf Tage."
+    process.confirmed_causes = "Angebotsdaten liegen nicht strukturiert vor."
+    process.save(update_fields=["diagnostic_observations", "confirmed_causes", "updated_at"])
+    client.force_login(owner)
+
+    content = client.get(process.get_absolute_url()).content.decode()
+
+    assert "Keine offene Hypothese dokumentiert" in content
+    assert "Hypothese / nicht bestätigt" not in content
