@@ -128,7 +128,7 @@ def build_process_findings(
     groups = [
         ProcessFindingGroup(
             key="bottlenecks",
-            label="Hauptbottlenecks und Ursachen",
+            label="Unstrukturierte Bottleneck- und Ursachenangaben",
             items=_findings_for_field(
                 process_analysis,
                 "bottlenecks",
