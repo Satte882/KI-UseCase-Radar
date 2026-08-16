@@ -7,6 +7,33 @@
     <a class="btn btn-sm btn-outline-secondary" href="#prozessdetails">Detailanalyse prüfen</a>
   </div>
   <div class="card-body">
+    {% if process_analysis.diagnostic_observations or process_analysis.cause_hypotheses or process_analysis.confirmed_causes or process_analysis.constraints %}
+    <div class="mb-4" data-testid="structured-diagnosis-summary">
+      <div class="section-title">Geschärfte Diagnose</div>
+      <div class="architecture-artifact-grid">
+        <section id="analysis-diagnostic-observations">
+          <div class="d-flex align-items-center gap-2 mb-1"><strong>Beobachtung / Problem</strong></div>
+          <div class="text-preline">{{ process_analysis.diagnostic_observations|default:"Noch nicht dokumentiert" }}</div>
+        </section>
+        <section id="analysis-cause-hypotheses">
+          <div class="d-flex align-items-center gap-2 mb-1"><strong>Ursachenhypothese</strong><span class="badge state-review">Hypothese / nicht bestätigt</span></div>
+          <div class="text-preline">{{ process_analysis.cause_hypotheses|default:"Keine offene Hypothese dokumentiert" }}</div>
+        </section>
+        <section id="analysis-confirmed-causes">
+          <div class="d-flex align-items-center gap-2 mb-1"><strong>Bestätigte Ursache</strong>{% if process_analysis.confirmed_causes %}<span class="badge state-ready">Bestätigt</span>{% endif %}</div>
+          <div class="text-preline">{{ process_analysis.confirmed_causes|default:"Noch nicht bestätigt" }}</div>
+        </section>
+        {% if process_analysis.constraints %}
+        <section id="analysis-constraints">
+          <div class="d-flex align-items-center gap-2 mb-1"><strong>Randbedingung / Constraint</strong><span class="badge badge-soft">Optional</span></div>
+          <div class="text-preline">{{ process_analysis.constraints }}</div>
+        </section>
+        {% endif %}
+      </div>
+      <div class="small text-muted mt-3">Der bestehende Freitext „Bottlenecks und Ursachen“ bleibt unverändert und wird nicht automatisch als Beobachtung, Hypothese, bestätigte Ursache oder Constraint umgedeutet.</div>
+    </div>
+    {% endif %}
+
     {% if finding_groups %}
     <div class="architecture-artifact-grid">
       {% for group in finding_groups %}
