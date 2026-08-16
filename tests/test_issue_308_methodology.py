@@ -61,7 +61,7 @@ def test_value_stream_capture_exposes_methodology_help_but_use_case_capture_does
     assert "Capability" in value_stream_body
     assert "Trigger" in value_stream_body
     assert "Scope-In" in value_stream_body
-    assert "Business Importance × Transformation Need" in value_stream_body
+    assert "Business Importance \u00d7 Transformation Need" in value_stream_body
     assert "Wertfortschritt" in value_stream_body
     assert "Methodik herunterladen" in value_stream_body
 

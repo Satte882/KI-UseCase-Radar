@@ -171,7 +171,12 @@ VALUE_STREAM_CATALOG_V1 = CaptureCatalog(
                 _question(
                     "vs_stages",
                     "Welche Phasen durchläuft der Value Stream in welcher Reihenfolge?",
-                    "Benennen Sie je Phase Aktivität, Ergebnis und sinnvolle Reihenfolge.",
+                    (
+                        "Beschreiben Sie je Phase einen erkennbaren Wertfortschritt: Was liegt "
+                        "vorher vor, was verändert sich fachlich und welcher relevante Zustand "
+                        "bzw. welches Ergebnis ist anschließend erreicht? Benennen Sie zusätzlich "
+                        "die sinnvolle Reihenfolge."
+                    ),
                     targets=(
                         "value_stream.stages[].sequence",
                         "value_stream.stages[].name",

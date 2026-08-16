@@ -5,15 +5,6 @@ from django import forms
 from .catalogs import CaptureSection
 
 
-VALUE_STREAM_METHOD_HELP_OVERRIDES = {
-    "vs_stages": (
-        "Beschreiben Sie je Phase einen erkennbaren Wertfortschritt: Was liegt vorher vor, "
-        "was verändert sich fachlich und welcher relevante Zustand bzw. welches Ergebnis "
-        "ist anschließend erreicht? Benennen Sie zusätzlich die sinnvolle Reihenfolge."
-    ),
-}
-
-
 class CaptureStartForm(forms.Form):
     working_title = forms.CharField(
         max_length=200,
@@ -63,10 +54,7 @@ class CaptureSectionForm(forms.Form):
                 required=False,
                 max_length=question.max_length,
                 label=question.label,
-                help_text=VALUE_STREAM_METHOD_HELP_OVERRIDES.get(
-                    question.key,
-                    question.help_text,
-                ),
+                help_text=question.help_text,
                 widget=widget,
             )
             field.capture_required = question.required
