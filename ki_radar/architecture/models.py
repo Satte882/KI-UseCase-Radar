@@ -130,6 +130,10 @@ class ProcessAnalysis(TimeStampedModel):
     business_rules = models.TextField(blank=True, verbose_name="Geschäftsregeln")
     handoffs = models.TextField(blank=True, verbose_name="Übergaben und Schnittstellen")
     bottlenecks = models.TextField(verbose_name="Bottlenecks und Ursachen")
+    diagnostic_observations = models.TextField(blank=True, verbose_name="Beobachtung / Problem")
+    cause_hypotheses = models.TextField(blank=True, verbose_name="Ursachenhypothese")
+    confirmed_causes = models.TextField(blank=True, verbose_name="Bestätigte Ursache")
+    constraints = models.TextField(blank=True, verbose_name="Randbedingung / Constraint")
     exceptions = models.TextField(blank=True, verbose_name="Ausnahmen und Fehlerfälle")
     baseline_metrics = models.TextField(verbose_name="Baseline und Prozesskennzahlen")
     target_state_principles = models.TextField(
@@ -346,6 +350,8 @@ class SolutionSelectionDecision(TimeStampedModel):
     )
     rationale = models.TextField(verbose_name="Auswahlbegründung")
     comparison_snapshot = models.JSONField(default=list, editable=False)
+    process_version = models.PositiveIntegerField(null=True, blank=True, editable=False)
+    diagnosis_snapshot = models.JSONField(default=dict, blank=True, editable=False)
     decided_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,

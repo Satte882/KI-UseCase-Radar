@@ -72,6 +72,10 @@ PROCESS_VALIDATION_FIELDS = {
     "business_rules",
     "handoffs",
     "bottlenecks",
+    "diagnostic_observations",
+    "cause_hypotheses",
+    "confirmed_causes",
+    "constraints",
     "exceptions",
     "baseline_metrics",
 }

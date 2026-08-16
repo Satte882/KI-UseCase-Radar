@@ -2,7 +2,7 @@
 {% load static %}
 {% block title %}Lösungsoptionen vergleichen – KI-Radar{% endblock %}
 {% block body_class %}page-detail-workspace page-solution-compare{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/ui-control-room-primitives.css' %}"><link rel="stylesheet" href="{% static 'css/ui-control-room-workspaces.css' %}">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/ui-control-room-primitives.css' %}"><link rel="stylesheet" href="{% static 'css/ui-control-room-workspaces.css' %}?v=issue-318-readiness-2">{% endblock %}
 {% block content %}
 <div class="page-header">
   <div>
@@ -56,12 +56,12 @@
     </div>
   {% endif %}
   <div class="card-body table-responsive">
-    <table class="table align-middle comparison-matrix">
+    <table class="table align-middle comparison-matrix comparison-options-{{ options|length }}">
       <thead><tr><th scope="col">Kriterium</th>{% for option in options %}<th scope="col"><span class="badge badge-soft">{{ option.get_option_type_display }}</span><div class="mt-2">{{ option.name }}</div><div class="small text-muted">{{ option.get_evaluation_status_display }}</div></th>{% endfor %}</tr></thead>
       <tbody>
         <tr><th scope="row">Lösungsbeschreibung</th>{% for option in options %}<td class="text-preline">{{ option.description }}</td>{% endfor %}</tr>
         <tr><th scope="row">Erwarteter Beitrag</th>{% for option in options %}<td class="text-preline">{{ option.expected_value }}</td>{% endfor %}</tr>
-        <tr><th scope="row">Bottleneck-Abdeckung</th>{% for option in options %}<td class="text-preline">{{ option.bottleneck_coverage|default:"–" }}</td>{% endfor %}</tr>
+        <tr><th scope="row">Bottleneck-Abdeckung und Diagnosebezug<span class="d-block small text-muted mt-1">Problem / bestätigte Ursache</span></th>{% for option in options %}<td class="text-preline">{{ option.bottleneck_coverage|default:"–" }}</td>{% endfor %}</tr>
         <tr><th scope="row">Machbarkeit</th>{% for option in options %}<td>{{ option.get_feasibility_display }}</td>{% endfor %}</tr>
         <tr><th scope="row">Datenanforderungen</th>{% for option in options %}<td class="text-preline">{{ option.data_requirements|default:"–" }}</td>{% endfor %}</tr>
         <tr><th scope="row">Anwendungsauswirkung</th>{% for option in options %}<td class="text-preline">{{ option.application_impact|default:"–" }}</td>{% endfor %}</tr>
@@ -138,13 +138,20 @@
           </div>
         {% endif %}
       </div>
+    {% elif diagnosis_blockers %}
+      <div class="alert alert-warning mb-0">
+        <strong>Auswahl noch gesperrt.</strong>
+        Vor einer verbindlichen Präferenz braucht die Diagnose mindestens eine Beobachtung und eine bestätigte Ursache.
+        Es fehlen: {{ diagnosis_blockers|join:", " }}. Lösungsoptionen können weiterhin exploriert und verglichen werden.
+        <div class="mt-3"><a class="btn btn-sm btn-outline-secondary" href="{% url 'architecture:process_analysis_update' process_analysis.pk %}">Diagnose ergänzen</a></div>
+      </div>
     {% else %}
       <div class="mb-3"><label class="form-label">{{ form.selected_option.label }}</label>{{ form.selected_option }}{{ form.selected_option.errors }}</div>
       <div><label class="form-label" for="{{ form.rationale.id_for_label }}">{{ form.rationale.label }}</label>{{ form.rationale }}<div class="form-text">{{ form.rationale.help_text }}</div>{{ form.rationale.errors }}</div>
     {% endif %}
   </div>
   <div class="card-body border-top border-secondary-subtle text-end">
-    {% if blockers %}
+    {% if blockers or diagnosis_blockers %}
       <button class="btn btn-primary" type="button" disabled>Auswahl noch gesperrt</button>
     {% else %}
       <button class="btn btn-primary" type="submit">Bevorzugte Option auswählen</button>
@@ -159,7 +166,18 @@
     {% for decision in selection_history %}
       <section class="border-bottom border-secondary-subtle pb-3 mb-3">
         <div class="d-flex justify-content-between gap-3"><strong>{{ decision.selected_option.name }}</strong><span class="text-muted">{{ decision.decided_at|date:"d.m.Y H:i" }}</span></div>
-        <div class="small text-muted mt-1">Entschieden von {{ decision.decided_by|default:"Gelöschter Nutzer" }} · {{ decision.comparison_snapshot|length }} verglichene Optionen</div>
+        <div class="small text-muted mt-1">Entschieden von {{ decision.decided_by|default:"Gelöschter Nutzer" }} · {{ decision.comparison_snapshot|length }} verglichene Optionen{% if decision.process_version %} · Prozessversion v{{ decision.process_version }}{% endif %}</div>
+        {% if decision.diagnosis_snapshot %}
+          <details class="mt-2">
+            <summary class="small">Diagnosestand der Entscheidung</summary>
+            <dl class="small mt-2 mb-0">
+              <dt>Beobachtung / Problem</dt><dd class="text-preline">{{ decision.diagnosis_snapshot.diagnostic_observations }}</dd>
+              {% if decision.diagnosis_snapshot.cause_hypotheses %}<dt>Ursachenhypothese</dt><dd class="text-preline">{{ decision.diagnosis_snapshot.cause_hypotheses }}</dd>{% endif %}
+              <dt>Bestätigte Ursache</dt><dd class="text-preline">{{ decision.diagnosis_snapshot.confirmed_causes }}</dd>
+              {% if decision.diagnosis_snapshot.constraints %}<dt>Randbedingung / Constraint</dt><dd class="text-preline">{{ decision.diagnosis_snapshot.constraints }}</dd>{% endif %}
+            </dl>
+          </details>
+        {% endif %}
         <div class="text-preline mt-2">{{ decision.rationale }}</div>
       </section>
     {% empty %}<p class="text-muted mb-0">Noch keine auditierbare Auswahl dokumentiert.</p>{% endfor %}

@@ -273,6 +273,9 @@ def test_successful_generation_and_adoption_preserve_manual_option_and_all_gates
 @pytest.mark.django_db
 def test_existing_manual_selection_service_remains_explicit(owner, business_unit):
     process = make_process(owner, business_unit)
+    process.diagnostic_observations = "Der manuelle Vergleich verursacht dokumentierte Wartezeit."
+    process.confirmed_causes = "Die manuelle Übertragung ist als Ursache fachlich bestätigt."
+    process.save(update_fields=["diagnostic_observations", "confirmed_causes", "updated_at"])
     select_focus(process, owner)
     first = create_option(process, owner, name="Manuelle Option A", assessed=True)
     second = create_option(process, owner, name="Manuelle Option B", assessed=True)

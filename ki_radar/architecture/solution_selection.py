@@ -47,6 +47,15 @@ def comparison_blockers(options: list[SolutionOption]) -> list[str]:
     return blockers
 
 
+def diagnosis_readiness_blockers(process_analysis: ProcessAnalysis) -> list[str]:
+    blockers: list[str] = []
+    if not process_analysis.diagnostic_observations.strip():
+        blockers.append("Beobachtung/Problem")
+    if not process_analysis.confirmed_causes.strip():
+        blockers.append("bestätigte Ursache")
+    return blockers
+
+
 def build_comparison_snapshot(options: list[SolutionOption]) -> list[dict]:
     return [
         {
@@ -70,6 +79,15 @@ def build_comparison_snapshot(options: list[SolutionOption]) -> list[dict]:
         }
         for option in options
     ]
+
+
+def build_diagnosis_snapshot(process_analysis: ProcessAnalysis) -> dict:
+    return {
+        "diagnostic_observations": process_analysis.diagnostic_observations,
+        "cause_hypotheses": process_analysis.cause_hypotheses,
+        "confirmed_causes": process_analysis.confirmed_causes,
+        "constraints": process_analysis.constraints,
+    }
 
 
 @transaction.atomic
@@ -100,11 +118,22 @@ def select_preferred_solution(
     if not reason:
         raise ValidationError("Für die Auswahl ist eine Begründung erforderlich.")
 
+    diagnosis_blockers = diagnosis_readiness_blockers(process_analysis)
+    if diagnosis_blockers:
+        raise ValidationError(
+            "Verbindliche Lösungspräferenz nicht möglich: Diagnose noch nicht belastbar. "
+            "Es fehlen: "
+            + ", ".join(diagnosis_blockers)
+            + ". Lösungsoptionen können weiterhin exploriert und verglichen werden."
+        )
+
     decision = SolutionSelectionDecision.objects.create(
         process_analysis=process_analysis,
         selected_option=selected,
         rationale=reason,
         comparison_snapshot=build_comparison_snapshot(options),
+        process_version=process_analysis.version,
+        diagnosis_snapshot=build_diagnosis_snapshot(process_analysis),
         decided_by=actor,
     )
     active_ids = [option.pk for option in options]

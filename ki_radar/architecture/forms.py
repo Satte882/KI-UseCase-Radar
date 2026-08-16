@@ -299,6 +299,10 @@ class ProcessAnalysisForm(StyledModelForm):
             "business_rules",
             "handoffs",
             "bottlenecks",
+            "diagnostic_observations",
+            "cause_hypotheses",
+            "confirmed_causes",
+            "constraints",
             "exceptions",
             "baseline_metrics",
             "target_state_principles",
@@ -311,9 +315,27 @@ class ProcessAnalysisForm(StyledModelForm):
             "business_rules": forms.Textarea(attrs={"rows": 4}),
             "handoffs": forms.Textarea(attrs={"rows": 4}),
             "bottlenecks": forms.Textarea(attrs={"rows": 5}),
+            "diagnostic_observations": forms.Textarea(attrs={"rows": 4}),
+            "cause_hypotheses": forms.Textarea(attrs={"rows": 4}),
+            "confirmed_causes": forms.Textarea(attrs={"rows": 4}),
+            "constraints": forms.Textarea(attrs={"rows": 4}),
             "exceptions": forms.Textarea(attrs={"rows": 4}),
             "baseline_metrics": forms.Textarea(attrs={"rows": 4}),
             "target_state_principles": forms.Textarea(attrs={"rows": 5}),
+        }
+        help_texts = {
+            "diagnostic_observations": (
+                "Beschreibe das beobachtbare Symptom oder Problem, ohne eine Ursache "
+                "zu unterstellen."
+            ),
+            "cause_hypotheses": (
+                "Vermutete Ursache; Hypothesen bleiben ausdrücklich als unbestätigt gekennzeichnet."
+            ),
+            "confirmed_causes": "Nur fachlich oder durch Evidenz bestätigte Ursachen eintragen.",
+            "constraints": (
+                "Optional: Nur eintragen, wenn eine Randbedingung oder ein Engpass den "
+                "Gesamtfluss begrenzt; ein lokales Problem ist nicht automatisch ein Constraint."
+            ),
         }
 
 
@@ -386,6 +408,9 @@ class SolutionOptionForm(StyledModelForm):
             "risks",
             "architecture_fit",
         ]
+        labels = {
+            "option_type": "Lösungstyp",
+        }
         widgets = {
             "description": forms.Textarea(attrs={"rows": 5}),
             "expected_value": forms.Textarea(attrs={"rows": 4}),
