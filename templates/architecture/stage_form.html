@@ -22,6 +22,7 @@
       <div class="{% if field.name == 'sequence' or field.name == 'name' %}col-md-6{% else %}col-12{% endif %}">
         <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
         {{ field }}
+        {% if field.name == 'description' %}<div class="form-text">Eine Phase sollte einen erkennbaren Wertfortschritt beschreiben: Was liegt vorher vor, was verändert sich fachlich und welcher relevante Zustand bzw. welches Ergebnis ist anschließend erreicht?</div>{% endif %}
         {{ field.errors }}
       </div>
       {% endfor %}

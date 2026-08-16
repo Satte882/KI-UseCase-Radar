@@ -10,8 +10,15 @@
     <h1 class="page-title">{{ section.title }}</h1>
     <p class="page-subtitle">{{ section.description }}</p>
   </div>
-  <a class="btn btn-outline-secondary" href="{% url 'accelerator:capture_review' session.pk %}">Entwurf prüfen</a>
+  <div class="d-flex gap-2 flex-wrap">
+    {% if session.capture_type == 'value_stream' %}
+    <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#value-stream-methodology-modal">Methodik &amp; Beispiel</button>
+    {% endif %}
+    <a class="btn btn-outline-secondary" href="{% url 'accelerator:capture_review' session.pk %}">Entwurf prüfen</a>
+  </div>
 </div>
+
+{% if session.capture_type == 'value_stream' %}{% include "accelerator/_value_stream_methodology_modal.html" %}{% endif %}
 
 <nav class="wizard-stepper mb-3" aria-label="Schritte der geführten {{ capture_label }}-Erfassung">
   {% for item in step_states %}

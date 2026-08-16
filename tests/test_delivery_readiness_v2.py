@@ -304,9 +304,7 @@ def test_statistical_keywords_and_deferred_placeholders_are_not_evidence(
     )
     package = create_delivery_package(use_case=use_case, actor=coordinator)
     package.acceptance_criteria = "Fehlerquote < 2 %. Recall > 90 %."
-    package.test_scenarios = (
-        "Kritische Fehlerklassen später definieren; Testset später festlegen."
-    )
+    package.test_scenarios = "Kritische Fehlerklassen später definieren; Testset später festlegen."
     package.measurement_plan = (
         "Testpopulation später festlegen. Stichprobengröße später festlegen. "
         "Aussagekraft später bewerten."
@@ -619,10 +617,7 @@ def test_synchronous_retry_cannot_exceed_end_to_end_latency_budget(
     [
         "Provider-Timeout 4 Sekunden; danach 2 synchrone Retries.",
         "Provider-Timeout 4 Sekunden; maximal zwei synchrone Wiederholungen.",
-        (
-            "Request-Timeout 6 Sekunden; Provider-Timeout 4 Sekunden; "
-            "danach 1 synchroner Retry."
-        ),
+        ("Request-Timeout 6 Sekunden; Provider-Timeout 4 Sekunden; danach 1 synchroner Retry."),
     ],
 )
 @pytest.mark.django_db

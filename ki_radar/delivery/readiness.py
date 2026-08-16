@@ -466,9 +466,7 @@ def _latency_semantic_findings(latency_text: str) -> list[ReadinessFinding]:
 
     budget_matches = list(_LATENCY_BUDGET_RE.finditer(latency_text))
     if not budget_matches:
-        message = (
-            "Für synchrone Retries fehlt ein nutzerseitiges Ende-zu-Ende-Latenzbudget."
-        )
+        message = "Für synchrone Retries fehlt ein nutzerseitiges Ende-zu-Ende-Latenzbudget."
     else:
         budget_seconds = min(_seconds(match) for match in budget_matches)
         total_matches = list(_TOTAL_SYNC_DURATION_RE.finditer(latency_text))
@@ -563,8 +561,7 @@ def _retention_semantic_findings(retention_text: str) -> list[ReadinessFinding]:
             or _NON_PERSISTENCE_RE.search(segment)
         )
         has_invalid_retention = bool(
-            _INVALID_RETENTION_RE.search(segment)
-            or _SEMANTIC_PLACEHOLDER_RE.search(segment)
+            _INVALID_RETENTION_RE.search(segment) or _SEMANTIC_PLACEHOLDER_RE.search(segment)
         )
         retention_complete = has_retention_rule and not has_invalid_retention
         if not purpose_complete:

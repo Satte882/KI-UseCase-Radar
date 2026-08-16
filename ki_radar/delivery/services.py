@@ -423,9 +423,7 @@ def build_initial_delivery_data(
         "security_privacy_requirements": (
             "\n".join(checks) or "Keine zusätzlichen Prüfungen markiert."
         ),
-        "human_oversight": (
-            (use_case.human_oversight + "\n") if use_case.human_oversight else ""
-        )
+        "human_oversight": ((use_case.human_oversight + "\n") if use_case.human_oversight else "")
         + (
             "Output-Typ und Unsicherheit dokumentieren:\n"
             "- Extraktion/Klassifikation: [fachliche Confidence-Semantik konkretisieren]\n"
