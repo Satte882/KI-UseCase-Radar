@@ -8,10 +8,15 @@ from django.core.exceptions import ValidationError
 from django.urls import reverse
 from django.utils import timezone
 
-from ki_radar.delivery.models import DeliveryRoleSourceDecision, DeliverySectionReview
-from ki_radar.delivery.readiness import evaluate_delivery_readiness
+from ki_radar.delivery.models import (
+    DeliveryPackage,
+    DeliveryRoleSourceDecision,
+    DeliverySectionReview,
+)
+from ki_radar.delivery.readiness import delivery_status_snapshot, evaluate_delivery_readiness
 from ki_radar.delivery.services import (
     create_delivery_package,
+    current_handed_over_package,
     render_delivery_markdown,
     resolve_technical_owner_source_change,
     review_delivery_section,
@@ -164,6 +169,205 @@ def test_generic_prefill_and_open_reviews_are_readiness_blockers(
     assert "SECTION_NEEDS_REVIEW" in codes
     assert "OUT_OF_SCOPE_MISSING" in codes
     assert "SYSTEM_RESPONSIBILITIES_GENERIC" in codes
+
+
+@pytest.mark.django_db
+def test_handed_over_status_is_not_reported_as_successful_with_current_blockers(
+    client,
+    owner,
+    other_owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    DeliveryPackage.objects.filter(pk=package.pk).update(
+        status=DeliveryPackage.Status.HANDED_OVER,
+        handed_over_at=timezone.now(),
+    )
+    package.refresh_from_db()
+
+    snapshot = delivery_status_snapshot(package)
+    exported = render_delivery_markdown(package)
+    client.force_login(owner)
+    response = client.get(reverse("delivery:package_detail", kwargs={"pk": package.pk}))
+
+    assert snapshot.code == "handover_inconsistent"
+    assert snapshot.handover_complete is False
+    assert "Status: Übergabe blockiert (inkonsistenter Bestand)" in exported
+    assert "Übergabe blockiert (inkonsistenter Bestand)" in response.content.decode()
+    assert current_handed_over_package(use_case) is None
+
+
+@pytest.mark.django_db
+def test_internal_architecture_views_keep_artifact_export_meaningful_without_external_url(
+    owner,
+    other_owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    package.architecture_artifacts.artifacts_url = ""
+
+    exported = render_delivery_markdown(package)
+
+    assert "## Architekturartefakte und Diagramme" in exported
+    assert "Im Delivery Package dokumentiert: Zielarchitektur/Systemkontext" in exported
+    assert "Daten-/Informationsfluss" in exported
+
+
+@pytest.mark.django_db
+def test_percentage_quality_target_requires_population_and_sample_size(
+    owner,
+    other_owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    package.acceptance_criteria = "Fehlerquote < 2 %."
+    package.test_scenarios = "Fachliche Ausgaben prüfen."
+    package.measurement_plan = "Fehlerquote im Pilot ermitteln."
+
+    codes = {finding.code for finding in evaluate_delivery_readiness(package)}
+
+    assert "EVALUATION_POPULATION_MISSING" in codes
+    assert "CRITICAL_ERROR_CLASSES_UNDOCUMENTED" in codes
+
+
+@pytest.mark.django_db
+def test_generative_output_rejects_unjustified_numeric_confidence(
+    owner,
+    other_owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    package.human_oversight = "Jeder generative Textentwurf zeigt Confidence 87 %."
+
+    codes = {finding.code for finding in evaluate_delivery_readiness(package)}
+
+    assert "GENERATIVE_NUMERIC_CONFIDENCE_UNJUSTIFIED" in codes
+
+
+@pytest.mark.django_db
+def test_calibrated_classifier_confidence_and_grounded_generation_are_allowed(
+    owner,
+    other_owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    package.human_oversight = (
+        "Klassifikation: Confidence 0,8 ist kalibriert und fachlich definiert.\n"
+        "Generative Textentwürfe zeigen Quellen und fehlende Grundlagen."
+    )
+
+    codes = {finding.code for finding in evaluate_delivery_readiness(package)}
+
+    assert "GENERATIVE_NUMERIC_CONFIDENCE_UNJUSTIFIED" not in codes
+
+
+@pytest.mark.django_db
+def test_synchronous_retry_cannot_exceed_end_to_end_latency_budget(
+    owner,
+    other_owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    package.non_functional_requirements = (
+        "Nutzerseitiges Ende-zu-Ende-Latenzbudget P95 < 8 Sekunden. "
+        "Provider-Timeout 8 Sekunden; danach 1 synchroner Retry."
+    )
+
+    codes = {finding.code for finding in evaluate_delivery_readiness(package)}
+
+    assert "LATENCY_RETRY_BUDGET_CONFLICT" in codes
+
+
+@pytest.mark.django_db
+def test_asynchronous_retry_does_not_conflict_with_user_latency_budget(
+    owner,
+    other_owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    package.non_functional_requirements = (
+        "Nutzerseitiges Ende-zu-Ende-Latenzbudget P95 < 8 Sekunden. "
+        "Provider-Timeout 8 Sekunden; ein Retry läuft asynchron außerhalb des Nutzerpfads."
+    )
+
+    codes = {finding.code for finding in evaluate_delivery_readiness(package)}
+
+    assert "LATENCY_RETRY_BUDGET_CONFLICT" not in codes
+
+
+@pytest.mark.django_db
+def test_retention_requires_separate_raw_content_and_metadata_semantics(
+    owner,
+    other_owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    package.logging_and_audit = "Auditnachweise haben eine Aufbewahrung von 24 Monaten."
+
+    findings = evaluate_delivery_readiness(package)
+    retention = next(
+        finding for finding in findings if finding.code == "RETENTION_SEMANTICS_INCOMPLETE"
+    )
+
+    assert retention.severity == "blocker"
+    assert "Prompt-/Input-Rohinhalte" in retention.message
+    assert "Dokumentinhalte" in retention.message
 
 
 @pytest.mark.django_db

@@ -104,7 +104,11 @@ class DeliveryPackageForm(forms.ModelForm):
     )
     architecture_artifacts_url = forms.URLField(
         required=False,
-        label="Architekturartefakte und Diagramme",
+        label="Externe Architekturartefakte und Diagramme (optional)",
+        help_text=(
+            "Optionaler Link auf vorhandene Diagramme oder Nachweise. Zielarchitektur/"
+            "Systemkontext und Daten-/Informationsfluss werden direkt im Package dokumentiert."
+        ),
     )
 
     class Meta:

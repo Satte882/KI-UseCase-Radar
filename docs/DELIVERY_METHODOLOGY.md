@@ -20,6 +20,30 @@ KI-Radar verwendet **CRISP-ML(Q)** als Lebenszyklus- und Qualitätssicherungsrah
 
 Das Delivery Package bildet nicht den vollständigen CRISP-ML(Q)-Lebenszyklus innerhalb von KI-Radar ab. Es übergibt den freigegebenen Problem-, Scope-, Lösungs-, Architektur- und Qualitätsrahmen. Deployment, Rollback, laufendes Monitoring und die eigentliche ML-Test-Score-Erhebung werden während der Umsetzung und im Betrieb durch die zuständigen Delivery- und Betriebsteams durchgeführt.
 
+## Verbindliche Präzisierungen für ein übergabefähiges Package
+
+### Architekturartefakte
+
+Zielarchitektur beziehungsweise Systemkontext und Daten-/Informationsfluss müssen im Package konkret beschrieben oder über vorhandene Architekturartefakte referenziert sein. Eine externe Diagramm-URL ist optional, wenn diese beiden Sichten im Package selbst belastbar dokumentiert sind. Komponenten-, Integrations- und Trust-/Security-Boundaries werden ergänzt, wenn Risiko und Lösungsreife dies erfordern.
+
+### Evaluation, Qualitätsmetriken und Stichproben
+
+Prozentuale Qualitätsgrenzen werden immer gemeinsam mit Metrik, betrachteter Testpopulation und Stichprobengröße interpretiert. Bei kleinen Populationen wird die Aussagekraft über ein Konfidenzintervall, eine Fehlerspanne oder eine gleichwertige verständliche Unsicherheitsaussage eingeordnet. Seltene oder kritische Fehlerklassen erhalten gezielte Testfälle oder kuratierte Testsets; ein aggregierter Prozentwert ersetzt diese Prüfung nicht. Recall-Ziele benennen insbesondere die Anzahl positiver Fälle.
+
+### Confidence und Unsicherheit nach Output-Typ
+
+- **Extraktion/Klassifikation:** Numerische Confidence nur, wenn sie technisch vorhanden, fachlich definiert und möglichst kalibriert ist.
+- **Generative Texte/Vorschläge:** Quellenbezug beziehungsweise Grounding, fehlende Grundlagen und Unsicherheit sichtbar machen; keinen pseudo-präzisen numerischen Score erzwingen.
+- **Regelbasierte Prüfung:** Regelreferenz, Prüfergebnis und bei Bedarf Regelversion oder Herkunft ausweisen.
+
+### Ende-zu-Ende-Latenz, Timeouts und Retries
+
+Das nutzerseitige Ende-zu-Ende-Latenzbudget ist das verbindliche Gesamtbudget. Request-, Provider- und Komponenten-Timeouts sind davon getrennt auszuweisen. Sämtliche synchronen Versuche einschließlich Retries müssen in das Gesamtbudget passen. Andernfalls erfolgt der Retry außerhalb des synchronen Nutzerpfads oder es greift ein deterministischer, testbarer Fallback.
+
+### Audit und Retention
+
+Aufbewahrung und Löschung werden mindestens getrennt für Audit-/Traceability-Metadaten, Prompt-/Input-Rohinhalte, Dokumentinhalte, personenbezogene oder besonders schutzbedürftige Daten sowie technische Logs/Betriebsdaten beschrieben. Jede Kategorie erhält Zweckbindung und Löschfrist. Eine längere Auditfrist für Metadaten begründet keine gleich lange Speicherung vollständiger Rohinhalte.
+
 ---
 
 # Vollständiges Vorgehensmodell Version 2.0

@@ -5,6 +5,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.db.models import Prefetch
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -27,7 +28,7 @@ from .permissions import (
     can_view_package,
     reviewer_roles,
 )
-from .readiness import missing_ready_fields
+from .readiness import delivery_status_snapshot, missing_ready_fields
 from .services import (
     APPROVED_STATUSES,
     create_delivery_package,
@@ -73,6 +74,19 @@ def _package_queryset():
         "use_case__architecture_origin__stage__value_stream__focus",
         "use_case__architecture_origin__process_analysis",
         "use_case__architecture_origin__solution_option",
+    )
+
+
+def _package_list_status_queryset():
+    return DeliveryPackage.objects.select_related(
+        "technical_owner",
+        "generated_from_decision__condition_owner",
+        "architecture_artifacts",
+        "use_case__business_owner",
+        "use_case__technical_owner",
+    ).prefetch_related(
+        "section_reviews__business_confirmed_by",
+        "section_reviews__technical_confirmed_by",
     )
 
 
@@ -186,7 +200,10 @@ def package_list(request):
             decision_status__in=APPROVED_STATUSES,
         )
         .select_related("business_unit", "business_owner", "classification")
-        .prefetch_related("delivery_packages", "approval_decisions")
+        .prefetch_related(
+            Prefetch("delivery_packages", queryset=_package_list_status_queryset()),
+            "approval_decisions",
+        )
         .order_by("business_unit__name", "short_id")
     )
     rows = []
@@ -202,6 +219,7 @@ def package_list(request):
             None,
         )
         packages = list(use_case.delivery_packages.all())
+        latest_package = packages[0] if packages else None
         rows.append(
             {
                 "use_case": use_case,
@@ -211,7 +229,10 @@ def package_list(request):
                     if final_decision
                     else "Die positive Freigabe ist noch nicht final dokumentiert."
                 ),
-                "latest_package": packages[0] if packages else None,
+                "latest_package": latest_package,
+                "latest_package_status": (
+                    delivery_status_snapshot(latest_package) if latest_package else None
+                ),
             }
         )
     return render(
@@ -274,11 +295,13 @@ def package_detail(request, pk):
         and package.technical_owner_id == package.use_case.business_owner_id
     )
     technical_owner_change = technical_owner_source_state(package)
+    status_snapshot = delivery_status_snapshot(package)
     return render(
         request,
         "delivery/package_detail.html",
         {
             "package": package,
+            "delivery_status": status_snapshot,
             "journey": build_delivery_package_journey(package, request.user),
             "can_edit": can_edit_package(request.user, package),
             "can_transition": can_transition_package(request.user),

@@ -44,6 +44,14 @@ ARCHITECTURE_FIELD_CODES = {
     for suffix in ("MISSING", "GENERIC")
 }
 FIELD_CODES = PACKAGE_FIELD_CODES | ARCHITECTURE_FIELD_CODES
+FIELD_CODES |= {
+    "EVALUATION_POPULATION_MISSING": "measurement_plan",
+    "EVALUATION_UNCERTAINTY_UNDOCUMENTED": "measurement_plan",
+    "CRITICAL_ERROR_CLASSES_UNDOCUMENTED": "test_scenarios",
+    "GENERATIVE_NUMERIC_CONFIDENCE_UNJUSTIFIED": "human_oversight",
+    "LATENCY_RETRY_BUDGET_CONFLICT": "non_functional_requirements",
+    "RETENTION_SEMANTICS_INCOMPLETE": "logging_and_audit",
+}
 
 RESPONSIBILITY_CODES = {
     "TECHNICAL_OWNER_MISSING",
@@ -144,9 +152,9 @@ def _field_label(package: DeliveryPackage, field_name: str) -> str:
 
 
 def _finding_rule(code: str, field_name: str) -> str:
-    if field_name and code.endswith("_MISSING"):
+    if code in PACKAGE_FIELD_CODES | ARCHITECTURE_FIELD_CODES and code.endswith("_MISSING"):
         return "Pflichtangabe muss vollständig ausgefüllt sein."
-    if field_name and code.endswith("_GENERIC"):
+    if code in PACKAGE_FIELD_CODES | ARCHITECTURE_FIELD_CODES and code.endswith("_GENERIC"):
         return "Inhalt muss konkret und projektspezifisch sein; Vorlagentext reicht nicht aus."
     rules = {
         "TECHNICAL_OWNER_MISSING": (
@@ -187,6 +195,29 @@ def _finding_rule(code: str, field_name: str) -> str:
         ),
         "SOURCE_CHANGED_AFTER_SNAPSHOT": (
             "Quellenänderungen nach dem Package-Snapshot müssen sichtbar geprüft werden."
+        ),
+        "EVALUATION_POPULATION_MISSING": (
+            "Prozentgrenzen müssen gemeinsam mit Testpopulation und Stichprobengröße "
+            "interpretiert werden."
+        ),
+        "EVALUATION_UNCERTAINTY_UNDOCUMENTED": (
+            "Die Aussagekraft kleiner Stichproben muss über Unsicherheit, Fehlerspanne "
+            "oder eine gleichwertige Einordnung sichtbar sein."
+        ),
+        "CRITICAL_ERROR_CLASSES_UNDOCUMENTED": (
+            "Seltene und kritische Fehlerklassen benötigen gezielte Testfälle oder Testsets."
+        ),
+        "GENERATIVE_NUMERIC_CONFIDENCE_UNJUSTIFIED": (
+            "Numerische Confidence ist nur bei fachlich definierter und belastbarer "
+            "Semantik zulässig."
+        ),
+        "LATENCY_RETRY_BUDGET_CONFLICT": (
+            "Synchrone Versuche einschließlich Retries müssen im nutzerseitigen "
+            "Ende-zu-Ende-Budget bleiben."
+        ),
+        "RETENTION_SEMANTICS_INCOMPLETE": (
+            "Audit-Metadaten und schutzbedürftige Rohinhalte benötigen getrennte "
+            "Zwecke, Fristen und Löschregeln."
         ),
     }
     return rules.get(code, "Die Delivery-Readiness-Regel für diesen Punkt ist noch nicht erfüllt.")

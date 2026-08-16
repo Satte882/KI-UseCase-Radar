@@ -29,7 +29,7 @@ from .permissions import (
     confirmation_role_label,
     reviewer_roles,
 )
-from .readiness import blocking_findings, missing_ready_fields
+from .readiness import blocking_findings, delivery_status_snapshot, missing_ready_fields
 
 APPROVED_STATUSES = {
     UseCase.DecisionStatus.APPROVED,
@@ -75,11 +75,7 @@ def current_handed_over_package(use_case: UseCase) -> DeliveryPackage | None:
     """Return the current package only when its handover is complete and timestamped."""
 
     package = current_delivery_package(use_case)
-    if (
-        package is not None
-        and package.status == DeliveryPackage.Status.HANDED_OVER
-        and package.handed_over_at is not None
-    ):
+    if package is not None and delivery_status_snapshot(package).handover_complete:
         return package
     return None
 
@@ -420,14 +416,27 @@ def build_initial_delivery_data(
             "2. Fachliche Entscheidung und Ergebnis nachvollziehbar darstellen."
         ),
         "non_functional_requirements": (
-            "Performance, Verfügbarkeit, Barrierefreiheit und Wartbarkeit konkretisieren."
+            "Performance, Verfügbarkeit, Barrierefreiheit und Wartbarkeit konkretisieren.\n"
+            "Nutzerseitiges Ende-zu-Ende-Latenzbudget, Request-/Provider-Timeouts sowie "
+            "synchrone Retries innerhalb dieses Budgets getrennt festlegen; Fallback benennen."
         ),
         "security_privacy_requirements": (
             "\n".join(checks) or "Keine zusätzlichen Prüfungen markiert."
         ),
-        "human_oversight": use_case.human_oversight or "Menschliche Kontrolle konkretisieren.",
+        "human_oversight": (
+            (use_case.human_oversight + "\n") if use_case.human_oversight else ""
+        )
+        + (
+            "Unsicherheit nach Output-Typ konkretisieren: Extraktion/Klassifikation nur mit "
+            "interpretierbarer Confidence; generative Texte über Quellen/Grounding und "
+            "fehlende Grundlagen; regelbasierte Prüfungen mit Regelreferenz und Ergebnis."
+        ),
         "logging_and_audit": (
-            "Fachliche Entscheidungen, Fehler und relevante Änderungen protokollieren."
+            "Fachliche Entscheidungen, Fehler und relevante Änderungen protokollieren. "
+            "Retention getrennt konkretisieren für Audit-/Traceability-Metadaten, "
+            "Prompt-/Input-Rohinhalte, Dokumentinhalte, personenbezogene oder besonders "
+            "schutzbedürftige Daten sowie technische Logs/Betriebsdaten; Zweckbindung und "
+            "Löschfristen benennen."
         ),
         "operations_and_support": (
             use_case.support_responsibility or "Betriebsverantwortung festlegen."
@@ -439,9 +448,15 @@ def build_initial_delivery_data(
             f"3. {metric}"
         ),
         "test_scenarios": (
-            "Happy Path, Datenfehler, fachliche Ausnahme und manuellen Eingriff testen."
+            "Happy Path, Datenfehler, fachliche Ausnahme und manuellen Eingriff testen. "
+            "Seltene oder kritische Fehlerklassen durch gezielte Testsets konkretisieren."
         ),
-        "measurement_plan": metric,
+        "measurement_plan": (
+            f"{metric}\n"
+            "Je Qualitätsmetrik Testpopulation, Stichprobengröße, positive Fälle und "
+            "Aussagekraft/statistische Unsicherheit konkretisieren; Prozentwerte nicht "
+            "losgelöst von dieser Grundlage interpretieren."
+        ),
         "dependencies": "",
         "risks": (
             f"Bewertung: Risiko/Komplexität {decision.assessment.get_risk_complexity_display()}."

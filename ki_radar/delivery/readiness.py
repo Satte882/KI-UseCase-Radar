@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -15,6 +16,13 @@ class ReadinessFinding:
     code: str
     severity: str
     message: str
+
+
+@dataclass(frozen=True)
+class DeliveryStatusSnapshot:
+    code: str
+    label: str
+    handover_complete: bool
 
 
 SECTION_LABELS = dict(DELIVERY_SECTION_DEFINITIONS)
@@ -84,6 +92,207 @@ GENERIC_PLACEHOLDER_FRAGMENTS = (
     "fachliche verantwortlichkeiten bestätigen",
 )
 
+_PERCENT_THRESHOLD_RE = re.compile(
+    r"(?:[<>]=?|≤|≥|mindestens|maximal|unter|über)?\s*\d+(?:[.,]\d+)?\s*(?:%|prozent)",
+    re.IGNORECASE,
+)
+_SAMPLE_CONTEXT_RE = re.compile(
+    r"(?:stichprob|population|testset|evaluationsset|goldstandard|"
+    r"\b\d+\s*(?:fälle|vorgänge|beispiele|dokumente|ausgaben|outputs|positive))",
+    re.IGNORECASE,
+)
+_UNCERTAINTY_CONTEXT_RE = re.compile(
+    r"(?:konfidenzintervall|fehlerspanne|statistische unsicherheit|aussagekraft)",
+    re.IGNORECASE,
+)
+_CRITICAL_CLASS_RE = re.compile(
+    r"(?:seltene?|kritische?|fehlerklass|gezielte?s? testset|edge cases?|randfälle)",
+    re.IGNORECASE,
+)
+_NUMERIC_CONFIDENCE_RE = re.compile(
+    r"(?:confidence|konfidenz)(?:\s*score)?\s*(?::|=|>|<|von)?\s*\d+(?:[.,]\d+)?\s*%?",
+    re.IGNORECASE,
+)
+_GENERATIVE_OUTPUT_RE = re.compile(
+    r"(?:generativ|freitext|textentwurf|kommunikationsentwurf|llm-ausgabe|antwortentwurf)",
+    re.IGNORECASE,
+)
+_CONFIDENCE_JUSTIFICATION_RE = re.compile(
+    r"(?:kalibrier|dokumentierte? semantik|fachlich definiert)",
+    re.IGNORECASE,
+)
+_CONFIDENCE_NEGATION_RE = re.compile(
+    r"(?:kein(?:e|en|er|es)?|nicht)\s+(?:pseudo-präzise[nr]?\s+)?(?:numerische[nr]?\s+)?"
+    r"(?:confidence|konfidenz)",
+    re.IGNORECASE,
+)
+_LATENCY_BUDGET_RE = re.compile(
+    r"(?:p95|ende-zu-ende|e2e|nutzer(?:seitig)?(?:es)?\s+(?:latenz|budget))"
+    r"[^\d]{0,30}(?:<|≤|max(?:imal)?\.?|unter)?\s*(\d+(?:[.,]\d+)?)\s*(ms|sekunden?|s\b)",
+    re.IGNORECASE,
+)
+_TIMEOUT_RE = re.compile(
+    r"(?:request-|provider-|komponenten-)?timeout[^\d]{0,20}(\d+(?:[.,]\d+)?)\s*(ms|sekunden?|s\b)",
+    re.IGNORECASE,
+)
+_SYNC_RETRY_RE = re.compile(
+    r"(?:\bsynchron\w*[^.\n]{0,40}retr(?:y|ies)|retr(?:y|ies)[^.\n]{0,40}\bsynchron\w*)",
+    re.IGNORECASE,
+)
+_RETENTION_RE = re.compile(r"(?:retention|aufbewahr|löschfrist|speicherdauer)", re.IGNORECASE)
+
+
+def _seconds(match: re.Match[str]) -> float:
+    value = float(match.group(1).replace(",", "."))
+    return value / 1000 if match.group(2).casefold() == "ms" else value
+
+
+def _quality_semantic_findings(package: DeliveryPackage) -> list[ReadinessFinding]:
+    findings: list[ReadinessFinding] = []
+    evaluation_text = "\n".join(
+        _text(value)
+        for value in (
+            package.acceptance_criteria,
+            package.test_scenarios,
+            package.measurement_plan,
+        )
+    )
+    if _PERCENT_THRESHOLD_RE.search(evaluation_text):
+        if not _SAMPLE_CONTEXT_RE.search(evaluation_text):
+            findings.append(
+                ReadinessFinding(
+                    "acceptance_and_measurement",
+                    "EVALUATION_POPULATION_MISSING",
+                    "warning",
+                    (
+                        "Prozentuale Qualitätsgrenzen benötigen eine benannte Testpopulation "
+                        "und eine nachvollziehbare Stichprobengröße."
+                    ),
+                )
+            )
+        elif not _UNCERTAINTY_CONTEXT_RE.search(evaluation_text):
+            findings.append(
+                ReadinessFinding(
+                    "acceptance_and_measurement",
+                    "EVALUATION_UNCERTAINTY_UNDOCUMENTED",
+                    "warning",
+                    (
+                        "Für die prozentualen Qualitätsgrenzen ist die statistische "
+                        "Aussagekraft beziehungsweise Unsicherheit noch nicht dokumentiert."
+                    ),
+                )
+            )
+        if not _CRITICAL_CLASS_RE.search(evaluation_text):
+            findings.append(
+                ReadinessFinding(
+                    "acceptance_and_measurement",
+                    "CRITICAL_ERROR_CLASSES_UNDOCUMENTED",
+                    "warning",
+                    (
+                        "Seltene oder kritische Fehlerklassen sollten mit gezielten "
+                        "Testfällen beziehungsweise Testsets abgedeckt werden."
+                    ),
+                )
+            )
+
+    confidence_text = "\n".join(
+        _text(value)
+        for value in (
+            package.acceptance_criteria,
+            package.human_oversight,
+            package.non_functional_requirements,
+        )
+    )
+    unjustified_generative_confidence = any(
+        _GENERATIVE_OUTPUT_RE.search(statement)
+        and _NUMERIC_CONFIDENCE_RE.search(statement)
+        and not _CONFIDENCE_JUSTIFICATION_RE.search(statement)
+        and not _CONFIDENCE_NEGATION_RE.search(statement)
+        for statement in re.split(r"[\n.!?]+", confidence_text)
+    )
+    if unjustified_generative_confidence:
+        findings.append(
+            ReadinessFinding(
+                "requirements_and_governance",
+                "GENERATIVE_NUMERIC_CONFIDENCE_UNJUSTIFIED",
+                "blocker",
+                (
+                    "Für generative Texte wird ein numerischer Confidence Score verlangt, "
+                    "ohne eine belastbare, kalibrierte Semantik zu dokumentieren."
+                ),
+            )
+        )
+
+    artifacts = get_delivery_architecture_artifacts(package)
+    latency_text = "\n".join(
+        _text(value)
+        for value in (
+            package.non_functional_requirements,
+            package.operations_and_support,
+            getattr(artifacts, "integration_operations", ""),
+        )
+    )
+    budget_match = _LATENCY_BUDGET_RE.search(latency_text)
+    timeout_match = _TIMEOUT_RE.search(latency_text)
+    has_sync_retry = bool(_SYNC_RETRY_RE.search(latency_text))
+    if (
+        budget_match
+        and timeout_match
+        and has_sync_retry
+        and _seconds(timeout_match) >= _seconds(budget_match)
+    ):
+        findings.append(
+            ReadinessFinding(
+                "requirements_and_governance",
+                "LATENCY_RETRY_BUDGET_CONFLICT",
+                "blocker",
+                (
+                    "Der Timeout eines einzelnen Versuchs verbraucht bereits das gesamte "
+                    "nutzerseitige Ende-zu-Ende-Latenzbudget, obwohl synchrone Retries "
+                    "vorgesehen sind."
+                ),
+            )
+        )
+
+    retention_text = "\n".join(
+        _text(value)
+        for value in (
+            package.logging_and_audit,
+            package.security_privacy_requirements,
+            package.operations_and_support,
+        )
+    )
+    if _RETENTION_RE.search(retention_text):
+        required_semantics = {
+            "Audit-/Traceability-Metadaten": r"(?:audit|traceability)[-/ ]*metadaten|metadaten",
+            "Prompt-/Input-Rohinhalte": r"(?:prompt|input)[-/ ]*(?:roh)?inhalt|rohinhalt",
+            "Dokumentinhalte": r"dokumentinhalt",
+            "personenbezogene oder besonders schutzbedürftige Daten": (
+                r"personenbezogen|schutzbedürftig"
+            ),
+            "technische Logs/Betriebsdaten": r"technische logs?|betriebsdaten",
+            "Zweckbindung und Löschung": r"zweckbind|lösch",
+        }
+        missing = [
+            label
+            for label, pattern in required_semantics.items()
+            if not re.search(pattern, retention_text, re.IGNORECASE)
+        ]
+        if missing:
+            findings.append(
+                ReadinessFinding(
+                    "requirements_and_governance",
+                    "RETENTION_SEMANTICS_INCOMPLETE",
+                    "blocker",
+                    (
+                        "Die Aufbewahrungsregel unterscheidet noch nicht vollständig: "
+                        + ", ".join(missing)
+                        + "."
+                    ),
+                )
+            )
+    return findings
+
 
 def _text(value) -> str:
     return str(value or "").strip()
@@ -111,6 +320,10 @@ def _source_staleness_findings(
     package: DeliveryPackage,
     reviews_by_key,
 ) -> list[ReadinessFinding]:
+    if package.status == DeliveryPackage.Status.HANDED_OVER:
+        # The handed-over version is an immutable snapshot. Later source changes belong to a
+        # new package version and must not retroactively invalidate the completed handover.
+        return []
     review = reviews_by_key.get("problem_and_target")
     if review is None or not review.source_manifest:
         return []
@@ -356,6 +569,7 @@ def evaluate_delivery_readiness(package: DeliveryPackage) -> list[ReadinessFindi
             )
 
     findings.extend(_source_staleness_findings(package, reviews))
+    findings.extend(_quality_semantic_findings(package))
     return findings
 
 
@@ -363,6 +577,26 @@ def blocking_findings(package: DeliveryPackage) -> list[ReadinessFinding]:
     return [
         finding for finding in evaluate_delivery_readiness(package) if finding.severity == "blocker"
     ]
+
+
+def delivery_status_snapshot(package: DeliveryPackage) -> DeliveryStatusSnapshot:
+    if package.status == DeliveryPackage.Status.HANDED_OVER:
+        if package.handed_over_at is None or blocking_findings(package):
+            return DeliveryStatusSnapshot(
+                code="handover_inconsistent",
+                label="Übergabe blockiert (inkonsistenter Bestand)",
+                handover_complete=False,
+            )
+        return DeliveryStatusSnapshot(
+            code=package.status,
+            label=package.get_status_display(),
+            handover_complete=package.handed_over_at is not None,
+        )
+    return DeliveryStatusSnapshot(
+        code=package.status,
+        label=package.get_status_display(),
+        handover_complete=False,
+    )
 
 
 def _legacy_missing_ready_fields(package: DeliveryPackage) -> list[str]:

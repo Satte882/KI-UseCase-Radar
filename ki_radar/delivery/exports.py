@@ -4,7 +4,7 @@ import json
 
 from .architecture_artifacts import get_delivery_architecture_artifacts
 from .models import DELIVERY_SECTION_DEFINITIONS, DeliveryPackage
-from .readiness import evaluate_delivery_readiness
+from .readiness import delivery_status_snapshot, evaluate_delivery_readiness
 
 
 def _review_summary(package: DeliveryPackage) -> str:
@@ -98,11 +98,20 @@ def render_delivery_markdown(package: DeliveryPackage) -> str:
                     artifacts.integration_contracts,
                 ),
                 ("Integrationsbetrieb und Fehlerbehandlung", artifacts.integration_operations),
-                ("Architekturartefakte und Diagramme", artifacts.artifacts_url),
+                (
+                    "Architekturartefakte und Diagramme",
+                    artifacts.artifacts_url
+                    or (
+                        "Im Delivery Package dokumentiert: Zielarchitektur/Systemkontext "
+                        "sowie Daten-/Informationsfluss. Externe Referenz: nicht "
+                        "hinterlegt (optional)."
+                    ),
+                ),
             ]
         )
 
     findings = evaluate_delivery_readiness(package)
+    status = delivery_status_snapshot(package)
     findings_text = (
         "\n".join(
             f"- **{finding.severity.upper()} · {finding.code}:** {finding.message}"
@@ -124,7 +133,7 @@ def render_delivery_markdown(package: DeliveryPackage) -> str:
         f"# Delivery Package - {package.use_case.short_id} {package.use_case.title}\n\n"
         f"Version: {package.version}  \n"
         f"Readiness-Schema: {package.readiness_schema_version}  \n"
-        f"Status: {package.get_status_display()}  \n"
+        f"Status: {status.label}  \n"
         f"Technical Owner: {package.technical_owner or 'Nicht benannt'}\n\n"
         "Methodische Referenz: `docs/DELIVERY_METHODOLOGY.md`\n\n"
         f"{body}\n"

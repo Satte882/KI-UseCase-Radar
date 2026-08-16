@@ -34,7 +34,7 @@
           <td>{{ row.use_case.business_unit }}</td>
           <td>{{ row.use_case.get_decision_status_display }}</td>
           <td>
-            {% if row.latest_package %}<a href="{{ row.latest_package.get_absolute_url }}">v{{ row.latest_package.version }} · {{ row.latest_package.get_status_display }}</a>{% else %}<span class="text-muted">Noch nicht erstellt</span>{% endif %}
+            {% if row.latest_package %}<a href="{{ row.latest_package.get_absolute_url }}">v{{ row.latest_package.version }} · {{ row.latest_package_status.label }}</a>{% else %}<span class="text-muted">Noch nicht erstellt</span>{% endif %}
           </td>
           <td>
             {% if can_create and row.eligible %}

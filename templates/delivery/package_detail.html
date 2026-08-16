@@ -13,7 +13,7 @@
   <div class="cr-page-header__copy">
     <div class="eyebrow mb-2">{{ package.use_case.short_id }} · Delivery v{{ package.version }}</div>
     <h1 class="cr-page-header__title">{{ package.use_case.title }}</h1>
-    <p class="cr-work-header__summary">{{ package.get_status_display }} · Readiness-Schema {{ package.readiness_schema_version }} · erzeugt aus {{ package.generated_from_decision.get_decision_status_display }}</p>
+    <p class="cr-work-header__summary">{{ delivery_status.label }} · Readiness-Schema {{ package.readiness_schema_version }} · erzeugt aus {{ package.generated_from_decision.get_decision_status_display }}</p>
   </div>
   <div class="cr-work-header__actions">
     <a class="btn btn-outline-secondary" href="{% url 'delivery:package_list' %}">Zur Übersicht</a>
@@ -26,7 +26,7 @@
 <div class="cr-next-action" id="next-action">{% include "includes/next_action.html" %}</div>
 
 <div class="kpi-strip mb-4">
-  <div class="kpi-cell"><small>Status</small><strong>{{ package.get_status_display }}</strong></div>
+  <div class="kpi-cell"><small>Status</small><strong>{{ delivery_status.label }}</strong></div>
   <div class="kpi-cell"><small>Version</small><strong>{{ package.version }}</strong></div>
   <div class="kpi-cell"><small>Technical Owner · Technik, Daten und KI</small><strong>{{ package.technical_owner|default:"Nicht benannt" }}</strong></div>
 </div>
@@ -258,7 +258,7 @@
     <section><div class="section-title">Datenqualität, Zugriff und Schutzbedarf</div><div class="text-preline">{{ package.architecture_artifacts.data_quality_and_access|default:"Noch nicht dokumentiert" }}</div></section>
     <section><div class="section-title">Integrationsverträge und Verantwortlichkeiten</div><div class="text-preline">{{ package.architecture_artifacts.integration_contracts|default:"Noch nicht dokumentiert" }}</div></section>
     <section><div class="section-title">Integrationsbetrieb und Fehlerbehandlung</div><div class="text-preline">{{ package.architecture_artifacts.integration_operations|default:"Noch nicht dokumentiert" }}</div></section>
-    <section><div class="section-title">Architekturdiagramme und Nachweise</div>{% if package.architecture_artifacts.artifacts_url %}<a href="{{ package.architecture_artifacts.artifacts_url }}" target="_blank" rel="noopener noreferrer">Architekturartefakte öffnen</a>{% else %}<span class="text-muted">Noch nicht verknüpft</span>{% endif %}</section>
+    <section><div class="section-title">Architekturdiagramme und Nachweise</div>{% if package.architecture_artifacts.artifacts_url %}<a href="{{ package.architecture_artifacts.artifacts_url }}" target="_blank" rel="noopener noreferrer">Externe Architekturartefakte öffnen</a>{% else %}<span class="text-muted">Zielarchitektur/Systemkontext und Daten-/Informationsfluss sind oben im Package dokumentiert; eine externe Referenz ist optional.</span>{% endif %}</section>
   </div>
 </div>
 

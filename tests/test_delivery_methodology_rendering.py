@@ -19,3 +19,7 @@ def test_methodology_page_renders_markdown_structure(client, owner):
     assert "<blockquote>" in content
     assert "<pre><code" in content
     assert "text-preline" not in content
+    assert "Evaluation, Qualitätsmetriken und Stichproben" in content
+    assert "Confidence und Unsicherheit nach Output-Typ" in content
+    assert "Ende-zu-Ende-Latenz, Timeouts und Retries" in content
+    assert "Audit und Retention" in content
