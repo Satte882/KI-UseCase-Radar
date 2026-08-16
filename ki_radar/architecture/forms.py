@@ -272,21 +272,6 @@ class ValueStreamStageForm(StyledModelForm):
 
 
 class ProcessAnalysisForm(StyledModelForm):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["diagnostic_observations"].help_text = (
-            "Beschreibe das beobachtbare Symptom oder Problem, ohne eine Ursache zu unterstellen."
-        )
-        self.fields["cause_hypotheses"].help_text = (
-            "Vermutete Ursache; Hypothesen bleiben ausdrücklich als unbestätigt gekennzeichnet."
-        )
-        self.fields[
-            "confirmed_causes"
-        ].help_text = "Nur fachlich oder durch Evidenz bestätigte Ursachen eintragen."
-        self.fields["constraints"].help_text = (
-            "Optional: relevante Randbedingung oder Engpass, der die Lösungswahl begrenzt."
-        )
-
     def clean_status(self):
         status = self.cleaned_data["status"]
         if status == ProcessAnalysis.Status.VALIDATED and (
@@ -337,6 +322,18 @@ class ProcessAnalysisForm(StyledModelForm):
             "exceptions": forms.Textarea(attrs={"rows": 4}),
             "baseline_metrics": forms.Textarea(attrs={"rows": 4}),
             "target_state_principles": forms.Textarea(attrs={"rows": 5}),
+        }
+        help_texts = {
+            "diagnostic_observations": (
+                "Beschreibe das beobachtbare Symptom oder Problem, ohne eine Ursache zu unterstellen."
+            ),
+            "cause_hypotheses": (
+                "Vermutete Ursache; Hypothesen bleiben ausdrücklich als unbestätigt gekennzeichnet."
+            ),
+            "confirmed_causes": "Nur fachlich oder durch Evidenz bestätigte Ursachen eintragen.",
+            "constraints": (
+                "Optional: relevante Randbedingung oder Engpass, der die Lösungswahl begrenzt."
+            ),
         }
 
 
