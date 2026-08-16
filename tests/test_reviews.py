@@ -80,6 +80,16 @@ def prepare_failed_pilot(use_case, coordinator):
     use_case.metric_measured_at = today
     use_case.metric_evidence_url = "https://example.invalid/evidence"
     use_case.save()
+    decision = create_final_approval(use_case, coordinator)
+    DeliveryPackage.objects.create(
+        use_case=use_case,
+        version=1,
+        status=DeliveryPackage.Status.HANDED_OVER,
+        generated_from_decision=decision,
+        created_by=coordinator,
+        handed_over_by=coordinator,
+        handed_over_at=timezone.now(),
+    )
     return today
 
 

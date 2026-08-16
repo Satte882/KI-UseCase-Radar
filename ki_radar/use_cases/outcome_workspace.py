@@ -165,16 +165,30 @@ def _handover_step(
             ),
             details=("Aktuelle Package-Version", "verbindliche Übergabe"),
         )
+    status_snapshot = delivery_status_snapshot(package)
+    ready_and_valid = (
+        package.status == DeliveryPackage.Status.READY
+        and status_snapshot.code == DeliveryPackage.Status.READY
+    )
     return JourneyStep(
         key="handover",
         label="Übergabe",
-        state="current" if package.status == DeliveryPackage.Status.READY else "blocked",
+        state="current" if ready_and_valid else "blocked",
         url=package.get_absolute_url(),
-        action_label="Delivery Package öffnen",
+        action_label="Delivery Package öffnen" if ready_and_valid else "Readiness prüfen",
         reason=(
             "Das Package ist bereit; die Übergabe an das externe Delivery-System steht aus."
-            if package.status == DeliveryPackage.Status.READY
-            else "Das Delivery Package muss vor der Übergabe vervollständigt werden."
+            if ready_and_valid
+            else (
+                status_snapshot.label
+                if package.status == DeliveryPackage.Status.READY
+                else "Das Delivery Package muss vor der Übergabe vervollständigt werden."
+            )
+        ),
+        details=(
+            tuple(finding.message for finding in blocking_findings(package))
+            if package.status == DeliveryPackage.Status.READY and not ready_and_valid
+            else ()
         ),
     )
 

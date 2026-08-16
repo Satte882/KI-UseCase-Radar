@@ -11,6 +11,7 @@ from ki_radar.core.taxonomy import BusinessDomain
 from ki_radar.delivery.models import DeliveryPackage
 from ki_radar.delivery.permissions import can_edit_package, can_transition_package
 from ki_radar.delivery.readiness import delivery_status_snapshot
+from ki_radar.delivery.services import current_handed_over_package
 from ki_radar.use_cases.blockers import build_blocker_details
 from ki_radar.use_cases.classification import UseCaseClassification
 from ki_radar.use_cases.models import UseCase
@@ -135,6 +136,7 @@ def _build_outcome_stage_action(
     user,
 ) -> dict[str, str | bool]:
     package = use_case.latest_delivery
+    handed_over_package = current_handed_over_package(use_case)
     phase = OUTCOME_STAGE_COPY[active_stage]["title"]
 
     if active_stage == "handover":
@@ -158,6 +160,14 @@ def _build_outcome_stage_action(
                 state="available",
             )
         if package.status == DeliveryPackage.Status.READY:
+            if status_snapshot.code != DeliveryPackage.Status.READY:
+                return _stage_action(
+                    phase,
+                    status_snapshot.label,
+                    action_label="Readiness prüfen",
+                    url=package.get_absolute_url(),
+                    state="available",
+                )
             if can_transition_package(user):
                 return _stage_action(
                     phase,
@@ -192,7 +202,19 @@ def _build_outcome_stage_action(
                 phase,
                 "Ein operativer Pilot-Link wird erst für einen gestarteten Pilot angezeigt.",
             )
-        if package and package.external_delivery_url:
+        if handed_over_package is None:
+            return _stage_action(
+                phase,
+                (
+                    delivery_status_snapshot(package).label
+                    if package
+                    else "Das aktuelle Delivery Package wurde noch nicht verbindlich übergeben."
+                ),
+                action_label="Übergabe prüfen" if package else "",
+                url=package.get_absolute_url() if package else "",
+                state="available" if package else "blocked",
+            )
+        if handed_over_package.external_delivery_url:
             return _stage_action(
                 phase,
                 (
@@ -200,22 +222,22 @@ def _build_outcome_stage_action(
                     "Review-Snapshot."
                 ),
                 action_label="Externen Pilot öffnen",
-                url=package.external_delivery_url,
+                url=handed_over_package.external_delivery_url,
                 external=True,
                 state="available",
             )
-        if package and can_edit_package(user, package):
+        if can_edit_package(user, handed_over_package):
             return _stage_action(
                 phase,
                 "Im Delivery Package ist noch kein externer Pilot-Link hinterlegt.",
                 action_label="Delivery-Link ergänzen",
                 url=(
-                    f"{reverse('delivery:package_update', kwargs={'pk': package.pk})}"
+                    f"{reverse('delivery:package_update', kwargs={'pk': handed_over_package.pk})}"
                     "?highlight=external_delivery_url"
                 ),
                 state="available",
             )
-        if package and package.status == DeliveryPackage.Status.HANDED_OVER:
+        if handed_over_package.status == DeliveryPackage.Status.HANDED_OVER:
             return _stage_action(
                 phase,
                 "Kein externer Pilot-Link hinterlegt. Das übergebene Package ist unveränderlich; "
@@ -249,6 +271,17 @@ def _build_outcome_stage_action(
                 "Wirkungsmessung vorliegt."
             )
             return action
+        if use_case.status == UseCase.Status.PILOT and handed_over_package is None:
+            return _stage_action(
+                phase,
+                (
+                    "Die Go-live-Entscheidung ist blockiert, weil die aktuelle Delivery-"
+                    "Übergabe nicht mehr gültig ist."
+                ),
+                action_label="Übergabe prüfen" if package else "",
+                url=package.get_absolute_url() if package else "",
+                state="available" if package else "blocked",
+            )
         if use_case.status == UseCase.Status.PILOT and is_coordinator(user):
             return _stage_action(
                 phase,

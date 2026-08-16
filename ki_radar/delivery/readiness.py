@@ -120,7 +120,7 @@ _CRITICAL_CLASS_RE = re.compile(
     r"(?:seltene?|kritische?|fehlerklass|edge cases?|randfälle)", re.IGNORECASE
 )
 _TARGETED_TEST_SIZE_RE = re.compile(
-    r"(?:\b\d+\s*(?:gezielte\s+)?(?:testfälle|tests|fälle|beispiele)|"
+    r"(?:\b\d+\s*(?:gezielte[nr]?\s+)?(?:testfälle|tests|fälle|beispiele)|"
     r"(?:testset|negativtest|randfalltest)[^\d;\n]{0,30}\d+)",
     re.IGNORECASE,
 )
@@ -157,8 +157,12 @@ _NEGATED_JUSTIFICATION_RE = re.compile(
     re.IGNORECASE,
 )
 _OUTPUT_NOT_APPLICABLE_RE = re.compile(
+    r"(?:"
     r"(?:kein(?:e|en|er|es)?|nicht\s+anwendbar(?:e|en|er|es)?)\s+[^.;\n]{0,24}"
-    r"(?:extraktion|klassifikation|generativ|freitext|textentwurf|regelbasiert|regelprüfung)",
+    r"(?:extraktion|klassifikation|generativ|freitext|textentwurf|regelbasiert|regelprüfung)"
+    r"|(?:extraktion|klassifikation|generativ\w*|freitext|textentwurf|regelbasiert|regelprüfung)"
+    r"[^.;\n]{0,30}(?:nicht\s+anwendbar|nicht\s+vorgesehen|entfällt)"
+    r")",
     re.IGNORECASE,
 )
 _GROUNDING_RE = re.compile(r"(?:grounding|quelle|beleg|nachweis)", re.IGNORECASE)
@@ -173,6 +177,39 @@ _RULE_REFERENCE_RE = re.compile(
 )
 _RULE_RESULT_RE = re.compile(
     r"(?:prüfergebnis|regelresultat|bestanden|nicht\s+bestanden|erfüllt|verletzt)",
+    re.IGNORECASE,
+)
+_NEGATED_GROUNDING_RE = re.compile(
+    r"(?:kein(?:e|en)?|ohne)\s+(?:grounding|quellen?(?:bezug)?|belege?|nachweise?)"
+    r"|(?:grounding|quellen?(?:bezug)?|belege?|nachweise?)"
+    r"[^.;\n]{0,24}(?:deaktiviert|fehlt\b|fehlen\b|nicht\s+(?:vorhanden|verwendet|dokumentiert))",
+    re.IGNORECASE,
+)
+_NEGATED_UNCERTAIN_BASIS_RE = re.compile(
+    r"(?:keine|ohne)\s+(?:kennzeichnung|anzeige|darstellung)[^.;\n]{0,24}"
+    r"(?:unsicher|fehlende\s+(?:grundlagen?|quellen?|informationen?)|kenntnislücke)"
+    r"|(?:unsicherheit|unsichere\s+(?:grundlagen?|quellen?|informationen?)|kenntnislücken?)"
+    r"[^.;\n]{0,30}(?:nicht\s+(?:angezeigt|gekennzeichnet|dargestellt)|fehlt\b|fehlen\b)",
+    re.IGNORECASE,
+)
+_NEGATED_RULE_REFERENCE_RE = re.compile(
+    r"(?:kein(?:e)?|ohne)\s+(?:regelreferenz|regel[- ]?(?:id|version|nummer)|"
+    r"policy[- ]?(?:id|version))"
+    r"|(?:regelreferenz|regel[- ]?(?:id|version|nummer)|policy[- ]?(?:id|version))"
+    r"[^.;\n]{0,24}(?:fehlt\b|nicht\s+(?:vorhanden|dokumentiert))",
+    re.IGNORECASE,
+)
+_NEGATED_RULE_RESULT_RE = re.compile(
+    r"(?:kein(?:e)?|ohne)\s+(?:prüfergebnis|regelresultat)"
+    r"|(?:prüfergebnis|regelresultat)[^.;\n]{0,24}"
+    r"(?:fehlt\b|nicht\s+(?:vorhanden|dokumentiert))",
+    re.IGNORECASE,
+)
+_NEGATED_CRITICAL_TEST_RE = re.compile(
+    r"(?:nicht|nie|ohne)\s+(?:gezielt\s+)?(?:getestet|geprüft|abgedeckt)"
+    r"|(?:wird|werden|ist|sind)\s+[^.;\n]{0,20}nicht\s+"
+    r"(?:gezielt\s+)?(?:getestet|geprüft|abgedeckt)"
+    r"|keine\s+(?:gezielten?\s+)?(?:testfälle|tests|testabdeckung)",
     re.IGNORECASE,
 )
 _LATENCY_BUDGET_RE = re.compile(
@@ -270,6 +307,18 @@ def _has_concrete_match(value: str, pattern: re.Pattern[str]) -> bool:
     )
 
 
+def _has_affirmative_match(
+    value: str,
+    pattern: re.Pattern[str],
+    negated_pattern: re.Pattern[str],
+) -> bool:
+    return any(
+        pattern.search(negated_pattern.sub("", statement))
+        and not _SEMANTIC_PLACEHOLDER_RE.search(statement)
+        for statement in _statements(value)
+    )
+
+
 def _affirmative_confidence_semantics(statement: str) -> bool:
     without_negated_claims = _NEGATED_JUSTIFICATION_RE.sub("", statement)
     return bool(_CONFIDENCE_JUSTIFICATION_RE.search(without_negated_claims))
@@ -343,8 +392,12 @@ def _output_semantic_findings(confidence_text: str) -> list[ReadinessFinding]:
                 )
             )
         if not (
-            _has_concrete_match(confidence_text, _GROUNDING_RE)
-            and _has_concrete_match(confidence_text, _UNCERTAIN_BASIS_RE)
+            _has_affirmative_match(confidence_text, _GROUNDING_RE, _NEGATED_GROUNDING_RE)
+            and _has_affirmative_match(
+                confidence_text,
+                _UNCERTAIN_BASIS_RE,
+                _NEGATED_UNCERTAIN_BASIS_RE,
+            )
         ):
             findings.append(
                 ReadinessFinding(
@@ -361,9 +414,15 @@ def _output_semantic_findings(confidence_text: str) -> list[ReadinessFinding]:
     has_rule_based_output = any(
         _RULE_BASED_OUTPUT_RE.search(statement) for statement in active_output_statements
     )
-    has_rule_based_evidence = _has_concrete_match(
-        confidence_text, _RULE_REFERENCE_RE
-    ) and _has_concrete_match(confidence_text, _RULE_RESULT_RE)
+    has_rule_based_evidence = _has_affirmative_match(
+        confidence_text,
+        _RULE_REFERENCE_RE,
+        _NEGATED_RULE_REFERENCE_RE,
+    ) and _has_affirmative_match(
+        confidence_text,
+        _RULE_RESULT_RE,
+        _NEGATED_RULE_RESULT_RE,
+    )
     if has_rule_based_output and not has_rule_based_evidence:
         findings.append(
             ReadinessFinding(
@@ -384,13 +443,24 @@ def _count_value(value: str) -> int:
 
 
 def _latency_semantic_findings(latency_text: str) -> list[ReadinessFinding]:
-    synchronous_retry_statements = [
-        statement
-        for statement in _statements(latency_text)
-        if _RETRY_RE.search(statement)
-        and _SYNC_RE.search(statement)
-        and not _ASYNC_RE.search(statement)
-    ]
+    statements = _statements(latency_text)
+    synchronous_retry_statements: list[str] = []
+    for index, statement in enumerate(statements):
+        if not _RETRY_RE.search(statement) or _ASYNC_RE.search(statement):
+            continue
+        context = statement
+        if not _SYNC_RE.search(context):
+            adjacent_statements = [
+                statements[adjacent_index]
+                for adjacent_index in (index - 1, index + 1)
+                if 0 <= adjacent_index < len(statements)
+                and _SYNC_RE.search(statements[adjacent_index])
+                and not _ASYNC_RE.search(statements[adjacent_index])
+            ]
+            if adjacent_statements:
+                context = f"{statement} {adjacent_statements[0]}"
+        if _SYNC_RE.search(context):
+            synchronous_retry_statements.append(context)
     if not synchronous_retry_statements:
         return []
 
@@ -402,45 +472,58 @@ def _latency_semantic_findings(latency_text: str) -> list[ReadinessFinding]:
     else:
         budget_seconds = min(_seconds(match) for match in budget_matches)
         total_matches = list(_TOTAL_SYNC_DURATION_RE.finditer(latency_text))
-        if total_matches:
-            total_seconds = max(_seconds(match) for match in total_matches)
-            if total_seconds <= budget_seconds:
+        total_seconds = [_seconds(match) for match in total_matches]
+        timeout_matches = list(_TIMEOUT_RE.finditer(latency_text))
+        retry_counts = {
+            _count_value(match.group("count"))
+            for statement in synchronous_retry_statements
+            for match in _RETRY_COUNT_RE.finditer(statement)
+        }
+        attempt_counts = {
+            _count_value(match.group("count"))
+            for statement in synchronous_retry_statements
+            for match in _ATTEMPT_COUNT_RE.finditer(statement)
+        }
+        total_attempts: int | None = None
+        if len(attempt_counts) == 1 and not retry_counts:
+            total_attempts = next(iter(attempt_counts))
+        elif len(retry_counts) == 1 and not attempt_counts:
+            total_attempts = next(iter(retry_counts)) + 1
+        elif len(retry_counts) == 1 and len(attempt_counts) == 1:
+            retry_attempts = next(iter(retry_counts)) + 1
+            stated_attempts = next(iter(attempt_counts))
+            if retry_attempts == stated_attempts:
+                total_attempts = stated_attempts
+
+        if len(timeout_matches) == 1 and total_attempts:
+            calculated_seconds = _seconds(timeout_matches[0]) * total_attempts
+            if total_seconds and any(
+                abs(declared_seconds - calculated_seconds) > 0.001
+                for declared_seconds in total_seconds
+            ):
+                message = (
+                    "Die dokumentierte maximale Gesamtdauer widerspricht der aus Timeout und "
+                    "Versuchszahl berechneten synchronen Retry-Dauer."
+                )
+            elif calculated_seconds > budget_seconds:
+                message = (
+                    f"Die maximale synchrone Retry-Dauer von {calculated_seconds:g} Sekunden "
+                    "überschreitet das nutzerseitige Ende-zu-Ende-Latenzbudget."
+                )
+            else:
+                return []
+        elif total_seconds:
+            if max(total_seconds) <= budget_seconds:
                 return []
             message = (
                 "Die dokumentierte maximale Gesamtdauer aller synchronen Versuche "
                 "überschreitet das nutzerseitige Ende-zu-Ende-Latenzbudget."
             )
         else:
-            timeout_matches = list(_TIMEOUT_RE.finditer(latency_text))
-            retry_counts = {
-                _count_value(match.group("count"))
-                for statement in synchronous_retry_statements
-                for match in _RETRY_COUNT_RE.finditer(statement)
-            }
-            attempt_counts = {
-                _count_value(match.group("count"))
-                for statement in synchronous_retry_statements
-                for match in _ATTEMPT_COUNT_RE.finditer(statement)
-            }
-            total_attempts: int | None = None
-            if len(attempt_counts) == 1 and not retry_counts:
-                total_attempts = next(iter(attempt_counts))
-            elif len(retry_counts) == 1 and not attempt_counts:
-                total_attempts = next(iter(retry_counts)) + 1
-
-            if len(timeout_matches) == 1 and total_attempts:
-                calculated_seconds = _seconds(timeout_matches[0]) * total_attempts
-                if calculated_seconds <= budget_seconds:
-                    return []
-                message = (
-                    f"Die maximale synchrone Retry-Dauer von {calculated_seconds:g} Sekunden "
-                    "überschreitet das nutzerseitige Ende-zu-Ende-Latenzbudget."
-                )
-            else:
-                message = (
-                    "Für die synchronen Retries ist keine eindeutig ableitbare oder ausdrücklich "
-                    "dokumentierte maximale Gesamtdauer aller Versuche vorhanden."
-                )
+            message = (
+                "Für die synchronen Retries ist keine eindeutig ableitbare oder ausdrücklich "
+                "dokumentierte maximale Gesamtdauer aller Versuche vorhanden."
+            )
 
     return [
         ReadinessFinding(
@@ -544,10 +627,14 @@ def _quality_semantic_findings(package: DeliveryPackage) -> list[ReadinessFindin
                     ),
                 )
             )
-        if not (
-            _has_concrete_match(evaluation_text, _CRITICAL_CLASS_RE)
-            and _has_concrete_match(evaluation_text, _TARGETED_TEST_SIZE_RE)
-        ):
+        critical_class_covered = any(
+            _CRITICAL_CLASS_RE.search(statement)
+            and _TARGETED_TEST_SIZE_RE.search(statement)
+            and not _NEGATED_CRITICAL_TEST_RE.search(statement)
+            and not _SEMANTIC_PLACEHOLDER_RE.search(statement)
+            for statement in _statements(evaluation_text)
+        )
+        if not critical_class_covered:
             findings.append(
                 ReadinessFinding(
                     "acceptance_and_measurement",
@@ -913,6 +1000,12 @@ def delivery_status_snapshot(package: DeliveryPackage) -> DeliveryStatusSnapshot
             code=package.status,
             label=package.get_status_display(),
             handover_complete=package.handed_over_at is not None,
+        )
+    if package.status == DeliveryPackage.Status.READY and blocking_findings(package):
+        return DeliveryStatusSnapshot(
+            code="readiness_blocked",
+            label="Readiness blockiert",
+            handover_complete=False,
         )
     return DeliveryStatusSnapshot(
         code=package.status,

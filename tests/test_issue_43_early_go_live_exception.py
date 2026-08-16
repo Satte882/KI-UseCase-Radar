@@ -6,10 +6,11 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.urls import reverse
 from django.utils import timezone
 
+from ki_radar.delivery.models import DeliveryPackage
 from ki_radar.reviews.forms import ReviewForm
 from ki_radar.reviews.models import EarlyGoLiveException, Review
 from ki_radar.reviews.services import create_review
-from ki_radar.use_cases.models import UseCase
+from ki_radar.use_cases.models import ApprovalDecision, DecisionAssessment, UseCase
 from ki_radar.use_cases.services import (
     EARLY_GO_LIVE_BLOCKER,
     apply_status_transition,
@@ -19,7 +20,7 @@ from ki_radar.use_cases.services import (
 
 def _early_go_live_candidate(owner, coordinator, business_unit):
     today = timezone.localdate()
-    return UseCase.objects.create(
+    use_case = UseCase.objects.create(
         title="Früh entscheidbarer Pilot",
         summary="Der Pilot liefert früher als geplant belastbare Evidenz.",
         problem_statement="Der bestehende Prozess verursacht vermeidbare Bearbeitungszeit.",
@@ -53,6 +54,41 @@ def _early_go_live_candidate(owner, coordinator, business_unit):
         support_responsibility="IT-Service",
         human_oversight="Fachliche Entscheidung bleibt manuell.",
     )
+    assessment = DecisionAssessment.objects.create(
+        use_case=use_case,
+        version=1,
+        assessed_by=coordinator,
+        business_value=UseCase.Level.HIGH,
+        strategic_fit=UseCase.Level.HIGH,
+        technical_feasibility=UseCase.Level.HIGH,
+        data_readiness=UseCase.Level.MEDIUM,
+        risk_complexity=UseCase.Level.MEDIUM,
+        evidence_quality=DecisionAssessment.EvidenceQuality.REPRESENTATIVE,
+        evidence_recency=DecisionAssessment.ConfidenceFactor.SOLID,
+        evidence_coverage=DecisionAssessment.ConfidenceFactor.SOLID,
+        independent_review=DecisionAssessment.ConfidenceFactor.SOLID,
+        assumptions_resolved=DecisionAssessment.ConfidenceFactor.SOLID,
+        recommendation=UseCase.DecisionStatus.APPROVED,
+    )
+    decision = ApprovalDecision.objects.create(
+        use_case=use_case,
+        assessment=assessment,
+        decision_status=UseCase.DecisionStatus.APPROVED,
+        rationale="Pilot und Delivery sind freigegeben.",
+        decided_by=coordinator,
+        governance_confirmed=True,
+        finalized_at=timezone.now(),
+    )
+    DeliveryPackage.objects.create(
+        use_case=use_case,
+        version=1,
+        status=DeliveryPackage.Status.HANDED_OVER,
+        generated_from_decision=decision,
+        created_by=coordinator,
+        handed_over_by=coordinator,
+        handed_over_at=timezone.now(),
+    )
+    return use_case
 
 
 def _go_live_data(use_case, coordinator, **overrides):

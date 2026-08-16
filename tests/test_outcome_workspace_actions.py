@@ -3,6 +3,7 @@ from decimal import Decimal
 from pathlib import Path
 
 import pytest
+from django.core.exceptions import ValidationError
 from django.urls import reverse
 from django.utils import timezone
 
@@ -10,6 +11,11 @@ from ki_radar.delivery.models import DeliveryPackage
 from ki_radar.reviews.forms import ReviewForm
 from ki_radar.reviews.models import Review
 from ki_radar.use_cases.models import ApprovalDecision, DecisionAssessment, UseCase
+from ki_radar.use_cases.services import (
+    PILOT_HANDOVER_BLOCKER,
+    check_go_live,
+    validate_target_status,
+)
 
 
 def _use_case(owner, business_unit, *, status=UseCase.Status.PILOT):
@@ -148,6 +154,33 @@ def test_running_pilot_opens_real_external_delivery_link(
 
 
 @pytest.mark.django_db
+def test_invalid_current_handover_blocks_external_pilot_action(
+    client,
+    coordinator,
+    owner,
+    business_unit,
+):
+    use_case = _use_case(owner, business_unit)
+    package = _package(
+        use_case,
+        coordinator,
+        external_url="https://example.invalid/delivery/pilot-42",
+    )
+    DeliveryPackage.objects.filter(pk=package.pk).update(readiness_schema_version=2)
+    client.force_login(owner)
+
+    response = client.get(
+        reverse("reporting:outcome_workspace"),
+        {"stage": "pilot", "use_case": use_case.pk},
+    )
+
+    action = response.context["active_stage_action"]
+    assert action["action_label"] == "Übergabe prüfen"
+    assert action["url"] == package.get_absolute_url()
+    assert "Externen Pilot öffnen" not in response.content.decode()
+
+
+@pytest.mark.django_db
 def test_handed_over_pilot_without_external_link_has_intentional_empty_state(
     client,
     coordinator,
@@ -192,6 +225,7 @@ def test_effect_deep_link_targets_existing_metric_fields(client, owner, business
 @pytest.mark.django_db
 def test_go_live_action_uses_existing_review_form(client, coordinator, owner, business_unit):
     use_case = _use_case(owner, business_unit)
+    _package(use_case, coordinator)
     use_case.metric_actual = Decimal("2.8")
     use_case.metric_measurement_period = "Mai bis Juni 2026"
     use_case.metric_measured_at = timezone.localdate()
@@ -217,6 +251,36 @@ def test_go_live_action_uses_existing_review_form(client, coordinator, owner, bu
     )
     assert form.fields["decision"].initial == Review.Decision.GO_LIVE
     assert form.fields["new_status"].initial == UseCase.Status.OPERATION
+
+
+@pytest.mark.django_db
+def test_invalid_current_handover_blocks_go_live_action_and_service(
+    client,
+    coordinator,
+    owner,
+    business_unit,
+):
+    use_case = _use_case(owner, business_unit)
+    use_case.metric_actual = Decimal("2.8")
+    use_case.metric_measurement_period = "Mai bis Juni 2026"
+    use_case.metric_measured_at = timezone.localdate()
+    use_case.metric_evidence_url = "https://example.invalid/evidence/pilot"
+    use_case.save()
+    package = _package(use_case, coordinator)
+    DeliveryPackage.objects.filter(pk=package.pk).update(readiness_schema_version=2)
+    client.force_login(coordinator)
+
+    response = client.get(
+        reverse("reporting:outcome_workspace"),
+        {"stage": "decision", "use_case": use_case.pk},
+    )
+
+    action = response.context["active_stage_action"]
+    assert action["action_label"] == "Übergabe prüfen"
+    assert "Go-live entscheiden" not in response.content.decode()
+    assert PILOT_HANDOVER_BLOCKER in check_go_live(use_case).blockers
+    with pytest.raises(ValidationError, match=PILOT_HANDOVER_BLOCKER):
+        validate_target_status(use_case, UseCase.Status.OPERATION)
 
 
 @pytest.mark.django_db

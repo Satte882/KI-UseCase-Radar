@@ -323,24 +323,45 @@ def _use_case_steps(use_case: UseCase, user) -> tuple[list[JourneyStep], str]:
                 )
             )
     elif package.status == DeliveryPackage.Status.READY:
-        steps.append(
-            JourneyStep(
-                key="delivery",
-                label="Delivery",
-                state="current",
-                url=(
-                    reverse("delivery:package_handover", kwargs={"pk": package.pk})
-                    if can_decide
-                    else package.get_absolute_url()
-                ),
-                action_label="An Delivery übergeben" if can_decide else "Delivery Package öffnen",
-                action_method="post" if can_decide else "get",
-                reason=_permission_reason(
-                    can_decide,
-                    "Das Delivery Package ist vollständig und bereit zur verbindlichen Übergabe.",
-                ),
+        status_snapshot = delivery_status_snapshot(package)
+        if status_snapshot.code == DeliveryPackage.Status.READY:
+            steps.append(
+                JourneyStep(
+                    key="delivery",
+                    label="Delivery",
+                    state="current",
+                    url=(
+                        reverse("delivery:package_handover", kwargs={"pk": package.pk})
+                        if can_decide
+                        else package.get_absolute_url()
+                    ),
+                    action_label=(
+                        "An Delivery übergeben" if can_decide else "Delivery Package öffnen"
+                    ),
+                    action_method="post" if can_decide else "get",
+                    reason=_permission_reason(
+                        can_decide,
+                        (
+                            "Das Delivery Package ist vollständig und bereit zur verbindlichen "
+                            "Übergabe."
+                        ),
+                    ),
+                )
             )
-        )
+        else:
+            steps.append(
+                JourneyStep(
+                    key="delivery",
+                    label="Delivery",
+                    state="blocked",
+                    url=package.get_absolute_url(),
+                    action_label="Readiness prüfen",
+                    reason=status_snapshot.label,
+                    details=tuple(
+                        finding.message for finding in blocking_findings(package)
+                    ),
+                )
+            )
     else:
         missing = missing_ready_fields(package)
         steps.append(

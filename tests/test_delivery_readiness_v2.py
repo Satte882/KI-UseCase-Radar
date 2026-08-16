@@ -337,7 +337,7 @@ def test_complete_statistical_context_clears_quality_warnings(
     package = create_delivery_package(use_case=use_case, actor=coordinator)
     package.acceptance_criteria = "Fehlerquote < 2 %. Recall > 90 %."
     package.test_scenarios = (
-        "Kritische Fehlerklasse falscher Betrag; 20 gezielte Testfälle im Testset."
+        "Kritische Fehlerklasse falscher Betrag wird mit 20 gezielten Testfällen geprüft."
     )
     package.measurement_plan = (
         "Testpopulation: eingehende Rechnungen; Stichprobengröße n=400; "
@@ -351,6 +351,35 @@ def test_complete_statistical_context_clears_quality_warnings(
     assert "EVALUATION_UNCERTAINTY_UNDOCUMENTED" not in codes
     assert "CRITICAL_ERROR_CLASSES_UNDOCUMENTED" not in codes
     assert "RECALL_POSITIVE_CASES_MISSING" not in codes
+
+
+@pytest.mark.django_db
+def test_critical_class_requires_its_own_non_negated_test_scope(
+    owner,
+    other_owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    package.acceptance_criteria = "Fehlerquote < 2 %."
+    package.test_scenarios = (
+        "Kritische Fehlerklasse falscher Betrag wird nicht getestet. "
+        "20 Fälle decken ausschließlich den Happy Path ab."
+    )
+    package.measurement_plan = (
+        "Testpopulation: eingehende Rechnungen; Stichprobengröße n=400; "
+        "Aussagekraft über ein 95-%-Konfidenzintervall."
+    )
+
+    codes = {finding.code for finding in evaluate_delivery_readiness(package)}
+
+    assert "CRITICAL_ERROR_CLASSES_UNDOCUMENTED" in codes
 
 
 @pytest.mark.django_db
@@ -428,6 +457,43 @@ def test_output_types_require_grounding_or_rule_evidence(
     assert "RULE_BASED_OUTPUT_EVIDENCE_INCOMPLETE" in codes
 
 
+@pytest.mark.parametrize(
+    ("statement", "expected_code"),
+    [
+        (
+            "Generative Textentwürfe: Grounding ist deaktiviert. "
+            "Unsicherheit wird nicht angezeigt.",
+            "GENERATIVE_GROUNDING_INCOMPLETE",
+        ),
+        (
+            "Regelbasierte Prüfungen haben keine Regelreferenz und kein Prüfergebnis.",
+            "RULE_BASED_OUTPUT_EVIDENCE_INCOMPLETE",
+        ),
+    ],
+)
+@pytest.mark.django_db
+def test_output_evidence_must_be_affirmative(
+    statement,
+    expected_code,
+    owner,
+    other_owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    package.human_oversight = statement
+
+    codes = {finding.code for finding in evaluate_delivery_readiness(package)}
+
+    assert expected_code in codes
+
+
 @pytest.mark.django_db
 def test_missing_output_type_semantics_are_blocking(
     owner,
@@ -491,6 +557,31 @@ def test_explicitly_non_applicable_output_type_does_not_create_false_blocker(
     package.human_oversight = (
         "Keine generativen Ausgaben. Extraktion/Klassifikation: Es wird keine numerische "
         "Confidence ausgegeben; der Einkauf validiert das Ergebnis."
+    )
+
+    codes = {finding.code for finding in evaluate_delivery_readiness(package)}
+
+    assert "OUTPUT_TYPE_SEMANTICS_MISSING" not in codes
+    assert "GENERATIVE_GROUNDING_INCOMPLETE" not in codes
+
+
+@pytest.mark.django_db
+def test_reverse_output_type_non_applicability_does_not_create_blocker(
+    owner,
+    other_owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    package.human_oversight = (
+        "Generative Texte: nicht anwendbar. Extraktion/Klassifikation: Es wird keine "
+        "numerische Confidence ausgegeben; der Einkauf validiert das Ergebnis."
     )
 
     codes = {finding.code for finding in evaluate_delivery_readiness(package)}
@@ -581,6 +672,34 @@ def test_explicit_total_sync_duration_within_budget_is_allowed(
     codes = {finding.code for finding in evaluate_delivery_readiness(package)}
 
     assert "LATENCY_RETRY_BUDGET_CONFLICT" not in codes
+
+
+@pytest.mark.django_db
+def test_explicit_total_cannot_contradict_calculated_retry_duration(
+    owner,
+    other_owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    package.non_functional_requirements = (
+        "Nutzerseitiges Ende-zu-Ende-Latenzbudget P95 < 8 Sekunden. "
+        "Provider-Timeout 4 Sekunden. Der Nutzerpfad ist synchron. "
+        "Danach erfolgen zwei Retries. Maximale Gesamtdauer: 6 Sekunden."
+    )
+
+    findings = evaluate_delivery_readiness(package)
+    latency_finding = next(
+        finding for finding in findings if finding.code == "LATENCY_RETRY_BUDGET_CONFLICT"
+    )
+
+    assert "widerspricht" in latency_finding.message
 
 
 @pytest.mark.django_db

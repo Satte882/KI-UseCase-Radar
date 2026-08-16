@@ -25,6 +25,8 @@ from ki_radar.delivery.services import (
     review_delivery_section,
 )
 from ki_radar.use_cases.models import ApprovalDecision, DecisionAssessment, UseCase
+from ki_radar.use_cases.outcome_workspace import build_outcome_workspace_journey
+from ki_radar.use_cases.workflow import build_use_case_journey
 
 
 def make_use_case(owner, business_unit, **overrides):
@@ -179,12 +181,15 @@ def complete_delivery_readiness(package):
 
 @pytest.mark.django_db
 def test_inactive_technical_owner_is_one_canonical_server_blocker(
+    client,
     owner,
     coordinator,
     business_unit,
 ):
     use_case = make_use_case(owner, business_unit)
     approve_use_case(use_case, coordinator)
+    use_case.status = UseCase.Status.REVIEW
+    use_case.save(update_fields=["status", "updated_at"])
     package = create_delivery_package(use_case=use_case, actor=coordinator)
     complete_delivery_readiness(package)
     type(owner).objects.filter(pk=owner.pk).update(is_active=False)
@@ -200,6 +205,29 @@ def test_inactive_technical_owner_is_one_canonical_server_blocker(
 
     DeliveryPackage.objects.filter(pk=package.pk).update(status=DeliveryPackage.Status.READY)
     package.refresh_from_db()
+    ready_snapshot = delivery_status_snapshot(package)
+    journey = build_use_case_journey(use_case, coordinator)
+    outcome = build_outcome_workspace_journey(use_case, coordinator)
+    delivery_step = next(step for step in journey.steps if step.key == "delivery")
+    handover_step = next(step for step in outcome.steps if step.key == "handover")
+    client.force_login(coordinator)
+    detail_response = client.get(reverse("delivery:package_detail", kwargs={"pk": package.pk}))
+    list_response = client.get(reverse("delivery:package_list"))
+    workspace_response = client.get(
+        reverse("reporting:outcome_workspace"),
+        {"stage": "handover", "use_case": use_case.pk},
+    )
+
+    assert ready_snapshot.code == "readiness_blocked"
+    assert ready_snapshot.label == "Readiness blockiert"
+    assert delivery_step.state == "blocked"
+    assert delivery_step.action_method == "get"
+    assert handover_step.state == "blocked"
+    assert "Readiness blockiert" in detail_response.content.decode()
+    assert "Readiness blockiert" in list_response.content.decode()
+    assert "Status: Readiness blockiert" in render_delivery_markdown(package)
+    assert "An Delivery übergeben" not in detail_response.content.decode()
+    assert workspace_response.context["active_stage_action"]["action_label"] == "Readiness prüfen"
     with pytest.raises(ValidationError, match="Technical Owner"):
         hand_over_package(package, coordinator)
 

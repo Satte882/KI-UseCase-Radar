@@ -7,9 +7,10 @@ from django.urls import reverse
 from django.utils import timezone
 
 from config.settings.base import openrouter_api_url
+from ki_radar.delivery.models import DeliveryPackage
 from ki_radar.governance.models import GovernanceAssessment
 from ki_radar.use_cases.copilot import CopilotUnavailable, analyze_use_case
-from ki_radar.use_cases.models import UseCase
+from ki_radar.use_cases.models import ApprovalDecision, DecisionAssessment, UseCase
 from ki_radar.use_cases.services import (
     check_go_live,
     check_pilot_start,
@@ -20,7 +21,7 @@ from ki_radar.use_cases.services import (
 
 @pytest.fixture
 def decision_use_case(owner, coordinator, business_unit):
-    return UseCase.objects.create(
+    use_case = UseCase.objects.create(
         title="Rechnungsprüfung",
         problem_statement="Rechnungen werden manuell geprüft.",
         business_unit=business_unit,
@@ -33,6 +34,41 @@ def decision_use_case(owner, coordinator, business_unit):
         planned_pilot_end=timezone.localdate() + timedelta(days=30),
         decision_status=UseCase.DecisionStatus.APPROVED,
     )
+    assessment = DecisionAssessment.objects.create(
+        use_case=use_case,
+        version=1,
+        assessed_by=coordinator,
+        business_value=UseCase.Level.HIGH,
+        strategic_fit=UseCase.Level.HIGH,
+        technical_feasibility=UseCase.Level.HIGH,
+        data_readiness=UseCase.Level.MEDIUM,
+        risk_complexity=UseCase.Level.MEDIUM,
+        evidence_quality=DecisionAssessment.EvidenceQuality.REPRESENTATIVE,
+        evidence_recency=DecisionAssessment.ConfidenceFactor.SOLID,
+        evidence_coverage=DecisionAssessment.ConfidenceFactor.SOLID,
+        independent_review=DecisionAssessment.ConfidenceFactor.SOLID,
+        assumptions_resolved=DecisionAssessment.ConfidenceFactor.SOLID,
+        recommendation=UseCase.DecisionStatus.APPROVED,
+    )
+    decision = ApprovalDecision.objects.create(
+        use_case=use_case,
+        assessment=assessment,
+        decision_status=UseCase.DecisionStatus.APPROVED,
+        rationale="Pilot und Delivery sind freigegeben.",
+        decided_by=coordinator,
+        governance_confirmed=True,
+        finalized_at=timezone.now(),
+    )
+    DeliveryPackage.objects.create(
+        use_case=use_case,
+        version=1,
+        status=DeliveryPackage.Status.HANDED_OVER,
+        generated_from_decision=decision,
+        created_by=coordinator,
+        handed_over_by=coordinator,
+        handed_over_at=timezone.now(),
+    )
+    return use_case
 
 
 @pytest.mark.django_db

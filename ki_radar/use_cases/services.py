@@ -251,6 +251,8 @@ def check_go_live(
         ),
     )
     warnings = []
+    if current_handed_over_package(use_case) is None:
+        blockers.append(PILOT_HANDOVER_BLOCKER)
     if use_case.decision_status not in APPROVAL_STATUSES:
         blockers.append("Positive Freigabeentscheidung")
     checks = [
