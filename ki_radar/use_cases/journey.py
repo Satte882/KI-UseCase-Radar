@@ -11,6 +11,7 @@ from ki_radar.accounts.permissions import (
 )
 from ki_radar.architecture.models import ProcessAnalysis, SolutionOption, ValueStream
 from ki_radar.delivery.models import DeliveryPackage
+from ki_radar.delivery.readiness import blocking_findings, delivery_status_snapshot
 from ki_radar.delivery.services import latest_final_approval, missing_ready_fields
 
 from .blockers import build_blocker_details
@@ -288,17 +289,39 @@ def _use_case_steps(use_case: UseCase, user) -> tuple[list[JourneyStep], str]:
             )
         )
     elif package.status == DeliveryPackage.Status.HANDED_OVER:
-        steps.append(
-            JourneyStep(
-                key="delivery",
-                label="Delivery",
-                state="complete",
-                url=package.get_absolute_url(),
-                action_label="Übergabe öffnen",
-                reason=f"Delivery Package v{package.version} wurde übergeben und ist unveränderlich.",
+        status_snapshot = delivery_status_snapshot(package)
+        if status_snapshot.handover_complete:
+            steps.append(
+                JourneyStep(
+                    key="delivery",
+                    label="Delivery",
+                    state="complete",
+                    url=package.get_absolute_url(),
+                    action_label="Übergabe öffnen",
+                    reason=(
+                        f"Delivery Package v{package.version} wurde übergeben und ist "
+                        "unveränderlich."
+                    ),
+                )
             )
-        )
-        completion_message = "Journey abgeschlossen: Das Vorhaben wurde an Delivery übergeben."
+            completion_message = (
+                "Journey abgeschlossen: Das Vorhaben wurde an Delivery übergeben."
+            )
+        else:
+            blocker_messages = tuple(
+                finding.message for finding in blocking_findings(package)
+            ) or ("Verbindlicher Übergabezeitpunkt",)
+            steps.append(
+                JourneyStep(
+                    key="delivery",
+                    label="Delivery",
+                    state="blocked",
+                    url=package.get_absolute_url(),
+                    action_label="Übergabe prüfen",
+                    reason=status_snapshot.label,
+                    details=blocker_messages,
+                )
+            )
     elif package.status == DeliveryPackage.Status.READY:
         steps.append(
             JourneyStep(

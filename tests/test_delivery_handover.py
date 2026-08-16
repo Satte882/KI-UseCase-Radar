@@ -12,10 +12,13 @@ from ki_radar.architecture.models import (
     ValueStream,
     ValueStreamStage,
 )
+from ki_radar.delivery.actions import build_actionable_findings
 from ki_radar.delivery.models import DeliveryPackage
 from ki_radar.delivery.permissions import can_edit_package
+from ki_radar.delivery.readiness import delivery_status_snapshot, evaluate_delivery_readiness
 from ki_radar.delivery.services import (
     create_delivery_package,
+    current_handed_over_package,
     hand_over_package,
     mark_package_ready,
     render_delivery_markdown,
@@ -101,8 +104,16 @@ def complete_delivery_readiness(package):
     package.security_privacy_requirements = (
         "Rollenbasierter Zugriff und verschlüsselte Übertragung."
     )
+    package.human_oversight = (
+        "Extraktion/Klassifikation: Es wird keine numerische Confidence ausgegeben; "
+        "der Einkauf validiert jedes Ergebnis fachlich."
+    )
     package.logging_and_audit = (
-        "Extraktionen, Korrekturen und Freigaben revisionsfähig protokollieren."
+        "Audit-/Traceability-Metadaten — Zweck: Nachvollziehbarkeit; Aufbewahrung: 24 Monate.\n"
+        "Prompt-/Input-Rohinhalte — Zweck: Verarbeitung der Anfrage; nicht persistiert.\n"
+        "Dokumentinhalte — Zweck: Fachliche Prüfung; Löschung nach Abschluss.\n"
+        "Personenbezogene Daten — Zweck: Vorgangsbearbeitung; Löschung nach Zweckfortfall.\n"
+        "Technische Logs/Betriebsdaten — Zweck: Störungsanalyse; Aufbewahrung: 30 Tage."
     )
     package.operations_and_support = "IT Application Management übernimmt Betrieb und Support."
     package.mvp_scope = "PDF- und Word-Angebote einer Warengruppe bis zur menschlichen Auswahl."
@@ -164,6 +175,43 @@ def complete_delivery_readiness(package):
                 actor=technical_actor,
                 note="Technischer Inhalt für Delivery geprüft.",
             )
+
+
+@pytest.mark.django_db
+def test_inactive_technical_owner_is_one_canonical_server_blocker(
+    owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_use_case(owner, business_unit)
+    approve_use_case(use_case, coordinator)
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    complete_delivery_readiness(package)
+    type(owner).objects.filter(pk=owner.pk).update(is_active=False)
+    package.refresh_from_db()
+
+    finding_codes = [finding.code for finding in evaluate_delivery_readiness(package)]
+    action_codes = [finding.code for finding in build_actionable_findings(package, coordinator)]
+
+    assert finding_codes.count("TECHNICAL_OWNER_INACTIVE") == 1
+    assert action_codes.count("TECHNICAL_OWNER_INACTIVE") == 1
+    with pytest.raises(ValidationError, match="Technical Owner"):
+        mark_package_ready(package)
+
+    DeliveryPackage.objects.filter(pk=package.pk).update(status=DeliveryPackage.Status.READY)
+    package.refresh_from_db()
+    with pytest.raises(ValidationError, match="Technical Owner"):
+        hand_over_package(package, coordinator)
+
+    DeliveryPackage.objects.filter(pk=package.pk).update(
+        status=DeliveryPackage.Status.HANDED_OVER,
+        handed_over_at=timezone.now(),
+    )
+    package.refresh_from_db()
+
+    assert delivery_status_snapshot(package).handover_complete is False
+    assert current_handed_over_package(use_case) is None
+    assert render_delivery_markdown(package).count("TECHNICAL_OWNER_INACTIVE") == 1
 
 
 @pytest.mark.django_db

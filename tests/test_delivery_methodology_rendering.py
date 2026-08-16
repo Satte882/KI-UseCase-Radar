@@ -23,3 +23,4 @@ def test_methodology_page_renders_markdown_structure(client, owner):
     assert "Confidence und Unsicherheit nach Output-Typ" in content
     assert "Ende-zu-Ende-Latenz, Timeouts und Retries" in content
     assert "Audit und Retention" in content
+    assert "Beispiele für belastbare Delivery-Angaben" in content

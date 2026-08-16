@@ -46,9 +46,15 @@ ARCHITECTURE_FIELD_CODES = {
 FIELD_CODES = PACKAGE_FIELD_CODES | ARCHITECTURE_FIELD_CODES
 FIELD_CODES |= {
     "EVALUATION_POPULATION_MISSING": "measurement_plan",
+    "EVALUATION_SAMPLE_SIZE_MISSING": "measurement_plan",
     "EVALUATION_UNCERTAINTY_UNDOCUMENTED": "measurement_plan",
+    "RECALL_POSITIVE_CASES_MISSING": "measurement_plan",
     "CRITICAL_ERROR_CLASSES_UNDOCUMENTED": "test_scenarios",
+    "OUTPUT_TYPE_SEMANTICS_MISSING": "human_oversight",
+    "PREDICTIVE_CONFIDENCE_SEMANTICS_INCOMPLETE": "human_oversight",
     "GENERATIVE_NUMERIC_CONFIDENCE_UNJUSTIFIED": "human_oversight",
+    "GENERATIVE_GROUNDING_INCOMPLETE": "human_oversight",
+    "RULE_BASED_OUTPUT_EVIDENCE_INCOMPLETE": "human_oversight",
     "LATENCY_RETRY_BUDGET_CONFLICT": "non_functional_requirements",
     "RETENTION_SEMANTICS_INCOMPLETE": "logging_and_audit",
 }
@@ -197,19 +203,40 @@ def _finding_rule(code: str, field_name: str) -> str:
             "Quellenänderungen nach dem Package-Snapshot müssen sichtbar geprüft werden."
         ),
         "EVALUATION_POPULATION_MISSING": (
-            "Prozentgrenzen müssen gemeinsam mit Testpopulation und Stichprobengröße "
-            "interpretiert werden."
+            "Prozentgrenzen müssen einer konkret benannten Testpopulation zugeordnet sein."
+        ),
+        "EVALUATION_SAMPLE_SIZE_MISSING": (
+            "Prozentgrenzen benötigen eine numerisch dokumentierte Stichprobengröße."
         ),
         "EVALUATION_UNCERTAINTY_UNDOCUMENTED": (
             "Die Aussagekraft kleiner Stichproben muss über Unsicherheit, Fehlerspanne "
             "oder eine gleichwertige Einordnung sichtbar sein."
         ),
+        "RECALL_POSITIVE_CASES_MISSING": (
+            "Recall-Ziele benötigen die numerische Anzahl positiver Fälle im Testset."
+        ),
         "CRITICAL_ERROR_CLASSES_UNDOCUMENTED": (
-            "Seltene und kritische Fehlerklassen benötigen gezielte Testfälle oder Testsets."
+            "Seltene und kritische Fehlerklassen benötigen konkrete, gezählte Testfälle "
+            "oder kuratierte Testsets."
+        ),
+        "OUTPUT_TYPE_SEMANTICS_MISSING": (
+            "Confidence und Unsicherheit müssen mindestens einem konkreten Output-Typ "
+            "zugeordnet sein."
+        ),
+        "PREDICTIVE_CONFIDENCE_SEMANTICS_INCOMPLETE": (
+            "Numerische Confidence für Extraktion oder Klassifikation benötigt eine "
+            "fachlich dokumentierte Semantik."
         ),
         "GENERATIVE_NUMERIC_CONFIDENCE_UNJUSTIFIED": (
             "Numerische Confidence ist nur bei fachlich definierter und belastbarer "
             "Semantik zulässig."
+        ),
+        "GENERATIVE_GROUNDING_INCOMPLETE": (
+            "Generative Ausgaben benötigen Grounding oder Quellenbezug und eine sichtbare "
+            "Kennzeichnung unsicherer Grundlagen."
+        ),
+        "RULE_BASED_OUTPUT_EVIDENCE_INCOMPLETE": (
+            "Regelbasierte Prüfungen müssen Regelreferenz und Prüfergebnis ausweisen."
         ),
         "LATENCY_RETRY_BUDGET_CONFLICT": (
             "Synchrone Versuche einschließlich Retries müssen im nutzerseitigen "
@@ -233,25 +260,6 @@ def _use_case_edit_url(package: DeliveryPackage, field_name: str, return_to: str
     base = reverse("use_cases:edit", kwargs={"pk": package.use_case.pk})
     target = f"{base}?{urlencode({'highlight': field_name})}#field-{field_name}"
     return with_return_to(target, return_to)
-
-
-def _synthetic_findings(package: DeliveryPackage) -> list[ReadinessFinding]:
-    findings: list[ReadinessFinding] = []
-    technical_owner = package.technical_owner
-    if technical_owner is not None and not technical_owner.is_active:
-        findings.append(
-            ReadinessFinding(
-                "architecture_and_data",
-                "TECHNICAL_OWNER_INACTIVE",
-                "blocker",
-                (
-                    "Der zugeordnete Technical Owner ist nicht aktiv und kann die "
-                    "technische Verantwortung nicht wahrnehmen."
-                ),
-            )
-        )
-
-    return findings
 
 
 def _build_action(
@@ -385,7 +393,7 @@ def build_actionable_findings(
     return_to: str | None = None,
 ) -> list[ActionableFinding]:
     target = return_to or package.get_absolute_url()
-    raw_findings = [*evaluate_delivery_readiness(package), *_synthetic_findings(package)]
+    raw_findings = evaluate_delivery_readiness(package)
     actions = [_build_action(package, finding, user, return_to=target) for finding in raw_findings]
     return sorted(actions, key=lambda item: item.sort_key)
 

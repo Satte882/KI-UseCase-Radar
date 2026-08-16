@@ -41,7 +41,17 @@ def _complete_delivery_readiness(package):
     package.security_privacy_requirements = (
         "Rollenbasierter Zugriff und verschlüsselte Übertragung."
     )
-    package.logging_and_audit = "Extraktionen, Korrekturen und Freigaben protokollieren."
+    package.human_oversight = (
+        "Extraktion/Klassifikation: Es wird keine numerische Confidence ausgegeben; "
+        "der Einkauf validiert jedes Ergebnis fachlich."
+    )
+    package.logging_and_audit = (
+        "Audit-/Traceability-Metadaten — Zweck: Nachvollziehbarkeit; Aufbewahrung: 24 Monate.\n"
+        "Prompt-/Input-Rohinhalte — Zweck: Verarbeitung der Anfrage; nicht persistiert.\n"
+        "Dokumentinhalte — Zweck: Fachliche Prüfung; Löschung nach Abschluss.\n"
+        "Personenbezogene Daten — Zweck: Vorgangsbearbeitung; Löschung nach Zweckfortfall.\n"
+        "Technische Logs/Betriebsdaten — Zweck: Störungsanalyse; Aufbewahrung: 30 Tage."
+    )
     package.operations_and_support = "IT Application Management übernimmt Betrieb und Support."
     package.mvp_scope = "Angebote einer Warengruppe bis zur menschlichen Auswahl vergleichen."
     package.acceptance_criteria = (

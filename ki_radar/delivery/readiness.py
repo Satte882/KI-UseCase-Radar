@@ -96,9 +96,20 @@ _PERCENT_THRESHOLD_RE = re.compile(
     r"(?:[<>]=?|≤|≥|mindestens|maximal|unter|über)?\s*\d+(?:[.,]\d+)?\s*(?:%|prozent)",
     re.IGNORECASE,
 )
-_SAMPLE_CONTEXT_RE = re.compile(
-    r"(?:stichprob|population|testset|evaluationsset|goldstandard|"
-    r"\b\d+\s*(?:fälle|vorgänge|beispiele|dokumente|ausgaben|outputs|positive))",
+_SEMANTIC_PLACEHOLDER_RE = re.compile(
+    r"(?:\[[^\]]*(?:konkret|frist|zweck|ergänz|festleg)[^\]]*\]|"
+    r"\b(?:tbd|todo|später)\b|noch\s+(?:festlegen|definieren|ergänzen)|"
+    r"(?:festlegen|definieren|konkretisieren|benennen|ergänzen)\s*[.!]?$)",
+    re.IGNORECASE,
+)
+_POPULATION_CONTEXT_RE = re.compile(
+    r"(?:testpopulation|population|grundgesamtheit|testset|evaluationsset|goldstandard)"
+    r"(?:\s+(?:der|für|aus|mit|umfasst))?\s*(?::|=|-)?\s*[a-zäöüß][^;\n]{2,}",
+    re.IGNORECASE,
+)
+_SAMPLE_SIZE_RE = re.compile(
+    r"(?:\bn\s*=\s*\d+|(?:stichprobengröße|stichprobe|testset|evaluationsset|goldstandard)"
+    r"[^\d;\n]{0,30}\d+|\b\d+\s*(?:fälle|vorgänge|beispiele|dokumente|ausgaben|outputs))",
     re.IGNORECASE,
 )
 _UNCERTAINTY_CONTEXT_RE = re.compile(
@@ -106,24 +117,62 @@ _UNCERTAINTY_CONTEXT_RE = re.compile(
     re.IGNORECASE,
 )
 _CRITICAL_CLASS_RE = re.compile(
-    r"(?:seltene?|kritische?|fehlerklass|gezielte?s? testset|edge cases?|randfälle)",
+    r"(?:seltene?|kritische?|fehlerklass|edge cases?|randfälle)", re.IGNORECASE
+)
+_TARGETED_TEST_SIZE_RE = re.compile(
+    r"(?:\b\d+\s*(?:gezielte\s+)?(?:testfälle|tests|fälle|beispiele)|"
+    r"(?:testset|negativtest|randfalltest)[^\d;\n]{0,30}\d+)",
+    re.IGNORECASE,
+)
+_RECALL_TARGET_RE = re.compile(
+    r"\brecall\b[^\d;\n]{0,30}\d+(?:[.,]\d+)?\s*(?:%|prozent)?", re.IGNORECASE
+)
+_POSITIVE_CASE_COUNT_RE = re.compile(
+    r"(?:\b\d+\s*positive\s+(?:fälle|beispiele|treffer)|"
+    r"(?:positive\s+(?:fälle|beispiele)|n[_ -]?pos)\s*(?::|=|von)?\s*\d+)",
     re.IGNORECASE,
 )
 _NUMERIC_CONFIDENCE_RE = re.compile(
-    r"(?:confidence|konfidenz)(?:\s*score)?\s*(?::|=|>|<|von)?\s*\d+(?:[.,]\d+)?\s*%?",
+    r"(?:"
+    r"(?:confidence|konfidenz)(?:\s*score)?\s*(?::|=|>|<|von)?\s*\d+(?:[.,]\d+)?\s*%?"
+    r"|\d+(?:[.,]\d+)?\s*%?\s*(?:confidence|konfidenz)(?:\s*score)?"
+    r")",
     re.IGNORECASE,
+)
+_PREDICTIVE_OUTPUT_RE = re.compile(
+    r"(?:extraktion|klassifikation|classifier|klassifikator)", re.IGNORECASE
 )
 _GENERATIVE_OUTPUT_RE = re.compile(
     r"(?:generativ|freitext|textentwurf|kommunikationsentwurf|llm-ausgabe|antwortentwurf)",
     re.IGNORECASE,
 )
+_RULE_BASED_OUTPUT_RE = re.compile(r"(?:regelbasiert|regelprüfung)", re.IGNORECASE)
 _CONFIDENCE_JUSTIFICATION_RE = re.compile(
-    r"(?:kalibrier|dokumentierte? semantik|fachlich definiert)",
+    r"(?:kalibrier|dokumentierte? semantik|fachlich definiert|interpretierbar)",
     re.IGNORECASE,
 )
-_CONFIDENCE_NEGATION_RE = re.compile(
-    r"(?:kein(?:e|en|er|es)?|nicht)\s+(?:pseudo-präzise[nr]?\s+)?(?:numerische[nr]?\s+)?"
-    r"(?:confidence|konfidenz)",
+_NEGATED_JUSTIFICATION_RE = re.compile(
+    r"(?:nicht|un|ohne(?:\s+eine)?)\s*"
+    r"(?:kalibrier\w*|dokumentierte?\s+semantik|fachlich\s+definiert|interpretierbar)",
+    re.IGNORECASE,
+)
+_OUTPUT_NOT_APPLICABLE_RE = re.compile(
+    r"(?:kein(?:e|en|er|es)?|nicht\s+anwendbar(?:e|en|er|es)?)\s+[^.;\n]{0,24}"
+    r"(?:extraktion|klassifikation|generativ|freitext|textentwurf|regelbasiert|regelprüfung)",
+    re.IGNORECASE,
+)
+_GROUNDING_RE = re.compile(r"(?:grounding|quelle|beleg|nachweis)", re.IGNORECASE)
+_UNCERTAIN_BASIS_RE = re.compile(
+    r"(?:unsicher|fehlende\s+(?:grundlagen?|quellen?|informationen?)|"
+    r"unbelegt|nicht\s+ableitbar|kenntnislücke)",
+    re.IGNORECASE,
+)
+_RULE_REFERENCE_RE = re.compile(
+    r"(?:regelreferenz|regel[- ]?(?:id|version|nummer)|policy[- ]?(?:id|version))",
+    re.IGNORECASE,
+)
+_RULE_RESULT_RE = re.compile(
+    r"(?:prüfergebnis|regelresultat|bestanden|nicht\s+bestanden|erfüllt|verletzt)",
     re.IGNORECASE,
 )
 _LATENCY_BUDGET_RE = re.compile(
@@ -135,16 +184,320 @@ _TIMEOUT_RE = re.compile(
     r"(?:request-|provider-|komponenten-)?timeout[^\d]{0,20}(\d+(?:[.,]\d+)?)\s*(ms|sekunden?|s\b)",
     re.IGNORECASE,
 )
-_SYNC_RETRY_RE = re.compile(
-    r"(?:\bsynchron\w*[^.\n]{0,40}retr(?:y|ies)|retr(?:y|ies)[^.\n]{0,40}\bsynchron\w*)",
+_RETRY_RE = re.compile(r"(?:retr(?:y|ies)|wiederholung(?:en)?)", re.IGNORECASE)
+_SYNC_RE = re.compile(r"\bsynchron\w*", re.IGNORECASE)
+_ASYNC_RE = re.compile(
+    r"(?:\basynchron\w*|außerhalb\s+des\s+(?:synchronen\s+)?nutzerpfads)", re.IGNORECASE
+)
+_RETRY_COUNT_RE = re.compile(
+    r"(?:maximal\s+)?(?P<count>\d+|ein(?:e|en|er|es)?|zwei|drei)\s+"
+    r"(?:synchron\w*\s+)?(?:retr(?:y|ies)|wiederholung(?:en)?)",
     re.IGNORECASE,
 )
-_RETENTION_RE = re.compile(r"(?:retention|aufbewahr|löschfrist|speicherdauer)", re.IGNORECASE)
+_ATTEMPT_COUNT_RE = re.compile(
+    r"(?:maximal\s+)?(?P<count>\d+|ein(?:e|en|er|es)?|zwei|drei)\s+"
+    r"synchron\w*\s+versuch(?:e|en)?",
+    re.IGNORECASE,
+)
+_TOTAL_SYNC_DURATION_RE = re.compile(
+    r"(?:maximale?\s+)?(?:gesamtdauer|gesamtlatenz|gesamtzeit)"
+    r"[^\d]{0,60}(\d+(?:[.,]\d+)?)\s*(ms|sekunden?|s\b)",
+    re.IGNORECASE,
+)
+
+_RETENTION_CATEGORIES = {
+    "Audit-/Traceability-Metadaten": re.compile(
+        r"(?:audit|traceability)[-/ ]*metadaten", re.IGNORECASE
+    ),
+    "Prompt-/Input-Rohinhalte": re.compile(
+        r"(?:prompt|input)[-/ ]*(?:roh)?inhalt(?:e|en)?", re.IGNORECASE
+    ),
+    "Dokumentinhalte": re.compile(r"dokumentinhalt(?:e|en)?", re.IGNORECASE),
+    "personenbezogene oder besonders schutzbedürftige Daten": re.compile(
+        r"(?:personenbezogene|besonders\s+schutzbedürftige|sensible)\s+daten", re.IGNORECASE
+    ),
+    "technische Logs/Betriebsdaten": re.compile(
+        r"(?:technische\s+logs?|betriebsdaten)", re.IGNORECASE
+    ),
+}
+_PURPOSE_RE = re.compile(r"(?:zweck|zweckbindung)\s*(?::|=|-|ist)\s*[^;\n.]{3,}", re.IGNORECASE)
+_RETENTION_DURATION_RE = re.compile(
+    r"(?:aufbewahr|speicher|lösch|retention|frist)[^;\n]{0,35}"
+    r"\d+\s*(?:stunden?|tage?|wochen?|monate?|jahre?)",
+    re.IGNORECASE,
+)
+_EVENT_DELETION_RE = re.compile(
+    r"(?:nach\s+(?:verarbeitung|abschluss|zweckfortfall|vertragsende|freigabe)|"
+    r"bei\s+(?:widerruf|zweckfortfall))[^;\n]{0,40}(?:lösch|entfern|vernicht)|"
+    r"(?:lösch|entfern|vernicht)[^;\n]{0,40}"
+    r"(?:nach\s+(?:verarbeitung|abschluss|zweckfortfall|vertragsende|freigabe)|"
+    r"bei\s+(?:widerruf|zweckfortfall))",
+    re.IGNORECASE,
+)
+_NON_PERSISTENCE_RE = re.compile(
+    r"(?:nicht\s+(?:gespeichert|persistiert|aufbewahrt)|keine\s+(?:speicherung|persistierung)|"
+    r"nur\s+transient|sofort\s+gelöscht)",
+    re.IGNORECASE,
+)
+_INVALID_RETENTION_RE = re.compile(
+    r"(?:keine\s+löschung|nicht\s+gelöscht|unbegrenzt|dauerhaft\s+gespeichert|"
+    r"frist\s+(?:benennen|festlegen|ergänzen)|löschfrist\s+(?:offen|tbd))",
+    re.IGNORECASE,
+)
+_INVALID_PURPOSE_RE = re.compile(
+    r"(?:keine\s+zweckbindung|zweck\s+(?:benennen|festlegen|ergänzen|offen|tbd))",
+    re.IGNORECASE,
+)
 
 
 def _seconds(match: re.Match[str]) -> float:
     value = float(match.group(1).replace(",", "."))
     return value / 1000 if match.group(2).casefold() == "ms" else value
+
+
+def _statements(value: str) -> list[str]:
+    return [
+        statement.strip()
+        for statement in re.split(r"(?:[;\n]+|(?<=[.!?])\s+)", value)
+        if statement.strip()
+    ]
+
+
+def _has_concrete_match(value: str, pattern: re.Pattern[str]) -> bool:
+    return any(
+        pattern.search(statement) and not _SEMANTIC_PLACEHOLDER_RE.search(statement)
+        for statement in _statements(value)
+    )
+
+
+def _affirmative_confidence_semantics(statement: str) -> bool:
+    without_negated_claims = _NEGATED_JUSTIFICATION_RE.sub("", statement)
+    return bool(_CONFIDENCE_JUSTIFICATION_RE.search(without_negated_claims))
+
+
+def _output_semantic_findings(confidence_text: str) -> list[ReadinessFinding]:
+    findings: list[ReadinessFinding] = []
+    statements = _statements(confidence_text)
+    output_patterns = (_PREDICTIVE_OUTPUT_RE, _GENERATIVE_OUTPUT_RE, _RULE_BASED_OUTPUT_RE)
+    active_output_statements = [
+        statement
+        for statement in statements
+        if any(pattern.search(statement) for pattern in output_patterns)
+        and not _OUTPUT_NOT_APPLICABLE_RE.search(statement)
+        and not _SEMANTIC_PLACEHOLDER_RE.search(statement)
+    ]
+    if not active_output_statements:
+        findings.append(
+            ReadinessFinding(
+                "requirements_and_governance",
+                "OUTPUT_TYPE_SEMANTICS_MISSING",
+                "blocker",
+                (
+                    "Die Confidence- und Unsicherheitsdarstellung ist noch keinem konkreten "
+                    "Output-Typ zugeordnet."
+                ),
+            )
+        )
+        return findings
+
+    predictive_numeric_without_semantics = any(
+        _PREDICTIVE_OUTPUT_RE.search(statement)
+        and _NUMERIC_CONFIDENCE_RE.search(statement)
+        and not _affirmative_confidence_semantics(statement)
+        for statement in active_output_statements
+    )
+    if predictive_numeric_without_semantics:
+        findings.append(
+            ReadinessFinding(
+                "requirements_and_governance",
+                "PREDICTIVE_CONFIDENCE_SEMANTICS_INCOMPLETE",
+                "blocker",
+                (
+                    "Numerische Confidence für Extraktion oder Klassifikation benötigt eine "
+                    "ausdrücklich dokumentierte fachliche Semantik."
+                ),
+            )
+        )
+
+    generative_statements = [
+        statement
+        for statement in active_output_statements
+        if _GENERATIVE_OUTPUT_RE.search(statement)
+    ]
+    if generative_statements:
+        unjustified_numeric_confidence = any(
+            _NUMERIC_CONFIDENCE_RE.search(statement)
+            and not _affirmative_confidence_semantics(statement)
+            for statement in generative_statements
+        )
+        if unjustified_numeric_confidence:
+            findings.append(
+                ReadinessFinding(
+                    "requirements_and_governance",
+                    "GENERATIVE_NUMERIC_CONFIDENCE_UNJUSTIFIED",
+                    "blocker",
+                    (
+                        "Für generative Texte wird ein numerischer Confidence Score verlangt, "
+                        "ohne eine belastbare, kalibrierte Semantik zu dokumentieren."
+                    ),
+                )
+            )
+        if not (
+            _has_concrete_match(confidence_text, _GROUNDING_RE)
+            and _has_concrete_match(confidence_text, _UNCERTAIN_BASIS_RE)
+        ):
+            findings.append(
+                ReadinessFinding(
+                    "requirements_and_governance",
+                    "GENERATIVE_GROUNDING_INCOMPLETE",
+                    "blocker",
+                    (
+                        "Generative Ausgaben benötigen Quellenbezug oder Grounding sowie eine "
+                        "Kennzeichnung fehlender oder unsicherer Grundlagen."
+                    ),
+                )
+            )
+
+    has_rule_based_output = any(
+        _RULE_BASED_OUTPUT_RE.search(statement) for statement in active_output_statements
+    )
+    has_rule_based_evidence = _has_concrete_match(
+        confidence_text, _RULE_REFERENCE_RE
+    ) and _has_concrete_match(confidence_text, _RULE_RESULT_RE)
+    if has_rule_based_output and not has_rule_based_evidence:
+        findings.append(
+            ReadinessFinding(
+                "requirements_and_governance",
+                "RULE_BASED_OUTPUT_EVIDENCE_INCOMPLETE",
+                "blocker",
+                "Regelbasierte Prüfungen benötigen Regelreferenz und Prüfergebnis.",
+            )
+        )
+    return findings
+
+
+def _count_value(value: str) -> int:
+    normalized = value.casefold()
+    if normalized.startswith("ein"):
+        return 1
+    return {"zwei": 2, "drei": 3}.get(normalized, int(value) if value.isdigit() else 0)
+
+
+def _latency_semantic_findings(latency_text: str) -> list[ReadinessFinding]:
+    synchronous_retry_statements = [
+        statement
+        for statement in _statements(latency_text)
+        if _RETRY_RE.search(statement)
+        and _SYNC_RE.search(statement)
+        and not _ASYNC_RE.search(statement)
+    ]
+    if not synchronous_retry_statements:
+        return []
+
+    budget_matches = list(_LATENCY_BUDGET_RE.finditer(latency_text))
+    if not budget_matches:
+        message = (
+            "Für synchrone Retries fehlt ein nutzerseitiges Ende-zu-Ende-Latenzbudget."
+        )
+    else:
+        budget_seconds = min(_seconds(match) for match in budget_matches)
+        total_matches = list(_TOTAL_SYNC_DURATION_RE.finditer(latency_text))
+        if total_matches:
+            total_seconds = max(_seconds(match) for match in total_matches)
+            if total_seconds <= budget_seconds:
+                return []
+            message = (
+                "Die dokumentierte maximale Gesamtdauer aller synchronen Versuche "
+                "überschreitet das nutzerseitige Ende-zu-Ende-Latenzbudget."
+            )
+        else:
+            timeout_matches = list(_TIMEOUT_RE.finditer(latency_text))
+            retry_counts = {
+                _count_value(match.group("count"))
+                for statement in synchronous_retry_statements
+                for match in _RETRY_COUNT_RE.finditer(statement)
+            }
+            attempt_counts = {
+                _count_value(match.group("count"))
+                for statement in synchronous_retry_statements
+                for match in _ATTEMPT_COUNT_RE.finditer(statement)
+            }
+            total_attempts: int | None = None
+            if len(attempt_counts) == 1 and not retry_counts:
+                total_attempts = next(iter(attempt_counts))
+            elif len(retry_counts) == 1 and not attempt_counts:
+                total_attempts = next(iter(retry_counts)) + 1
+
+            if len(timeout_matches) == 1 and total_attempts:
+                calculated_seconds = _seconds(timeout_matches[0]) * total_attempts
+                if calculated_seconds <= budget_seconds:
+                    return []
+                message = (
+                    f"Die maximale synchrone Retry-Dauer von {calculated_seconds:g} Sekunden "
+                    "überschreitet das nutzerseitige Ende-zu-Ende-Latenzbudget."
+                )
+            else:
+                message = (
+                    "Für die synchronen Retries ist keine eindeutig ableitbare oder ausdrücklich "
+                    "dokumentierte maximale Gesamtdauer aller Versuche vorhanden."
+                )
+
+    return [
+        ReadinessFinding(
+            "requirements_and_governance",
+            "LATENCY_RETRY_BUDGET_CONFLICT",
+            "blocker",
+            message,
+        )
+    ]
+
+
+def _retention_segments(retention_text: str) -> dict[str, str]:
+    occurrences: list[tuple[int, str]] = []
+    for label, pattern in _RETENTION_CATEGORIES.items():
+        occurrences.extend((match.start(), label) for match in pattern.finditer(retention_text))
+    occurrences.sort()
+    segments: dict[str, list[str]] = {label: [] for label in _RETENTION_CATEGORIES}
+    for index, (start, label) in enumerate(occurrences):
+        end = occurrences[index + 1][0] if index + 1 < len(occurrences) else len(retention_text)
+        segments[label].append(retention_text[start:end].strip())
+    return {label: "\n".join(values) for label, values in segments.items()}
+
+
+def _retention_semantic_findings(retention_text: str) -> list[ReadinessFinding]:
+    segments = _retention_segments(retention_text)
+    problems: list[str] = []
+    for label, segment in segments.items():
+        if not segment:
+            problems.append(f"{label}: Kategorie fehlt")
+            continue
+        purpose_complete = bool(_PURPOSE_RE.search(segment)) and not (
+            _INVALID_PURPOSE_RE.search(segment) or _SEMANTIC_PLACEHOLDER_RE.search(segment)
+        )
+        has_retention_rule = bool(
+            _RETENTION_DURATION_RE.search(segment)
+            or _EVENT_DELETION_RE.search(segment)
+            or _NON_PERSISTENCE_RE.search(segment)
+        )
+        has_invalid_retention = bool(
+            _INVALID_RETENTION_RE.search(segment)
+            or _SEMANTIC_PLACEHOLDER_RE.search(segment)
+        )
+        retention_complete = has_retention_rule and not has_invalid_retention
+        if not purpose_complete:
+            problems.append(f"{label}: Zweck fehlt oder ist noch ein Platzhalter")
+        if not retention_complete:
+            problems.append(f"{label}: konkrete Lösch-/Aufbewahrungsregel fehlt")
+    if not problems:
+        return []
+    return [
+        ReadinessFinding(
+            "requirements_and_governance",
+            "RETENTION_SEMANTICS_INCOMPLETE",
+            "blocker",
+            "Retention unvollständig: " + "; ".join(problems) + ".",
+        )
+    ]
 
 
 def _quality_semantic_findings(package: DeliveryPackage) -> list[ReadinessFinding]:
@@ -158,7 +511,7 @@ def _quality_semantic_findings(package: DeliveryPackage) -> list[ReadinessFindin
         )
     )
     if _PERCENT_THRESHOLD_RE.search(evaluation_text):
-        if not _SAMPLE_CONTEXT_RE.search(evaluation_text):
+        if not _has_concrete_match(evaluation_text, _POPULATION_CONTEXT_RE):
             findings.append(
                 ReadinessFinding(
                     "acceptance_and_measurement",
@@ -170,7 +523,16 @@ def _quality_semantic_findings(package: DeliveryPackage) -> list[ReadinessFindin
                     ),
                 )
             )
-        elif not _UNCERTAINTY_CONTEXT_RE.search(evaluation_text):
+        if not _has_concrete_match(evaluation_text, _SAMPLE_SIZE_RE):
+            findings.append(
+                ReadinessFinding(
+                    "acceptance_and_measurement",
+                    "EVALUATION_SAMPLE_SIZE_MISSING",
+                    "warning",
+                    "Für die prozentualen Qualitätsgrenzen fehlt eine numerische Stichprobengröße.",
+                )
+            )
+        if not _has_concrete_match(evaluation_text, _UNCERTAINTY_CONTEXT_RE):
             findings.append(
                 ReadinessFinding(
                     "acceptance_and_measurement",
@@ -182,7 +544,10 @@ def _quality_semantic_findings(package: DeliveryPackage) -> list[ReadinessFindin
                     ),
                 )
             )
-        if not _CRITICAL_CLASS_RE.search(evaluation_text):
+        if not (
+            _has_concrete_match(evaluation_text, _CRITICAL_CLASS_RE)
+            and _has_concrete_match(evaluation_text, _TARGETED_TEST_SIZE_RE)
+        ):
             findings.append(
                 ReadinessFinding(
                     "acceptance_and_measurement",
@@ -194,6 +559,17 @@ def _quality_semantic_findings(package: DeliveryPackage) -> list[ReadinessFindin
                     ),
                 )
             )
+    if _RECALL_TARGET_RE.search(evaluation_text) and not _has_concrete_match(
+        evaluation_text, _POSITIVE_CASE_COUNT_RE
+    ):
+        findings.append(
+            ReadinessFinding(
+                "acceptance_and_measurement",
+                "RECALL_POSITIVE_CASES_MISSING",
+                "warning",
+                "Ein Recall-Ziel benötigt die numerische Anzahl positiver Fälle im Testset.",
+            )
+        )
 
     confidence_text = "\n".join(
         _text(value)
@@ -203,25 +579,7 @@ def _quality_semantic_findings(package: DeliveryPackage) -> list[ReadinessFindin
             package.non_functional_requirements,
         )
     )
-    unjustified_generative_confidence = any(
-        _GENERATIVE_OUTPUT_RE.search(statement)
-        and _NUMERIC_CONFIDENCE_RE.search(statement)
-        and not _CONFIDENCE_JUSTIFICATION_RE.search(statement)
-        and not _CONFIDENCE_NEGATION_RE.search(statement)
-        for statement in re.split(r"[\n.!?]+", confidence_text)
-    )
-    if unjustified_generative_confidence:
-        findings.append(
-            ReadinessFinding(
-                "requirements_and_governance",
-                "GENERATIVE_NUMERIC_CONFIDENCE_UNJUSTIFIED",
-                "blocker",
-                (
-                    "Für generative Texte wird ein numerischer Confidence Score verlangt, "
-                    "ohne eine belastbare, kalibrierte Semantik zu dokumentieren."
-                ),
-            )
-        )
+    findings.extend(_output_semantic_findings(confidence_text))
 
     artifacts = get_delivery_architecture_artifacts(package)
     latency_text = "\n".join(
@@ -232,27 +590,7 @@ def _quality_semantic_findings(package: DeliveryPackage) -> list[ReadinessFindin
             getattr(artifacts, "integration_operations", ""),
         )
     )
-    budget_match = _LATENCY_BUDGET_RE.search(latency_text)
-    timeout_match = _TIMEOUT_RE.search(latency_text)
-    has_sync_retry = bool(_SYNC_RETRY_RE.search(latency_text))
-    if (
-        budget_match
-        and timeout_match
-        and has_sync_retry
-        and _seconds(timeout_match) >= _seconds(budget_match)
-    ):
-        findings.append(
-            ReadinessFinding(
-                "requirements_and_governance",
-                "LATENCY_RETRY_BUDGET_CONFLICT",
-                "blocker",
-                (
-                    "Der Timeout eines einzelnen Versuchs verbraucht bereits das gesamte "
-                    "nutzerseitige Ende-zu-Ende-Latenzbudget, obwohl synchrone Retries "
-                    "vorgesehen sind."
-                ),
-            )
-        )
+    findings.extend(_latency_semantic_findings(latency_text))
 
     retention_text = "\n".join(
         _text(value)
@@ -262,35 +600,7 @@ def _quality_semantic_findings(package: DeliveryPackage) -> list[ReadinessFindin
             package.operations_and_support,
         )
     )
-    if _RETENTION_RE.search(retention_text):
-        required_semantics = {
-            "Audit-/Traceability-Metadaten": r"(?:audit|traceability)[-/ ]*metadaten|metadaten",
-            "Prompt-/Input-Rohinhalte": r"(?:prompt|input)[-/ ]*(?:roh)?inhalt|rohinhalt",
-            "Dokumentinhalte": r"dokumentinhalt",
-            "personenbezogene oder besonders schutzbedürftige Daten": (
-                r"personenbezogen|schutzbedürftig"
-            ),
-            "technische Logs/Betriebsdaten": r"technische logs?|betriebsdaten",
-            "Zweckbindung und Löschung": r"zweckbind|lösch",
-        }
-        missing = [
-            label
-            for label, pattern in required_semantics.items()
-            if not re.search(pattern, retention_text, re.IGNORECASE)
-        ]
-        if missing:
-            findings.append(
-                ReadinessFinding(
-                    "requirements_and_governance",
-                    "RETENTION_SEMANTICS_INCOMPLETE",
-                    "blocker",
-                    (
-                        "Die Aufbewahrungsregel unterscheidet noch nicht vollständig: "
-                        + ", ".join(missing)
-                        + "."
-                    ),
-                )
-            )
+    findings.extend(_retention_semantic_findings(retention_text))
     return findings
 
 
@@ -394,6 +704,18 @@ def evaluate_delivery_readiness(package: DeliveryPackage) -> list[ReadinessFindi
                 "TECHNICAL_OWNER_MISSING",
                 "blocker",
                 "Vor der Übergabe muss ein Technical Owner benannt sein.",
+            )
+        )
+    elif not package.technical_owner.is_active:
+        findings.append(
+            ReadinessFinding(
+                "architecture_and_data",
+                "TECHNICAL_OWNER_INACTIVE",
+                "blocker",
+                (
+                    "Der zugeordnete Technical Owner ist nicht aktiv und kann die technische "
+                    "Verantwortung nicht wahrnehmen."
+                ),
             )
         )
 

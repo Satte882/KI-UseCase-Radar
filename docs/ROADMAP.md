@@ -113,6 +113,10 @@ Der erste Rückfluss aus Jira, Azure DevOps, GitHub oder einem anderen Delivery-
 
 ## 2. Nächster verbindlicher Umfang
 
+**Dokumentierte Reihenfolge-Ausnahme:** Issue #311 wird als P1-Hardening des bestehenden
+Delivery-Handover vorgezogen. Die fachliche Reihenfolge der Folgeinkremente bleibt unverändert;
+„Versionierte Wirkungsmessungen“ ist danach weiterhin der nächste verbindliche Produktumfang.
+
 ### Versionierte Wirkungsmessungen
 
 **Status am 22.07.2026:** geplant, noch nicht umgesetzt.

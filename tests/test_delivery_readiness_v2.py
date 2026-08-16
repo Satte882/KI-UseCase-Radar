@@ -22,6 +22,21 @@ from ki_radar.delivery.services import (
     review_delivery_section,
 )
 from ki_radar.use_cases.models import ApprovalDecision, DecisionAssessment, UseCase
+from ki_radar.use_cases.outcome_workspace import build_outcome_workspace_journey
+from ki_radar.use_cases.services import (
+    PILOT_HANDOVER_BLOCKER,
+    apply_status_transition,
+    check_pilot_start,
+)
+from ki_radar.use_cases.workflow import build_use_case_journey
+
+VALID_RETENTION_POLICY = (
+    "Audit-/Traceability-Metadaten — Zweck: Nachvollziehbarkeit; Aufbewahrung: 24 Monate.\n"
+    "Prompt-/Input-Rohinhalte — Zweck: Verarbeitung der Anfrage; nicht persistiert.\n"
+    "Dokumentinhalte — Zweck: Fachliche Prüfung; Löschung nach Abschluss.\n"
+    "Personenbezogene Daten — Zweck: Vorgangsbearbeitung; Löschung nach Zweckfortfall.\n"
+    "Technische Logs/Betriebsdaten — Zweck: Störungsanalyse; Aufbewahrung: 30 Tage."
+)
 
 
 def make_approved_use_case(*, owner, technical_owner, coordinator, business_unit):
@@ -169,6 +184,8 @@ def test_generic_prefill_and_open_reviews_are_readiness_blockers(
     assert "SECTION_NEEDS_REVIEW" in codes
     assert "OUT_OF_SCOPE_MISSING" in codes
     assert "SYSTEM_RESPONSIBILITIES_GENERIC" in codes
+    assert "OUTPUT_TYPE_SEMANTICS_MISSING" in codes
+    assert "RETENTION_SEMANTICS_INCOMPLETE" in codes
 
 
 @pytest.mark.django_db
@@ -190,18 +207,38 @@ def test_handed_over_status_is_not_reported_as_successful_with_current_blockers(
         status=DeliveryPackage.Status.HANDED_OVER,
         handed_over_at=timezone.now(),
     )
+    use_case.status = UseCase.Status.REVIEW
+    use_case.save(update_fields=["status", "updated_at"])
     package.refresh_from_db()
 
     snapshot = delivery_status_snapshot(package)
     exported = render_delivery_markdown(package)
+    journey = build_use_case_journey(use_case, coordinator)
+    outcome = build_outcome_workspace_journey(use_case, coordinator)
+    delivery_step = next(step for step in journey.steps if step.key == "delivery")
+    handover_step = next(step for step in outcome.steps if step.key == "handover")
     client.force_login(owner)
     response = client.get(reverse("delivery:package_detail", kwargs={"pk": package.pk}))
+    list_response = client.get(reverse("delivery:package_list"))
 
     assert snapshot.code == "handover_inconsistent"
     assert snapshot.handover_complete is False
     assert "Status: Übergabe blockiert (inkonsistenter Bestand)" in exported
     assert "Übergabe blockiert (inkonsistenter Bestand)" in response.content.decode()
+    assert "Übergabe blockiert (inkonsistenter Bestand)" in list_response.content.decode()
     assert current_handed_over_package(use_case) is None
+    assert delivery_step.state == "blocked"
+    assert journey.completion_message == ""
+    assert all(step.key != "pilot_start" for step in journey.steps)
+    assert handover_step.state == "blocked"
+    assert PILOT_HANDOVER_BLOCKER in check_pilot_start(use_case).blockers
+    with pytest.raises(ValidationError, match=PILOT_HANDOVER_BLOCKER):
+        apply_status_transition(
+            use_case=use_case,
+            target_status=UseCase.Status.PILOT,
+            actor=coordinator,
+            pilot_start=timezone.localdate(),
+        )
 
 
 @pytest.mark.django_db
@@ -248,7 +285,72 @@ def test_percentage_quality_target_requires_population_and_sample_size(
     codes = {finding.code for finding in evaluate_delivery_readiness(package)}
 
     assert "EVALUATION_POPULATION_MISSING" in codes
+    assert "EVALUATION_SAMPLE_SIZE_MISSING" in codes
     assert "CRITICAL_ERROR_CLASSES_UNDOCUMENTED" in codes
+
+
+@pytest.mark.django_db
+def test_statistical_keywords_and_deferred_placeholders_are_not_evidence(
+    owner,
+    other_owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    package.acceptance_criteria = "Fehlerquote < 2 %. Recall > 90 %."
+    package.test_scenarios = (
+        "Kritische Fehlerklassen später definieren; Testset später festlegen."
+    )
+    package.measurement_plan = (
+        "Testpopulation später festlegen. Stichprobengröße später festlegen. "
+        "Aussagekraft später bewerten."
+    )
+
+    codes = {finding.code for finding in evaluate_delivery_readiness(package)}
+
+    assert "EVALUATION_POPULATION_MISSING" in codes
+    assert "EVALUATION_SAMPLE_SIZE_MISSING" in codes
+    assert "EVALUATION_UNCERTAINTY_UNDOCUMENTED" in codes
+    assert "CRITICAL_ERROR_CLASSES_UNDOCUMENTED" in codes
+    assert "RECALL_POSITIVE_CASES_MISSING" in codes
+
+
+@pytest.mark.django_db
+def test_complete_statistical_context_clears_quality_warnings(
+    owner,
+    other_owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    package.acceptance_criteria = "Fehlerquote < 2 %. Recall > 90 %."
+    package.test_scenarios = (
+        "Kritische Fehlerklasse falscher Betrag; 20 gezielte Testfälle im Testset."
+    )
+    package.measurement_plan = (
+        "Testpopulation: eingehende Rechnungen; Stichprobengröße n=400; "
+        "davon 62 positive Fälle; Aussagekraft über ein 95-%-Konfidenzintervall."
+    )
+
+    codes = {finding.code for finding in evaluate_delivery_readiness(package)}
+
+    assert "EVALUATION_POPULATION_MISSING" not in codes
+    assert "EVALUATION_SAMPLE_SIZE_MISSING" not in codes
+    assert "EVALUATION_UNCERTAINTY_UNDOCUMENTED" not in codes
+    assert "CRITICAL_ERROR_CLASSES_UNDOCUMENTED" not in codes
+    assert "RECALL_POSITIVE_CASES_MISSING" not in codes
 
 
 @pytest.mark.django_db
@@ -270,6 +372,81 @@ def test_generative_output_rejects_unjustified_numeric_confidence(
     codes = {finding.code for finding in evaluate_delivery_readiness(package)}
 
     assert "GENERATIVE_NUMERIC_CONFIDENCE_UNJUSTIFIED" in codes
+
+
+@pytest.mark.parametrize(
+    "statement",
+    [
+        "Generativer Textentwurf zeigt 87 % Konfidenz.",
+        "Generativer Textentwurf zeigt Confidence 87 %, ist aber nicht kalibriert.",
+    ],
+)
+@pytest.mark.django_db
+def test_generative_confidence_recognizes_reverse_order_and_negated_calibration(
+    statement,
+    owner,
+    other_owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    package.human_oversight = statement
+
+    codes = {finding.code for finding in evaluate_delivery_readiness(package)}
+
+    assert "GENERATIVE_NUMERIC_CONFIDENCE_UNJUSTIFIED" in codes
+
+
+@pytest.mark.django_db
+def test_output_types_require_grounding_or_rule_evidence(
+    owner,
+    other_owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    package.human_oversight = (
+        "Generative Textentwürfe werden fachlich geprüft. "
+        "Regelbasierte Prüfungen werden protokolliert."
+    )
+
+    codes = {finding.code for finding in evaluate_delivery_readiness(package)}
+
+    assert "GENERATIVE_GROUNDING_INCOMPLETE" in codes
+    assert "RULE_BASED_OUTPUT_EVIDENCE_INCOMPLETE" in codes
+
+
+@pytest.mark.django_db
+def test_missing_output_type_semantics_are_blocking(
+    owner,
+    other_owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    package.human_oversight = "Der Einkauf prüft und entscheidet."
+
+    codes = {finding.code for finding in evaluate_delivery_readiness(package)}
+
+    assert "OUTPUT_TYPE_SEMANTICS_MISSING" in codes
 
 
 @pytest.mark.django_db
@@ -294,6 +471,32 @@ def test_calibrated_classifier_confidence_and_grounded_generation_are_allowed(
     codes = {finding.code for finding in evaluate_delivery_readiness(package)}
 
     assert "GENERATIVE_NUMERIC_CONFIDENCE_UNJUSTIFIED" not in codes
+    assert "GENERATIVE_GROUNDING_INCOMPLETE" not in codes
+
+
+@pytest.mark.django_db
+def test_explicitly_non_applicable_output_type_does_not_create_false_blocker(
+    owner,
+    other_owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    package.human_oversight = (
+        "Keine generativen Ausgaben. Extraktion/Klassifikation: Es wird keine numerische "
+        "Confidence ausgegeben; der Einkauf validiert das Ergebnis."
+    )
+
+    codes = {finding.code for finding in evaluate_delivery_readiness(package)}
+
+    assert "OUTPUT_TYPE_SEMANTICS_MISSING" not in codes
+    assert "GENERATIVE_GROUNDING_INCOMPLETE" not in codes
 
 
 @pytest.mark.django_db
@@ -318,6 +521,66 @@ def test_synchronous_retry_cannot_exceed_end_to_end_latency_budget(
     codes = {finding.code for finding in evaluate_delivery_readiness(package)}
 
     assert "LATENCY_RETRY_BUDGET_CONFLICT" in codes
+
+
+@pytest.mark.parametrize(
+    "retry_text",
+    [
+        "Provider-Timeout 4 Sekunden; danach 2 synchrone Retries.",
+        "Provider-Timeout 4 Sekunden; maximal zwei synchrone Wiederholungen.",
+        (
+            "Request-Timeout 6 Sekunden; Provider-Timeout 4 Sekunden; "
+            "danach 1 synchroner Retry."
+        ),
+    ],
+)
+@pytest.mark.django_db
+def test_synchronous_retry_requires_complete_total_budget(
+    retry_text,
+    owner,
+    other_owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    package.non_functional_requirements = (
+        "Nutzerseitiges Ende-zu-Ende-Latenzbudget P95 < 8 Sekunden. " + retry_text
+    )
+
+    codes = {finding.code for finding in evaluate_delivery_readiness(package)}
+
+    assert "LATENCY_RETRY_BUDGET_CONFLICT" in codes
+
+
+@pytest.mark.django_db
+def test_explicit_total_sync_duration_within_budget_is_allowed(
+    owner,
+    other_owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    package.non_functional_requirements = (
+        "Nutzerseitiges Ende-zu-Ende-Latenzbudget P95 < 8 Sekunden. "
+        "Request-Timeout 6 Sekunden; Provider-Timeout 2 Sekunden; zwei synchrone Retries. "
+        "Maximale Gesamtdauer aller synchronen Versuche: 6 Sekunden."
+    )
+
+    codes = {finding.code for finding in evaluate_delivery_readiness(package)}
+
+    assert "LATENCY_RETRY_BUDGET_CONFLICT" not in codes
 
 
 @pytest.mark.django_db
@@ -368,6 +631,86 @@ def test_retention_requires_separate_raw_content_and_metadata_semantics(
     assert retention.severity == "blocker"
     assert "Prompt-/Input-Rohinhalte" in retention.message
     assert "Dokumentinhalte" in retention.message
+
+
+@pytest.mark.parametrize(
+    "policy",
+    [
+        (
+            "Audit-Metadaten, Prompt-Rohinhalte, Dokumentinhalte, personenbezogene Daten "
+            "und technische Logs; keine Zweckbindung und keine Löschung vorgesehen."
+        ),
+        (
+            "Audit-/Traceability-Metadaten — Zweck: Nachvollziehbarkeit; Frist benennen.\n"
+            "Prompt-/Input-Rohinhalte — Zweck: Verarbeitung; nicht persistiert.\n"
+            "Dokumentinhalte — Zweck: Prüfung; Löschung nach Abschluss.\n"
+            "Personenbezogene Daten — Zweck: Bearbeitung; Löschung nach Zweckfortfall.\n"
+            "Technische Logs/Betriebsdaten — Zweck: Betrieb; Aufbewahrung: 30 Tage."
+        ),
+    ],
+)
+@pytest.mark.django_db
+def test_retention_rejects_keyword_lists_negation_and_placeholders(
+    policy,
+    owner,
+    other_owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    package.logging_and_audit = policy
+
+    codes = {finding.code for finding in evaluate_delivery_readiness(package)}
+
+    assert "RETENTION_SEMANTICS_INCOMPLETE" in codes
+
+
+@pytest.mark.django_db
+def test_retention_requires_policy_even_without_retention_keywords(
+    owner,
+    other_owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    package.logging_and_audit = "Fachliche Entscheidungen werden protokolliert."
+
+    codes = {finding.code for finding in evaluate_delivery_readiness(package)}
+
+    assert "RETENTION_SEMANTICS_INCOMPLETE" in codes
+
+
+@pytest.mark.django_db
+def test_complete_retention_policy_with_non_persistence_is_allowed(
+    owner,
+    other_owner,
+    coordinator,
+    business_unit,
+):
+    use_case = make_approved_use_case(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package = create_delivery_package(use_case=use_case, actor=coordinator)
+    package.logging_and_audit = VALID_RETENTION_POLICY
+
+    codes = {finding.code for finding in evaluate_delivery_readiness(package)}
+
+    assert "RETENTION_SEMANTICS_INCOMPLETE" not in codes
 
 
 @pytest.mark.django_db

@@ -95,6 +95,30 @@ def test_handover_has_its_own_workspace_context(client, coordinator, owner, busi
 
 
 @pytest.mark.django_db
+def test_inconsistent_handover_workspace_action_opens_blocked_package(
+    client,
+    coordinator,
+    owner,
+    business_unit,
+):
+    use_case = _use_case(owner, business_unit, status=UseCase.Status.REVIEW)
+    package = _package(use_case, coordinator)
+    DeliveryPackage.objects.filter(pk=package.pk).update(readiness_schema_version=2)
+    package.refresh_from_db()
+    client.force_login(coordinator)
+
+    response = client.get(
+        reverse("reporting:outcome_workspace"),
+        {"stage": "handover", "use_case": use_case.pk},
+    )
+
+    action = response.context["active_stage_action"]
+    assert action["reason"] == "Übergabe blockiert (inkonsistenter Bestand)"
+    assert action["action_label"] == "Übergabe prüfen"
+    assert action["url"] == package.get_absolute_url()
+
+
+@pytest.mark.django_db
 def test_running_pilot_opens_real_external_delivery_link(
     client,
     coordinator,

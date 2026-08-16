@@ -44,6 +44,12 @@ Das nutzerseitige Ende-zu-Ende-Latenzbudget ist das verbindliche Gesamtbudget. R
 
 Aufbewahrung und Löschung werden mindestens getrennt für Audit-/Traceability-Metadaten, Prompt-/Input-Rohinhalte, Dokumentinhalte, personenbezogene oder besonders schutzbedürftige Daten sowie technische Logs/Betriebsdaten beschrieben. Jede Kategorie erhält Zweckbindung und Löschfrist. Eine längere Auditfrist für Metadaten begründet keine gleich lange Speicherung vollständiger Rohinhalte.
 
+### Beispiele für belastbare Delivery-Angaben
+
+- **Evaluation:** `Testpopulation: eingehende Rechnungen; n=400, davon 62 positive Fälle; 95-%-Konfidenzintervall dokumentiert; kritische Betragsfehler mit 20 gezielten Testfällen.`
+- **Latenz:** `P95-E2E-Budget 8 Sekunden; Provider-Timeout 2 Sekunden; zwei synchrone Retries; maximale Gesamtdauer aller synchronen Versuche 6 Sekunden.`
+- **Retention:** Jede Kategorie steht in einer eigenen Policy-Zeile, beispielsweise `Prompt-/Input-Rohinhalte — Zweck: Verarbeitung der Anfrage; nicht persistiert.` Audit-Metadaten, Dokumentinhalte, personenbezogene Daten und technische Logs erhalten entsprechend jeweils einen eigenen Zweck und eine konkrete Frist oder Löschregel.
+
 ---
 
 # Vollständiges Vorgehensmodell Version 2.0

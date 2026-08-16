@@ -427,16 +427,23 @@ def build_initial_delivery_data(
             (use_case.human_oversight + "\n") if use_case.human_oversight else ""
         )
         + (
-            "Unsicherheit nach Output-Typ konkretisieren: Extraktion/Klassifikation nur mit "
-            "interpretierbarer Confidence; generative Texte über Quellen/Grounding und "
-            "fehlende Grundlagen; regelbasierte Prüfungen mit Regelreferenz und Ergebnis."
+            "Output-Typ und Unsicherheit dokumentieren:\n"
+            "- Extraktion/Klassifikation: [fachliche Confidence-Semantik konkretisieren]\n"
+            "- Generative Texte: [Quellen/Grounding und unsichere Grundlagen konkretisieren]\n"
+            "- Regelbasierte Prüfungen: [Regelreferenz und Prüfergebnis konkretisieren]"
         ),
         "logging_and_audit": (
-            "Fachliche Entscheidungen, Fehler und relevante Änderungen protokollieren. "
-            "Retention getrennt konkretisieren für Audit-/Traceability-Metadaten, "
-            "Prompt-/Input-Rohinhalte, Dokumentinhalte, personenbezogene oder besonders "
-            "schutzbedürftige Daten sowie technische Logs/Betriebsdaten; Zweckbindung und "
-            "Löschfristen benennen."
+            "Fachliche Entscheidungen, Fehler und relevante Änderungen protokollieren.\n"
+            "- Audit-/Traceability-Metadaten — Zweck: [Zweck konkretisieren]; "
+            "Aufbewahrung/Löschung: [Frist konkretisieren]\n"
+            "- Prompt-/Input-Rohinhalte — Zweck: [Zweck konkretisieren]; "
+            "Aufbewahrung/Löschung: [Frist oder Nichtpersistierung konkretisieren]\n"
+            "- Dokumentinhalte — Zweck: [Zweck konkretisieren]; "
+            "Aufbewahrung/Löschung: [Frist oder Nichtpersistierung konkretisieren]\n"
+            "- Personenbezogene oder besonders schutzbedürftige Daten — Zweck: "
+            "[Zweck konkretisieren]; Aufbewahrung/Löschung: [Frist konkretisieren]\n"
+            "- Technische Logs/Betriebsdaten — Zweck: [Zweck konkretisieren]; "
+            "Aufbewahrung/Löschung: [Frist konkretisieren]"
         ),
         "operations_and_support": (
             use_case.support_responsibility or "Betriebsverantwortung festlegen."

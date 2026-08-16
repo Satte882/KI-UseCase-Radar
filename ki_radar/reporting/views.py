@@ -10,6 +10,7 @@ from ki_radar.accounts.permissions import is_coordinator
 from ki_radar.core.taxonomy import BusinessDomain
 from ki_radar.delivery.models import DeliveryPackage
 from ki_radar.delivery.permissions import can_edit_package, can_transition_package
+from ki_radar.delivery.readiness import delivery_status_snapshot
 from ki_radar.use_cases.blockers import build_blocker_details
 from ki_radar.use_cases.classification import UseCaseClassification
 from ki_radar.use_cases.models import UseCase
@@ -142,10 +143,19 @@ def _build_outcome_stage_action(
                 phase,
                 "Für diesen Use Case existiert noch kein Delivery Package.",
             )
-        if package.status == DeliveryPackage.Status.HANDED_OVER:
+        status_snapshot = delivery_status_snapshot(package)
+        if status_snapshot.handover_complete:
             return _stage_action(
                 phase,
                 f"Delivery Package v{package.version} wurde bereits verbindlich übergeben.",
+            )
+        if package.status == DeliveryPackage.Status.HANDED_OVER:
+            return _stage_action(
+                phase,
+                status_snapshot.label,
+                action_label="Übergabe prüfen",
+                url=package.get_absolute_url(),
+                state="available",
             )
         if package.status == DeliveryPackage.Status.READY:
             if can_transition_package(user):

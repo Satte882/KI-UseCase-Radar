@@ -5,6 +5,7 @@ from urllib.parse import urlencode
 from django.urls import reverse
 
 from ki_radar.delivery.models import DeliveryPackage
+from ki_radar.delivery.readiness import blocking_findings, delivery_status_snapshot
 from ki_radar.delivery.services import (
     current_delivery_package,
     current_handed_over_package,
@@ -138,13 +139,18 @@ def _handover_step(
             reason=f"Delivery Package v{package.version} wurde verbindlich übergeben.",
         )
     if package.status == DeliveryPackage.Status.HANDED_OVER:
+        status_snapshot = delivery_status_snapshot(package)
+        details = tuple(finding.message for finding in blocking_findings(package)) or (
+            "Verbindlicher Übergabezeitpunkt",
+        )
         return JourneyStep(
             key="handover",
             label="Übergabe",
             state="blocked",
             url=package.get_absolute_url(),
             action_label="Übergabe prüfen",
-            reason=("Der Übergabestatus besitzt keinen verbindlichen Übergabezeitpunkt."),
+            reason=status_snapshot.label,
+            details=details,
         )
     if lifecycle_advanced:
         return JourneyStep(
