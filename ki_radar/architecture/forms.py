@@ -274,7 +274,9 @@ class ValueStreamStageForm(StyledModelForm):
 class ProcessAnalysisForm(StyledModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["diagnostic_observations"].help_text = (
+        self.fields[
+            "diagnostic_observations"
+        ].help_text = (
             "Beschreibe das beobachtbare Symptom oder Problem, ohne eine Ursache zu unterstellen."
         )
         self.fields["cause_hypotheses"].help_text = (
