@@ -275,7 +275,8 @@ class ProcessAnalysisForm(StyledModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["diagnostic_observations"].help_text = (
-            "Beschreibe das beobachtbare Symptom oder Problem, ohne bereits eine Ursache zu unterstellen."
+            "Beschreibe das beobachtbare Symptom oder Problem, ohne bereits eine "
+            "Ursache zu unterstellen."
         )
         self.fields["cause_hypotheses"].help_text = (
             "Vermutete Ursache; Hypothesen bleiben ausdrücklich als unbestätigt gekennzeichnet."
