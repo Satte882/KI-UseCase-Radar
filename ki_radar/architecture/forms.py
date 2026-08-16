@@ -272,6 +272,21 @@ class ValueStreamStageForm(StyledModelForm):
 
 
 class ProcessAnalysisForm(StyledModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["diagnostic_observations"].help_text = (
+            "Beschreibe das beobachtbare Symptom oder Problem, ohne bereits eine Ursache zu unterstellen."
+        )
+        self.fields["cause_hypotheses"].help_text = (
+            "Vermutete Ursache; Hypothesen bleiben ausdrücklich als unbestätigt gekennzeichnet."
+        )
+        self.fields["confirmed_causes"].help_text = (
+            "Nur fachlich oder durch Evidenz bestätigte Ursachen eintragen."
+        )
+        self.fields["constraints"].help_text = (
+            "Optional: relevante Randbedingung oder Engpass, der die Lösungswahl begrenzt."
+        )
+
     def clean_status(self):
         status = self.cleaned_data["status"]
         if status == ProcessAnalysis.Status.VALIDATED and (
@@ -299,6 +314,10 @@ class ProcessAnalysisForm(StyledModelForm):
             "business_rules",
             "handoffs",
             "bottlenecks",
+            "diagnostic_observations",
+            "cause_hypotheses",
+            "confirmed_causes",
+            "constraints",
             "exceptions",
             "baseline_metrics",
             "target_state_principles",
@@ -311,6 +330,10 @@ class ProcessAnalysisForm(StyledModelForm):
             "business_rules": forms.Textarea(attrs={"rows": 4}),
             "handoffs": forms.Textarea(attrs={"rows": 4}),
             "bottlenecks": forms.Textarea(attrs={"rows": 5}),
+            "diagnostic_observations": forms.Textarea(attrs={"rows": 4}),
+            "cause_hypotheses": forms.Textarea(attrs={"rows": 4}),
+            "confirmed_causes": forms.Textarea(attrs={"rows": 4}),
+            "constraints": forms.Textarea(attrs={"rows": 4}),
             "exceptions": forms.Textarea(attrs={"rows": 4}),
             "baseline_metrics": forms.Textarea(attrs={"rows": 4}),
             "target_state_principles": forms.Textarea(attrs={"rows": 5}),
