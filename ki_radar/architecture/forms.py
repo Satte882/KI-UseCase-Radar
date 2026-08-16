@@ -274,17 +274,15 @@ class ValueStreamStageForm(StyledModelForm):
 class ProcessAnalysisForm(StyledModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields[
-            "diagnostic_observations"
-        ].help_text = (
+        self.fields["diagnostic_observations"].help_text = (
             "Beschreibe das beobachtbare Symptom oder Problem, ohne eine Ursache zu unterstellen."
         )
         self.fields["cause_hypotheses"].help_text = (
             "Vermutete Ursache; Hypothesen bleiben ausdrücklich als unbestätigt gekennzeichnet."
         )
-        self.fields["confirmed_causes"].help_text = (
-            "Nur fachlich oder durch Evidenz bestätigte Ursachen eintragen."
-        )
+        self.fields[
+            "confirmed_causes"
+        ].help_text = "Nur fachlich oder durch Evidenz bestätigte Ursachen eintragen."
         self.fields["constraints"].help_text = (
             "Optional: relevante Randbedingung oder Engpass, der die Lösungswahl begrenzt."
         )
