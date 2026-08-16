@@ -304,13 +304,11 @@ def _use_case_steps(use_case: UseCase, user) -> tuple[list[JourneyStep], str]:
                     ),
                 )
             )
-            completion_message = (
-                "Journey abgeschlossen: Das Vorhaben wurde an Delivery übergeben."
-            )
+            completion_message = "Journey abgeschlossen: Das Vorhaben wurde an Delivery übergeben."
         else:
-            blocker_messages = tuple(
-                finding.message for finding in blocking_findings(package)
-            ) or ("Verbindlicher Übergabezeitpunkt",)
+            blocker_messages = tuple(finding.message for finding in blocking_findings(package)) or (
+                "Verbindlicher Übergabezeitpunkt",
+            )
             steps.append(
                 JourneyStep(
                     key="delivery",
@@ -357,9 +355,7 @@ def _use_case_steps(use_case: UseCase, user) -> tuple[list[JourneyStep], str]:
                     url=package.get_absolute_url(),
                     action_label="Readiness prüfen",
                     reason=status_snapshot.label,
-                    details=tuple(
-                        finding.message for finding in blocking_findings(package)
-                    ),
+                    details=tuple(finding.message for finding in blocking_findings(package)),
                 )
             )
     else:
