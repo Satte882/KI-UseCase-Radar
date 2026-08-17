@@ -228,9 +228,7 @@ def build_source_manifest(use_case: UseCase, decision: ApprovalDecision) -> dict
             "technical_owner": {
                 "id": str(use_case.technical_owner_id or ""),
                 "value": (
-                    _display_name(use_case.technical_owner)
-                    if use_case.technical_owner
-                    else ""
+                    _display_name(use_case.technical_owner) if use_case.technical_owner else ""
                 ),
                 "updated_at": _iso(use_case.updated_at),
                 "adoption": "copied",
