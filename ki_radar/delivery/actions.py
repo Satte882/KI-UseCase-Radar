@@ -302,9 +302,7 @@ def _build_action(
                 url = f"{package.get_absolute_url()}#technical-owner-source-change"
         else:
             title = (
-                "Technical Owner benennen"
-                if code.endswith("MISSING")
-                else "Technical Owner ersetzen"
+                "Technical Owner benennen" if code.endswith("MISSING") else "Technical Owner ersetzen"
             )
             action_label = "Technical Owner zuordnen"
             responsible_role = "Business Owner oder KI-Koordinator"
@@ -411,8 +409,7 @@ def build_actionable_findings(
         use_case_owner
         and use_case_owner.is_active
         and any(
-            finding.code == "TECHNICAL_OWNER_SOURCE_CHANGE_UNRESOLVED"
-            for finding in raw_findings
+            finding.code == "TECHNICAL_OWNER_SOURCE_CHANGE_UNRESOLVED" for finding in raw_findings
         )
     )
     actions = [

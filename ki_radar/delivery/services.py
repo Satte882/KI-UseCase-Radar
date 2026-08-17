@@ -228,7 +228,9 @@ def build_source_manifest(use_case: UseCase, decision: ApprovalDecision) -> dict
             "technical_owner": {
                 "id": str(use_case.technical_owner_id or ""),
                 "value": (
-                    _display_name(use_case.technical_owner) if use_case.technical_owner else ""
+                    _display_name(use_case.technical_owner)
+                    if use_case.technical_owner
+                    else ""
                 ),
                 "updated_at": _iso(use_case.updated_at),
                 "adoption": "copied",
@@ -705,9 +707,11 @@ def resolve_technical_owner_source_change(
     rationale: str,
     actor,
 ) -> DeliveryRoleSourceDecision:
-    package = DeliveryPackage.objects.select_for_update().select_related(
-        "technical_owner", "use_case__technical_owner"
-    ).get(pk=package.pk)
+    package = (
+        DeliveryPackage.objects.select_for_update()
+        .select_related("technical_owner", "use_case__technical_owner")
+        .get(pk=package.pk)
+    )
     if package.status == DeliveryPackage.Status.HANDED_OVER:
         raise ValidationError("Ein übergebenes Delivery Package ist unveränderlich.")
     if not can_resolve_role_source(actor, package):
