@@ -705,11 +705,7 @@ def resolve_technical_owner_source_change(
     rationale: str,
     actor,
 ) -> DeliveryRoleSourceDecision:
-    package = (
-        DeliveryPackage.objects.select_for_update()
-        .select_related("technical_owner", "use_case__technical_owner")
-        .get(pk=package.pk)
-    )
+    package = DeliveryPackage.objects.select_for_update().get(pk=package.pk)
     if package.status == DeliveryPackage.Status.HANDED_OVER:
         raise ValidationError("Ein übergebenes Delivery Package ist unveränderlich.")
     if not can_resolve_role_source(actor, package):
