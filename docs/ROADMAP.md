@@ -179,9 +179,33 @@ Dazu gehört insbesondere der neutrale Reiseveranstalter-Demo-/Runbook-Kontext a
 # Next – priorisierte nächste Probleme
 
 **Next zuletzt geprüft:** 2026-08-17  
-**Ergebnis:** bewusst leer – derzeit ist kein neues Produktinkrement verbindlich als Next priorisiert.
+**Aktuelle Priorität:** #328 als nächster größerer Produktfokus; #322 und #323 als klar abgegrenzte kleinere Folgeinkremente.
 
-Ein Thema wird erst nach einer expliziten Produktentscheidung aus `Later` nach `Next` gezogen. Dabei wird zuerst gegen den aktuellen `main` geprüft, ob die angenommene Lücke nach den inzwischen umgesetzten Fähigkeiten überhaupt noch besteht.
+## 1. KI-gestützte Bearbeitung fachlicher Lücken gezielt ausrollen – #328
+
+Der im Delivery-Bereich erprobte KI-Entwurf soll selektiv auf weitere geeignete Arbeitsaufgaben übertragen werden. Ziel ist nicht ein generischer „KI-Button an jedem Feld“, sondern konkrete Unterstützung dort, wo bereits ausreichend belastbarer Systemkontext vorhanden ist und ein editierbarer Entwurf echten Bearbeitungsaufwand reduziert.
+
+Vor einer ersten Rollout-Welle werden im Parent #328 drei Analysepfade konsolidiert:
+
+- #325 – geeignete Einsatzbereiche entlang des Workflows bewerten und priorisieren;
+- #326 – gemeinsames UX-, Qualitäts- und Wirkungsmesskonzept definieren;
+- #327 – technische, fachliche, Sicherheits- und Betriebsleitplanken festlegen.
+
+Erst danach wird eine kleine erste Umsetzungswelle priorisiert. Nutzerinitiierung, sichtbare Quellen, bewusste Übernahme und Human Review bleiben verbindlich; automatische Speicherung, Freigaben oder Statusänderungen durch KI bleiben ausgeschlossen.
+
+## 2. Traceability vom Ursprungsprozess zum Use Case – #322
+
+Use Cases sollen optional mit ihrem kanonischen Ursprungsprozess verknüpft werden können. Phase, Value Stream und vorhandener strategischer Kontext werden daraus abgeleitet statt redundant am Use Case gepflegt.
+
+Der Nutzen liegt in einer durchgängigen Herkunftskette für Business Architecture, Portfolio, Impact-Analyse und Delivery, ohne direkte Use-Case-Erfassung zu erschweren oder neue Strategiehierarchien einzuführen.
+
+## 3. SIPOC als Leitfrage in der ProcessAnalysis – #323
+
+Die bestehende ProcessAnalysis soll um eine kompakte sichtbare SIPOC-Orientierung ergänzt werden: `Supplier → Input → Process → Output → Customer`.
+
+Das ist bewusst nur eine kleine Methodik-/UX-Schärfung. Vorhandene Felder werden weiterverwendet; es entsteht weder ein SIPOC-Modul noch ein neues Pflichtartefakt oder zusätzlicher Prozessschritt.
+
+Die Reihenfolge in `Next` beschreibt die aktuelle Produktpriorität, nicht einen starren Implementierungsplan. Vor Umsetzung bleibt der Gap-Check gegen den dann aktuellen `main` verbindlich.
 
 ---
 
