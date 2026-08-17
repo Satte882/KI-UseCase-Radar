@@ -93,6 +93,13 @@ def _iso(value: datetime | None) -> str:
     return value.isoformat() if value else ""
 
 
+def _display_name(user) -> str:
+    if not user:
+        return "Nicht benannt"
+    display_name = getattr(user, "get_display_name", None)
+    return display_name() if callable(display_name) else str(user)
+
+
 def _source_entry(source, *, version=None) -> dict[str, str | int | None]:
     if source is None:
         return {}
@@ -216,11 +223,13 @@ def build_source_manifest(use_case: UseCase, decision: ApprovalDecision) -> dict
         "role_sources": {
             "business_owner": {
                 "id": str(use_case.business_owner_id or ""),
-                "value": str(use_case.business_owner or ""),
+                "value": _display_name(use_case.business_owner) if use_case.business_owner else "",
             },
             "technical_owner": {
                 "id": str(use_case.technical_owner_id or ""),
-                "value": str(use_case.technical_owner or ""),
+                "value": (
+                    _display_name(use_case.technical_owner) if use_case.technical_owner else ""
+                ),
                 "updated_at": _iso(use_case.updated_at),
                 "adoption": "copied",
             },
@@ -290,11 +299,11 @@ def technical_owner_source_state(package: DeliveryPackage) -> dict | None:
     return {
         "role_key": "technical_owner",
         "working_id": str(package.technical_owner_id or ""),
-        "working_value": str(package.technical_owner or "Nicht benannt"),
+        "working_value": _display_name(package.technical_owner),
         "snapshot_id": snapshot_id,
         "snapshot_value": str(source.get("value") or "Nicht benannt"),
         "current_source_id": current_id,
-        "current_source_value": str(current_owner or "Nicht benannt"),
+        "current_source_value": _display_name(current_owner),
         "source_changed": current_id != snapshot_id,
         "adoption": source.get("adoption", "copied"),
     }
@@ -307,7 +316,11 @@ def refresh_technical_owner_source_snapshot(
 ) -> None:
     source = {
         "id": str(package.use_case.technical_owner_id or ""),
-        "value": str(package.use_case.technical_owner or ""),
+        "value": (
+            _display_name(package.use_case.technical_owner)
+            if package.use_case.technical_owner
+            else ""
+        ),
         "updated_at": _iso(package.use_case.updated_at),
         "adoption": adoption,
     }
@@ -711,13 +724,28 @@ def resolve_technical_owner_source_change(
 
     old_owner = package.technical_owner
     new_owner = package.use_case.technical_owner
+    if action == DeliveryRoleSourceDecision.Decision.KEEP_PACKAGE and (
+        old_owner is None or not old_owner.is_active
+    ):
+        raise ValidationError(
+            "Die bestehende Package-Zuordnung kann nicht beibehalten werden, "
+            "weil kein aktiver Technical Owner vorhanden ist."
+        )
+    if action == DeliveryRoleSourceDecision.Decision.ADOPT_SOURCE and (
+        new_owner is None or not new_owner.is_active
+    ):
+        raise ValidationError(
+            "Die Use-Case-Zuordnung kann nicht übernommen werden, "
+            "weil dort kein aktiver Technical Owner vorhanden ist."
+        )
+
     decision = DeliveryRoleSourceDecision.objects.create(
         delivery_package=package,
         role_key=DeliveryRoleSourceDecision.RoleKey.TECHNICAL_OWNER,
         old_value_id=str(package.technical_owner_id or ""),
-        old_value_label=str(old_owner) if old_owner else "Nicht benannt",
+        old_value_label=_display_name(old_owner),
         new_value_id=str(package.use_case.technical_owner_id or ""),
-        new_value_label=str(new_owner) if new_owner else "Nicht benannt",
+        new_value_label=_display_name(new_owner),
         decision=action,
         rationale=reason,
         decided_by=actor,

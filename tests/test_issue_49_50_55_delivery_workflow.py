@@ -159,9 +159,9 @@ def test_section_states_and_role_confirmations_are_visually_distinct(
     assert response.status_code == 200
     assert confirmed_section in content
     assert blocked_section in content
-    assert "Fachlich: bestätigt" in content
-    assert "Technisch: nicht erforderlich" in content
-    assert "Fachlich: offen" in content
+    assert "Fachliche Prüfung: bestätigt" in content
+    assert "Technische Prüfung: nicht erforderlich" in content
+    assert "Fachliche Prüfung: offen" in content
 
 
 @pytest.mark.django_db

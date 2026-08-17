@@ -17,6 +17,10 @@ from .governance_status import build_governance_statuses
 from .models import UseCase
 
 
+def _user_choice_label(user) -> str:
+    return user.get_display_name()
+
+
 class DateInput(forms.DateInput):
     input_type = "date"
 
@@ -225,6 +229,8 @@ class UseCaseForm(forms.ModelForm):
         self.fields["business_owner"].queryset = ordered_users.filter(pk__in=business_owner_ids)
         self.fields["coordinator"].queryset = ordered_users.filter(pk__in=coordinator_ids)
         self.fields["technical_owner"].queryset = ordered_users.filter(pk__in=active_ids)
+        for field_name in ("business_owner", "coordinator", "technical_owner"):
+            self.fields[field_name].label_from_instance = _user_choice_label
         self.fields["business_owner"].required = True
 
         role_source = self.instance if self.instance.pk else None

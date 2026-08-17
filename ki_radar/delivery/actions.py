@@ -17,6 +17,7 @@ from .readiness import (
     ReadinessFinding,
     evaluate_delivery_readiness,
 )
+from .services import technical_owner_source_state
 
 SECTION_LABELS = dict(DELIVERY_SECTION_DEFINITIONS)
 SECTION_ORDER = {key: index for index, (key, _label) in enumerate(DELIVERY_SECTION_DEFINITIONS)}
@@ -268,6 +269,7 @@ def _build_action(
     user,
     *,
     return_to: str,
+    technical_owner_source_decision_is_next: bool = False,
 ) -> ActionableFinding:
     code = finding.code
     section_key = finding.section_key
@@ -290,16 +292,26 @@ def _build_action(
         if can_execute:
             url = f"{package.get_absolute_url()}#technical-owner-source-change"
     elif code in {"TECHNICAL_OWNER_MISSING", "TECHNICAL_OWNER_INACTIVE"}:
-        title = (
-            "Technical Owner benennen" if code.endswith("MISSING") else "Technical Owner ersetzen"
-        )
-        action_label = "Technical Owner zuordnen"
         field_label = "Technical Owner"
-        responsible_role = "Business Owner oder KI-Koordinator"
-        responsible_person = _display_name(package.use_case.business_owner)
-        can_execute = can_edit_use_case(user, package.use_case)
-        if can_execute:
-            url = _use_case_edit_url(package, "technical_owner", return_to)
+        if technical_owner_source_decision_is_next:
+            title = "Änderung des Technical Owners entscheiden"
+            action_label = "Abweichung auflösen"
+            responsible_role = "KI-Koordinator"
+            responsible_person = "Berechtigte Koordination"
+            can_execute = is_coordinator(user)
+            if can_execute:
+                url = f"{package.get_absolute_url()}#technical-owner-source-change"
+        else:
+            if code.endswith("MISSING"):
+                title = "Technical Owner benennen"
+            else:
+                title = "Technical Owner ersetzen"
+            action_label = "Technical Owner zuordnen"
+            responsible_role = "Business Owner oder KI-Koordinator"
+            responsible_person = _display_name(package.use_case.business_owner)
+            can_execute = can_edit_use_case(user, package.use_case)
+            if can_execute:
+                url = _use_case_edit_url(package, "technical_owner", return_to)
     elif field_name:
         title = f"{field_label} {'konkretisieren' if code.endswith('GENERIC') else 'ergänzen'}"
         action_label = "Feld bearbeiten"
@@ -394,7 +406,25 @@ def build_actionable_findings(
 ) -> list[ActionableFinding]:
     target = return_to or package.get_absolute_url()
     raw_findings = evaluate_delivery_readiness(package)
-    actions = [_build_action(package, finding, user, return_to=target) for finding in raw_findings]
+    use_case_owner = package.use_case.technical_owner
+    technical_owner_source = technical_owner_source_state(package)
+    technical_owner_source_decision_is_next = bool(
+        use_case_owner
+        and use_case_owner.is_active
+        and not use_case_owner.is_anonymized
+        and technical_owner_source
+        and technical_owner_source["source_changed"]
+    )
+    actions = [
+        _build_action(
+            package,
+            finding,
+            user,
+            return_to=target,
+            technical_owner_source_decision_is_next=technical_owner_source_decision_is_next,
+        )
+        for finding in raw_findings
+    ]
     return sorted(actions, key=lambda item: item.sort_key)
 
 
