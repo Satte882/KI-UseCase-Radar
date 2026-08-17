@@ -42,6 +42,8 @@ Bereits bekannte Vorhaben können weiterhin direkt über den Use-Case-Intake erf
 
 Die operative Umsetzung verbleibt in Jira, Azure DevOps, GitHub oder einem anderen Delivery-System. KI-Radar hält den entscheidungsrelevanten Kontext, die Governance, die Übergabereife und die späteren Review-Snapshots.
 
+Die Gesamtstrecke wird in der Oberfläche kontextbezogen dargestellt. Auf konkreten Arbeitsobjekten zeigt eine kompakte Lifecycle-Orientierung den tatsächlichen Zustand und die nächste relevante Entscheidung; Querschnitts- und Listensichten wie Portfolio verzichten bewusst auf eine pseudo-lineare Journey.
+
 ---
 
 ## Acht zentrale Produktfähigkeiten
