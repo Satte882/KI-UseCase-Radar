@@ -1,8 +1,8 @@
 # KI-Radar Produkt-Roadmap
 
-**Stand:** 16.08.2026  
-**Status:** verbindliche fachliche Reihenfolge, kein Terminversprechen  
-**Pflege:** Nach jedem relevanten Merge werden Status, Datum und nächster verbindlicher Umfang aktualisiert.
+**Stand:** 17.08.2026  
+**Status:** priorisierte Produkt-Roadmap, kein Terminversprechen  
+**Pflege:** Nach jedem relevanten Merge werden Status, Datum und Produktprioritäten aktualisiert.
 
 ## Legende
 
@@ -77,7 +77,7 @@ Der erste Rückfluss aus Jira, Azure DevOps, GitHub oder einem anderen Delivery-
 - [x] **22.07.2026:** zweiter Arbeitsraum `Wirkung & Betrieb`
 - [x] **22.07.2026:** Variante A als verbindliche Navigation: `Übergabe → Pilot → Wirkung → Ergebnisentscheidung → Betrieb → Abschluss`
 - [x] **22.07.2026:** sichtbare Verantwortungsgrenze zwischen KI-Radar und externem Delivery-System
-- [x] **22.07.2026:** responsive Desktop- und Mobile-Darstellung ohne horizontale Seitenüberläufe
+- [x] **22.07.2026:** responsive Desktop- und Mobile-Darstellung ohne horizontalen Seitenüberläufe
 - [x] **22.07.2026:** kompakter Entscheidungs-Snapshot mit getrenntem Handlungsstatus je Bereich
 - [x] **22.07.2026:** Deep Links ausschließlich zu vorhandenen führenden Oberflächen für Übergabe, Wirkung, Go-live, Betriebsreview und Abschluss
 - [x] **22.07.2026:** Pilot öffnet nur einen tatsächlich hinterlegten externen Delivery-Link; fehlende oder unzulässige Aktionen erhalten einen neutralen Zustand
@@ -111,18 +111,15 @@ Der erste Rückfluss aus Jira, Azure DevOps, GitHub oder einem anderen Delivery-
 
 ---
 
-## 2. Nächster verbindlicher Umfang
+## 2. Priorisierte Produktinkremente
 
-**Dokumentierte Reihenfolge-Ausnahmen:**
+Die aktuell vorhandene Kernjourney deckt bereits Baseline, Ziel, Ist-Wert, Messzeitraum, Messdatum, Messnachweis, Go-live-Gates und Betriebsreviews ab. Weitere Ausbaustufen werden deshalb nicht mehr als unmittelbar verbindliche Reihenfolge behandelt, sondern nach nachgewiesenem Produktnutzen priorisiert.
 
-- Issue #311 wird als P1-Hardening des bestehenden Delivery-Handover vorgezogen.
-- Issue #308 wird aufgrund expliziter Produktpriorisierung als methodisches Hardening der bestehenden Value-Stream-Journey vorgezogen.
+### Priorität 3 – Versionierte Wirkungsmessungen
 
-Beide Ausnahmen ändern die fachliche Reihenfolge der Folgeinkremente nicht; „Versionierte Wirkungsmessungen“ bleibt anschließend der nächste verbindliche Produktumfang.
+**Status am 17.08.2026:** fachlich weiterhin relevant, bewusst geparkt.
 
-### Versionierte Wirkungsmessungen
-
-**Status am 22.07.2026:** geplant, noch nicht umgesetzt.
+Der aktuelle Messstand reicht für Golden Path, Pilotbewertung und Go-live aus. Versionierte Messreihen werden erst benötigt, wenn wiederkehrende Wirkungsreviews, Trend-/Drift-Betrachtung oder belastbare Portfolioanalysen einen konkreten Mehrwert rechtfertigen.
 
 - [ ] Messwert und Zeitpunkt versioniert speichern
 - [ ] Zeitraum, Stichprobengröße und betrachtete Population speichern
@@ -139,13 +136,13 @@ Beide Ausnahmen ändern die fachliche Reihenfolge der Folgeinkremente nicht; „
 - Jira-/Azure-DevOps-Synchronisation
 - lernendes System
 
-Erst nach Abschluss und Abnahme dieses Inkrements wird der nächste Roadmap-Punkt begonnen.
+Die Umsetzung erfolgt erst nach einer neuen expliziten Produktpriorisierung.
 
 ---
 
 ## 3. Geplante Folgeinkremente
 
-Die Reihenfolge ist verbindlich, solange keine dokumentierte Produktentscheidung sie ändert.
+Die Reihenfolge ist nicht mehr automatisch verbindlich. Ein Folgeinkrement wird erst nach einer dokumentierten Produktentscheidung priorisiert.
 
 ### 3.1 Versionierte Wirkungsreviews
 
@@ -245,17 +242,17 @@ Personennamen, sensible Rohdaten und unstrukturierte Dokumentinhalte sollen nich
 ## 5. Pflege- und Umsetzungsregeln
 
 1. Vor neuen Produktänderungen diese Roadmap und relevante ADRs lesen.
-2. Nur der unter **Nächster verbindlicher Umfang** beschriebene Punkt darf ohne neue Produktentscheidung begonnen werden.
-3. Folgeinkremente nicht vorziehen oder in einen großen PR bündeln.
+2. Neue Produktinkremente benötigen eine explizite Priorisierungsentscheidung; geparkte Punkte werden nicht automatisch zum nächsten Scope.
+3. Folgeinkremente nicht ohne dokumentierte Produktentscheidung vorziehen oder in einen großen PR bündeln.
 4. Jeder PR besitzt einen klaren Scope und explizite Nicht-Ziele.
-5. Nach einem Merge werden erledigte Checkboxen, Datum und nächster Umfang aktualisiert.
-6. Änderungen der Systemgrenze oder Roadmap-Reihenfolge werden im PR begründet und bei Bedarf als ADR dokumentiert.
-7. `OPEN_QUESTIONS.md` bleibt für ungeklärte Betriebs- und Konfigurationsfragen; die Produktreihenfolge steht hier.
+5. Nach einem Merge werden erledigte Checkboxen, Datum und Priorisierung aktualisiert.
+6. Änderungen der Systemgrenze oder Roadmap-Priorisierung werden im PR begründet und bei Bedarf als ADR dokumentiert.
+7. `OPEN_QUESTIONS.md` bleibt für ungeklärte Betriebs- und Konfigurationsfragen; Produktprioritäten stehen hier.
 
-## 6. Festgelegte Entscheidungen vom 22.07.2026
+## 6. Festgelegte Entscheidungen
 
-- Variante A ist die verbindliche Navigation für `Wirkung & Betrieb`.
-- KI-Radar bleibt Entscheidungs-Cockpit und kein operatives Delivery-System.
-- Der erste Rückfluss aus Delivery erfolgt als manueller Review-Snapshot.
-- `JourneyState` bleibt die zentrale Status- und Next-Action-Logik.
-- Der nächste Implementierungsumfang ist ausschließlich die Versionierung einzelner Wirkungsmessungen; Wirkungsreviews, Ergebnisentscheidungen und Integrationen bleiben Folgeinkremente.
+- **22.07.2026:** Variante A ist die verbindliche Navigation für `Wirkung & Betrieb`.
+- **22.07.2026:** KI-Radar bleibt Entscheidungs-Cockpit und kein operatives Delivery-System.
+- **22.07.2026:** Der erste Rückfluss aus Delivery erfolgt als manueller Review-Snapshot.
+- **22.07.2026:** `JourneyState` bleibt die zentrale Status- und Next-Action-Logik.
+- **17.08.2026:** Versionierte Wirkungsmessungen bleiben als fachliche Ausbaustufe erhalten, werden aber aufgrund des bereits vollständigen aktuellen Mess-/Go-live-Pfads als **Priorität 3** geparkt. Ihre Umsetzung benötigt eine neue explizite Produktpriorisierung.
