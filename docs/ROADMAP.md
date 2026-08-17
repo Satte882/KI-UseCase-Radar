@@ -178,7 +178,8 @@ Dazu gehört insbesondere der neutrale Reiseveranstalter-Demo-/Runbook-Kontext a
 
 # Next – priorisierte nächste Probleme
 
-Derzeit ist **kein neues Produktinkrement verbindlich als Next priorisiert**.
+**Next zuletzt geprüft:** 2026-08-17  
+**Ergebnis:** bewusst leer – derzeit ist kein neues Produktinkrement verbindlich als Next priorisiert.
 
 Ein Thema wird erst nach einer expliziten Produktentscheidung aus `Later` nach `Next` gezogen. Dabei wird zuerst gegen den aktuellen `main` geprüft, ob die angenommene Lücke nach den inzwischen umgesetzten Fähigkeiten überhaupt noch besteht.
 
