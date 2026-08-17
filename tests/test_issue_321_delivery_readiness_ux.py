@@ -157,6 +157,31 @@ def test_owner_loop_state_c_keeps_existing_source_decision_route(
 
 
 @pytest.mark.django_db
+def test_owner_loop_handed_over_snapshot_routes_to_visible_source_decision(
+    owner, other_owner, coordinator, business_unit
+):
+    use_case, package = make_package(
+        owner=owner,
+        technical_owner=other_owner,
+        coordinator=coordinator,
+        business_unit=business_unit,
+    )
+    package.technical_owner = None
+    package.status = package.Status.HANDED_OVER
+    package.save(update_fields=["technical_owner", "status", "updated_at"])
+    use_case.technical_owner = owner
+    use_case.save(update_fields=["technical_owner", "updated_at"])
+
+    action = primary_delivery_action(package, coordinator)
+
+    assert action is not None
+    assert action.code == "TECHNICAL_OWNER_MISSING"
+    assert action.title == "Änderung des Technical Owners entscheiden"
+    assert action.action_label == "Abweichung auflösen"
+    assert action.url == f"{package.get_absolute_url()}#technical-owner-source-change"
+
+
+@pytest.mark.django_db
 def test_source_decision_rejects_inapplicable_keep_and_adopt_actions(
     owner, other_owner, coordinator, business_unit
 ):

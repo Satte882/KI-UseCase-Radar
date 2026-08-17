@@ -17,6 +17,7 @@ from .readiness import (
     ReadinessFinding,
     evaluate_delivery_readiness,
 )
+from .services import technical_owner_source_state
 
 SECTION_LABELS = dict(DELIVERY_SECTION_DEFINITIONS)
 SECTION_ORDER = {key: index for index, (key, _label) in enumerate(DELIVERY_SECTION_DEFINITIONS)}
@@ -406,12 +407,13 @@ def build_actionable_findings(
     target = return_to or package.get_absolute_url()
     raw_findings = evaluate_delivery_readiness(package)
     use_case_owner = package.use_case.technical_owner
+    technical_owner_source = technical_owner_source_state(package)
     technical_owner_source_decision_is_next = bool(
         use_case_owner
         and use_case_owner.is_active
-        and any(
-            finding.code == "TECHNICAL_OWNER_SOURCE_CHANGE_UNRESOLVED" for finding in raw_findings
-        )
+        and not use_case_owner.is_anonymized
+        and technical_owner_source
+        and technical_owner_source["source_changed"]
     )
     actions = [
         _build_action(
