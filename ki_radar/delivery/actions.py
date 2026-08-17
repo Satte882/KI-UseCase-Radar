@@ -301,9 +301,10 @@ def _build_action(
             if can_execute:
                 url = f"{package.get_absolute_url()}#technical-owner-source-change"
         else:
-            title = (
-                "Technical Owner benennen" if code.endswith("MISSING") else "Technical Owner ersetzen"
-            )
+            if code.endswith("MISSING"):
+                title = "Technical Owner benennen"
+            else:
+                title = "Technical Owner ersetzen"
             action_label = "Technical Owner zuordnen"
             responsible_role = "Business Owner oder KI-Koordinator"
             responsible_person = _display_name(package.use_case.business_owner)
