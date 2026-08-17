@@ -7,11 +7,16 @@ from django.utils import timezone
 
 from ki_radar.delivery.actions import primary_delivery_action
 from ki_radar.delivery.models import DeliveryRoleSourceDecision
-from ki_radar.delivery.services import create_delivery_package, resolve_technical_owner_source_change
+from ki_radar.delivery.services import (
+    create_delivery_package,
+    resolve_technical_owner_source_change,
+)
 from ki_radar.use_cases.models import ApprovalDecision, DecisionAssessment, UseCase
 
 
-def make_approved_use_case(*, owner, technical_owner, coordinator, business_unit, title="Issue 321"):
+def make_approved_use_case(
+    *, owner, technical_owner, coordinator, business_unit, title="Issue 321"
+):
     use_case = UseCase.objects.create(
         title=title,
         summary="Angebote strukturiert vergleichen.",
