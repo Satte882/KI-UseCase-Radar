@@ -94,7 +94,10 @@ def _iso(value: datetime | None) -> str:
 
 
 def _display_name(user) -> str:
-    return user.get_display_name() if user else "Nicht benannt"
+    if not user:
+        return "Nicht benannt"
+    display_name = getattr(user, "get_display_name", None)
+    return display_name() if callable(display_name) else str(user)
 
 
 def _source_entry(source, *, version=None) -> dict[str, str | int | None]:
