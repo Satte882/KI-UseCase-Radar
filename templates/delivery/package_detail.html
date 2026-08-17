@@ -28,12 +28,12 @@
 <div class="kpi-strip mb-4">
   <div class="kpi-cell"><small>Status</small><strong>{{ delivery_status.label }}</strong></div>
   <div class="kpi-cell"><small>Version</small><strong>{{ package.version }}</strong></div>
-  <div class="kpi-cell"><small>Technical Owner · Technik, Daten und KI</small><strong>{{ package.technical_owner|default:"Nicht benannt" }}</strong></div>
+  <div class="kpi-cell"><small>Technical Owner · Technik, Daten und KI</small><strong>{% if package.technical_owner %}{{ package.technical_owner.get_display_name }}{% else %}Nicht benannt{% endif %}</strong></div>
 </div>
 
 {% if owner_role_collapse %}
 <div class="alert alert-secondary mb-4">
-  <strong>Zusammengeführte Verantwortung:</strong> {{ package.use_case.business_owner }} ist Business Owner sowie Technical Owner. Die beiden Bestätigungen bleiben getrennte Aktionen. Bestätigt dieselbe Person beide Rollen, ist vor der Übergabe eine unabhängige Kontrolle erforderlich.
+  <strong>Zusammengeführte Verantwortung:</strong> {{ package.use_case.business_owner.get_display_name }} ist Business Owner sowie Technical Owner. Die beiden Bestätigungen bleiben getrennte Aktionen. Bestätigt dieselbe Person beide Rollen, ist vor der Übergabe eine unabhängige Kontrolle erforderlich.
 </div>
 {% endif %}
 
@@ -53,8 +53,16 @@
       <label class="form-label" for="technical-owner-rationale">Begründung der Übernahmeentscheidung</label>
       <textarea class="form-control mb-3" id="technical-owner-rationale" name="rationale" rows="3" required></textarea>
       <div class="d-flex gap-2 flex-wrap">
+        {% if package.use_case.technical_owner and package.use_case.technical_owner.is_active %}
         <button class="btn btn-primary" name="action" value="adopt_source">Neuen Owner übernehmen</button>
+        {% else %}
+        <span class="small text-muted">Die Use-Case-Zuordnung kann nicht übernommen werden, solange dort kein aktiver Technical Owner gesetzt ist.</span>
+        {% endif %}
+        {% if package.technical_owner and package.technical_owner.is_active %}
         <button class="btn btn-outline-secondary" name="action" value="keep_package">Package-Zuordnung beibehalten</button>
+        {% else %}
+        <span class="small text-muted">Die Package-Zuordnung kann nicht beibehalten werden, weil kein aktiver Technical Owner vorhanden ist.</span>
+        {% endif %}
       </div>
     </form>
     {% else %}
@@ -66,7 +74,7 @@
     <div class="section-title mb-2">Entscheidungsverlauf</div>
     <div class="table-responsive"><table class="table table-sm mb-0">
       <thead><tr><th>Zeitpunkt</th><th>Alt</th><th>Neue Quelle</th><th>Entscheidung</th><th>Begründung</th><th>Person</th></tr></thead>
-      <tbody>{% for decision in role_source_decisions %}<tr><td>{{ decision.decided_at|date:"d.m.Y H:i" }}</td><td>{{ decision.old_value_label|default:"Nicht benannt" }}</td><td>{{ decision.new_value_label|default:"Nicht benannt" }}</td><td>{{ decision.get_decision_display }}</td><td>{{ decision.rationale }}</td><td>{{ decision.decided_by|default:"Gelöschte Person" }}</td></tr>{% endfor %}</tbody>
+      <tbody>{% for decision in role_source_decisions %}<tr><td>{{ decision.decided_at|date:"d.m.Y H:i" }}</td><td>{{ decision.old_value_label|default:"Nicht benannt" }}</td><td>{{ decision.new_value_label|default:"Nicht benannt" }}</td><td>{{ decision.get_decision_display }}</td><td>{{ decision.rationale }}</td><td>{% if decision.decided_by %}{{ decision.decided_by.get_display_name }}{% else %}Gelöschte Person{% endif %}</td></tr>{% endfor %}</tbody>
     </table></div>
     {% endif %}
   </div>
@@ -112,7 +120,7 @@
       <section class="readiness-finding-group" data-section-key="{{ row.key }}">
         <div class="readiness-finding-group-header">
           <div><strong>{{ forloop.counter }}. {{ row.label }}</strong><div class="small text-muted">{{ row.finding_count }} Finding{{ row.finding_count|pluralize:"s" }} · {{ row.blocker_count }} blockierend</div></div>
-          <span class="delivery-section-status delivery-section-status-{{ row.state }}">{{ row.state_label }}</span>
+          <span class="delivery-section-status delivery-section-status-{{ row.state }}">Delivery Readiness: {{ row.state_label }}</span>
         </div>
         <div class="blocker-actions">
           {% for finding in row.findings %}
@@ -146,11 +154,11 @@
     <div class="delivery-section-stack">
       {% for row in section_rows %}
       <details class="app-card delivery-section-card delivery-section-{{ row.state }}" id="section-{{ row.key }}"{% if row.is_primary %} open{% endif %}>
-        <summary class="card-header delivery-section-summary" aria-label="{{ row.label }}: {{ row.state_label }}">
+        <summary class="card-header delivery-section-summary" aria-label="{{ row.label }} · Delivery Readiness: {{ row.state_label }}">
           <div class="delivery-section-summary-main">
             <div class="d-flex flex-wrap align-items-center gap-2">
               <strong>{{ forloop.counter }}. {{ row.label }}</strong>
-              <span class="delivery-section-status delivery-section-status-{{ row.state }}">{{ row.state_label }}</span>
+              <span class="delivery-section-status delivery-section-status-{{ row.state }}">Delivery Readiness: {{ row.state_label }}</span>
               {% if row.is_primary %}<span class="badge badge-soft">Nächster Schritt</span>{% endif %}
             </div>
             <div class="small text-muted mt-1">{{ row.responsible_role }} · {{ row.responsible_person }}</div>
@@ -160,22 +168,17 @@
             <span>{{ row.finding_count }} Findings</span>
             <span>{{ row.source_count }} Quellen</span>
           </div>
-          <div class="delivery-confirmation-status" aria-label="Bestätigungsstatus">
-            <span class="confirmation-state {% if not row.requires_business %}confirmation-na{% elif row.business_complete %}confirmation-complete{% else %}confirmation-open{% endif %}">Fachlich: {% if not row.requires_business %}nicht erforderlich{% elif row.business_complete %}bestätigt{% else %}offen{% endif %}</span>
-            <span class="confirmation-state {% if not row.requires_technical %}confirmation-na{% elif row.technical_complete %}confirmation-complete{% else %}confirmation-open{% endif %}">Technisch: {% if not row.requires_technical %}nicht erforderlich{% elif row.technical_complete %}bestätigt{% else %}offen{% endif %}</span>
+          <div class="delivery-confirmation-status" aria-label="Prüfstatus">
+            <span class="confirmation-state {% if not row.requires_business %}confirmation-na{% elif row.business_complete %}confirmation-complete{% else %}confirmation-open{% endif %}">Fachliche Prüfung: {% if not row.requires_business %}nicht erforderlich{% elif row.business_complete %}bestätigt{% else %}offen{% endif %}</span>
+            <span class="confirmation-state {% if not row.requires_technical %}confirmation-na{% elif row.technical_complete %}confirmation-complete{% else %}confirmation-open{% endif %}">Technische Prüfung: {% if not row.requires_technical %}nicht erforderlich{% elif row.technical_complete %}bestätigt{% else %}offen{% endif %}</span>
           </div>
         </summary>
         <div class="card-body delivery-section-body">
-          {% if row.findings %}
-          <div class="alert {% if row.state == 'blocked' %}alert-warning{% else %}alert-secondary{% endif %} py-2">
-            <strong>{{ row.finding_count }} offene Readiness-Punkte.</strong> Die vollständige Liste steht oberhalb; nach jeder Speicherung wird sie vollständig neu berechnet.
-          </div>
-          {% endif %}
           {% if row.can_edit and package.status != 'handed_over' %}<a class="btn btn-outline-secondary mb-3" href="{{ row.edit_url }}">Sektion fokussiert bearbeiten</a>{% endif %}
           {% if row.review %}
           <div class="small mb-3">
-            {% if row.requires_business %}<div>Fachlich: {{ row.review.business_confirmed_by|default:"offen" }}{% if row.review.business_confirmation_role %} · {{ row.review.business_confirmation_role }}{% endif %}{% if row.review.business_confirmed_at %} · {{ row.review.business_confirmed_at|date:"d.m.Y H:i" }}{% endif %}</div>{% endif %}
-            {% if row.requires_technical %}<div>Technisch: {{ row.review.technical_confirmed_by|default:"offen" }}{% if row.review.technical_confirmation_role %} · {{ row.review.technical_confirmation_role }}{% endif %}{% if row.review.technical_confirmed_at %} · {{ row.review.technical_confirmed_at|date:"d.m.Y H:i" }}{% endif %}</div>{% endif %}
+            {% if row.requires_business %}<div>Fachliche Prüfung: {% if row.review.business_confirmed_by %}{{ row.review.business_confirmed_by.get_display_name }}{% else %}offen{% endif %}{% if row.review.business_confirmation_role %} · {{ row.review.business_confirmation_role }}{% endif %}{% if row.review.business_confirmed_at %} · {{ row.review.business_confirmed_at|date:"d.m.Y H:i" }}{% endif %}</div>{% endif %}
+            {% if row.requires_technical %}<div>Technische Prüfung: {% if row.review.technical_confirmed_by %}{{ row.review.technical_confirmed_by.get_display_name }}{% else %}offen{% endif %}{% if row.review.technical_confirmation_role %} · {{ row.review.technical_confirmation_role }}{% endif %}{% if row.review.technical_confirmed_at %} · {{ row.review.technical_confirmed_at|date:"d.m.Y H:i" }}{% endif %}</div>{% endif %}
           </div>
           {% if row.review.admin_override_confirmed %}
           <div class="alert alert-warning py-2 small mb-2">
