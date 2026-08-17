@@ -1,258 +1,262 @@
 # KI-Radar Produkt-Roadmap
 
 **Stand:** 17.08.2026  
-**Status:** priorisierte Produkt-Roadmap, kein Terminversprechen  
-**Pflege:** Nach jedem relevanten Merge werden Status, Datum und Produktprioritäten aktualisiert.
+**Status:** Produktstand und strategische Richtung, kein Terminversprechen
 
-## Legende
+## Zweck dieser Roadmap
 
-- `[x]` umgesetzt und auf `main` enthalten
-- `[ ]` geplant oder noch nicht vollständig geschlossen
-- **Grundlage vorhanden:** Teilfunktionen oder Datenfelder existieren bereits, der fachliche Ablauf ist aber noch nicht durchgängig abgeschlossen
+Diese Datei beschreibt **was KI-Radar als Produkt bereits kann und welche größeren Produktprobleme als Nächstes oder später adressiert werden könnten**.
+
+Sie beschreibt bewusst **nicht**, wie einzelne Funktionen technisch umgesetzt wurden. Dafür sind die jeweiligen GitHub-Issues, Pull Requests, Gap-Analysen, Completion-Dokumente und – bei architekturrelevanten Entscheidungen – die ADRs maßgeblich.
+
+Die Zukunftssicht folgt den Horizonten **Now / Next / Later**:
+
+- **Shipped:** auf `main` vorhandene Produktfähigkeiten;
+- **Now:** aktuell bearbeiteter Produktfokus;
+- **Next:** priorisierte nächste Produktprobleme, deren konkreter Scope noch nicht festgeschrieben sein muss;
+- **Later:** strategische Optionen ohne Umsetzungszusage oder feste Reihenfolge.
+
+Je weiter ein Thema vom aktuellen Produktstand entfernt ist, desto geringer ist bewusst die Planungssicherheit.
+
+---
 
 ## Produktgrenze
 
-KI-Radar ist ein Portfolio-, Governance- und Entscheidungs-Cockpit für KI-Vorhaben. Es ersetzt kein operatives Projektmanagement- oder Delivery-System.
+KI-Radar ist ein **AI-Business-Architecture-, Portfolio-, Governance- und Entscheidungs-Cockpit** für KI-Vorhaben. Es ersetzt kein operatives Projektmanagement- oder Delivery-System.
 
 **Externes Delivery-System bleibt führend für:**
 
-- Backlog, Tasks, Sprints und technische Detailprobleme
-- tägliche Maßnahmen, Ressourcen und operativen Fortschritt
-- Release-, Incident-, Change- und Service-Steuerung
+- Backlog, Tasks, Sprints und technische Detailprobleme;
+- tägliche Maßnahmen, Ressourcen und operativen Fortschritt;
+- Release-, Incident-, Change- und Service-Steuerung.
 
 **KI-Radar bleibt führend für:**
 
-- fachliche Herkunft, Nutzenhypothese und Erfolgsmetriken
-- Governance, Bewertung, Freigabe und Auflagen
-- Delivery Readiness und verbindliche Übergabe
-- entscheidungsrelevante Review-Snapshots
-- Folgeentscheidungen, Ownership und Abschluss
+- fachliche Herkunft, Problemverständnis und Nutzenhypothese;
+- Value-Stream-, Prozess- und Lösungsanalyse;
+- Bewertung, Governance, Freigabe und Auflagen;
+- Architekturentscheidung auf angemessenem Abstraktionsniveau;
+- Delivery Readiness, Evidenzherkunft und verbindliche Übergabe;
+- entscheidungsrelevante Review-Snapshots;
+- Lifecycle, Ownership, Wirkung und Abschluss.
 
-Der erste Rückfluss aus Jira, Azure DevOps, GitHub oder einem anderen Delivery-System erfolgt bewusst **manuell zum Review-Termin**. Eine Live-Synchronisation ist kein aktueller Umfang.
-
----
-
-## 1. Bereits umgesetzt
-
-### 1.1 Discovery, Fokus und Business Architecture
-
-- [x] **22.07.2026:** Fachdomänen und Business Capabilities
-- [x] **22.07.2026:** End-to-End-Value-Streams und geordnete Phasen
-- [x] **22.07.2026:** Fokus-Screening nach Impact, Potenzial, Problemintensität, Datenzugänglichkeit und Veränderungsaufwand
-- [x] **22.07.2026:** serverseitiges Gate vor dem Prozess-Deep-Dive
-- [x] **22.07.2026:** Prozessanalyse mit Rollen, Systemen, Datenobjekten, Bottlenecks und Baselines
-- [x] **22.07.2026:** Vergleich organisatorischer, regelbasierter, technischer und KI-gestützter Lösungsoptionen
-- [x] **22.07.2026:** nachvollziehbare Herkunftskette über `UseCaseOrigin`
-
-### 1.2 Use Case, Bewertung und Freigabe
-
-- [x] **22.07.2026:** direkter und systematisch abgeleiteter Use-Case-Intake
-- [x] **22.07.2026:** Nutzenhypothese, Baseline, Zielwert und primäre Erfolgsmetrik
-- [x] **22.07.2026:** versionierte Bewertungen
-- [x] **22.07.2026:** Governance-, Datenschutz-, Security- und Rechtsprüfungen
-- [x] **22.07.2026:** getrennte Bewertung und finale Freigabe
-- [x] **22.07.2026:** deterministische serverseitige Hard Gates
-- [x] **22.07.2026:** Portfolio- und Entscheidungsansichten mit konkreten Next Actions
-
-### 1.3 Delivery Readiness und Übergabe
-
-- [x] **22.07.2026:** versioniertes Delivery Package nach final positiver Freigabe
-- [x] **22.07.2026:** System-, Daten-, Integrations- und Architekturkontext
-- [x] **22.07.2026:** MVP-Scope, Anforderungen, Akzeptanzkriterien, Tests und Messplan
-- [x] **22.07.2026:** Risiken, Annahmen, Abhängigkeiten und Architekturentscheidungen
-- [x] **22.07.2026:** Statusfolge `Entwurf → Bereit zur Übergabe → Übergeben`
-- [x] **22.07.2026:** übergebene Package-Versionen sind unveränderlich
-- [x] **22.07.2026:** Link zum externen Delivery-System
-- [x] **23.07.2026:** sieben strukturierte Delivery-Sektionen mit Herkunft, Prüfstatus und fachlicher beziehungsweise technischer Bestätigung
-- [x] **23.07.2026:** Quellenmanifest aus Use Case, Discovery, Bewertung und Freigabe
-- [x] **23.07.2026:** vertiefter System-, Daten- und Integrationskontext einschließlich Systemverantwortung, Datenzugriff und Fehlerbehandlung
-- [x] **23.07.2026:** strukturierte Readiness-Findings und erneute serverseitige Prüfung vor der Übergabe
-- [x] **23.07.2026:** Legacy-Bestandsschutz über Readiness-Schemaversionen
-- [x] **23.07.2026:** vollständige methodische Referenz CRISP-ML(Q) mit integriertem ML Test Score, In-App-Ansicht und identischem Markdown-Download
-
-### 1.4 Geführte Journey und Arbeitsräume
-
-- [x] **22.07.2026:** zentrale `JourneyState`-/`JourneyStep`-Logik
-- [x] **22.07.2026:** stabile Hauptleiste für Auswahl und Freigabe
-- [x] **22.07.2026:** zweiter Arbeitsraum `Wirkung & Betrieb`
-- [x] **22.07.2026:** Variante A als verbindliche Navigation: `Übergabe → Pilot → Wirkung → Ergebnisentscheidung → Betrieb → Abschluss`
-- [x] **22.07.2026:** sichtbare Verantwortungsgrenze zwischen KI-Radar und externem Delivery-System
-- [x] **22.07.2026:** responsive Desktop- und Mobile-Darstellung ohne horizontalen Seitenüberläufe
-- [x] **22.07.2026:** kompakter Entscheidungs-Snapshot mit getrenntem Handlungsstatus je Bereich
-- [x] **22.07.2026:** Deep Links ausschließlich zu vorhandenen führenden Oberflächen für Übergabe, Wirkung, Go-live, Betriebsreview und Abschluss
-- [x] **22.07.2026:** Pilot öffnet nur einen tatsächlich hinterlegten externen Delivery-Link; fehlende oder unzulässige Aktionen erhalten einen neutralen Zustand
-- [x] **22.07.2026:** kompakter Sidebar-Footer mit aufklappbarem Account-Menü für Administration und Abmelden
-
-### 1.5 Lifecycle und vollständiger Golden Path
-
-- [x] **22.07.2026:** Lifecycle-Status `Idee`, `Prüfung`, `Pilot`, `Betrieb`, `Beendet`
-- [x] **22.07.2026:** Lifecycle-Reviews mit Statuswechseln und Begründung
-- [x] **22.07.2026:** Pilotbeginn, geplantes Pilotende und nächster Review-Termin als Datenfelder
-- [x] **22.07.2026:** aktueller Ist-Wert, Messzeitraum, Messdatum und Messnachweis als Datenfelder
-- [x] **22.07.2026:** technische Verantwortung, Support-Verantwortung und Kostenfelder
-- [x] **22.07.2026:** Beendigungsgrund, Daten- und Zugangsbehandlung, Lessons Learned und Ersatzlösung
-- [x] **22.07.2026:** geschlossener Übergang `Prüfung → Pilot` nur nach verbindlicher Übergabe der aktuellsten Delivery-Package-Version
-- [x] **22.07.2026:** separate Next Action `Pilot starten`; die Delivery-Übergabe startet den Pilot nicht automatisch
-- [x] **22.07.2026:** Pilotstart ausschließlich durch `KI-Koordinator` oder den zuständigen Benutzer mit Rolle `Business Owner`
-- [x] **22.07.2026:** tatsächlicher Pilotbeginn als Pflichtdatum, nicht zukünftig und nicht vor `handed_over_at`
-- [x] **22.07.2026:** atomare Speicherung von Pilotbeginn, Statuswechsel und Lifecycle-Review
-- [x] **22.07.2026:** Golden-Path-Test vom Value Stream bis zum Pilotstart einschließlich serverseitiger Negativ- und Manipulationstests
-- [x] **22.07.2026:** Browserabnahme der Pilotstart-Next-Action auf Desktop und Mobile ohne horizontalen Seitenüberlauf
-- [x] **22.07.2026:** ein einzelner getesteter Use Case vom Value Stream bis zum Abschluss
-- [x] **22.07.2026:** reproduzierbares Einkaufsszenario `Automatisierte Lieferantenauswahl` mit Herkunftskette und Delivery Package
-- [x] **22.07.2026:** `GO_LIVE` ausschließlich als Statuswechsel `Pilot → Betrieb`
-- [x] **22.07.2026:** Go-live nur mit Ist-Wert, Messzeitraum, Messdatum und Messnachweis
-- [x] **22.07.2026:** Go-live bei verfehltem Ziel nur mit begründeter Ausnahme durch die Gruppe `KI-Koordinator`
-- [x] **22.07.2026:** Abschluss nur mit Beendigungsgrund und dokumentiertem Umgang mit Daten und Zugängen
-- [x] **22.07.2026:** atomare und service-seitig abgesicherte Speicherung von Review, Akteur, Begründung, Ausnahme und Statuswechsel
-- [x] **22.07.2026:** bestehende Pilot- und Betriebsfälle bleiben unverändert; neue Gates greifen bei zukünftigen Übergängen
-- [ ] versionierte Messungen und Wirkungsreviews
-- [ ] persistierte Scale-/Continue-/Stop-Entscheidung
+Der Rückfluss aus Jira, Azure DevOps, GitHub oder einem anderen Delivery-System erfolgt weiterhin bewusst als **verdichteter Review-Snapshot**. KI-Radar wird nicht zum zweiten operativen Delivery-System.
 
 ---
 
-## 2. Priorisierte Produktinkremente
+# Shipped – aktuelle Produkt-Baseline
 
-Die aktuell vorhandene Kernjourney deckt bereits Baseline, Ziel, Ist-Wert, Messzeitraum, Messdatum, Messnachweis, Go-live-Gates und Betriebsreviews ab. Weitere Ausbaustufen werden deshalb nicht mehr als unmittelbar verbindliche Reihenfolge behandelt, sondern nach nachgewiesenem Produktnutzen priorisiert.
+## 1. Business Architecture, Discovery und methodische Führung
 
-### Priorität 3 – Versionierte Wirkungsmessungen
+KI-Radar kann fachlichen Kontext vom Geschäftsbereich bis zum konkreten Analysegegenstand strukturiert führen:
 
-**Status am 17.08.2026:** fachlich weiterhin relevant, bewusst geparkt.
+- Fachdomänen und Business Capabilities;
+- End-to-End-Value-Streams mit Trigger, Outcome, Scope und Stakeholdern;
+- geordnete Phasen mit nachvollziehbarem Wertfortschritt;
+- Fokus-Screening und dokumentierte Auswahl für den Deep Dive;
+- klare Trennung von Value Stream, Capability und Prozess;
+- kontextsensitive Methodik-Hilfe und kalibrierte qualitative Bewertungsskalen.
 
-Der aktuelle Messstand reicht für Golden Path, Pilotbewertung und Go-live aus. Versionierte Messreihen werden erst benötigt, wenn wiederkehrende Wirkungsreviews, Trend-/Drift-Betrachtung oder belastbare Portfolioanalysen einen konkreten Mehrwert rechtfertigen.
+Zentrale Nachweise: #54, #57, #308; methodische Gegenprüfung über #313–#316.
 
-- [ ] Messwert und Zeitpunkt versioniert speichern
-- [ ] Zeitraum, Stichprobengröße und betrachtete Population speichern
-- [ ] Messmethode und Methodenversion speichern
-- [ ] Datenqualität und Confidence dokumentieren
-- [ ] Nachweisquelle verknüpfen
-- [ ] Verlauf statt Überschreiben eines einzelnen Ist-Werts ermöglichen
+## 2. Prozessdiagnose und lösungsoffene Auswahl
 
-**Nicht Bestandteil dieses Inkrements:**
+Die Prozessanalyse verbindet Ablauf, Rollen, Systeme, Daten, Handoffs, Ausnahmen und Baselines mit einer belastbareren Diagnose vor der verbindlichen Lösungsauswahl:
 
-- versioniertes Wirkungsreview
-- strukturierte Ergebnisentscheidung
-- Lifecycle-Event-Log
-- Jira-/Azure-DevOps-Synchronisation
-- lernendes System
+- Beobachtung beziehungsweise Problem ist von Ursachenhypothese und bestätigter Ursache unterscheidbar;
+- ein systembestimmender Constraint bleibt optional und wird nicht mit jedem lokalen Problem gleichgesetzt;
+- frühe Exploration und Lösungsentwürfe bleiben möglich;
+- eine verbindliche bevorzugte Lösung benötigt eine ausreichend belastbare Diagnosebasis;
+- organisatorische, regelbasierte, klassische technische und KI-gestützte Lösungen bleiben echte Alternativen.
 
-Die Umsetzung erfolgt erst nach einer neuen expliziten Produktpriorisierung.
+Zentrale Nachweise: #47, #60, #63, #318.
 
----
+## 3. AI Accelerator und kontrollierte LLM-Unterstützung
 
-## 3. Geplante Folgeinkremente
+Der Accelerator reduziert manuelle Erstbefüllung, ohne Entscheidungsrechte an ein LLM zu übertragen:
 
-Die Reihenfolge ist nicht mehr automatisch verbindlich. Ein Folgeinkrement wird erst nach einer dokumentierten Produktentscheidung priorisiert.
+- geführte, wiederaufnehmbare Erfassung;
+- strukturierte LLM-Extraktionsvorschläge mit Quelle, Unsicherheit und Validierung;
+- konfliktgeschützte feldweise Übernahme;
+- strukturierte Entwurfsobjekte für Metriken, Phasen und Prozessanalyse;
+- generative, lösungsoffene Lösungsentwürfe;
+- deterministisches Evidence-to-Delivery-Mapping;
+- nachvollziehbare Rollen-Defaults;
+- kontrollierte Mess- und Regressionstrecke für Qualität, Laufzeit und Providerfehler.
 
-### 3.1 Versionierte Wirkungsreviews
+Der Accelerator erzeugt Entwürfe und Vorschläge, **keine Freigaben, Governance-Entscheidungen oder Lifecycle-Entscheidungen**.
 
-- [ ] quantitative und qualitative Ergebnisse bündeln
-- [ ] Probleme, Nebenwirkungen und Nutzerfeedback strukturiert erfassen
-- [ ] offene Governance-Auflagen übernehmen
-- [ ] Confidence der Ergebnisbewertung dokumentieren
-- [ ] Empfehlung und tatsächliche Folgeentscheidung miteinander verknüpfen
+Zentrale Nachweise: #116–#125 sowie die Completion-Dokumente unter `docs/accelerator/`.
 
-### 3.2 Strukturierte Ergebnisentscheidung
+## 4. Architecture Advisor und Solution Quality Control
 
-- [ ] kontrollierte Entscheidungstypen einführen:
-  - skalieren
-  - Pilot verlängern
-  - nachbessern
-  - begrenzt betreiben
-  - produktiv setzen
-  - pausieren
-  - beenden
-- [ ] Begründung, Entscheider, Zeitpunkt und Bedingungen speichern
-- [ ] erwarteten nächsten Effekt und nächsten Review festlegen
-- [ ] Entscheidung versionieren und auditierbar machen
+Für vorhandene Lösungsoptionen kann KI-Radar die minimal hinreichende technische Autonomie transparent einordnen:
 
-### 3.3 Lifecycle-Event-Log
+- deterministische Architekturklassen `No LLM required`, `Controlled LLM`, `LLM Workflow`, `Bounded Agent` und `Assessment open`;
+- erklärbare Reason Codes und sichtbares „Warum / Warum kein Agent?“;
+- strukturierter semantischer Critic für generierte Lösungsentwürfe;
+- maximal ein gezielter Repair und danach erneute deterministische Validierung;
+- Human Review bleibt der Endpunkt;
+- keine automatische Rangfolge, Präferenz oder Governance-Wirkung.
 
-- [ ] Ereignistyp, alten und neuen Status speichern
-- [ ] Zeitpunkt und Akteursrolle speichern
-- [ ] Entscheidungsgrund, Blocker und Warnungen erfassen
-- [ ] verwendete Bewertungs-, Evidenz- und Review-Version referenzieren
-- [ ] Time-to-Value und Verweildauer je Phase ableitbar machen
+Zentrale Nachweise: #210–#213, #274 und #276.
 
-### 3.4 Verdichtete Delivery-Ergebnisse
+## 5. Use Case, Decision Governance und Portfolio
 
-- [ ] geplanten und tatsächlichen Start sowie Abschluss speichern
-- [ ] geplante und tatsächliche Delivery-Dauer vergleichen
-- [ ] Pilotumfang und erreichte Akzeptanzkriterien erfassen
-- [ ] Defekt-/Fehlerquote und wesentliche Scope-Änderungen dokumentieren
-- [ ] tatsächliche Einmal- und Betriebskosten speichern
-- [ ] Releases oder produktive Versionen auf Managementebene referenzieren
+Use Cases werden als nachvollziehbare Entscheidungsobjekte geführt:
 
-### 3.5 Nutzung und Adoption
+- direkter oder systematisch abgeleiteter Intake;
+- Nutzenhypothese, Baseline, Zielwert und Erfolgsmetrik;
+- versionierte Bewertung mit Evidenz und Confidence;
+- getrennte Governance-, Datenschutz-, Security- und Rechtsprüfungen;
+- getrennte Bewertung, finale Freigabe und unabhängige Bestätigungen;
+- deterministische serverseitige Hard Gates;
+- Portfolio- und Arbeitsvorratssichten ohne künstlichen Gesamtscore;
+- konkrete Blocker, Zuständigkeit und Next Actions.
 
-- [ ] berechtigte und aktive Nutzer erfassen
-- [ ] Nutzungshäufigkeit und Abbruchquote erfassen
-- [ ] Human-Override-Quote erfassen
-- [ ] Nutzerzufriedenheit dokumentieren
-- [ ] Zeit bis zur produktiven Nutzung ableiten
+KI-Ausgaben können unterstützen, aber keine verbindliche fachliche Entscheidung auslösen.
 
-### 3.6 Optionale Integration externer Delivery-Systeme
+## 6. Delivery Readiness, Provenance und Übergabe
 
-- [ ] erst nach stabiler manueller Review-Strecke bewerten
-- [ ] nur verdichtete, entscheidungsrelevante Daten übernehmen
-- [ ] keine doppelte Task-, Sprint- oder Maßnahmenpflege erzeugen
-- [ ] Jira, Azure DevOps oder GitHub nicht als führendes Delivery-System ersetzen
-- [ ] Synchronisationsquelle, Aktualität und Konfliktbehandlung sichtbar machen
+Das versionierte Delivery Package bildet den kontrollierten Übergang von der Entscheidung in die Umsetzung:
 
-### 3.7 Grundlage für ein später lernendes System
+- sieben fachlich beziehungsweise technisch prüfbare Delivery-Sektionen;
+- System-, Daten-, Integrations- und Architekturkontext;
+- MVP-Scope, Anforderungen, Akzeptanz, Test- und Messkonzept;
+- Risiken, Annahmen, Abhängigkeiten und Architekturentscheidungen;
+- Quellenmanifest, Snapshots, Staleness und kontrollierte Source Decisions;
+- strukturierte Readiness-Findings mit konkreter Regel, Ursache, Zuständigkeit und Behebungsaktion;
+- konsistente Handover-Gates und unabhängige Bestätigung;
+- output-typ-spezifische Confidence-/Unsicherheitssemantik sowie präzisierte Evaluation-, Latenz- und Retention-Regeln;
+- unveränderliche übergebene Package-Versionen.
 
-- [ ] eindeutige versionierte Feature-Snapshots definieren
-- [ ] kontrollierte Kategorien statt freier Personennamen als Lernmerkmale verwenden
-- [ ] verworfene, pausierte und gescheiterte Vorhaben mit Gründen erhalten
-- [ ] Zielgrößen definieren:
-  - Zielerreichung
-  - Time-to-Value
-  - realisierter Nutzen
-  - Kostenabweichung
-  - Adoption
-  - nachhaltiger Betrieb
-  - Abbruch- oder Erfolgsgrund
-- [ ] Datenqualitäts- und Bias-Prüfungen vor Modellentwicklung durchführen
-- [ ] erst danach Empfehlungen, Prognosen oder Ähnlichkeitsanalysen evaluieren
+Zentrale Nachweise: #37–#39, #49, #50, #55, #124, #311, #320 und #321.
 
-Ein späteres Modell darf keine Freigaben oder Lifecycle-Entscheidungen autonom auslösen. Es kann Muster, Risiken und vergleichbare historische Fälle sichtbar machen.
+## 7. Lifecycle, Wirkung und Betrieb
 
----
+Die fachliche Journey endet nicht mit dem Delivery-Handover:
 
-## 4. Daten, die langfristig erhalten bleiben müssen
+- Lifecycle `Idee → Prüfung → Pilot → Betrieb → Beendet`;
+- expliziter Pilotstart nach verbindlicher Übergabe;
+- Baseline, Ziel, aktueller Ist-Wert, Messzeitraum, Messdatum und Messnachweis;
+- Go-live-Gate mit aktuellen Mess- und Betriebsinformationen;
+- geplanter Pilotzeitraum und dokumentierte Ausnahme für vorzeitige Produktivsetzung;
+- Betriebsreviews und Hinweis auf veraltete Nutzenmessungen;
+- Abschluss mit Beendigungsgrund, Daten-/Zugangsbehandlung und Lessons Learned;
+- entscheidungsrelevanter Workspace `Wirkung & Betrieb`.
 
-Für spätere Auswertungen und Lernverfahren sind nicht nur erfolgreiche Fälle relevant.
+Der aktuelle Messstand reicht für Golden Path, Pilotbewertung und Go-live. Mehrere fachlich eigenständige Messstände sind noch keine eigene Messreihe.
 
-- [x] fachlicher Kontext, Organisationseinheit, Fachdomäne und Capability
-- [x] Value-Stream-Fokusmerkmale, Prozesse, Systeme, Daten und Bottlenecks
-- [x] verglichene und verworfene Lösungsoptionen
-- [x] Nutzenhypothese, Baseline, Ziel und primäre Erfolgsmetrik
-- [x] Bewertungen, Confidence-Faktoren, Governance-Prüfungen und Freigaben
-- [x] versionierte Delivery Packages und Architekturentscheidungen
-- [x] Lifecycle-Reviews, Maßnahmen und Abschlussinformationen
-- [ ] versionierte Messreihen
-- [ ] versionierte Wirkungsreviews und Ergebnisentscheidungen
-- [ ] verdichtete Delivery-, Adoptions- und Betriebsdaten
-- [ ] strukturierte Gründe für Erfolg, Nachbesserung, Pause und Beendigung
+## 8. Business & Decision Control Room
 
-Personennamen, sensible Rohdaten und unstrukturierte Dokumentinhalte sollen nicht als Lernmerkmale verwendet werden. Geeignet sind pseudonymisierte Rollen, kontrollierte Kategorien, versionierte Merkmals-Snapshots und klar definierte Zielgrößen.
+Die Oberfläche wurde auf die fachliche Arbeit und die jeweils nächste Entscheidung ausgerichtet:
+
+- Portfolio als Querschnitt statt pseudo-linearer Journey;
+- konkrete Arbeitsobjekte mit kontextuellem Lifecycle;
+- genau eine dominante Next Action je Zustand;
+- getrennte Darstellung von Arbeitsstatus, Prüfstatus und Readiness;
+- gemeinsame UI-Archetypen für Listen, Workspaces und Formulare;
+- konsistente Desktop-, Tablet- und Mobile-Darstellung;
+- sichtbarer Tastaturfokus, semantische Zustände und zugängliche Interaktionen;
+- reduzierte Legacy- und Duplicate-Journey-Strukturen.
+
+Zentrale Nachweise: #279–#287 und #295.
 
 ---
 
-## 5. Pflege- und Umsetzungsregeln
+# Now – aktueller Fokus
 
-1. Vor neuen Produktänderungen diese Roadmap und relevante ADRs lesen.
-2. Neue Produktinkremente benötigen eine explizite Priorisierungsentscheidung; geparkte Punkte werden nicht automatisch zum nächsten Scope.
-3. Folgeinkremente nicht ohne dokumentierte Produktentscheidung vorziehen oder in einen großen PR bündeln.
-4. Jeder PR besitzt einen klaren Scope und explizite Nicht-Ziele.
-5. Nach einem Merge werden erledigte Checkboxen, Datum und Priorisierung aktualisiert.
-6. Änderungen der Systemgrenze oder Roadmap-Priorisierung werden im PR begründet und bei Bedarf als ADR dokumentiert.
-7. `OPEN_QUESTIONS.md` bleibt für ungeklärte Betriebs- und Konfigurationsfragen; Produktprioritäten stehen hier.
+## Reproduzierbare End-to-End-Demonstration und reale Validierung
 
-## 6. Festgelegte Entscheidungen
+Der aktuelle Produktfokus liegt nicht auf dem Aufbau einer weiteren großen Capability, sondern darauf, die vorhandene Kernstrecke **realitätsnah und nachvollziehbar demonstrierbar** zu halten.
 
-- **22.07.2026:** Variante A ist die verbindliche Navigation für `Wirkung & Betrieb`.
-- **22.07.2026:** KI-Radar bleibt Entscheidungs-Cockpit und kein operatives Delivery-System.
-- **22.07.2026:** Der erste Rückfluss aus Delivery erfolgt als manueller Review-Snapshot.
-- **22.07.2026:** `JourneyState` bleibt die zentrale Status- und Next-Action-Logik.
-- **17.08.2026:** Versionierte Wirkungsmessungen bleiben als fachliche Ausbaustufe erhalten, werden aber aufgrund des bereits vollständigen aktuellen Mess-/Go-live-Pfads als **Priorität 3** geparkt. Ihre Umsetzung benötigt eine neue explizite Produktpriorisierung.
+Dazu gehört insbesondere der neutrale Reiseveranstalter-Demo-/Runbook-Kontext aus #310. Neue Produktlücken werden aus solchen realen Durchläufen abgeleitet, nicht aus dem Wunsch, Frameworks oder Funktionslisten möglichst vollständig abzubilden.
+
+**Aktuell ist kein zusätzliches großes Produktinkrement verbindlich in Umsetzung.**
+
+---
+
+# Next – priorisierte nächste Probleme
+
+Derzeit ist **kein neues Produktinkrement verbindlich als Next priorisiert**.
+
+Ein Thema wird erst nach einer expliziten Produktentscheidung aus `Later` nach `Next` gezogen. Dabei wird zuerst gegen den aktuellen `main` geprüft, ob die angenommene Lücke nach den inzwischen umgesetzten Fähigkeiten überhaupt noch besteht.
+
+---
+
+# Later – strategische Optionen
+
+Die folgenden Themen sind bewusst **Optionen, keine Zusagen und keine feste Reihenfolge**.
+
+## Priorität 3 – Versionierte Wirkungsmessungen
+
+Fachlich relevant, aber bewusst geparkt. Der bestehende Einzel-Messstand deckt Pilotbewertung und Go-live bereits ab.
+
+Eine spätere Messreihe könnte zusätzlich ermöglichen:
+
+- Messwert und Zeitpunkt historisch als eigenständige Messstände führen;
+- Zeitraum, Population und Stichprobengröße je Messstand dokumentieren;
+- Messmethode und Methodenversion nachvollziehen;
+- Datenqualität und Confidence je Messstand festhalten;
+- Evidenz je Messung verknüpfen;
+- Trend- und Drift-Betrachtung statt Überschreiben eines einzelnen Ist-Werts.
+
+Die Umsetzung benötigt eine neue explizite Produktpriorisierung.
+
+## Wirkungsreviews und Ergebnisentscheidungen
+
+Auf Basis belastbarer wiederkehrender Messungen könnte KI-Radar später:
+
+- quantitative und qualitative Ergebnisse zu einem Review bündeln;
+- Nebenwirkungen, Nutzerfeedback und offene Governance-Auflagen einbeziehen;
+- Empfehlung und tatsächliche Folgeentscheidung verknüpfen;
+- Entscheidungen wie `skalieren`, `verlängern`, `nachbessern`, `begrenzt betreiben`, `pausieren` oder `beenden` strukturiert und auditierbar festhalten.
+
+## Lifecycle- und Outcome-Analytics
+
+Mögliche spätere Ausbaustufen:
+
+- explizites Lifecycle-Event-Log;
+- Time-to-Value und Verweildauer je Phase;
+- verdichtete Delivery-Ergebnisse und Kostenabweichungen;
+- Adoption, aktive Nutzung, Human Overrides und Nutzerzufriedenheit.
+
+Diese Punkte werden nur umgesetzt, wenn ein konkreter Steuerungsnutzen den zusätzlichen Pflegeaufwand rechtfertigt.
+
+## Optionale Integration externer Delivery-Systeme
+
+Erst nach stabiler manueller Review-Strecke prüfen:
+
+- nur verdichtete entscheidungsrelevante Daten übernehmen;
+- Quelle und Aktualität sichtbar machen;
+- Konflikte explizit behandeln;
+- keine doppelte Task-, Sprint- oder Maßnahmenpflege erzeugen.
+
+## Später lernendes System
+
+Erst bei ausreichend hochwertigen, versionierten historischen Daten bewerten:
+
+- Merkmals-Snapshots und klar definierte Zielgrößen;
+- Vergleich ähnlicher historischer Fälle;
+- Muster-, Risiko- oder Erfolgsfaktoren;
+- Bias- und Datenqualitätsprüfung vor Modellentwicklung.
+
+Ein späteres Modell darf keine Freigaben oder Lifecycle-Entscheidungen autonom auslösen.
+
+## Optionaler Entscheidungsraum
+
+Der in #307 beschriebene zusätzliche Decision-Space bleibt als strategische Option geparkt. Er wird nur priorisiert, wenn die bestehende Decision-Governance bei realen komplexen oder strittigen Entscheidungen nachweislich nicht ausreicht.
+
+---
+
+# Pflege- und Dokumentationsregeln
+
+1. Die Roadmap beschreibt **Produktfähigkeit, Problem und Richtung**, nicht technische Implementierungsdetails.
+2. `Shipped` wird nach relevanten Produktmerges auf Capability-Ebene aktualisiert; einzelne Fixes werden nicht als eigene Roadmap-Punkte gespiegelt.
+3. `Now`, `Next` und `Later` sind Prioritätshorizonte, keine Kalendertermine.
+4. `Next` oder `Later` werden nicht automatisch umgesetzt; vor jedem neuen Inkrement ist eine explizite Produktentscheidung und ein Gap-Check gegen den aktuellen `main` erforderlich.
+5. GitHub-Issues und Pull Requests bleiben der detaillierte Umsetzungs- und Änderungssachverhalt.
+6. Gap-Analysen, Methodik- und Completion-Dokumente bleiben der vertiefende fachliche beziehungsweise technische Nachweis.
+7. ADRs dokumentieren ausschließlich relevante Architekturentscheidungen mit Kontext, Entscheidung und Konsequenzen; sie dienen nicht als Capability-Inventar.
+8. README beschreibt das **heutige Produktbild**; diese Roadmap beschreibt **erreichten Stand und strategische Richtung**.
+9. Ein `CHANGELOG.md` wird erst sinnvoll, wenn versionierte Releases beziehungsweise Release-Tags als eigenes Kommunikationsobjekt geführt werden.
