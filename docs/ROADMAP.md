@@ -1,6 +1,6 @@
 # KI-Radar Produkt-Roadmap
 
-**Stand:** 17.08.2026  
+**Stand:** 19.08.2026  
 **Status:** Produktstand und strategische Richtung, kein Terminversprechen
 
 ## Zweck dieser Roadmap
@@ -8,6 +8,8 @@
 Diese Datei beschreibt **was KI-Radar als Produkt bereits kann und welche größeren Produktprobleme als Nächstes oder später adressiert werden könnten**.
 
 Sie beschreibt bewusst **nicht**, wie einzelne Funktionen technisch umgesetzt wurden. Dafür sind die jeweiligen GitHub-Issues, Pull Requests, Gap-Analysen, Completion-Dokumente und – bei architekturrelevanten Entscheidungen – die ADRs maßgeblich.
+
+Die konkrete Abarbeitungsreihenfolge offener Issues nach fachlichen und technischen Abhängigkeiten wird getrennt im [`planning/EXECUTION_PLAN.md`](planning/EXECUTION_PLAN.md) geführt. Dadurch bleibt diese Roadmap auf Produktstand und strategische Richtung fokussiert, während der Execution Plan Rework-Risiken und Implementierungsreihenfolge steuert.
 
 Die Zukunftssicht folgt den Horizonten **Now / Next / Later**:
 
