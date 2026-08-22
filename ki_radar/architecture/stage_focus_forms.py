@@ -140,9 +140,7 @@ class StageFocusForm(forms.Form):
                     criterion: self.cleaned_data.get(f"{criterion}_{stage_key}", "")
                     for criterion in CRITERIA_KEYS
                 },
-                EVIDENCE_BASIS_KEY: self.cleaned_data.get(
-                    f"{EVIDENCE_BASIS_KEY}_{stage_key}", ""
-                ),
+                EVIDENCE_BASIS_KEY: self.cleaned_data.get(f"{EVIDENCE_BASIS_KEY}_{stage_key}", ""),
                 "indicators": {
                     "description": stage.description,
                     "pain_points": stage.pain_points,
