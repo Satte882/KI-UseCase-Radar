@@ -8,9 +8,12 @@ Der Bereich ergänzt den direkten Use-Case-Intake um einen optionalen, priorisie
 Fachdomäne und Business Capability
 → End-to-End-Value-Stream
 → Fokus-Screening und Auswahl
+→ Fokusphase mit Kriterien- und Evidenzsnapshot
 → ausgewählter Prozess-Deep-Dive
-→ organisatorische, klassische und KI-Lösungsoptionen
-→ geführter Use-Case-Intake
+→ Problem / Ursache / Verbesserungspotenzial
+→ organisatorische, klassische, KI- oder hybride Lösungsoptionen
+→ begründete bevorzugte Lösung
+→ gegebenenfalls geführter Use-Case-Intake
 → Bewertung
 → Freigabe
 → Delivery Package
@@ -24,9 +27,9 @@ Ein Use Case muss nicht aus einem Value Stream entstehen. Der direkte Intake ble
 KI-Radar behandelt fünf unterschiedliche Ebenen getrennt:
 
 1. **Value-Stream-Analyse:** End-to-End-Wertschöpfung, Empfänger, Phasen, Stakeholder und Ergebnis.
-2. **Fokus & Priorisierung:** Auswahl der zu vertiefenden Value Streams anhand transparenter Kriterien ohne künstlichen Gesamtscore.
-3. **Prozessanalyse und Lösungsoptionen:** detaillierter Ist-Ablauf, Systeme, Daten, Regeln, Bottlenecks und alternative Lösungswege.
-4. **Use-Case- und Decision-Governance:** fachliche Kategorisierung, evidenzbasierte Bewertung und verbindliche Freigabe.
+2. **Fokus & Priorisierung:** Auswahl der zu vertiefenden Value Streams und Phasen anhand transparenter Kriterien und sichtbarer Evidenzbasis ohne künstlichen Gesamtscore.
+3. **Prozessanalyse und Lösungsoptionen:** detaillierter Ist-Ablauf, Systeme, Daten, Regeln, Bottlenecks, Ursachen und technologieoffene Lösungswege.
+4. **Use-Case- und Decision-Governance:** fachliche Kategorisierung, evidenzbasierte Bewertung und verbindliche Freigabe tatsächlich angelegter Use Cases.
 5. **Delivery-Handover:** umsetzbarer Scope, Architekturartefakte, Anforderungen, Akzeptanzkriterien, Risiken, Abhängigkeiten und initiales Backlog.
 
 Die Ebenen sind miteinander verknüpft, aber nicht austauschbar. Ein Value Stream ist kein Detailprozess, ein Fokus-Screening ist keine Use-Case-Bewertung, eine Prozessanalyse ist keine Lösungsarchitektur und ein Delivery Package ist kein Projektplan.
@@ -61,7 +64,11 @@ Damit kann ein fachlich dem Einkauf zugeordneter Use Case weiterhin von Shared S
 
 ## Fokus & Priorisierung
 
-Die grobe Value-Stream-Aufnahme darf abgeschlossen werden, ohne sofort einen Deep Dive auszulösen. Vor der Vertiefung wird dokumentiert:
+Die grobe Value-Stream-Aufnahme darf abgeschlossen werden, ohne sofort einen Deep Dive auszulösen.
+
+### Value-Stream-Screening
+
+Auf der vorgelagerten Value-Stream-Ebene bleiben die vorhandenen Screening-Perspektiven maßgeblich, unter anderem:
 
 - Fachdomäne,
 - Business Capability,
@@ -70,7 +77,7 @@ Die grobe Value-Stream-Aufnahme darf abgeschlossen werden, ohne sofort einen Dee
 - Problem- und Schmerzintensität,
 - Datenzugänglichkeit,
 - Veränderungsaufwand,
-- begründete Fokusentscheidung.
+- begründete Auswahlentscheidung.
 
 Mögliche Entscheidungen sind:
 
@@ -80,9 +87,30 @@ Mögliche Entscheidungen sind:
 - zurückgestellt,
 - nicht ausgewählt.
 
-Nur ein vollständig bewerteter und ausgewählter Value Stream darf neue Prozessanalysen, bevorzugte Lösungsoptionen oder abgeleitete Use Cases starten. Diese Regel wird nicht nur in der Oberfläche, sondern serverseitig geprüft.
+### Fokusphase innerhalb des Value Streams
 
-Die Kriterien bleiben einzeln sichtbar. KI-Radar berechnet bewusst keinen scheinpräzisen Gesamtscore.
+Für den eigentlichen Stage-/Phasenvergleich werden die entscheidungsrelevanten Kriterien explizit und getrennt gespeichert:
+
+- **Business Impact**,
+- **Problemintensität**,
+- **Verbesserungspotenzial**,
+- **Datenzugang / Validierbarkeit**,
+- **Veränderungsaufwand**,
+- **Time-to-Value**.
+
+`Verbesserungspotenzial` beantwortet, welche relevante Verbesserung gegenüber dem Ist-Zustand realistisch erreichbar erscheint. `Veränderungsaufwand` beschreibt dagegen den notwendigen organisatorischen, prozessualen und technischen Änderungsaufwand. Beide Kriterien dürfen nicht zusammengezogen werden.
+
+Zusätzlich wird je Phase die **Evidenzbasis** sichtbar eingeordnet:
+
+- Hypothese / unbestätigt,
+- Indiz / qualitativ belegt,
+- gemessen / nachgewiesen.
+
+Eine frühe Fokuswahl darf ausdrücklich auf Hypothesenbasis erfolgen. Fehlende Messwerte blockieren die Discovery nicht. Die Einordnung muss aber sichtbar bleiben; Hypothesen werden nicht als validierte Erkenntnisse dargestellt und es werden keine künstlichen Baselines erzeugt.
+
+Time-to-Value bleibt ein qualitativer Trade-off (`unbekannt`, `kurz`, `mittel`, `lang`) und erzeugt keine automatische Rangfolge. Die Kriterien bleiben einzeln sichtbar; KI-Radar berechnet bewusst keinen scheinpräzisen Gesamtscore.
+
+Nur ein ausreichend dokumentierter und ausgewählter Fokus darf neue Prozessanalysen oder daraus abgeleitete Lösungsentscheidungen starten. Bestehende serverseitige Fokus- und Journey-Regeln bleiben maßgeblich.
 
 ## TOGAF-light
 
@@ -94,7 +122,7 @@ KI-Radar ist kein Enterprise-Architecture-Repository und implementiert nicht das
 | B – Business Architecture | Fachdomäne, Capability, Value Stream, Phasen, Rollen, Ist-Prozess, Regeln, Bottlenecks und Kennzahlen |
 | C – Information Systems | Anwendungen, Datenobjekte, Informationsflüsse und Integrationen |
 | D – Technology Architecture | Technologie-, Hosting- und Plattformleitplanken innerhalb der Lösungsoption und des Delivery Packages |
-| E – Opportunities & Solutions | Fokusentscheidung sowie organisatorische, klassische und KI-Lösungsoptionen mit begründeter Präferenz |
+| E – Opportunities & Solutions | Fokusentscheidung sowie organisatorische, klassische, KI- und hybride Lösungsoptionen mit begründeter Präferenz |
 | F – Migration Planning | MVP-Scope, Akzeptanzkriterien, Tests, Abhängigkeiten, Backlog und Delivery Package |
 | G/H | Freigaben, Package-Versionen und Änderungen werden dokumentiert; kein vollständiges Architecture-Governance-Modul |
 
@@ -104,14 +132,14 @@ Der bestehende Use-Case-Intake bleibt ein vollwertiger Einstieg. Die Herkunftske
 
 ```text
 Use Case
-→ bevorzugte Lösungsoption
+→ bevorzugte Lösungsoption mit KI-Komponente
 → Prozessanalyse
 → Fokusentscheidung
 → Value-Stream-Phase
 → Value Stream
 ```
 
-Direkt erfasste Use Cases erhalten ebenfalls Fachdomäne, Capability und Prozessbereich, aber kein künstliches Value-Stream-Artefakt. Systematische Discovery bleibt vollständig rückverfolgbar.
+Eine bevorzugte Non-AI-Lösung kann die Discovery dagegen regulär beenden, ohne einen künstlichen Use Case zu erzeugen. Direkt erfasste Use Cases erhalten ebenfalls Fachdomäne, Capability und Prozessbereich, aber kein künstliches Value-Stream-Artefakt. Systematische Discovery bleibt vollständig rückverfolgbar.
 
 ## Prozessanalyse
 
@@ -130,6 +158,8 @@ Eine Prozessanalyse erfasst genau die Informationen, die zur Beurteilung des Pro
 - Baseline und Prozesskennzahlen
 - Prinzipien für den Soll-Prozess
 
+Beobachtung beziehungsweise Problem, Ursachenhypothese und bestätigte Ursache werden semantisch getrennt. `ProcessValidation`, Provenance und Versions-/Stale-Mechanismen bleiben die kanonischen Nachweise für fachliche Validierung und Herkunft.
+
 KI-Radar erzeugt kein BPMN-Modell. Vorhandene Prozessmodelle können weiterhin in spezialisierten Werkzeugen gepflegt werden.
 
 ## Lösungsoptionen
@@ -143,9 +173,15 @@ Nach einer positiven Fokusentscheidung können unterschiedliche Lösungsarten ve
 - Analytics oder Machine Learning
 - generative KI
 - Assistenzsystem
+- hybride Lösung
 - keine technische Lösung
+- sonstige Option
 
-Maximal eine Option kann je Prozessanalyse als bevorzugt markiert werden. Nur diese Option kann den Intake vorbefüllen. Eine organisatorische, regelbasierte oder Standardsoftware-Lösung kann die Discovery bewusst ohne KI-Use-Case abschließen. Die anschließende Bewertung und Governance bleiben für tatsächlich angelegte Use Cases verbindlich.
+Für jede bewertete Option werden die vorhandenen Vergleichsdimensionen um **Evidenzbasis** und **Time-to-Value** ergänzt. Time-to-Value ist ein Trade-off und keine automatische Priorisierung. Bei Hybrid-, Custom- oder sonstigen Lösungen wird ein KI-Anteil explizit dokumentiert; er wird nicht automatisch aus dem Lösungstyp abgeleitet.
+
+Maximal eine Option kann je Prozessanalyse als bevorzugt markiert werden. Die Auswahl bleibt eine menschliche Entscheidung und wird mit Vergleichs-, Diagnose- und Evidenzsnapshot historisiert. LLM-Unterstützung darf Alternativen entwerfen, aber keine bindende Präferenz erzeugen.
+
+Nur eine bevorzugte Lösung mit tatsächlicher KI-Komponente führt regulär in den KI-Use-Case-Pfad. Eine organisatorische, regelbasierte, Standardsoftware- oder andere Non-AI-Lösung kann die Discovery bewusst erfolgreich ohne KI-Use-Case abschließen. Analyse, Entscheidung und Begründung bleiben dabei auditierbar.
 
 ## Portfolio als Querschnitt
 
@@ -221,5 +257,6 @@ Die Systemlandschaft im Delivery Package ist eine umsetzungsbezogene Ist-/Ziel-S
 5. Versioniertes Delivery Package mit Systemlandschaft und exportierbarem Handover
 6. Delivery Readiness 2.0 mit Quellenmanifest, Sektionsbestätigungen und strukturierten Blockern
 7. Vollständige methodische Referenz mit In-App-Ansicht und identischem Markdown-Download
+8. Evidenzbewusste Fokusphase und technologieoffene Lösungsentscheidung mit Time-to-Value, Hybrid- und No-AI-Ausgang (#331)
 
 Der direkte Intake und der systematische Architecture-Pfad bleiben unabhängig nutzbar. Der Architecture-Pfad verlangt jedoch eine nachvollziehbare Auswahlentscheidung, bevor vertiefende Artefakte erzeugt werden.

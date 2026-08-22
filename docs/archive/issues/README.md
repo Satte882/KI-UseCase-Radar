@@ -21,6 +21,7 @@ Für den aktuellen Stand gelten vorrangig:
 - `lifecycle/` – historische Issue-Nachweise zu Lifecycle-, Journey- und Statuskorrekturen;
 - `issue-308/` – abgeschlossene Gap-Analyse zur Value-Stream-Methodik;
 - `issue-311/` – abgeschlossene Gap-Analyse zum Delivery-Hardening;
+- `issue-331/` – Gap-Analyse und Abschlussnachweis zur evidenzbewussten Fokuswahl sowie technologieoffenen Lösungsentscheidung mit TTV-, Hybrid- und No-AI-Semantik;
 - `pr-a/` – historische Scope- und Abnahmeunterlagen von PR A;
 - `ui-control-room/` – abgeschlossene Migrations- und Auditunterlagen der UI-Control-Room-Einführung.
 

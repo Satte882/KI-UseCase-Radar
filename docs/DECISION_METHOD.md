@@ -2,7 +2,38 @@
 
 ## Ziel
 
-KI-Radar trennt die fachliche Bewertung eines Use Cases von der verbindlichen Entscheidung. Eine positive Entscheidung ist nur möglich, wenn die Aufnahme vollständig, die Bewertung evidenzbasiert und die Rollentrennung eingehalten ist.
+KI-Radar trennt mehrere fachlich unterschiedliche Entscheidungen bewusst voneinander:
+
+1. **Discovery-Lösungsentscheidung:** Welche Intervention ist für das analysierte Problem die beste ausreichende Lösung – organisatorisch, klassische Automation, KI oder Hybrid?
+2. **Use-Case-Bewertung:** Ist ein tatsächlich angelegter KI-Use-Case fachlich und technisch ausreichend belastbar bewertet?
+3. **Verbindliche Freigabe:** Darf der bewertete Use Case unter den geltenden Governance- und Rollenregeln weitergeführt werden?
+
+Eine positive Freigabe ist nur möglich, wenn die Aufnahme vollständig, die Bewertung evidenzbasiert und die Rollentrennung eingehalten ist. Eine vorgelagerte Discovery-Entscheidung erzeugt dagegen **nicht automatisch** einen KI-Use-Case.
+
+## Vorgelagerte Lösungsentscheidung in Discovery
+
+Vor der Use-Case-Aufnahme kann eine Prozessanalyse mehrere Lösungsoptionen vergleichen. Dabei gelten seit #331 folgende Invarianten:
+
+- organisatorische beziehungsweise standardisierende Lösungen, klassische Automation, KI und hybride Lösungen sind gleichwertig zulässige Lösungsklassen;
+- Time-to-Value ist ein sichtbarer qualitativer Trade-off, **kein automatischer Dominanzscore**;
+- die Auswahlbegründung muss Problem-Fit, erwarteten Nutzen, Machbarkeit, Datenanforderungen, Integrationsaufwand, Risiken, Architecture Fit und Time-to-Value nachvollziehbar abwägen;
+- eine Option kann auf einer **Hypothese**, einem **Indiz** oder einem **Messwert/Nachweis** beruhen; eine fachliche Prozessvalidierung bleibt davon als eigener Validierungsnachweis getrennt;
+- eine frühe Hypothese ist zulässig, darf in der UI und im Entscheidungssnapshot aber nicht wie validierte Evidenz erscheinen;
+- die Auswahl wird als unveränderlicher Entscheidungsstand mit Vergleichs-, Diagnose- und Evidenzkontext historisiert;
+- ein bevorzugter Non-AI-Ansatz ist ein gültiger Abschluss der Discovery und erzeugt keine verpflichtende Next Action `KI-Use-Case anlegen`;
+- bei Hybrid-, Custom- oder sonstigen Optionen wird ein KI-Anteil explizit behandelt und nicht automatisch aus dem Lösungstyp abgeleitet;
+- LLM-Funktionen dürfen Optionen entwerfen, aber keine bindende Präferenz, No-AI-Entscheidung oder Use-Case-Anlage auslösen.
+
+Damit gilt fachlich:
+
+```text
+Problem / Ursache / Potenzial
+→ technologieoffener Lösungsraum
+→ begründete bevorzugte Lösung
+→ nur bei tatsächlicher KI-Komponente ggf. KI-Use-Case
+```
+
+Die folgenden Abschnitte beschreiben die **nachgelagerte Use-Case-Bewertung und Freigabe**, sobald ein Use Case tatsächlich existiert.
 
 ## Entscheidungsstatus
 
@@ -75,6 +106,8 @@ Der Wechsel in `Pilot` oder `Betrieb` ist nur möglich, wenn der Entscheidungsst
 ## Versionierung
 
 Jede Bewertung erhält eine fortlaufende Version. Entscheidungen referenzieren die konkrete Bewertungsversion. Historische Bewertungen und Entscheidungen werden nicht überschrieben.
+
+Auch die vorgelagerte Discovery-Lösungspräferenz besitzt eine eigene immutable Entscheidungshistorie. Eine spätere Neubewertung erzeugt einen neuen Entscheidungsstand und löscht oder verändert bestehende Downstream-Artefakte nicht automatisch.
 
 ## Abgrenzung PR A
 

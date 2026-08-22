@@ -1,6 +1,6 @@
 # KI-Radar Produkt-Roadmap
 
-**Stand:** 19.08.2026  
+**Stand:** 22.08.2026  
 **Status:** Produktstand und strategische Richtung, kein Terminversprechen
 
 ## Zweck dieser Roadmap
@@ -56,10 +56,12 @@ KI-Radar kann fachlichen Kontext vom Geschäftsbereich bis zum konkreten Analyse
 - End-to-End-Value-Streams mit Trigger, Outcome, Scope und Stakeholdern;
 - geordnete Phasen mit nachvollziehbarem Wertfortschritt;
 - Fokus-Screening und dokumentierte Auswahl für den Deep Dive;
+- innerhalb eines Value Streams ein evidenzbewusster Phasenvergleich mit Business Impact, Problemintensität, Verbesserungspotenzial, Datenzugang/Validierbarkeit, Veränderungsaufwand und Time-to-Value;
+- frühe hypothesenbasierte Fokuswahl ohne erfundene Baselines oder Pflichtmesswerte;
 - klare Trennung von Value Stream, Capability und Prozess;
 - kontextsensitive Methodik-Hilfe und kalibrierte qualitative Bewertungsskalen.
 
-Zentrale Nachweise: #54, #57, #308; methodische Gegenprüfung über #313–#316.
+Zentrale Nachweise: #54, #57, #308, #331; methodische Gegenprüfung über #313–#316.
 
 ## 2. Prozessdiagnose und lösungsoffene Auswahl
 
@@ -68,10 +70,14 @@ Die Prozessanalyse verbindet Ablauf, Rollen, Systeme, Daten, Handoffs, Ausnahmen
 - Beobachtung beziehungsweise Problem ist von Ursachenhypothese und bestätigter Ursache unterscheidbar;
 - ein systembestimmender Constraint bleibt optional und wird nicht mit jedem lokalen Problem gleichgesetzt;
 - frühe Exploration und Lösungsentwürfe bleiben möglich;
-- eine verbindliche bevorzugte Lösung benötigt eine ausreichend belastbare Diagnosebasis;
-- organisatorische, regelbasierte, klassische technische und KI-gestützte Lösungen bleiben echte Alternativen.
+- Evidenzbasis ist als Hypothese, Indiz oder Messwert sichtbar, während `ProcessValidation`, Provenance und Versions-/Stale-Mechanismen die fachliche Validierung und Herkunft tragen;
+- organisatorische, regelbasierte, klassische technische, KI-gestützte und hybride Lösungen bleiben echte Alternativen;
+- Time-to-Value ist ein expliziter Trade-off und keine automatische Rangfolge;
+- Hybrid-, Custom- und sonstige Lösungen werden nicht automatisch als KI interpretiert;
+- eine bevorzugte Non-AI-Lösung ist ein gültiger Discovery-Abschluss und erzwingt keinen KI-Use-Case;
+- Auswahl und Begründung bleiben historisiert und auditierbar.
 
-Zentrale Nachweise: #47, #60, #63, #318.
+Zentrale Nachweise: #47, #60, #63, #318 und #331.
 
 ## 3. AI Accelerator und kontrollierte LLM-Unterstützung
 
@@ -86,7 +92,7 @@ Der Accelerator reduziert manuelle Erstbefüllung, ohne Entscheidungsrechte an e
 - nachvollziehbare Rollen-Defaults;
 - kontrollierte Mess- und Regressionstrecke für Qualität, Laufzeit und Providerfehler.
 
-Der Accelerator erzeugt Entwürfe und Vorschläge, **keine Freigaben, Governance-Entscheidungen oder Lifecycle-Entscheidungen**.
+Der Accelerator erzeugt Entwürfe und Vorschläge, **keine Freigaben, Governance-Entscheidungen, bindenden Lösungspräferenzen oder Lifecycle-Entscheidungen**.
 
 Zentrale Nachweise: #116–#125 sowie die Completion-Dokumente unter `docs/accelerator/`.
 
@@ -116,7 +122,7 @@ Use Cases werden als nachvollziehbare Entscheidungsobjekte geführt:
 - Portfolio- und Arbeitsvorratssichten ohne künstlichen Gesamtscore;
 - konkrete Blocker, Zuständigkeit und Next Actions.
 
-KI-Ausgaben können unterstützen, aber keine verbindliche fachliche Entscheidung auslösen.
+Die vorgelagerte Discovery-Lösungsentscheidung und die spätere Use-Case-Freigabe bleiben getrennte Entscheidungsobjekte. KI-Ausgaben können unterstützen, aber keine verbindliche fachliche Entscheidung auslösen.
 
 ## 6. Delivery Readiness, Provenance und Übergabe
 
@@ -172,7 +178,9 @@ Zentrale Nachweise: #279–#287 und #295.
 
 Der aktuelle Produktfokus liegt nicht auf dem Aufbau einer weiteren großen Capability, sondern darauf, die vorhandene Kernstrecke **realitätsnah und nachvollziehbar demonstrierbar** zu halten.
 
-Dazu gehört insbesondere der neutrale Reiseveranstalter-Demo-/Runbook-Kontext aus #310. Neue Produktlücken werden aus solchen realen Durchläufen abgeleitet, nicht aus dem Wunsch, Frameworks oder Funktionslisten möglichst vollständig abzubilden.
+Dazu gehört insbesondere der neutrale Reiseveranstalter-Demo-/Runbook-Kontext aus #310. Nach #331 muss dieser Durchlauf die neue Fokus- und Lösungssemantik sichtbar mitführen: Verbesserungspotenzial, Evidenzbasis, Time-to-Value, technologieoffener Vergleich sowie der Grundsatz, dass nur eine tatsächlich KI-haltige bevorzugte Lösung in einen KI-Use-Case übergeht.
+
+Für die kurzfristige Demonstration gilt **lokal zuerst**. Ein Render-Deployment beziehungsweise externer Smoke-Test ist nützlich für die Präsentation, aber kein fachlicher Blocker für den lokalen #310-E2E-Durchlauf und wird separat behandelt.
 
 **Aktuell ist kein zusätzliches großes Produktinkrement verbindlich in Umsetzung.**
 
@@ -180,8 +188,8 @@ Dazu gehört insbesondere der neutrale Reiseveranstalter-Demo-/Runbook-Kontext a
 
 # Next – priorisierte nächste Probleme
 
-**Next zuletzt geprüft:** 2026-08-17  
-**Aktuelle Priorität:** #328 als nächster größerer Produktfokus; #322 und #323 als klar abgegrenzte kleinere Folgeinkremente.
+**Next zuletzt geprüft:** 2026-08-22  
+**Aktuelle Priorität:** lokale #310-Demonstrierbarkeit nach den kleinen Discovery-Folgeinkrementen #322/#323; #328 bleibt der nächste größere KI-Rollout-Fokus. #333 ist ein nachgelagertes Lifecycle-/Go-live-Hardening.
 
 ## 1. KI-gestützte Bearbeitung fachlicher Lücken gezielt ausrollen – #328
 
@@ -206,6 +214,14 @@ Der Nutzen liegt in einer durchgängigen Herkunftskette für Business Architectu
 Die bestehende ProcessAnalysis soll um eine kompakte sichtbare SIPOC-Orientierung ergänzt werden: `Supplier → Input → Process → Output → Customer`.
 
 Das ist bewusst nur eine kleine Methodik-/UX-Schärfung. Vorhandene Felder werden weiterverwendet; es entsteht weder ein SIPOC-Modul noch ein neues Pflichtartefakt oder zusätzlicher Prozessschritt.
+
+## 4. Scale Readiness vor produktivem Betrieb – #333
+
+Zwischen erfolgreicher Pilot-/Wirkungsvalidierung und regulärem Betrieb soll eine kompakte Scale-Readiness-Sicht vorhandene Nachweise bündelbar machen. Ziel ist nicht ein neues Framework, sondern die explizite Managementfrage:
+
+> Ist die validierte Lösung ausreichend belastbar, kontrollierbar und verantwortet, um in den produktiven Regelbetrieb überführt zu werden?
+
+#333 soll vorhandene Pilot-, Governance-, Delivery-, Go-live- und ML-Test-Score-Mechanismen reuse-first zusammenführen. Ein erfolgreicher Pilot allein darf nicht automatisch als Produktionsreife interpretiert werden.
 
 Die Reihenfolge in `Next` beschreibt die aktuelle Produktpriorität, nicht einen starren Implementierungsplan. Vor Umsetzung bleibt der Gap-Check gegen den dann aktuellen `main` verbindlich.
 

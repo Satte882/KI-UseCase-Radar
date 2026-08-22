@@ -1,6 +1,6 @@
 # KI-Radar Execution Plan
 
-**Stand:** 19.08.2026  
+**Stand:** 22.08.2026  
 **Zweck:** Konkrete Abarbeitungsreihenfolge offener Issues nach fachlichen und technischen Abhängigkeiten.
 
 ## Leitprinzip
@@ -20,16 +20,22 @@ Die Produkt-Roadmap unter [`../ROADMAP.md`](../ROADMAP.md) bleibt davon getrennt
 
 ---
 
+## Kürzlich abgeschlossen
+
+**#331 – Fokuswahl, Evidenz, Time-to-Value und No-AI-Ausgang** wurde am 22.08.2026 über PR #334 auf `main` abgeschlossen. Damit ist die Discovery-Lösungsentscheidung als Grundlage für die folgenden Schritte stabilisiert: hypothesenfähige Fokuswahl, separates Verbesserungspotenzial, persistente Evidenzbasis, Time-to-Value als Trade-off, Hybrid-Semantik und ein gültiger No-AI-Ausgang sind umgesetzt.
+
+---
+
 # Aktueller Ablaufplan
 
 | Reihenfolge | Issue | Inhalt | Warum an dieser Stelle? | Geschätzter Aufwand | Komplexität |
 |---:|---|---|---|---:|---|
-| **1** | **#331 – Fokuswahl, Evidenz, Time-to-Value, No-AI** | Schärft die zentrale Discovery-Entscheidung: Fokuswahl wird evidenzbewusst, Hypothese und belastbare Evidenz werden unterscheidbar und Standardisierung, klassische Automation, KI, Hybrid sowie No-AI werden gültige Lösungsausgänge. Das Issue greift damit insbesondere in die Semantik rund um `SolutionSelection` und den Übergang zum Use Case ein. | Fundament zuerst: spätere Issues hängen daran, wann und wie aus einer Lösungsentscheidung ein Use Case entsteht. | **2–4 Tage** | **hoch** |
-| **2** | **#322 – Ursprungsprozess → Use Case** | Ergänzt eine optionale kanonische Relation vom Use Case zu seinem Ursprungsprozess; Phase, Value Stream und strategischer Kontext werden daraus abgeleitet statt redundant gespeichert. Bei geführter Discovery soll der bekannte Prozessbezug automatisch übernommen werden. | Erst nachdem #331 den Use-Case-Entstehungspfad stabilisiert hat, damit die Integrationsstelle nicht später erneut angepasst werden muss. | **1–2 Tage** | **mittel** |
-| **3** | **#323 – SIPOC-Leitfrage** | Ergänzt in der bestehenden `ProcessAnalysis` eine kompakte SIPOC-Orientierung zu Supplier, Input, Output und Customer. Es entstehen bewusst keine neuen SIPOC-Modelle oder Pflichtfelder. | Kleine Änderung im selben Discovery-/ProcessAnalysis-Bereich; dieser Bereich soll vor dem E2E-Durchlauf abgeschlossen sein. | **2–4 h** | **niedrig** |
-| **4** | **#310 – Reiseveranstalter E2E-Demo** | Führt den kompletten Referenzfall vom Value Stream über Prozessanalyse und Lösungsvergleich bis zum bewerteten und governance-seitig vorbereiteten Use Case manuell durch. Das Issue ist primär Integrations- und Abnahmetest, kein Feature-Build. | Erst nach #331/#322/#323, damit der zusammengehörige Discovery→Use-Case-Block einmal auf stabilem Stand vollständig geprüft wird. | **0,5–1 Tag** | **niedrig–mittel** |
-| **5** | **#320 – Delivery-Readiness analysieren** | Prüft `ReadinessFinding → ActionableFinding → Next Action → Bearbeitung` sowie Technical-Owner- und Sektionsstatus-Semantik Ende-zu-Ende. Das Issue ist ausschließlich Analyse und darf selbst keine Codeänderungen enthalten. | Vor #330 und #325 klären, ob die Delivery-Readiness-Semantik noch reale Lücken besitzt, damit API- und KI-Rollout nicht auf einem kurz darauf veränderten Zustand aufsetzen. | **0,5–1 Tag** | **mittel** |
-| **6** | **ggf. separates Fix-Issue aus #320** | Nur wenn #320 erneut eine echte Lücke nachweist, wird diese in einem separaten Implementierungs-Issue geschlossen. Inhalt und Umfang hängen vom Analyseergebnis ab. | Eine bestätigte Readiness-/Finding-/Action-Lücke muss geschlossen sein, bevor Verbraucher dieser Semantik darauf aufbauen. | **0,5–2 Tage*** | **mittel*** |
+| **1** | **#322 – Ursprungsprozess → Use Case** | Ergänzt eine optionale kanonische Relation vom Use Case zu seinem Ursprungsprozess; Phase, Value Stream und strategischer Kontext werden daraus abgeleitet statt redundant gespeichert. Bei geführter Discovery soll der bekannte Prozessbezug automatisch übernommen werden. | #331 ist abgeschlossen; damit kann die Herkunftskette jetzt auf den stabilisierten Use-Case-Entstehungspfad aufsetzen. | **1–2 Tage** | **mittel** |
+| **2** | **#323 – SIPOC-Leitfrage** | Ergänzt in der bestehenden `ProcessAnalysis` eine kompakte SIPOC-Orientierung zu Supplier, Input, Output und Customer. Es entstehen bewusst keine neuen SIPOC-Modelle oder Pflichtfelder. | Kleine Änderung im selben Discovery-/ProcessAnalysis-Bereich; dieser Bereich soll vor dem E2E-Durchlauf abgeschlossen sein. | **2–4 h** | **niedrig** |
+| **3** | **#310 – Reiseveranstalter E2E-Demo** | Führt den kompletten Referenzfall vom Value Stream über Fokus, Prozessanalyse und technologieoffenen Lösungsvergleich bis zum bewerteten und governance-seitig vorbereiteten Use Case manuell durch. Die neuen #331-Dimensionen Evidenzbasis, Verbesserungspotenzial und Time-to-Value werden sichtbar mitgeführt. | Kurzfristig wichtig für die interviewfähige lokale Demo. Erst nach #322/#323 durchführen, damit die Discovery→Use-Case-Strecke einmal auf stabilem Stand geprüft wird. | **0,5–1 Tag** | **niedrig–mittel** |
+| **4** | **#320 – Delivery-Readiness analysieren** | Prüft `ReadinessFinding → ActionableFinding → Next Action → Bearbeitung` sowie Technical-Owner- und Sektionsstatus-Semantik Ende-zu-Ende. Das Issue ist ausschließlich Analyse und darf selbst keine Codeänderungen enthalten. | Vor #333 und nachgelagerten Verbrauchern klären, ob die Delivery-/Readiness-Semantik noch reale Lücken besitzt. | **0,5–1 Tag** | **mittel** |
+| **5** | **ggf. separates Fix-Issue aus #320** | Nur wenn #320 erneut eine echte Lücke nachweist, wird diese in einem separaten Implementierungs-Issue geschlossen. Inhalt und Umfang hängen vom Analyseergebnis ab. | Eine bestätigte Readiness-/Finding-/Action-Lücke sollte vor weiterem Lifecycle-Hardening geschlossen werden. | **0,5–2 Tage*** | **mittel*** |
+| **6** | **#333 – Scale Readiness** | Bündelt vorhandene Pilot-, Wirkungs-, Governance-, Delivery- und ML-Test-Score-Nachweise zu einer kompakten Go-live-/Scale-Readiness-Entscheidung zwischen Pilot/Wirkung und Betrieb. | Erst nach der lokalen Kern-Demo und nach Klärung der Delivery-Readiness-Semantik; #333 soll bestehende Gates aggregieren, nicht duplizieren. | **2–4 Tage*** | **hoch*** |
 | **7A** | **#330 – Django-Ninja Read-only API** | Ergänzt eine kleine Read-only API für Use Cases und Delivery Readiness mit expliziten Response-Schemas, API-Key und OpenAPI/Swagger. Bestehende Domain-/Readiness-Logik wird wiederverwendet und nicht dupliziert. | Nach stabiler Delivery-Readiness-Semantik, damit der externe API-Contract nicht kurz danach wegen interner Änderungen nachgezogen werden muss. | **1–1,5 Tage / 8–12 h** | **mittel** |
 | **7B** | **#325 – KI-Einsatzbereiche analysieren** | Inventarisiert entlang Use Case, Architektur, Delivery, Governance und Reviews, wo KI-Entwürfe, Rückfragen oder Konsistenzprüfungen einen belastbaren Mehrwert liefern und wo nicht. Es findet noch keine Implementierung statt. | Ebenfalls erst nach #320, damit die Analyse nicht auf einer noch wechselnden Delivery-/Finding-Semantik basiert. Kann danach unabhängig von #330 laufen. | **0,5–1 Tag** | **mittel** |
 | **8A** | **#326 – UX, Qualität und Wirkungsmessung** | Definiert das wiederverwendbare UX-Muster für Erzeugen, Prüfen, Übernehmen, Verwerfen und Fehlerzustände sowie Qualitäts- und Erfolgsmetriken für KI-Entwürfe. | Baut auf den in #325 identifizierten Aufgabentypen auf und kann danach parallel zu #327 bearbeitet werden. | **0,5–1 Tag** | **mittel** |
@@ -37,24 +43,26 @@ Die Produkt-Roadmap unter [`../ROADMAP.md`](../ROADMAP.md) bleibt davon getrennt
 | **9** | **#328 – KI-Rollout konsolidieren** | Führt #325, #326 und #327 zusammen, entscheidet über priorisierte Rollout-Wellen und leitet daraus kleine Implementierungs-Issues ab. | Erst wenn alle drei Analyseergebnisse vorliegen; sonst würden Rollout-Entscheidungen vorweggenommen. | **0,5 Tag** | **niedrig–mittel** |
 | **10** | **#307 – optionaler Entscheidungsraum** | Ergänzt für echte strittige Entscheidungen einen zusätzlichen Decision Case mit Perspektiven, Evidenz, Readiness, RAPID/DACI, Constraints und Eskalation. Das ist ein größerer Governance-Subworkflow. | Spät aufsetzen, wenn Use-Case-, Governance-, Next-Action- und Delivery-Semantik stabiler sind; dadurch sinkt das Integrations- und Rework-Risiko. | **5–10 Tage** | **sehr hoch** |
 
-\* Schritt 6 ist erst nach Abschluss von #320 seriös schätzbar.
+\* Schritte 5 und 6 sind vor ihrem jeweiligen Gap-Check nur Planungswerte.
 
 ---
 
 # Abhängigkeitsbild
 
 ```text
-#331
+#331 abgeschlossen
   ↓
 #322
   ↓
 #323
   ↓
-#310
+#310 lokale E2E-/Interview-Demo
   ↓
 #320 Analyse
   ↓
 ggf. separates Fix-Issue
+  ↓
+#333 Scale Readiness
   ↓
 ┌───────────────────────────────┐
 │ #330 API                      │
@@ -65,7 +73,9 @@ ggf. separates Fix-Issue
 #307
 ```
 
-`#330` und der `#325 → #326/#327 → #328`-Strang besitzen nach Abschluss von #320 keine harte gegenseitige Abhängigkeit und können bei Bedarf parallel bearbeitet werden.
+`#330` und der `#325 → #326/#327 → #328`-Strang besitzen nach Abschluss von #320 keine harte gegenseitige Abhängigkeit und können bei Bedarf parallel laufen.
+
+**Demo-/Deployment-Leitlinie:** Für die kurzfristige Interviewvorbereitung ist die lokal funktionierende #310-Strecke führend. Render ist ein separater Deployment-/Smoke-Check und kein Blocker für die lokale fachliche Abnahme.
 
 ---
 
@@ -84,4 +94,4 @@ ggf. separates Fix-Issue
 
 - Nach Abschluss eines Issues den Plan kurz gegen den aktuellen `main` und die verbleibenden offenen Issues prüfen.
 - Neue Issues nicht automatisch hinten anhängen, sondern anhand ihrer technischen und fachlichen Abhängigkeiten einordnen.
-- Abgeschlossene issue-spezifische Analyse- und Completion-Artefakte sollen künftig unter einer getrennten Archivstruktur in `docs/archive/issues/` abgelegt werden; die eigentliche Bereinigung erfolgt separat nach Prüfung aller Referenzen und Links.
+- Abgeschlossene issue-spezifische Analyse- und Completion-Artefakte werden unter `docs/archive/issues/` abgelegt, sofern sie keine aktive fachliche oder technische Referenz mehr sind.
