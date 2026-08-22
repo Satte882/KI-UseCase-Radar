@@ -22,12 +22,12 @@
   {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
 
   <div class="app-card mb-4">
-    <div class="card-header"><strong>1. Phasen vergleichen</strong><div class="small text-muted mt-1">Impact, Problemintensität, Datenlage, Veränderungsaufwand und Time-to-Value einheitlich einordnen; Evidenzbasis separat sichtbar halten.</div></div>
+    <div class="card-header"><strong>1. Phasen vergleichen</strong><div class="small text-muted mt-1">Impact, Problemintensität, Verbesserungspotenzial, Datenlage, Veränderungsaufwand und Time-to-Value einheitlich einordnen; Evidenzbasis separat sichtbar halten.</div></div>
     <div class="card-body">
       {% include "architecture/_screening_level_anchors.html" with scope="stage" %}
       <div class="table-responsive">
         <table class="table align-middle mb-0">
-          <thead><tr><th>Fokus</th><th>Phase und Indikatoren</th><th>Impact</th><th>Problemintensität</th><th>Datenlage</th><th>Veränderungsaufwand</th><th>Time-to-Value</th><th>Evidenzbasis</th></tr></thead>
+          <thead><tr><th>Fokus</th><th>Phase und Indikatoren</th><th>Impact</th><th>Problemintensität</th><th>Verbesserungspotenzial</th><th>Datenlage</th><th>Veränderungsaufwand</th><th>Time-to-Value</th><th>Evidenzbasis</th></tr></thead>
           <tbody>
             {% for row in form.stage_rows %}
             <tr>
