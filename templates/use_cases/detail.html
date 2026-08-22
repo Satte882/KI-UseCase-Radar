@@ -106,13 +106,21 @@
 
     {% if architecture_origin %}
     <section class="cr-section uc-business-section" aria-labelledby="origin-title">
-      <header class="cr-section-heading"><div><h2 id="origin-title">Herkunft aus Discovery</h2><p>Nachvollziehbare Herkunftskette vom Value Stream bis zum Use Case.</p></div></header>
+      <header class="cr-section-heading"><div><h2 id="origin-title">Ursprung & strategischer Kontext</h2><p>Nachvollziehbare Herkunftskette vom Value Stream bis zum Use Case. Eine Herkunft aus Discovery bleibt automatisch erhalten; direkte Verknüpfungen nutzen dieselbe kanonische Relation.</p></div></header>
       <div class="uc-section-body">
         <dl class="uc-detail-list">
           <dt>Value Stream</dt><dd><a href="{{ architecture_origin.stage.value_stream.get_absolute_url }}">{{ architecture_origin.stage.value_stream.name }}</a></dd>
           <dt>Phase</dt><dd>{{ architecture_origin.stage.name }}</dd>
           <dt>Prozessanalyse</dt><dd>{% if architecture_origin.process_analysis %}<a href="{{ architecture_origin.process_analysis.get_absolute_url }}">{{ architecture_origin.process_analysis.name }}</a>{% else %}–{% endif %}</dd>
           <dt>Lösungsoption</dt><dd>{% if architecture_origin.solution_option %}{{ architecture_origin.solution_option.name }}{% else %}–{% endif %}</dd>
+          {% if architecture_origin.stage.value_stream.strategic_objective %}<dt>Strategisches Ziel</dt><dd>{{ architecture_origin.stage.value_stream.strategic_objective }}</dd>{% endif %}
+          {% with focus=architecture_origin.stage.value_stream.focus %}
+            {% if focus %}
+              <dt>Fachdomäne</dt><dd>{{ focus.get_business_domain_display }}</dd>
+              {% if focus.capability %}<dt>Business Capability</dt><dd>{{ focus.capability }}</dd>{% endif %}
+              {% if focus.strategic_impact %}<dt>Strategischer Impact</dt><dd>{{ focus.get_strategic_impact_display }}</dd>{% endif %}
+            {% endif %}
+          {% endwith %}
           <dt>Use Case</dt><dd>{{ use_case.short_id }} · {{ use_case.title }}</dd>
         </dl>
         {% if origin_source_differences %}
