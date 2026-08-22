@@ -29,6 +29,11 @@
   {% csrf_token %}
   <div class="card-header"><strong>Prozessanalyse · ADM Phase B</strong><div class="small text-muted mt-1">Der Fokus liegt auf dem fachlichen Ablauf und den Ursachen, nicht auf einer vorgezogenen Technologiewahl.</div></div>
   <div class="card-body">
+    <div class="mb-4" data-testid="sipoc-guidance">
+      <div class="section-title">SIPOC – Prozesskontext prüfen</div>
+      <div><strong>Supplier → Input → Process → Output → Customer</strong></div>
+      <div class="small text-muted mt-1">SIPOC dient hier nur als Denk- und Scopingrahmen. Die Angaben bleiben in den vorhandenen Feldern der Prozessanalyse: Inputs unter „Datenobjekte und Dokumente“, das Prozessergebnis unter „Ergebnis“ sowie Quellen und Empfänger unter „Übergaben und Schnittstellen“. Es entsteht kein separates SIPOC-Artefakt.</div>
+    </div>
     {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
     <div class="row g-3">
       {% for field in form %}
@@ -36,6 +41,9 @@
         <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
         {{ field }}
         {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+        {% if field.name == 'data_objects' %}<div class="form-text">Welche fachlichen Inputs, Daten oder Dokumente gelangen in den Prozess?</div>{% endif %}
+        {% if field.name == 'outcome' %}<div class="form-text">Welches fachliche Ergebnis verlässt den Prozess?</div>{% endif %}
+        {% if field.name == 'handoffs' %}<div class="form-text">Von wem bzw. aus welcher Quelle kommen relevante Inputs, und wer übernimmt, verwendet oder erhält das Prozessergebnis?</div>{% endif %}
         {{ field.errors }}
       </div>
       {% endfor %}

@@ -103,7 +103,7 @@ def test_methodology_download_serves_canonical_repository_markdown(client, owner
     assert response["Content-Type"].startswith("text/markdown")
     assert METHODOLOGY_DOWNLOAD_NAME in response["Content-Disposition"]
     assert response.content.decode() == METHODOLOGY_PATH.read_text(encoding="utf-8")
-    assert "**Version:** 1.1" in response.content.decode()
+    assert "**Version:** 1.2" in response.content.decode()
 
 
 @pytest.mark.django_db
