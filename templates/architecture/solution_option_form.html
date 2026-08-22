@@ -8,7 +8,7 @@
   <div>
     <div class="eyebrow mb-2">{{ process_analysis.name }}</div>
     <h1 class="page-title">{{ title }}</h1>
-    <p class="page-subtitle">Organisatorische, regelbasierte, klassische Software- und KI-Optionen vergleichbar dokumentieren.</p>
+    <p class="page-subtitle">Organisatorische, regelbasierte, klassische Software-, KI- und hybride Optionen vergleichbar dokumentieren.</p>
   </div>
   <a class="btn btn-outline-secondary" href="{{ process_analysis.get_absolute_url }}">Abbrechen</a>
 </div>
@@ -20,9 +20,10 @@
     {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
     <div class="row g-3">
       {% for field in form %}
-      <div class="{% if field.name == 'name' or field.name == 'option_type' or field.name == 'evaluation_status' or field.name == 'integration_effort' or field.name == 'feasibility' %}col-md-6{% else %}col-12{% endif %}">
+      <div class="{% if field.name == 'name' or field.name == 'option_type' or field.name == 'evaluation_status' or field.name == 'integration_effort' or field.name == 'feasibility' or field.name == 'time_to_value' or field.name == 'evidence_basis' %}col-md-6{% else %}col-12{% endif %}">
         <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
         {{ field }}
+        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
         {{ field.errors }}
       </div>
       {% endfor %}
