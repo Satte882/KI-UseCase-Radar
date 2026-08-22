@@ -1,9 +1,11 @@
 from decimal import Decimal
+from uuid import UUID
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.db import transaction
 from django.db.models import Model
 from django.shortcuts import get_object_or_404, redirect, render
 
@@ -31,12 +33,16 @@ def _serialize_cleaned_data(cleaned_data: dict) -> dict:
     serialized = {}
     for key, value in cleaned_data.items():
         if isinstance(value, Model):
-            serialized[key] = value.pk
+            serialized[key] = str(value.pk) if isinstance(value.pk, UUID) else value.pk
         elif isinstance(value, Decimal):
             serialized[key] = str(value)
         else:
             serialized[key] = value
     return serialized
+
+
+def _completion_field_names(form_class) -> tuple[str, ...]:
+    return tuple(name for name in form_class.base_fields if name != "process_analysis")
 
 
 def _form_initial(step: int, stored: dict) -> dict:
@@ -56,6 +62,13 @@ def _source_value_stream(stored: dict):
         .first()
     )
     return stage.value_stream if stage is not None else None
+
+
+def _selected_business_unit(stored: dict):
+    business_unit_id = stored.get("business_unit")
+    if not business_unit_id:
+        return None
+    return BusinessUnit.objects.filter(pk=business_unit_id).first()
 
 
 def _current_business_owner(stored: dict):
@@ -83,7 +96,7 @@ def _wizard_step_states(
         form_class = WIZARD_STEPS[number]["form"]
         complete = number == 6 and current_step == 6
         if form_class is not None:
-            complete = all(name in stored for name in form_class.base_fields)
+            complete = all(name in stored for name in _completion_field_names(form_class))
         if number == error_step:
             state = "error"
             symbol = "!"
@@ -145,33 +158,90 @@ def _build_use_case(*, stored: dict, user, business_owner) -> UseCase:
 
 def _persist_optional_origin(*, candidate: UseCase, stored: dict) -> None:
     source_stage_id = stored.get("source_stage_id")
-    if not source_stage_id:
+    source_process_id = stored.get("source_process_analysis_id")
+    selected_process_id = stored.get("process_analysis")
+    source_option_id = stored.get("source_solution_option_id")
+    if not any((source_stage_id, source_process_id, selected_process_id, source_option_id)):
         return
+
     from ki_radar.architecture.models import (
         ProcessAnalysis,
         SolutionOption,
         UseCaseOrigin,
         ValueStreamStage,
     )
+    from ki_radar.architecture.provenance import build_use_case_source_snapshot
 
-    stage = ValueStreamStage.objects.filter(pk=source_stage_id).first()
-    if stage is None:
-        return
+    stage = None
     process_analysis = None
-    source_process_id = stored.get("source_process_analysis_id")
+
     if source_process_id:
-        process_analysis = ProcessAnalysis.objects.filter(
-            pk=source_process_id,
-            stage=stage,
-        ).first()
+        process_analysis = (
+            ProcessAnalysis.objects.select_related("stage__value_stream")
+            .filter(pk=source_process_id)
+            .first()
+        )
+        if process_analysis is None:
+            raise ValidationError(
+                "Der aus Discovery übernommene Ursprungsprozess ist nicht mehr verfügbar."
+            )
+        stage = process_analysis.stage
+        if source_stage_id and str(stage.pk) != str(source_stage_id):
+            raise ValidationError(
+                "Der Discovery-Ursprungsprozess gehört nicht mehr zur erwarteten "
+                "Value-Stream-Phase."
+            )
+    elif selected_process_id:
+        process_analysis = (
+            ProcessAnalysis.objects.select_related("stage__value_stream")
+            .filter(pk=selected_process_id)
+            .first()
+        )
+        if process_analysis is None:
+            raise ValidationError("Der gewählte Ursprungsprozess ist nicht mehr verfügbar.")
+        stage = process_analysis.stage
+        if source_stage_id and str(stage.pk) != str(source_stage_id):
+            raise ValidationError(
+                "Der gewählte Ursprungsprozess gehört nicht zur Discovery-Phase dieses Intake."
+            )
+    elif source_stage_id:
+        stage = (
+            ValueStreamStage.objects.select_related("value_stream")
+            .filter(pk=source_stage_id)
+            .first()
+        )
+        if stage is None:
+            raise ValidationError(
+                "Die aus Discovery übernommene Value-Stream-Phase ist nicht mehr verfügbar."
+            )
+
+    if stage is None:
+        raise ValidationError("Der Ursprung des Use Cases ist nicht konsistent auflösbar.")
+    if stage.value_stream.business_unit_id != candidate.business_unit_id:
+        raise ValidationError(
+            "Der Ursprungsprozess gehört nicht zur gewählten Organisationseinheit. "
+            "Bitte prüfen Sie Prozess und Organisationseinheit."
+        )
+    if process_analysis is not None and candidate.affected_process != process_analysis.name:
+        raise ValidationError(
+            "Der betroffene Prozess stimmt nicht mit dem gewählten Ursprungsprozess überein."
+        )
+
     solution_option = None
-    source_option_id = stored.get("source_solution_option_id")
-    if source_option_id and process_analysis is not None:
+    if source_option_id:
+        if process_analysis is None:
+            raise ValidationError(
+                "Die Discovery-Lösungsoption kann ohne Ursprungsprozess nicht übernommen werden."
+            )
         solution_option = SolutionOption.objects.filter(
             pk=source_option_id,
             process_analysis=process_analysis,
         ).first()
-    from ki_radar.architecture.provenance import build_use_case_source_snapshot
+        if solution_option is None:
+            raise ValidationError(
+                "Die aus Discovery übernommene Lösungsoption gehört nicht mehr zum "
+                "Ursprungsprozess."
+            )
 
     UseCaseOrigin.objects.create(
         use_case=candidate,
@@ -200,7 +270,10 @@ def use_case_intake(request, step: int = 1):
 
     if step == 6:
         required_steps_complete = all(
-            all(name in stored for name in WIZARD_STEPS[number]["form"].base_fields)
+            all(
+                name in stored
+                for name in _completion_field_names(WIZARD_STEPS[number]["form"])
+            )
             for number in range(1, 6)
         )
         if not required_steps_complete:
@@ -226,15 +299,20 @@ def use_case_intake(request, step: int = 1):
                     "Der Use Case ist noch nicht bewertbar: " + ", ".join(blockers),
                 )
             else:
-                candidate._history_user = request.user
-                candidate.save()
-                _persist_optional_origin(candidate=candidate, stored=stored)
-                request.session.pop(SESSION_KEY, None)
-                messages.success(
-                    request,
-                    f"Use Case {candidate.short_id} ist bereit zur Bewertung.",
-                )
-                return redirect(candidate)
+                try:
+                    with transaction.atomic():
+                        candidate._history_user = request.user
+                        candidate.save()
+                        _persist_optional_origin(candidate=candidate, stored=stored)
+                except ValidationError as exc:
+                    messages.error(request, " ".join(exc.messages))
+                else:
+                    request.session.pop(SESSION_KEY, None)
+                    messages.success(
+                        request,
+                        f"Use Case {candidate.short_id} ist bereit zur Bewertung.",
+                    )
+                    return redirect(candidate)
         return render(
             request,
             "use_cases/intake_wizard.html",
@@ -251,7 +329,16 @@ def use_case_intake(request, step: int = 1):
         )
 
     error_step = None
-    form_kwargs = {"value_stream": _source_value_stream(stored)} if step == 1 else {}
+    form_kwargs = {}
+    if step == 1:
+        form_kwargs["value_stream"] = _source_value_stream(stored)
+    elif step == 2:
+        form_kwargs = {
+            "business_unit": _selected_business_unit(stored),
+            "source_stage_id": stored.get("source_stage_id"),
+            "source_process_analysis_id": stored.get("source_process_analysis_id"),
+        }
+
     if request.method == "POST":
         form = form_class(request.POST, **form_kwargs)
         if form.is_valid():
