@@ -11,6 +11,7 @@ from ki_radar.core.models import TimeStampedModel
 CRITERIA_KEYS = (
     "impact",
     "pain_intensity",
+    "improvement_potential",
     "data_accessibility",
     "change_effort",
     "time_to_value",
@@ -90,6 +91,7 @@ def _legacy_snapshot(stage) -> dict:
             "name": stage.name,
             "impact": "",
             "pain_intensity": "",
+            "improvement_potential": "",
             "data_accessibility": "",
             "change_effort": "",
             "time_to_value": "not_assessed",
