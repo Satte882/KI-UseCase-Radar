@@ -147,6 +147,22 @@ Im systematischen Discovery-Pfad wird ein bereits bekannter Prozess automatisch 
 
 Eine bevorzugte Non-AI-Lösung kann die Discovery weiterhin regulär beenden, ohne einen künstlichen Use Case zu erzeugen. Bestehende Use Cases ohne Ursprung bleiben unverändert gültig; es gibt keine heuristische oder LLM-basierte Rückzuordnung.
 
+### Messreife im geführten Use-Case-Intake
+
+Die hypothesenfähige Discovery setzt sich seit #340 konsistent im Guided Intake fort. Ein Use Case darf bis zur strukturierten Bewertung aufgenommen werden, obwohl noch keine belastbare numerische Baseline oder kein belastbarer Zielwert vorliegt.
+
+Für die Aufnahme bleiben fachlich erforderlich:
+
+- Nutzenhypothese,
+- Name und Typ der Erfolgsmetrik,
+- Optimierungsrichtung und Einheit,
+- konkrete Messmethode,
+- Datenrahmen.
+
+`metric_baseline` und `metric_target` dürfen in dieser frühen Reifestufe dagegen unbekannt bleiben und werden als `NULL` gespeichert. Es werden keine Platzhalterwerte wie `0` erzeugt. Das gilt für direkte Use Cases ebenso wie für Use Cases, die aus einer Discovery-Lösungsoption entstehen.
+
+Die Entscheidungsgrenze wird dadurch nicht aufgeweicht: Eine positive Freigabe bleibt ohne Baseline oder Zielwert serverseitig blockiert; Pilot- und Go-live-Metrikgates bleiben zusätzlich unverändert. Negative Entscheidungen wie `Zurückgestellt` oder `Nicht weiterverfolgt` können dagegen auch dann fachlich sinnvoll sein, wenn die Messreife für eine positive Freigabe noch nicht erreicht ist.
+
 ## Prozessanalyse
 
 Eine Prozessanalyse erfasst genau die Informationen, die zur Beurteilung des Problems und zur Formulierung eines Zielbilds benötigt werden:
@@ -265,5 +281,7 @@ Die Systemlandschaft im Delivery Package ist eine umsetzungsbezogene Ist-/Ziel-S
 7. Vollständige methodische Referenz mit In-App-Ansicht und identischem Markdown-Download
 8. Evidenzbewusste Fokusphase und technologieoffene Lösungsentscheidung mit Time-to-Value, Hybrid- und No-AI-Ausgang (#331)
 9. Optionaler kanonischer Ursprungsprozess für direkte und geführte Use Cases mit abgeleitetem strategischem Value-Stream-Kontext (#322)
+10. SIPOC als sichtbarer Scopingrahmen innerhalb der bestehenden ProcessAnalysis ohne separates Artefakt oder neue Pflichtfelder (#323)
+11. Hypothesenfähiger Guided Intake mit unbekannter Baseline beziehungsweise unbekanntem Zielwert bis zur strukturierten Bewertung bei unveränderten positiven Freigabe- und Lifecycle-Gates (#340)
 
 Der direkte Intake und der systematische Architecture-Pfad bleiben unabhängig nutzbar. Der Architecture-Pfad verlangt jedoch eine nachvollziehbare Auswahlentscheidung, bevor vertiefende Artefakte erzeugt werden.

@@ -119,7 +119,9 @@ Use Cases werden als nachvollziehbare Entscheidungsobjekte geführt:
 - optionaler kanonischer Ursprungsprozess über die bestehende `UseCaseOrigin`-Relation;
 - automatische Ableitung von Phase, Value Stream und vorhandenem strategischem Kontext bei bekanntem Prozessursprung statt redundanter Use-Case-Felder;
 - bestehende Use Cases ohne Prozessursprung bleiben vollständig gültig;
-- Nutzenhypothese, Baseline, Zielwert und Erfolgsmetrik;
+- Nutzenhypothese und definierte Erfolgsmetrik mit Name, Typ, Richtung, Einheit und Messmethode;
+- Baseline und Zielwert dürfen in früher Aufnahme noch unbekannt bleiben und werden nicht durch künstliche Platzhalter ersetzt;
+- eine strukturierte Bewertung ist auch mit noch unbekannter Baseline beziehungsweise unbekanntem Zielwert möglich; positive Freigaben bleiben bis zu deren belastbarer Erfassung serverseitig blockiert;
 - versionierte Bewertung mit Evidenz und Confidence;
 - getrennte Governance-, Datenschutz-, Security- und Rechtsprüfungen;
 - getrennte Bewertung, finale Freigabe und unabhängige Bestätigungen;
@@ -129,7 +131,7 @@ Use Cases werden als nachvollziehbare Entscheidungsobjekte geführt:
 
 Die vorgelagerte Discovery-Lösungsentscheidung und die spätere Use-Case-Freigabe bleiben getrennte Entscheidungsobjekte. KI-Ausgaben können unterstützen, aber keine verbindliche fachliche Entscheidung auslösen.
 
-Zentraler Nachweis für die Prozess-Traceability: #322.
+Zentrale Nachweise für Prozess-Traceability und Messreife: #322 und #340.
 
 ## 6. Delivery Readiness, Provenance und Übergabe
 
@@ -186,6 +188,8 @@ Zentrale Nachweise: #279–#287 und #295.
 Der aktuelle Produktfokus liegt nicht auf dem Aufbau einer weiteren großen Capability, sondern darauf, die vorhandene Kernstrecke **realitätsnah und nachvollziehbar demonstrierbar** zu halten.
 
 Dazu gehört insbesondere der neutrale Reiseveranstalter-Demo-/Runbook-Kontext aus #310. Der Durchlauf muss die geschärfte Discovery-Semantik sichtbar mitführen: Verbesserungspotenzial, Evidenzbasis, Time-to-Value, SIPOC-Prozesskontext, technologieoffener Vergleich sowie der Grundsatz, dass nur eine tatsächlich KI-haltige bevorzugte Lösung in einen KI-Use-Case übergeht.
+
+Seit #340 darf dieser Durchlauf den Use Case ohne erfundene numerische Baseline oder Zielwerte bis zur strukturierten Bewertung führen. Die Erfolgsmetrik und Messmethode bleiben definiert; positive Freigabe sowie Pilot-/Go-live-Gates bleiben bis zur erforderlichen Messreife geschützt.
 
 Für die kurzfristige Demonstration gilt **lokal zuerst**. Ein Render-Deployment beziehungsweise externer Smoke-Test ist nützlich für die Präsentation, aber kein fachlicher Blocker für den lokalen #310-E2E-Durchlauf und wird separat behandelt.
 
