@@ -126,20 +126,26 @@ KI-Radar ist kein Enterprise-Architecture-Repository und implementiert nicht das
 | F – Migration Planning | MVP-Scope, Akzeptanzkriterien, Tests, Abhängigkeiten, Backlog und Delivery Package |
 | G/H | Freigaben, Package-Versionen und Änderungen werden dokumentiert; kein vollständiges Architecture-Governance-Modul |
 
-## Optionalität
+## Optionalität und Traceability
 
-Der bestehende Use-Case-Intake bleibt ein vollwertiger Einstieg. Die Herkunftskette wird nur angelegt, wenn ein Vorhaben tatsächlich aus dem Architecture-Bereich abgeleitet wurde:
+Der bestehende Use-Case-Intake bleibt ein vollwertiger Einstieg. Ein Use Case benötigt weiterhin **keinen** Value-Stream- oder Prozessbezug.
+
+Wenn der Use Case jedoch aus einem bekannten Prozess entsteht, verwendet KI-Radar seit #322 die bereits vorhandene `UseCaseOrigin`-Relation als kanonische Herkunft:
 
 ```text
 Use Case
-→ bevorzugte Lösungsoption mit KI-Komponente
+→ UseCaseOrigin
 → Prozessanalyse
-→ Fokusentscheidung
 → Value-Stream-Phase
 → Value Stream
+→ strategisches Ziel / Fokuskontext
 ```
 
-Eine bevorzugte Non-AI-Lösung kann die Discovery dagegen regulär beenden, ohne einen künstlichen Use Case zu erzeugen. Direkt erfasste Use Cases erhalten ebenfalls Fachdomäne, Capability und Prozessbereich, aber kein künstliches Value-Stream-Artefakt. Systematische Discovery bleibt vollständig rückverfolgbar.
+Im direkten Intake kann optional eine vorhandene Prozessanalyse als Ursprungsprozess gewählt werden. Der Prozess wird auf die gewählte Organisationseinheit eingeschränkt; Phase, Value Stream und strategischer Kontext werden daraus abgeleitet und **nicht** als parallele Use-Case-Felder gespeichert. Ohne Auswahl bleibt die direkte Erfassung mit einem beschreibenden Prozessbereich unverändert möglich.
+
+Im systematischen Discovery-Pfad wird ein bereits bekannter Prozess automatisch übernommen. Ein aus einer bevorzugten KI-Lösungsoption gestarteter Intake darf diesen Ursprung nicht auf einen anderen Prozess umbiegen. Die bestehende Discovery-Kette bleibt damit vollständig rückverfolgbar.
+
+Eine bevorzugte Non-AI-Lösung kann die Discovery weiterhin regulär beenden, ohne einen künstlichen Use Case zu erzeugen. Bestehende Use Cases ohne Ursprung bleiben unverändert gültig; es gibt keine heuristische oder LLM-basierte Rückzuordnung.
 
 ## Prozessanalyse
 
@@ -258,5 +264,6 @@ Die Systemlandschaft im Delivery Package ist eine umsetzungsbezogene Ist-/Ziel-S
 6. Delivery Readiness 2.0 mit Quellenmanifest, Sektionsbestätigungen und strukturierten Blockern
 7. Vollständige methodische Referenz mit In-App-Ansicht und identischem Markdown-Download
 8. Evidenzbewusste Fokusphase und technologieoffene Lösungsentscheidung mit Time-to-Value, Hybrid- und No-AI-Ausgang (#331)
+9. Optionaler kanonischer Ursprungsprozess für direkte und geführte Use Cases mit abgeleitetem strategischem Value-Stream-Kontext (#322)
 
 Der direkte Intake und der systematische Architecture-Pfad bleiben unabhängig nutzbar. Der Architecture-Pfad verlangt jedoch eine nachvollziehbare Auswahlentscheidung, bevor vertiefende Artefakte erzeugt werden.
