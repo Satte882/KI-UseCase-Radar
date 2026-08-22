@@ -14,6 +14,20 @@ from ki_radar.core.models import TimeStampedModel
 from .audit import ImmutableDecisionManager
 
 
+class EvidenceBasis(models.TextChoices):
+    HYPOTHESIS = "hypothesis", "Hypothese / unbestätigt"
+    INDICATIVE = "indicative", "Indiz / qualitativ belegt"
+    MEASURED = "measured", "Gemessen / nachgewiesen"
+
+
+class TimeToValue(models.TextChoices):
+    NOT_ASSESSED = "not_assessed", "Noch nicht bewertet"
+    UNKNOWN = "unknown", "Unbekannt"
+    SHORT = "short", "Kurz"
+    MEDIUM = "medium", "Mittel"
+    LONG = "long", "Lang"
+
+
 class ValueStream(TimeStampedModel):
     class Status(models.TextChoices):
         DRAFT = "draft", "Entwurf"
@@ -197,6 +211,7 @@ class SolutionOption(TimeStampedModel):
         ANALYTICS_ML = "analytics_ml", "Analytics oder Machine Learning"
         GENERATIVE_AI = "generative_ai", "Generative KI"
         ASSISTANT = "assistant", "Assistenzsystem"
+        HYBRID = "hybrid", "Hybride Lösung"
         NO_TECH = "no_tech", "Keine technische Lösung"
         OTHER = "other", "Sonstige Option"
 
@@ -223,6 +238,14 @@ class SolutionOption(TimeStampedModel):
     )
     name = models.CharField(max_length=200)
     option_type = models.CharField(max_length=30, choices=OptionType.choices)
+    contains_ai_component = models.BooleanField(
+        default=False,
+        verbose_name="Enthält KI-Komponente",
+        help_text=(
+            "Für hybride, individuelle oder sonstige Lösungen explizit angeben. "
+            "Eindeutige KI- bzw. Nicht-KI-Typen werden automatisch eingeordnet."
+        ),
+    )
     recommendation = models.CharField(
         max_length=20,
         choices=Recommendation.choices,
@@ -234,8 +257,20 @@ class SolutionOption(TimeStampedModel):
         default=EvaluationStatus.DRAFT,
         verbose_name="Bewertungsstatus",
     )
+    evidence_basis = models.CharField(
+        max_length=20,
+        choices=EvidenceBasis.choices,
+        default=EvidenceBasis.HYPOTHESIS,
+        verbose_name="Evidenzbasis",
+    )
     description = models.TextField(verbose_name="Lösungsbeschreibung")
     expected_value = models.TextField(verbose_name="Erwarteter Beitrag")
+    time_to_value = models.CharField(
+        max_length=20,
+        choices=TimeToValue.choices,
+        default=TimeToValue.NOT_ASSESSED,
+        verbose_name="Time-to-Value",
+    )
     bottleneck_coverage = models.TextField(
         blank=True,
         verbose_name="Abdeckung von Bottleneck und Ursache",
@@ -284,6 +319,23 @@ class SolutionOption(TimeStampedModel):
             )
         ]
 
+    @classmethod
+    def fixed_ai_option_types(cls) -> set[str]:
+        return {
+            cls.OptionType.ANALYTICS_ML,
+            cls.OptionType.GENERATIVE_AI,
+            cls.OptionType.ASSISTANT,
+        }
+
+    @classmethod
+    def fixed_non_ai_option_types(cls) -> set[str]:
+        return {
+            cls.OptionType.ORGANIZATIONAL,
+            cls.OptionType.RULE_AUTOMATION,
+            cls.OptionType.STANDARD_SOFTWARE,
+            cls.OptionType.NO_TECH,
+        }
+
     def clean(self):
         super().clean()
         if self.evaluation_status != self.EvaluationStatus.ASSESSED:
@@ -295,8 +347,20 @@ class SolutionOption(TimeStampedModel):
             errors["integration_effort"] = (
                 "Integrationsaufwand muss für den Status 'Bewertet' bewertet sein."
             )
+        if self.time_to_value == TimeToValue.NOT_ASSESSED:
+            errors["time_to_value"] = (
+                "Time-to-Value muss für den Status 'Bewertet' eingeordnet werden; "
+                "'Unbekannt' ist zulässig, wenn keine belastbare Zeitangabe vorliegt."
+            )
         if errors:
             raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        if self.option_type in self.fixed_ai_option_types():
+            self.contains_ai_component = True
+        elif self.option_type in self.fixed_non_ai_option_types():
+            self.contains_ai_component = False
+        super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         return self.name
@@ -324,17 +388,16 @@ class SolutionOption(TimeStampedModel):
             self.evaluation_status == self.EvaluationStatus.ASSESSED
             and all(str(value).strip() for value in required)
             and all(value != self.Effort.NOT_ASSESSED for value in assessed_efforts)
+            and self.time_to_value != TimeToValue.NOT_ASSESSED
         )
 
     @property
     def starts_ai_use_case(self) -> bool:
-        non_ai_option_types = {
-            self.OptionType.ORGANIZATIONAL,
-            self.OptionType.RULE_AUTOMATION,
-            self.OptionType.STANDARD_SOFTWARE,
-            self.OptionType.NO_TECH,
-        }
-        return self.option_type not in non_ai_option_types
+        if self.option_type in self.fixed_ai_option_types():
+            return True
+        if self.option_type in self.fixed_non_ai_option_types():
+            return False
+        return bool(self.contains_ai_component)
 
 
 class SolutionSelectionDecision(TimeStampedModel):
