@@ -1,6 +1,7 @@
 # Value-Stream-Methodik
 
-**Version:** 1.0  
+**Version:** 1.1  
+**Stand:** 22.08.2026  
 **Gültig für:** Value-Stream-Erfassung und Fokus-/Prozessanalyse im KI-Radar  
 **Zweck:** kompakte fachliche Leitplanke; keine zusätzliche Business-Architecture-Schicht
 
@@ -123,17 +124,62 @@ Mögliche Indikatoren:
 
 Diese Heuristik ist **kein neues Portfolio-Modul und kein verpflichtendes Scoring**. Sie hilft lediglich, einen sinnvollen Startpunkt zu wählen.
 
-## 6. Von Value Stream zu Prozess und Lösung
+## 6. Fokusphase innerhalb eines Value Streams auswählen
+
+Nach Auswahl eines Value Streams wird entschieden, **welche Phase tatsächlich vertieft werden soll**. Diese Entscheidung darf früh und hypothesenbasiert erfolgen, muss aber nachvollziehbar bleiben.
+
+Die Fokusphase wird anhand folgender Perspektiven verglichen:
+
+- **Business Impact** – Relevanz für Geschäftsziele, Stakeholder oder kritischen Betrieb;
+- **Problemintensität** – Ausmaß von Wartezeit, Nacharbeit, Fehlern, Aufwand oder Engpässen;
+- **Verbesserungspotenzial** – welche relevante Verbesserung gegenüber dem Ist-Zustand realistisch erreichbar erscheint;
+- **Datenzugang / Validierbarkeit** – wie realistisch Hypothesen und spätere Wirkung geprüft werden können;
+- **Veränderungsaufwand** – organisatorischer, prozessualer und technischer Änderungsaufwand;
+- **Time-to-Value** – wie schnell eine sinnvolle Wirkung realistischerweise erreichbar ist.
+
+### Verbesserungspotenzial ist nicht Veränderungsaufwand
+
+Die beiden Kriterien beantworten unterschiedliche Fragen:
+
+- `Verbesserungspotenzial`: **Wie viel sinnvolle Verbesserung kann erreicht werden?**
+- `Veränderungsaufwand`: **Wie aufwendig ist die Veränderung?**
+
+Eine Phase kann gleichzeitig hohes Verbesserungspotenzial **und** hohen Veränderungsaufwand besitzen. Das ist kein Widerspruch und darf nicht in einem einzelnen Kriterium verschmolzen werden.
+
+### Time-to-Value als Trade-off
+
+Time-to-Value wird qualitativ als `unbekannt`, `kurz`, `mittel` oder `lang` eingeordnet.
+
+Es gilt ausdrücklich nicht:
+
+> kürzer = automatisch besser
+
+Ein schneller KI-Pilot kann im Einzelfall sinnvoller sein als eine langwierige Harmonisierung. Umgekehrt kann eine langsamere Standardisierung langfristig robuster und wirtschaftlicher sein. Die Abwägung muss sichtbar begründet werden; es gibt keinen automatischen TTV-Score.
+
+### Evidenzbasis sichtbar halten
+
+Je Phase wird außerdem kenntlich gemacht, worauf die Bewertung aktuell beruht:
+
+- **Hypothese / unbestätigt**,
+- **Indiz / qualitativ belegt**,
+- **gemessen / nachgewiesen**.
+
+Eine Hypothese ist in früher Discovery zulässig. Sie darf nur nicht so dargestellt werden, als läge bereits validierte Evidenz vor. Fehlende quantitative Baselines werden nicht erfunden.
+
+Bestehende `ProcessValidation`, Provenance sowie Versions-/Stale-Mechanismen bleiben die kanonischen Nachweise für fachliche Validierung und Herkunft im späteren Prozess-Deep-Dive.
+
+## 7. Von Value Stream zu Prozess und Lösung
 
 Der KI-Radar folgt bewusst dieser Logik:
 
 1. Value Stream erfassen und sauber abgrenzen.
 2. Phasen vergleichen.
-3. Fokusphase nachvollziehbar auswählen.
+3. Fokusphase anhand der Kriterien und der aktuellen Evidenzbasis nachvollziehbar auswählen.
 4. Den relevanten Prozess detaillierter analysieren.
-5. Ursachen, Engpässe, Baselines und Rahmenbedingungen verstehen.
+5. Problem, Ursachen, Engpässe, Baselines und Rahmenbedingungen verstehen.
 6. Mehrere Lösungsoptionen entwickeln und vergleichen.
-7. Die fachlich beste Option auswählen.
+7. Die fachlich beste ausreichende Option auswählen.
+8. Nur wenn die bevorzugte Lösung tatsächlich eine KI-Komponente enthält, gegebenenfalls einen KI-Use-Case anlegen.
 
 Dabei gilt:
 
@@ -143,11 +189,19 @@ Nicht:
 
 > **Problem → KI-Eignung → KI erzwingen.**
 
-Organisatorische, regelbasierte oder klassische technische Lösungen können gegenüber einer KI-Lösung die bessere Option sein.
+Organisatorische, regelbasierte oder klassische technische Lösungen können gegenüber einer KI-Lösung die bessere Option sein. Ebenso kann eine hybride Lösung aus Standardisierung, deterministischer Automation und gezielter KI-Komponente die beste ausreichende Variante sein.
 
-## 7. Bestehende qualitative Bewertungsskalen
+Ein fachlich sauberer Endzustand ist ausdrücklich auch:
 
-Die bestehende Value-Stream-/Fokus-Journey verwendet die drei Stufen:
+```text
+Problem analysiert
+→ Standardisierung / klassische Automation ausreichend
+→ kein KI-Use-Case erforderlich
+```
+
+## 8. Bestehende qualitative Bewertungsskalen
+
+Die bestehende Value-Stream-/Fokus-Journey verwendet für mehrere Kriterien die drei Stufen:
 
 `Niedrig · Mittel · Hoch`
 
@@ -156,20 +210,25 @@ Die konkrete Bedeutung hängt vom Kriterium ab. Deshalb gilt nicht pauschal „h
 - **Strategischer Impact / Impact:** Reichweite und Relevanz der Wirkung.
 - **Wirtschaftliches Potenzial:** Größe des plausiblen wirtschaftlichen Hebels.
 - **Problemintensität:** Stärke, Häufigkeit und Konsequenz des Problems.
-- **Datenzugänglichkeit / Datenlage:** reale Verfügbarkeit, Zugänglichkeit und Nutzbarkeit relevanter Daten.
+- **Verbesserungspotenzial:** Größe der plausibel erreichbaren Verbesserung gegenüber dem Ist-Zustand.
+- **Datenzugänglichkeit / Datenlage:** reale Verfügbarkeit, Zugänglichkeit und Nutzbarkeit relevanter Daten beziehungsweise Validierbarkeit.
 - **Veränderungsaufwand:** notwendiger organisatorischer, prozessualer und technischer Veränderungsaufwand.
 
-Die Skalenanker in der Anwendung erläutern diese bestehende Semantik; sie verändern die Bewertungslogik nicht.
+Time-to-Value verwendet bewusst eine eigene Skala (`unbekannt · kurz · mittel · lang`) und die Evidenzbasis eine eigene Semantik (`Hypothese · Indiz · Messwert`). Beide werden nicht in die Niedrig-/Mittel-/Hoch-Skala gezwungen.
 
-## 8. Methodische Leitplanke
+Die Skalenanker in der Anwendung erläutern diese Semantik; sie erzeugen keinen gewichteten Gesamtscore.
+
+## 9. Methodische Leitplanke
 
 Die Value-Stream-Erfassung soll Orientierung schaffen, nicht zusätzliche Bürokratie erzeugen.
 
 Daher:
 
-- vorhandene Felder zuerst nutzen,
+- vorhandene Felder und bestehende Validation-/Provenance-Mechanismen zuerst nutzen,
 - keine zusätzliche Capability- oder Portfolio-Engine,
-- keine neuen Pflichtfelder nur für Methodik,
+- keine zweite allgemeine Evidence-/Validation-Engine,
 - keine parallele Fokus- oder Prozessanalyse,
 - kein vorgeschaltetes AI-Suitability-Gate,
+- keine automatische Rangfolge aus Fokus- oder Lösungskriterien,
+- keine erfundenen Baselines oder TTV-Werte,
 - Detailtiefe erst dort erhöhen, wo eine Fokusentscheidung dies rechtfertigt.
