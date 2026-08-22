@@ -5,9 +5,11 @@ from django.urls import reverse
 from ki_radar.architecture.focus import ValueStreamFocus
 from ki_radar.architecture.forms import SolutionOptionForm
 from ki_radar.architecture.models import (
+    EvidenceBasis,
     ProcessAnalysis,
     SolutionOption,
     SolutionSelectionDecision,
+    TimeToValue,
     ValueStream,
     ValueStreamStage,
 )
@@ -80,25 +82,29 @@ def comparison_process(owner, business_unit):
     )
 
 
-def make_option(process, owner, *, name, option_type, status="assessed"):
-    return SolutionOption.objects.create(
-        process_analysis=process,
-        name=name,
-        option_type=option_type,
-        evaluation_status=status,
-        description=f"Beschreibung {name}",
-        expected_value=f"Nutzen {name}",
-        bottleneck_coverage="Reduziert manuelle Übertragung.",
-        feasibility=SolutionOption.Effort.HIGH,
-        data_requirements="Angebote und Kriterien",
-        application_impact="Ergänzung der Fachanwendung",
-        integration_effort=SolutionOption.Effort.MEDIUM,
-        integration_impact="ERP-Export",
-        technology_constraints="Nachvollziehbare Verarbeitung",
-        risks="Fehlerhafte Eingaben",
-        architecture_fit="Passt zur bestehenden Architektur",
-        created_by=owner,
-    )
+def make_option(process, owner, *, name, option_type, status="assessed", **overrides):
+    data = {
+        "process_analysis": process,
+        "name": name,
+        "option_type": option_type,
+        "evaluation_status": status,
+        "evidence_basis": EvidenceBasis.HYPOTHESIS,
+        "description": f"Beschreibung {name}",
+        "expected_value": f"Nutzen {name}",
+        "time_to_value": TimeToValue.UNKNOWN,
+        "bottleneck_coverage": "Reduziert manuelle Übertragung.",
+        "feasibility": SolutionOption.Effort.HIGH,
+        "data_requirements": "Angebote und Kriterien",
+        "application_impact": "Ergänzung der Fachanwendung",
+        "integration_effort": SolutionOption.Effort.MEDIUM,
+        "integration_impact": "ERP-Export",
+        "technology_constraints": "Nachvollziehbare Verarbeitung",
+        "risks": "Fehlerhafte Eingaben",
+        "architecture_fit": "Passt zur bestehenden Architektur",
+        "created_by": owner,
+    }
+    data.update(overrides)
+    return SolutionOption.objects.create(**data)
 
 
 def assessed_form_data(**overrides):
@@ -106,8 +112,10 @@ def assessed_form_data(**overrides):
         "name": "Regelprüfung",
         "option_type": SolutionOption.OptionType.RULE_AUTOMATION,
         "evaluation_status": SolutionOption.EvaluationStatus.ASSESSED,
+        "evidence_basis": EvidenceBasis.HYPOTHESIS,
         "description": "Beschreibung Regelprüfung",
         "expected_value": "Nutzen Regelprüfung",
+        "time_to_value": TimeToValue.UNKNOWN,
         "bottleneck_coverage": "Reduziert manuelle Übertragung.",
         "feasibility": SolutionOption.Effort.HIGH,
         "data_requirements": "Angebote und Kriterien",
@@ -135,6 +143,8 @@ def test_new_solution_option_defaults_are_not_assessed(comparison_process, owner
 
     assert option.feasibility == SolutionOption.Effort.NOT_ASSESSED
     assert option.integration_effort == SolutionOption.Effort.NOT_ASSESSED
+    assert option.time_to_value == TimeToValue.NOT_ASSESSED
+    assert option.evidence_basis == EvidenceBasis.HYPOTHESIS
     assert option.get_feasibility_display() == "Noch nicht bewertet"
     assert option.get_integration_effort_display() == "Noch nicht bewertet"
     assert option.comparison_complete is False
@@ -152,6 +162,7 @@ def test_explicit_existing_assessments_remain_unchanged(comparison_process, owne
 
     assert option.feasibility == SolutionOption.Effort.HIGH
     assert option.integration_effort == SolutionOption.Effort.MEDIUM
+    assert option.time_to_value == TimeToValue.UNKNOWN
     assert option.comparison_complete is True
 
 
@@ -166,6 +177,18 @@ def test_assessed_form_rejects_unassessed_effort(comparison_process, field_name)
     assert not form.is_valid()
     assert field_name in form.errors
     assert "muss für den Status 'Bewertet' bewertet sein" in form.errors[field_name][0]
+
+
+@pytest.mark.django_db
+def test_assessed_form_requires_time_to_value_tradeoff(comparison_process):
+    form = SolutionOptionForm(
+        data=assessed_form_data(time_to_value=TimeToValue.NOT_ASSESSED),
+        process_analysis=comparison_process,
+    )
+
+    assert not form.is_valid()
+    assert "time_to_value" in form.errors
+    assert "Time-to-Value muss" in form.errors["time_to_value"][0]
 
 
 @pytest.mark.django_db
@@ -206,6 +229,47 @@ def test_options_are_sorted_solution_open(comparison_process, owner):
 
 
 @pytest.mark.django_db
+def test_hybrid_and_ambiguous_types_require_explicit_ai_component(comparison_process, owner):
+    custom = make_option(
+        comparison_process,
+        owner,
+        name="Individuelle Fachlogik",
+        option_type=SolutionOption.OptionType.CUSTOM_SOFTWARE,
+    )
+    other = make_option(
+        comparison_process,
+        owner,
+        name="Sonstige Lösung",
+        option_type=SolutionOption.OptionType.OTHER,
+    )
+    hybrid_non_ai = make_option(
+        comparison_process,
+        owner,
+        name="Hybrid ohne KI",
+        option_type=SolutionOption.OptionType.HYBRID,
+    )
+    hybrid_ai = make_option(
+        comparison_process,
+        owner,
+        name="Hybrid mit KI",
+        option_type=SolutionOption.OptionType.HYBRID,
+        contains_ai_component=True,
+    )
+    assistant = make_option(
+        comparison_process,
+        owner,
+        name="KI-Assistenz",
+        option_type=SolutionOption.OptionType.ASSISTANT,
+    )
+
+    assert custom.starts_ai_use_case is False
+    assert other.starts_ai_use_case is False
+    assert hybrid_non_ai.starts_ai_use_case is False
+    assert hybrid_ai.starts_ai_use_case is True
+    assert assistant.starts_ai_use_case is True
+
+
+@pytest.mark.django_db
 def test_comparison_requires_two_complete_options(comparison_process, owner):
     first = make_option(
         comparison_process,
@@ -236,12 +300,16 @@ def test_selection_is_auditable_and_updates_statuses(comparison_process, owner):
         owner,
         name="Vorlage standardisieren",
         option_type=SolutionOption.OptionType.ORGANIZATIONAL,
+        evidence_basis=EvidenceBasis.MEASURED,
+        time_to_value=TimeToValue.SHORT,
     )
     assistant = make_option(
         comparison_process,
         owner,
         name="KI-Assistenz",
         option_type=SolutionOption.OptionType.ASSISTANT,
+        evidence_basis=EvidenceBasis.INDICATIVE,
+        time_to_value=TimeToValue.MEDIUM,
     )
 
     decision = select_preferred_solution(
@@ -261,7 +329,12 @@ def test_selection_is_auditable_and_updates_statuses(comparison_process, owner):
         comparison_process.diagnostic_observations
     )
     assert decision.diagnosis_snapshot["confirmed_causes"] == comparison_process.confirmed_causes
+    assert decision.diagnosis_snapshot["validation"] is None
     assert decision.comparison_snapshot[0]["name"] == organizational.name
+    assert decision.comparison_snapshot[0]["time_to_value"] == TimeToValue.SHORT
+    assert decision.comparison_snapshot[0]["evidence_basis"] == EvidenceBasis.MEASURED
+    assert decision.comparison_snapshot[0]["contains_ai_component"] is False
+    assert decision.comparison_snapshot[1]["contains_ai_component"] is True
     assert len(decision.comparison_snapshot) == 2
 
     decision.rationale = "Nachträglich geändert"
@@ -320,6 +393,8 @@ def test_comparison_page_selects_and_shows_history(client, comparison_process, o
     assert "Bottleneck-Abdeckung" in content
     assert "Integrationsaufwand" in content
     assert "Technologieleitplanken" in content
+    assert "Time-to-Value" in content
+    assert "Evidenzbasis" in content
 
     response = client.post(
         url,
@@ -336,7 +411,8 @@ def test_comparison_page_selects_and_shows_history(client, comparison_process, o
     assert "Auswahlhistorie" in history
     assert "Die organisatorische Alternative" in history
     assert f"Prozessversion v{comparison_process.version}" in history
-    assert "Diagnosestand der Entscheidung" in history
+    assert "Diagnose- und Evidenzstand der Entscheidung" in history
+    assert "KI-Use-Case kann regulär weitergeführt werden" in history
 
 
 def test_solution_option_form_uses_german_option_type_label():
