@@ -4,8 +4,8 @@ from django import forms
 
 from ki_radar.core.taxonomy import ScreeningLevel
 
-from .models import ValueStreamStage
-from .stage_focus import CRITERIA_KEYS
+from .models import EvidenceBasis, TimeToValue, ValueStreamStage
+from .stage_focus import CRITERIA_KEYS, EVIDENCE_BASIS_KEY
 
 FORM_CONTROL = "form-control"
 FORM_SELECT = "form-select"
@@ -14,6 +14,7 @@ CRITERIA_LABELS = {
     "pain_intensity": "Problemintensität",
     "data_accessibility": "Datenlage",
     "change_effort": "Veränderungsaufwand",
+    "time_to_value": "Time-to-Value",
 }
 
 
@@ -60,20 +61,47 @@ class StageFocusForm(forms.Form):
             )
 
         self.stage_rows = []
+        ttv_choices = [
+            ("", "Noch nicht bewertet"),
+            TimeToValue.UNKNOWN,
+            TimeToValue.SHORT,
+            TimeToValue.MEDIUM,
+            TimeToValue.LONG,
+        ]
+        evidence_choices = [("", "Noch nicht eingeordnet"), *EvidenceBasis.choices]
         for stage in self.stages:
             stage_key = stage.pk.hex
             saved = snapshot.get(str(stage.pk), {})
             row = {"stage": stage, "fields": []}
             for criterion in CRITERIA_KEYS:
                 field_name = f"{criterion}_{stage_key}"
+                choices = (
+                    ttv_choices
+                    if criterion == "time_to_value"
+                    else [("", "Noch nicht bewertet"), *ScreeningLevel.choices]
+                )
                 self.fields[field_name] = forms.ChoiceField(
-                    choices=[("", "Noch nicht bewertet"), *ScreeningLevel.choices],
+                    choices=choices,
                     required=False,
                     label=CRITERIA_LABELS[criterion],
                     widget=forms.Select(attrs={"class": FORM_SELECT}),
                     initial=saved.get(criterion, ""),
                 )
                 row["fields"].append(self[field_name])
+
+            evidence_field = f"{EVIDENCE_BASIS_KEY}_{stage_key}"
+            self.fields[evidence_field] = forms.ChoiceField(
+                choices=evidence_choices,
+                required=False,
+                label="Evidenzbasis",
+                help_text=(
+                    "Hypothese ist in früher Discovery zulässig. Indiz oder Messwert nur wählen, "
+                    "wenn die gespeicherten Indikatoren diese Einordnung tragen."
+                ),
+                widget=forms.Select(attrs={"class": FORM_SELECT}),
+                initial=saved.get(EVIDENCE_BASIS_KEY, ""),
+            )
+            row["fields"].append(self[evidence_field])
             self.stage_rows.append(row)
 
     def clean(self):
@@ -91,25 +119,29 @@ class StageFocusForm(forms.Form):
             return cleaned
 
         for stage in self.stages:
-            for criterion in CRITERIA_KEYS:
+            for criterion in (*CRITERIA_KEYS, EVIDENCE_BASIS_KEY):
                 field_name = f"{criterion}_{stage.pk.hex}"
                 if not cleaned.get(field_name):
                     self.add_error(
                         field_name,
-                        "Für den vollständigen Vergleich ist eine Bewertung erforderlich.",
+                        "Für den vollständigen Vergleich ist eine Einordnung erforderlich.",
                     )
         return cleaned
 
     def criteria_snapshot(self) -> dict:
         snapshot = {}
         for stage in self.stages:
+            stage_key = stage.pk.hex
             snapshot[str(stage.pk)] = {
                 "sequence": stage.sequence,
                 "name": stage.name,
                 **{
-                    criterion: self.cleaned_data.get(f"{criterion}_{stage.pk.hex}", "")
+                    criterion: self.cleaned_data.get(f"{criterion}_{stage_key}", "")
                     for criterion in CRITERIA_KEYS
                 },
+                EVIDENCE_BASIS_KEY: self.cleaned_data.get(
+                    f"{EVIDENCE_BASIS_KEY}_{stage_key}", ""
+                ),
                 "indicators": {
                     "description": stage.description,
                     "pain_points": stage.pain_points,
