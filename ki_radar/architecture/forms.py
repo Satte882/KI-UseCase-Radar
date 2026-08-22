@@ -372,7 +372,8 @@ class SolutionOptionForm(StyledModelForm):
             "Hypothesen sind zulässig, müssen aber als solche sichtbar bleiben."
         )
         self.fields["time_to_value"].help_text = (
-            "Qualitativer Trade-off. 'Unbekannt' verwenden, wenn keine belastbare Zeitangabe vorliegt."
+            "Qualitativer Trade-off. 'Unbekannt' verwenden, wenn keine belastbare "
+            "Zeitangabe vorliegt."
         )
 
     def clean(self):
