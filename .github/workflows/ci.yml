@@ -92,9 +92,11 @@ jobs:
       # pip-audit names sqlparse 0.6.0 as the fix, but that release is not yet
       # available from the official PyPI simple index. Keep the IDs visible so
       # the waiver is narrow and removable instead of disabling the audit gate.
+      # Run the project audit with a fixed pip release so pip-audit's own
+      # transitive tooling dependency is not audited from the dev environment.
       - name: Dependency audit
         run: >-
-          uv run pip-audit
+          uv run --with "pip==26.2" pip-audit .
           --ignore-vuln PYSEC-2026-3717
           --ignore-vuln PYSEC-2026-3698
           --ignore-vuln PYSEC-2026-3697
