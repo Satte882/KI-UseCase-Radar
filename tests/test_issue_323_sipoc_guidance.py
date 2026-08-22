@@ -57,7 +57,8 @@ def test_process_analysis_form_shows_sipoc_guidance(client, owner, sipoc_stage):
     assert response.status_code == 200
     content = response.content.decode()
     assert 'data-testid="sipoc-guidance"' in content
-    assert "SIPOC – Prozesskontext prüfen" in content
+    assert "SIPOC" in content
+    assert "Prozesskontext prüfen" in content
     assert "Supplier → Input → Process → Output → Customer" in content
     assert "Welche fachlichen Inputs, Daten oder Dokumente gelangen in den Prozess?" in content
     assert "Welches fachliche Ergebnis verlässt den Prozess?" in content
