@@ -2,7 +2,13 @@ import pytest
 from django.urls import reverse
 
 from ki_radar.architecture.focus import ValueStreamFocus
-from ki_radar.architecture.models import ProcessAnalysis, ValueStream, ValueStreamStage
+from ki_radar.architecture.models import (
+    EvidenceBasis,
+    ProcessAnalysis,
+    TimeToValue,
+    ValueStream,
+    ValueStreamStage,
+)
 from ki_radar.architecture.process_findings import build_process_findings
 from ki_radar.architecture.stage_focus import StageFocusDecision
 from ki_radar.core.taxonomy import BusinessDomain, ScreeningLevel
@@ -95,6 +101,12 @@ def test_process_analysis_requires_saved_focus_stage_and_uses_selected_stage(
                 ),
                 f"data_accessibility_{stage.pk.hex}": ScreeningLevel.MEDIUM,
                 f"change_effort_{stage.pk.hex}": ScreeningLevel.MEDIUM,
+                f"time_to_value_{stage.pk.hex}": (
+                    TimeToValue.SHORT if stage == stage_two else TimeToValue.MEDIUM
+                ),
+                f"evidence_basis_{stage.pk.hex}": (
+                    EvidenceBasis.MEASURED if stage == stage_two else EvidenceBasis.HYPOTHESIS
+                ),
             }
         )
 
@@ -103,6 +115,9 @@ def test_process_analysis_requires_saved_focus_stage_and_uses_selected_stage(
     decision = StageFocusDecision.objects.get(value_stream=value_stream)
     assert decision.selected_stage == stage_two
     assert decision.criteria_for(stage_two)["pain_intensity"] == ScreeningLevel.HIGH
+    assert decision.criteria_for(stage_two)["time_to_value"] == TimeToValue.SHORT
+    assert decision.criteria_for(stage_two)["evidence_basis"] == EvidenceBasis.MEASURED
+    assert decision.criteria_for(stage_one)["evidence_basis"] == EvidenceBasis.HYPOTHESIS
     assert (
         decision.criteria_for(stage_two)["indicators"]["baseline_metrics"]
         == "11 Minuten je Vorgang\n18 % Korrekturen"
@@ -153,6 +168,8 @@ def test_short_path_is_explicitly_justified_without_full_phase_scoring(
     decision = StageFocusDecision.objects.get(value_stream=value_stream)
     assert decision.is_short_path is True
     assert decision.criteria_for(stage)["impact"] == ""
+    assert decision.criteria_for(stage)["time_to_value"] == ""
+    assert decision.criteria_for(stage)["evidence_basis"] == ""
     assert "außerhalb" in decision.short_path_reason
 
 
