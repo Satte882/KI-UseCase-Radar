@@ -99,6 +99,9 @@ def test_process_analysis_requires_saved_focus_stage_and_uses_selected_stage(
                 f"pain_intensity_{stage.pk.hex}": (
                     ScreeningLevel.HIGH if stage == stage_two else ScreeningLevel.LOW
                 ),
+                f"improvement_potential_{stage.pk.hex}": (
+                    ScreeningLevel.HIGH if stage == stage_two else ScreeningLevel.LOW
+                ),
                 f"data_accessibility_{stage.pk.hex}": ScreeningLevel.MEDIUM,
                 f"change_effort_{stage.pk.hex}": ScreeningLevel.MEDIUM,
                 f"time_to_value_{stage.pk.hex}": (
@@ -115,6 +118,8 @@ def test_process_analysis_requires_saved_focus_stage_and_uses_selected_stage(
     decision = StageFocusDecision.objects.get(value_stream=value_stream)
     assert decision.selected_stage == stage_two
     assert decision.criteria_for(stage_two)["pain_intensity"] == ScreeningLevel.HIGH
+    assert decision.criteria_for(stage_two)["improvement_potential"] == ScreeningLevel.HIGH
+    assert decision.criteria_for(stage_two)["change_effort"] == ScreeningLevel.MEDIUM
     assert decision.criteria_for(stage_two)["time_to_value"] == TimeToValue.SHORT
     assert decision.criteria_for(stage_two)["evidence_basis"] == EvidenceBasis.MEASURED
     assert decision.criteria_for(stage_one)["evidence_basis"] == EvidenceBasis.HYPOTHESIS
@@ -168,6 +173,8 @@ def test_short_path_is_explicitly_justified_without_full_phase_scoring(
     decision = StageFocusDecision.objects.get(value_stream=value_stream)
     assert decision.is_short_path is True
     assert decision.criteria_for(stage)["impact"] == ""
+    assert decision.criteria_for(stage)["improvement_potential"] == ""
+    assert decision.criteria_for(stage)["change_effort"] == ""
     assert decision.criteria_for(stage)["time_to_value"] == ""
     assert decision.criteria_for(stage)["evidence_basis"] == ""
     assert "außerhalb" in decision.short_path_reason
