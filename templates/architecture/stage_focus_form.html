@@ -14,7 +14,7 @@
 </div>
 
 <div class="alert alert-secondary mb-4">
-  Die Bewertung ist eine kompakte Priorisierung, keine Vollanalyse. Kennzahlen und qualitative Indikatoren werden als Snapshot der aktuellen Phasenbeschreibung gespeichert.
+  Die Bewertung ist eine kompakte Priorisierung, keine Vollanalyse. Hypothesen sind in früher Discovery zulässig, müssen aber als solche sichtbar bleiben. Time-to-Value ist ein Trade-off und keine automatische Rangfolge.
 </div>
 
 <form method="post">
@@ -22,12 +22,12 @@
   {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
 
   <div class="app-card mb-4">
-    <div class="card-header"><strong>1. Phasen vergleichen</strong><div class="small text-muted mt-1">Impact, Problemintensität, Datenlage und Veränderungsaufwand einheitlich bewerten.</div></div>
+    <div class="card-header"><strong>1. Phasen vergleichen</strong><div class="small text-muted mt-1">Impact, Problemintensität, Datenlage, Veränderungsaufwand und Time-to-Value einheitlich einordnen; Evidenzbasis separat sichtbar halten.</div></div>
     <div class="card-body">
       {% include "architecture/_screening_level_anchors.html" with scope="stage" %}
       <div class="table-responsive">
         <table class="table align-middle mb-0">
-          <thead><tr><th>Fokus</th><th>Phase und Indikatoren</th><th>Impact</th><th>Problemintensität</th><th>Datenlage</th><th>Veränderungsaufwand</th></tr></thead>
+          <thead><tr><th>Fokus</th><th>Phase und Indikatoren</th><th>Impact</th><th>Problemintensität</th><th>Datenlage</th><th>Veränderungsaufwand</th><th>Time-to-Value</th><th>Evidenzbasis</th></tr></thead>
           <tbody>
             {% for row in form.stage_rows %}
             <tr>
@@ -39,7 +39,7 @@
                 <div class="small"><strong>Baseline:</strong> {{ row.stage.baseline_metrics|default:"–" }}</div>
               </td>
               {% for field in row.fields %}
-              <td>{{ field }}{% if field.errors %}<div class="invalid-feedback d-block">{{ field.errors }}</div>{% endif %}</td>
+              <td>{{ field }}{% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}{% if field.errors %}<div class="invalid-feedback d-block">{{ field.errors }}</div>{% endif %}</td>
               {% endfor %}
             </tr>
             {% endfor %}
