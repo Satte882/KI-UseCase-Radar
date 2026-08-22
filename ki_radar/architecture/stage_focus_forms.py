@@ -63,10 +63,10 @@ class StageFocusForm(forms.Form):
         self.stage_rows = []
         ttv_choices = [
             ("", "Noch nicht bewertet"),
-            TimeToValue.UNKNOWN,
-            TimeToValue.SHORT,
-            TimeToValue.MEDIUM,
-            TimeToValue.LONG,
+            (TimeToValue.UNKNOWN, TimeToValue.UNKNOWN.label),
+            (TimeToValue.SHORT, TimeToValue.SHORT.label),
+            (TimeToValue.MEDIUM, TimeToValue.MEDIUM.label),
+            (TimeToValue.LONG, TimeToValue.LONG.label),
         ]
         evidence_choices = [("", "Noch nicht eingeordnet"), *EvidenceBasis.choices]
         for stage in self.stages:
