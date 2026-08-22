@@ -5,7 +5,7 @@
 
 ## Ergebnis
 
-Issue #322 wird reuse-first über die bereits vorhandene `UseCaseOrigin`-Relation umgesetzt. Es entsteht **kein** neues Prozess-, Stage-, Value-Stream- oder Strategiefeld am `UseCase` und deshalb auch keine Datenmigration.
+Issue #322 wurde reuse-first über die bereits vorhandene `UseCaseOrigin`-Relation umgesetzt. Es entstand **kein** neues Prozess-, Stage-, Value-Stream- oder Strategiefeld am `UseCase` und deshalb auch keine Datenmigration.
 
 Die kanonische Kette lautet bei vorhandenem Prozessbezug:
 
@@ -19,6 +19,8 @@ UseCase
 ```
 
 Use Cases ohne Prozess- oder Discovery-Ursprung bleiben unverändert gültig.
+
+Die vorausgehende Gap-Analyse ist in [`ISSUE_322_GAP_ANALYSIS.md`](ISSUE_322_GAP_ANALYSIS.md) archiviert.
 
 ## Umgesetzte Änderungen
 
@@ -52,7 +54,7 @@ Die bereits vorhandenen `PROTECT`-Beziehungen von `UseCaseOrigin` auf Stage, Pro
 
 Die bestehende Signal-Logik `inherit_classification_from_discovery` wird wiederverwendet. Besitzt der zugehörige Value Stream einen `ValueStreamFocus`, werden Fachdomäne, Capability und Prozessbereich weiterhin aus diesem kanonischen Fokuskontext in die operative `UseCaseClassification` übernommen.
 
-Es wird bewusst **kein** zusätzlicher Synchronisationsmechanismus bei späteren Änderungen des `ValueStreamFocus` eingeführt. Das wäre eine allgemeine Klassifikations-/Synchronisationsfrage und liegt außerhalb von #322.
+Es wurde bewusst **kein** zusätzlicher Synchronisationsmechanismus bei späteren Änderungen des `ValueStreamFocus` eingeführt. Das wäre eine allgemeine Klassifikations-/Synchronisationsfrage und liegt außerhalb von #322.
 
 ### Strategischer Kontext in der Detailansicht
 
@@ -67,7 +69,7 @@ Die bestehende Use-Case-Detailansicht zeigt bei vorhandenem Ursprung zusätzlich
 - Business Capability,
 - strategischen Impact aus `ValueStreamFocus`.
 
-Dafür wird keine zweite Persistenz und kein mutierender Read-Helper eingeführt; die bereits geladene kanonische Relation wird direkt gelesen.
+Dafür wurde keine zweite Persistenz und kein mutierender Read-Helper eingeführt; die bereits geladene kanonische Relation wird direkt gelesen.
 
 ## Bewusste Nicht-Änderungen
 
@@ -92,7 +94,7 @@ Das externe Review wurde als Prüfinput bewertet, nicht als Pflichtumfang.
 2. expliziter Schutz des bereits bekannten Discovery-Ursprungs,
 3. Regressionstest für die bestehende Klassifikationsvererbung.
 
-Nicht übernommen wurde ein neuer `ValueStreamFocus.post_save`-Synchronisationsmechanismus, da er den Scope von #322 zu einer allgemeinen Synchronisationsarchitektur erweitern würde.
+Nicht übernommen wurde ein neuer `ValueStreamFocus.post_save`-Synchronisationsmechanismus, da er den Scope von #322 zu einer allgemeinen Synchronisationsarchitektur erweitert hätte.
 
 ## Testabdeckung
 
@@ -112,4 +114,16 @@ Die bestehende Guided-Intake-Regression deckt weiterhin den direkten Intake **oh
 
 ## Migration
 
-Keine Migration erforderlich. `UseCaseOrigin.process_analysis` existierte bereits optional; #322 schließt die verbleibende Intake-, Validierungs- und Sichtbarkeitslücke durch Wiederverwendung dieser Relation.
+Keine Migration erforderlich. `UseCaseOrigin.process_analysis` existierte bereits optional; #322 schloss die verbleibende Intake-, Validierungs- und Sichtbarkeitslücke durch Wiederverwendung dieser Relation.
+
+## Abschlussnachweis
+
+- **Pull Request:** #337 – `feat: Use Cases mit kanonischem Ursprungsprozess verknüpfen (#322)`
+- **Merge nach `main`:** 22.08.2026
+- **Merge-Commit:** `b1dc7b0295c2cc457fdb70e1044c518ae0f2960f`
+- **Issue:** #322 wurde durch den Merge geschlossen.
+- **Finaler PR-CI-Lauf:** #1564 vollständig erfolgreich.
+
+CI #1564 umfasste erfolgreich Ruff Lint und Format, Django System Check, Migrationsprüfung und -anwendung, Architecture Real-DEMO E2E, die vollständige Testsuite, Bandit, Dependency Audit, lokale/Production-/Staging-Compose-Prüfungen sowie Production- und Development-Docker-Builds.
+
+Der vorausgehende CI-Lauf #1563 war vollständig beendet worden, bevor eine Korrektur erfolgte. Der einzige konkrete Fehler war `ruff format --check` für `ki_radar/use_cases/intake_views.py`; nach Auswertung des vollständigen Logs wurde dieser blockierende Formatfehler in einem einzelnen Fix-Commit korrigiert. Erst danach wurde CI #1564 gestartet und vollständig grün abgeschlossen.
