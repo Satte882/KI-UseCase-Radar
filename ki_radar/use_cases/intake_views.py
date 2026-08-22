@@ -270,10 +270,7 @@ def use_case_intake(request, step: int = 1):
 
     if step == 6:
         required_steps_complete = all(
-            all(
-                name in stored
-                for name in _completion_field_names(WIZARD_STEPS[number]["form"])
-            )
+            all(name in stored for name in _completion_field_names(WIZARD_STEPS[number]["form"]))
             for number in range(1, 6)
         )
         if not required_steps_complete:
