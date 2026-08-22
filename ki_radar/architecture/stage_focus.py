@@ -8,7 +8,14 @@ from django.dispatch import receiver
 
 from ki_radar.core.models import TimeStampedModel
 
-CRITERIA_KEYS = ("impact", "pain_intensity", "data_accessibility", "change_effort")
+CRITERIA_KEYS = (
+    "impact",
+    "pain_intensity",
+    "data_accessibility",
+    "change_effort",
+    "time_to_value",
+)
+EVIDENCE_BASIS_KEY = "evidence_basis"
 
 
 class StageFocusDecision(TimeStampedModel):
@@ -85,6 +92,8 @@ def _legacy_snapshot(stage) -> dict:
             "pain_intensity": "",
             "data_accessibility": "",
             "change_effort": "",
+            "time_to_value": "not_assessed",
+            "evidence_basis": "hypothesis",
             "indicators": {
                 "pain_points": stage.pain_points,
                 "baseline_metrics": stage.baseline_metrics,
