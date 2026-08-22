@@ -9,6 +9,7 @@ from ki_radar.accelerator.role_default_ui import attach_role_default
 from ki_radar.accelerator.role_defaults import SUGGESTION, resolve_use_case_business_owner
 from ki_radar.accounts.models import BusinessUnit
 from ki_radar.accounts.permissions import is_business_owner
+from ki_radar.architecture.models import ProcessAnalysis
 from ki_radar.core.taxonomy import BusinessDomain
 
 from .form_fields import LocalizedDecimalField
@@ -99,6 +100,16 @@ class ProblemStepForm(IntakeStepForm):
 
 
 class ProcessStepForm(IntakeStepForm):
+    process_analysis = forms.ModelChoiceField(
+        queryset=ProcessAnalysis.objects.none(),
+        required=False,
+        label="Ursprungsprozess",
+        empty_label="Keinen Ursprungsprozess verknüpfen",
+        help_text=(
+            "Optional: vorhandene Prozessanalyse verknüpfen. Phase, Value Stream und "
+            "strategischer Kontext werden daraus abgeleitet."
+        ),
+    )
     business_domain = forms.ChoiceField(
         choices=BusinessDomain.choices,
         label="Fachdomäne",
@@ -109,7 +120,15 @@ class ProcessStepForm(IntakeStepForm):
         label="Business Capability",
         help_text="Zum Beispiel Source-to-Pay, Accounts Payable oder Customer Service Management.",
     )
-    affected_process = forms.CharField(max_length=200, label="Betroffener Prozess")
+    affected_process = forms.CharField(
+        max_length=200,
+        required=False,
+        label="Betroffener Prozess",
+        help_text=(
+            "Nur manuell pflegen, wenn kein Ursprungsprozess verknüpft wird. "
+            "Bei Auswahl wird der Prozessname automatisch übernommen."
+        ),
+    )
     summary = forms.CharField(
         label="Heutiger Ablauf und Auslöser",
         widget=forms.Textarea(attrs={"rows": 4}),
@@ -124,6 +143,55 @@ class ProcessStepForm(IntakeStepForm):
         label="Heute verwendete Systeme und Dokumente",
         widget=forms.Textarea(attrs={"rows": 3}),
     )
+
+    def __init__(
+        self,
+        *args,
+        business_unit=None,
+        source_stage_id=None,
+        source_process_analysis_id=None,
+        **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
+        queryset = ProcessAnalysis.objects.none()
+        if business_unit is not None:
+            queryset = ProcessAnalysis.objects.filter(
+                stage__value_stream__business_unit=business_unit
+            )
+            if source_stage_id:
+                queryset = queryset.filter(stage_id=source_stage_id)
+            if source_process_analysis_id:
+                queryset = queryset.filter(pk=source_process_analysis_id)
+            queryset = queryset.select_related("stage__value_stream").order_by(
+                "stage__value_stream__name",
+                "stage__sequence",
+                "name",
+            )
+        self.fields["process_analysis"].queryset = queryset
+
+        if source_process_analysis_id:
+            self.initial["process_analysis"] = source_process_analysis_id
+            self.fields["process_analysis"].disabled = True
+            self.fields["process_analysis"].help_text = (
+                "Der Ursprungsprozess wurde aus Discovery übernommen und bleibt für diesen "
+                "Intake unverändert."
+            )
+
+    def clean(self):
+        cleaned = super().clean()
+        process_analysis = cleaned.get("process_analysis")
+        affected_process = (cleaned.get("affected_process") or "").strip()
+        if process_analysis is not None:
+            cleaned["affected_process"] = process_analysis.name
+        elif not affected_process:
+            self.add_error(
+                "affected_process",
+                "Bitte wählen Sie einen Ursprungsprozess oder benennen Sie den "
+                "betroffenen Prozess.",
+            )
+        else:
+            cleaned["affected_process"] = affected_process
+        return cleaned
 
 
 class AffectedPeopleStepForm(IntakeStepForm):
