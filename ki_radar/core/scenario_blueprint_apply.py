@@ -13,8 +13,10 @@ from ki_radar.architecture.forms import (
     ValueStreamStageForm,
 )
 from ki_radar.architecture.models import (
+    EvidenceBasis,
     ProcessAnalysis,
     SolutionOption,
+    TimeToValue,
     UseCaseOrigin,
     ValueStream,
     ValueStreamStage,
@@ -193,7 +195,14 @@ def _save_options(
         resolved.payload["solution_options"],
         key=lambda item: item["key"],
     ):
-        form = SolutionOptionForm(data=_pick(payload, fields))
+        data = _pick(payload, fields)
+        data.update(
+            {
+                "evidence_basis": EvidenceBasis.HYPOTHESIS,
+                "time_to_value": TimeToValue.NOT_ASSESSED,
+            }
+        )
+        form = SolutionOptionForm(data=data)
         if not form.is_valid():
             raise _form_failure(f"solution_option.{payload['key']}", form)
         option = form.save(commit=False)

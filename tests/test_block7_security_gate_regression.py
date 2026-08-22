@@ -27,6 +27,7 @@ from ki_radar.architecture.models import (
     ProcessValidation,
     SolutionOption,
     SolutionSelectionDecision,
+    TimeToValue,
     ValueStream,
     ValueStreamStage,
 )
@@ -159,6 +160,7 @@ def create_option(process, owner, *, name, assessed=False):
         if assessed
         else SolutionOption.EvaluationStatus.DRAFT
     )
+    time_to_value = TimeToValue.UNKNOWN if assessed else TimeToValue.NOT_ASSESSED
     return SolutionOption.objects.create(
         process_analysis=process,
         option_type=SolutionOption.OptionType.STANDARD_SOFTWARE,
@@ -176,6 +178,7 @@ def create_option(process, owner, *, name, assessed=False):
         architecture_fit="Manuell dokumentierter Architecture Fit",
         evaluation_status=status,
         recommendation=SolutionOption.Recommendation.CANDIDATE,
+        time_to_value=time_to_value,
         created_by=owner,
     )
 

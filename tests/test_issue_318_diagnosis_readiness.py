@@ -8,6 +8,7 @@ from ki_radar.architecture.models import (
     ProcessAnalysis,
     SolutionOption,
     SolutionSelectionDecision,
+    TimeToValue,
     ValueStream,
     ValueStreamStage,
 )
@@ -94,6 +95,7 @@ def make_complete_option(process, owner, *, name, option_type):
         technology_constraints="Nachvollziehbare Verarbeitung",
         risks="Fehlerhafte Eingaben",
         architecture_fit="Passt zur bestehenden Architektur",
+        time_to_value=TimeToValue.UNKNOWN,
         created_by=owner,
     )
 
@@ -207,6 +209,7 @@ def test_confirmed_diagnosis_allows_preference_without_constraint(owner, busines
         "cause_hypotheses": process.cause_hypotheses,
         "confirmed_causes": process.confirmed_causes,
         "constraints": "",
+        "validation": None,
     }
 
     ProcessAnalysis.objects.filter(pk=process.pk).update(
