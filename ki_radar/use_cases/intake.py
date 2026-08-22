@@ -232,12 +232,22 @@ class BenefitStepForm(IntakeStepForm):
     metric_baseline = LocalizedDecimalField(
         max_digits=14,
         decimal_places=4,
+        required=False,
         label="Baseline-Wert",
+        help_text=(
+            "Kann in früher Discovery noch offen bleiben. Vor einer positiven Freigabe "
+            "muss die Baseline belastbar vorliegen."
+        ),
     )
     metric_target = LocalizedDecimalField(
         max_digits=14,
         decimal_places=4,
+        required=False,
         label="Zielwert",
+        help_text=(
+            "Kann in früher Discovery noch offen bleiben. Vor einer positiven Freigabe "
+            "muss der Zielwert belastbar definiert sein."
+        ),
     )
     metric_measurement_method = forms.CharField(
         label="Messmethode",
@@ -251,15 +261,15 @@ class BenefitStepForm(IntakeStepForm):
         target = cleaned.get("metric_target")
         direction = cleaned.get("metric_direction")
         metric_type = cleaned.get("metric_type")
-        if baseline is None or target is None:
-            return cleaned
         if metric_type == UseCase.MetricType.PERCENT:
             for field_name, value in [
                 ("metric_baseline", baseline),
                 ("metric_target", target),
             ]:
-                if value < Decimal("0") or value > Decimal("100"):
+                if value is not None and (value < Decimal("0") or value > Decimal("100")):
                     self.add_error(field_name, "Prozentwerte müssen zwischen 0 und 100 liegen.")
+        if baseline is None or target is None:
+            return cleaned
         if baseline == target:
             self.add_error(
                 "metric_target",
@@ -311,7 +321,10 @@ WIZARD_STEPS = {
     },
     4: {
         "title": "Nutzenhypothese messbar machen",
-        "subtitle": "Eine Kennzahl verbindet Ausgangslage, Ziel und spätere Entscheidung.",
+        "subtitle": (
+            "Eine Kennzahl verbindet Ausgangslage, Ziel und spätere Entscheidung; "
+            "Baseline und Ziel dürfen in früher Discovery noch offen sein."
+        ),
         "form": BenefitStepForm,
         "example": (
             "Beispiel: Die Bearbeitungszeit sinkt von 30 auf höchstens 15 Minuten je Vorgang, "
