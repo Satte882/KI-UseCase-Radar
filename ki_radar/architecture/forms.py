@@ -364,10 +364,15 @@ class SolutionOptionForm(StyledModelForm):
             self.process_analysis = self.instance.process_analysis
         else:
             self.process_analysis = None
-        self.fields[
-            "evaluation_status"
-        ].help_text = (
-            "Als bewertet markieren, sobald alle Vergleichskriterien belastbar dokumentiert sind."
+        self.fields["evaluation_status"].help_text = (
+            "Als bewertet markieren, sobald die Vergleichskriterien transparent dokumentiert sind."
+        )
+        self.fields["evidence_basis"].help_text = (
+            "Kennzeichnet die Belastbarkeit der Aussagen zu Nutzen und Lösungsfit. "
+            "Hypothesen sind zulässig, müssen aber als solche sichtbar bleiben."
+        )
+        self.fields["time_to_value"].help_text = (
+            "Qualitativer Trade-off. 'Unbekannt' verwenden, wenn keine belastbare Zeitangabe vorliegt."
         )
 
     def clean(self):
@@ -395,9 +400,12 @@ class SolutionOptionForm(StyledModelForm):
         fields = [
             "name",
             "option_type",
+            "contains_ai_component",
             "evaluation_status",
+            "evidence_basis",
             "description",
             "expected_value",
+            "time_to_value",
             "bottleneck_coverage",
             "feasibility",
             "data_requirements",
@@ -434,8 +442,8 @@ class SolutionSelectionForm(forms.Form):
         label="Auswahlbegründung",
         widget=forms.Textarea(attrs={"rows": 5, "class": FORM_CONTROL}),
         help_text=(
-            "Begründen Sie insbesondere, warum einfachere organisatorische oder "
-            "regelbasierte Alternativen nicht ausreichen."
+            "Begründen Sie den Trade-off aus Problem-Fit, Nutzen, Risiko, Aufwand und "
+            "Time-to-Value. KI, Nicht-KI und Hybrid sind gleichwertig zulässige Ergebnisse."
         ),
     )
 
