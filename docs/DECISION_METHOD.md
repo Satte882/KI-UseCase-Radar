@@ -8,7 +8,7 @@ KI-Radar trennt mehrere fachlich unterschiedliche Entscheidungen bewusst voneina
 2. **Use-Case-Bewertung:** Ist ein tatsächlich angelegter KI-Use-Case fachlich und technisch ausreichend belastbar bewertet?
 3. **Verbindliche Freigabe:** Darf der bewertete Use Case unter den geltenden Governance- und Rollenregeln weitergeführt werden?
 
-Eine positive Freigabe ist nur möglich, wenn die Aufnahme vollständig, die Bewertung evidenzbasiert und die Rollentrennung eingehalten ist. Eine vorgelagerte Discovery-Entscheidung erzeugt dagegen **nicht automatisch** einen KI-Use-Case.
+Eine positive Freigabe ist nur möglich, wenn die dafür erforderlichen Angaben einschließlich belastbarer Baseline und Zielwert vorliegen, die Bewertung evidenzbasiert ist und die Rollentrennung eingehalten wird. Für die vorgelagerte strukturierte Bewertung darf die Messreife dagegen noch geringer sein: Seit #340 können Baseline und Zielwert in früher Discovery beziehungsweise im Guided Intake noch unbekannt bleiben, ohne künstliche Zahlen zu erzeugen. Eine vorgelagerte Discovery-Entscheidung erzeugt außerdem **nicht automatisch** einen KI-Use-Case.
 
 ## Vorgelagerte Lösungsentscheidung in Discovery
 
@@ -38,11 +38,37 @@ Die folgenden Abschnitte beschreiben die **nachgelagerte Use-Case-Bewertung und 
 ## Entscheidungsstatus
 
 - **In Klärung:** Pflichtangaben für eine Bewertung fehlen.
-- **Bereit zur Bewertung:** Die geführte Aufnahme ist vollständig.
+- **Bereit zur Bewertung:** Die geführte Aufnahme enthält Problem, Prozess, Nutzenhypothese, definierte Erfolgsmetrik, Messmethode und Datenrahmen. Baseline und Zielwert dürfen in dieser frühen Reifestufe noch unbekannt sein.
 - **Zurückgestellt:** Behebbare Voraussetzungen oder Evidenzen fehlen.
-- **Freigegeben:** Alle Muss-Anforderungen sind erfüllt und eine von der Bewertung getrennte Person hat entschieden.
-- **Freigegeben mit Auflagen:** Alle Muss-Anforderungen sind erfüllt, Auflage, Verantwortung und Frist sind dokumentiert und eine zweite unabhängige berechtigte Person hat bestätigt.
+- **Freigegeben:** Alle Muss-Anforderungen einschließlich Baseline und Zielwert sind erfüllt und eine von der Bewertung getrennte Person hat entschieden.
+- **Freigegeben mit Auflagen:** Alle Muss-Anforderungen einschließlich Baseline und Zielwert sind erfüllt, Auflage, Verantwortung und Frist sind dokumentiert und eine zweite unabhängige berechtigte Person hat bestätigt.
 - **Nicht weiterverfolgt:** Ein begründeter Ausschluss- oder Abbruchgrund liegt vor.
+
+## Messreife zwischen Aufnahme und Freigabe
+
+Die Erfolgsmetrik wird bereits im Guided Intake fachlich definiert. Dafür bleiben verpflichtend:
+
+- Metrikname,
+- Metriktyp,
+- Optimierungsrichtung,
+- Einheit,
+- Messmethode.
+
+`metric_baseline` und `metric_target` dürfen dagegen solange `NULL` bleiben, wie noch keine belastbaren Werte vorliegen. Das verhindert künstliche Platzhalter oder scheinpräzise Demo-Zahlen und erlaubt dennoch eine strukturierte Bewertung des Use Cases.
+
+Die Reifegrenze liegt bewusst später:
+
+```text
+Intake / Bewertung
+→ Baseline und Ziel dürfen noch unbekannt sein
+→ keine künstlichen Werte
+
+positive Freigabe
+→ Baseline und Ziel sind Pflicht
+→ danach bleiben Pilot-/Go-live-Metrikgates zusätzlich aktiv
+```
+
+Fehlende Baseline oder Zielwert blockieren daher `Freigegeben` und `Freigegeben mit Auflagen`, nicht aber eine fachlich begründete Entscheidung `Zurückgestellt` oder `Nicht weiterverfolgt`.
 
 ## Rollen
 
@@ -82,7 +108,9 @@ Eine niedrige Confidence blockiert `Freigegeben` und `Freigegeben mit Auflagen`.
 
 Eine positive Entscheidung ist serverseitig ausgeschlossen, wenn mindestens einer der folgenden Punkte zutrifft:
 
-- Pflichtangaben aus der geführten Aufnahme fehlen
+- Pflichtangaben für die strukturierte Bewertung fehlen
+- Baseline-Wert fehlt
+- Zielwert fehlt
 - keine aktuelle strukturierte Bewertung existiert
 - bewertende und entscheidende Person sind identisch
 - fachlich verantwortliche und entscheidende Person sind identisch
