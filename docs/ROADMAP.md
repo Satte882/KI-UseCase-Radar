@@ -114,6 +114,9 @@ Zentrale Nachweise: #210–#213, #274 und #276.
 Use Cases werden als nachvollziehbare Entscheidungsobjekte geführt:
 
 - direkter oder systematisch abgeleiteter Intake;
+- optionaler kanonischer Ursprungsprozess über die bestehende `UseCaseOrigin`-Relation;
+- automatische Ableitung von Phase, Value Stream und vorhandenem strategischem Kontext bei bekanntem Prozessursprung statt redundanter Use-Case-Felder;
+- bestehende Use Cases ohne Prozessursprung bleiben vollständig gültig;
 - Nutzenhypothese, Baseline, Zielwert und Erfolgsmetrik;
 - versionierte Bewertung mit Evidenz und Confidence;
 - getrennte Governance-, Datenschutz-, Security- und Rechtsprüfungen;
@@ -123,6 +126,8 @@ Use Cases werden als nachvollziehbare Entscheidungsobjekte geführt:
 - konkrete Blocker, Zuständigkeit und Next Actions.
 
 Die vorgelagerte Discovery-Lösungsentscheidung und die spätere Use-Case-Freigabe bleiben getrennte Entscheidungsobjekte. KI-Ausgaben können unterstützen, aber keine verbindliche fachliche Entscheidung auslösen.
+
+Zentraler Nachweis für die Prozess-Traceability: #322.
 
 ## 6. Delivery Readiness, Provenance und Übergabe
 
@@ -189,7 +194,7 @@ Für die kurzfristige Demonstration gilt **lokal zuerst**. Ein Render-Deployment
 # Next – priorisierte nächste Probleme
 
 **Next zuletzt geprüft:** 2026-08-22  
-**Aktuelle Priorität:** lokale #310-Demonstrierbarkeit nach den kleinen Discovery-Folgeinkrementen #322/#323; #328 bleibt der nächste größere KI-Rollout-Fokus. #333 ist ein nachgelagertes Lifecycle-/Go-live-Hardening.
+**Aktuelle Priorität:** lokale #310-Demonstrierbarkeit nach dem kleinen Discovery-Folgeinkrement #323; #328 bleibt der nächste größere KI-Rollout-Fokus. #333 ist ein nachgelagertes Lifecycle-/Go-live-Hardening.
 
 ## 1. KI-gestützte Bearbeitung fachlicher Lücken gezielt ausrollen – #328
 
@@ -203,19 +208,13 @@ Vor einer ersten Rollout-Welle werden im Parent #328 drei Analysepfade konsolidi
 
 Erst danach wird eine kleine erste Umsetzungswelle priorisiert. Nutzerinitiierung, sichtbare Quellen, bewusste Übernahme und Human Review bleiben verbindlich; automatische Speicherung, Freigaben oder Statusänderungen durch KI bleiben ausgeschlossen.
 
-## 2. Traceability vom Ursprungsprozess zum Use Case – #322
-
-Use Cases sollen optional mit ihrem kanonischen Ursprungsprozess verknüpft werden können. Phase, Value Stream und vorhandener strategischer Kontext werden daraus abgeleitet statt redundant am Use Case gepflegt.
-
-Der Nutzen liegt in einer durchgängigen Herkunftskette für Business Architecture, Portfolio, Impact-Analyse und Delivery, ohne direkte Use-Case-Erfassung zu erschweren oder neue Strategiehierarchien einzuführen.
-
-## 3. SIPOC als Leitfrage in der ProcessAnalysis – #323
+## 2. SIPOC als Leitfrage in der ProcessAnalysis – #323
 
 Die bestehende ProcessAnalysis soll um eine kompakte sichtbare SIPOC-Orientierung ergänzt werden: `Supplier → Input → Process → Output → Customer`.
 
 Das ist bewusst nur eine kleine Methodik-/UX-Schärfung. Vorhandene Felder werden weiterverwendet; es entsteht weder ein SIPOC-Modul noch ein neues Pflichtartefakt oder zusätzlicher Prozessschritt.
 
-## 4. Scale Readiness vor produktivem Betrieb – #333
+## 3. Scale Readiness vor produktivem Betrieb – #333
 
 Zwischen erfolgreicher Pilot-/Wirkungsvalidierung und regulärem Betrieb soll eine kompakte Scale-Readiness-Sicht vorhandene Nachweise bündelbar machen. Ziel ist nicht ein neues Framework, sondern die explizite Managementfrage:
 
