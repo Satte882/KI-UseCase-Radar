@@ -1,6 +1,6 @@
 # Value-Stream-Methodik
 
-**Version:** 1.1  
+**Version:** 1.2  
 **Stand:** 22.08.2026  
 **Gültig für:** Value-Stream-Erfassung und Fokus-/Prozessanalyse im KI-Radar  
 **Zweck:** kompakte fachliche Leitplanke; keine zusätzliche Business-Architecture-Schicht
@@ -169,6 +169,21 @@ Eine Hypothese ist in früher Discovery zulässig. Sie darf nur nicht so dargest
 Bestehende `ProcessValidation`, Provenance sowie Versions-/Stale-Mechanismen bleiben die kanonischen Nachweise für fachliche Validierung und Herkunft im späteren Prozess-Deep-Dive.
 
 ## 7. Von Value Stream zu Prozess und Lösung
+
+### SIPOC als kompakter Scopingrahmen
+
+Beim Einstieg in die konkrete Prozessanalyse dient SIPOC als sichtbare Denkstütze:
+
+`Supplier → Input → Process → Output → Customer`
+
+Dafür werden **keine zusätzlichen SIPOC-Felder oder ein separates Artefakt** gepflegt. Die vorhandene `ProcessAnalysis` bleibt kanonisch:
+
+- fachliche Inputs, Daten und Dokumente werden unter **Datenobjekte und Dokumente** erfasst,
+- das konkrete Prozessergebnis unter **Ergebnis**,
+- Quellen relevanter Inputs und Empfänger des Ergebnisses werden bei **Übergaben und Schnittstellen** konkretisiert,
+- Prozessgrenzen und Ablauf bleiben über Prozessstart, Prozessende und Ist-Ablauf beschrieben.
+
+Der Quellkontext beziehungsweise `source_snapshot` dokumentiert dagegen die Herkunft übernommener Radar-Inhalte und ist **nicht** mit einem fachlichen SIPOC-Supplier gleichzusetzen.
 
 Der KI-Radar folgt bewusst dieser Logik:
 
