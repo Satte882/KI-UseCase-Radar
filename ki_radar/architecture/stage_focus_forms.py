@@ -12,6 +12,7 @@ FORM_SELECT = "form-select"
 CRITERIA_LABELS = {
     "impact": "Impact",
     "pain_intensity": "Problemintensität",
+    "improvement_potential": "Verbesserungspotenzial",
     "data_accessibility": "Datenlage",
     "change_effort": "Veränderungsaufwand",
     "time_to_value": "Time-to-Value",
