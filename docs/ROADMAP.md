@@ -67,6 +67,8 @@ Zentrale Nachweise: #54, #57, #308, #331; methodische Gegenprüfung über #313�
 
 Die Prozessanalyse verbindet Ablauf, Rollen, Systeme, Daten, Handoffs, Ausnahmen und Baselines mit einer belastbareren Diagnose vor der verbindlichen Lösungsauswahl:
 
+- SIPOC ist als kompakter Scopingrahmen `Supplier → Input → Process → Output → Customer` sichtbar, ohne ein separates SIPOC-Artefakt oder neue Pflichtfelder einzuführen;
+- fachliche Inputs/Daten/Dokumente, das Prozessergebnis sowie Quellen und Empfänger werden über die bestehenden ProcessAnalysis-Felder geführt;
 - Beobachtung beziehungsweise Problem ist von Ursachenhypothese und bestätigter Ursache unterscheidbar;
 - ein systembestimmender Constraint bleibt optional und wird nicht mit jedem lokalen Problem gleichgesetzt;
 - frühe Exploration und Lösungsentwürfe bleiben möglich;
@@ -77,7 +79,7 @@ Die Prozessanalyse verbindet Ablauf, Rollen, Systeme, Daten, Handoffs, Ausnahmen
 - eine bevorzugte Non-AI-Lösung ist ein gültiger Discovery-Abschluss und erzwingt keinen KI-Use-Case;
 - Auswahl und Begründung bleiben historisiert und auditierbar.
 
-Zentrale Nachweise: #47, #60, #63, #318 und #331.
+Zentrale Nachweise: #47, #60, #63, #318, #323 und #331.
 
 ## 3. AI Accelerator und kontrollierte LLM-Unterstützung
 
@@ -183,7 +185,7 @@ Zentrale Nachweise: #279–#287 und #295.
 
 Der aktuelle Produktfokus liegt nicht auf dem Aufbau einer weiteren großen Capability, sondern darauf, die vorhandene Kernstrecke **realitätsnah und nachvollziehbar demonstrierbar** zu halten.
 
-Dazu gehört insbesondere der neutrale Reiseveranstalter-Demo-/Runbook-Kontext aus #310. Nach #331 muss dieser Durchlauf die neue Fokus- und Lösungssemantik sichtbar mitführen: Verbesserungspotenzial, Evidenzbasis, Time-to-Value, technologieoffener Vergleich sowie der Grundsatz, dass nur eine tatsächlich KI-haltige bevorzugte Lösung in einen KI-Use-Case übergeht.
+Dazu gehört insbesondere der neutrale Reiseveranstalter-Demo-/Runbook-Kontext aus #310. Der Durchlauf muss die geschärfte Discovery-Semantik sichtbar mitführen: Verbesserungspotenzial, Evidenzbasis, Time-to-Value, SIPOC-Prozesskontext, technologieoffener Vergleich sowie der Grundsatz, dass nur eine tatsächlich KI-haltige bevorzugte Lösung in einen KI-Use-Case übergeht.
 
 Für die kurzfristige Demonstration gilt **lokal zuerst**. Ein Render-Deployment beziehungsweise externer Smoke-Test ist nützlich für die Präsentation, aber kein fachlicher Blocker für den lokalen #310-E2E-Durchlauf und wird separat behandelt.
 
@@ -194,7 +196,7 @@ Für die kurzfristige Demonstration gilt **lokal zuerst**. Ein Render-Deployment
 # Next – priorisierte nächste Probleme
 
 **Next zuletzt geprüft:** 2026-08-22  
-**Aktuelle Priorität:** lokale #310-Demonstrierbarkeit nach dem kleinen Discovery-Folgeinkrement #323; #328 bleibt der nächste größere KI-Rollout-Fokus. #333 ist ein nachgelagertes Lifecycle-/Go-live-Hardening.
+**Aktuelle Priorität:** lokale #310-Demonstrierbarkeit; #328 bleibt der nächste größere KI-Rollout-Fokus. #333 ist ein nachgelagertes Lifecycle-/Go-live-Hardening.
 
 ## 1. KI-gestützte Bearbeitung fachlicher Lücken gezielt ausrollen – #328
 
@@ -208,13 +210,7 @@ Vor einer ersten Rollout-Welle werden im Parent #328 drei Analysepfade konsolidi
 
 Erst danach wird eine kleine erste Umsetzungswelle priorisiert. Nutzerinitiierung, sichtbare Quellen, bewusste Übernahme und Human Review bleiben verbindlich; automatische Speicherung, Freigaben oder Statusänderungen durch KI bleiben ausgeschlossen.
 
-## 2. SIPOC als Leitfrage in der ProcessAnalysis – #323
-
-Die bestehende ProcessAnalysis soll um eine kompakte sichtbare SIPOC-Orientierung ergänzt werden: `Supplier → Input → Process → Output → Customer`.
-
-Das ist bewusst nur eine kleine Methodik-/UX-Schärfung. Vorhandene Felder werden weiterverwendet; es entsteht weder ein SIPOC-Modul noch ein neues Pflichtartefakt oder zusätzlicher Prozessschritt.
-
-## 3. Scale Readiness vor produktivem Betrieb – #333
+## 2. Scale Readiness vor produktivem Betrieb – #333
 
 Zwischen erfolgreicher Pilot-/Wirkungsvalidierung und regulärem Betrieb soll eine kompakte Scale-Readiness-Sicht vorhandene Nachweise bündelbar machen. Ziel ist nicht ein neues Framework, sondern die explizite Managementfrage:
 
