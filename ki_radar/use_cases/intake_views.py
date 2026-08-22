@@ -41,6 +41,12 @@ def _serialize_cleaned_data(cleaned_data: dict) -> dict:
     return serialized
 
 
+def _optional_decimal(value) -> Decimal | None:
+    if value in (None, ""):
+        return None
+    return Decimal(value)
+
+
 def _completion_field_names(form_class) -> tuple[str, ...]:
     return tuple(name for name in form_class.base_fields if name != "process_analysis")
 
@@ -138,8 +144,8 @@ def _build_use_case(*, stored: dict, user, business_owner) -> UseCase:
         metric_type=stored["metric_type"],
         metric_direction=stored["metric_direction"],
         metric_unit=stored["metric_unit"],
-        metric_baseline=Decimal(stored["metric_baseline"]),
-        metric_target=Decimal(stored["metric_target"]),
+        metric_baseline=_optional_decimal(stored.get("metric_baseline")),
+        metric_target=_optional_decimal(stored.get("metric_target")),
         metric_measurement_method=stored["metric_measurement_method"],
         privacy_review_required=stored.get("privacy_review_required", False),
         security_review_required=stored.get("security_review_required", False),

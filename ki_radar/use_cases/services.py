@@ -131,10 +131,13 @@ INTAKE_REQUIREMENTS = [
     "metric_type",
     "metric_direction",
     "metric_unit",
-    "metric_baseline",
-    "metric_target",
     "metric_measurement_method",
     "data_sources",
+]
+
+APPROVAL_METRIC_REQUIREMENTS = [
+    "metric_baseline",
+    "metric_target",
 ]
 
 FIELD_LABELS = {
@@ -460,6 +463,7 @@ def approval_check(
         blockers.append("Bewertende und entscheidende Person müssen verschieden sein")
 
     if target_status in APPROVAL_STATUSES:
+        blockers.extend(_missing_fields(use_case, APPROVAL_METRIC_REQUIREMENTS))
         if actor and use_case.business_owner_id == actor.id:
             blockers.append(
                 "Fachlich verantwortliche und freigebende Person müssen verschieden sein"
