@@ -7,7 +7,12 @@ from django.db import transaction
 from django.utils import timezone
 
 from ki_radar.architecture.forms import SolutionOptionForm
-from ki_radar.architecture.models import ProcessAnalysis, SolutionOption
+from ki_radar.architecture.models import (
+    EvidenceBasis,
+    ProcessAnalysis,
+    SolutionOption,
+    TimeToValue,
+)
 from ki_radar.architecture.permissions import can_edit_value_stream
 
 from .models import SolutionGenerationRun
@@ -75,6 +80,8 @@ def _option_form_data(lane: str, option: dict) -> dict[str, str]:
             "evaluation_status": SolutionOption.EvaluationStatus.DRAFT,
             "feasibility": SolutionOption.Effort.NOT_ASSESSED,
             "integration_effort": SolutionOption.Effort.NOT_ASSESSED,
+            "evidence_basis": EvidenceBasis.HYPOTHESIS,
+            "time_to_value": TimeToValue.NOT_ASSESSED,
         }
     )
     return data

@@ -13,6 +13,7 @@ from ki_radar.architecture.forms import (
     ValueStreamStageForm,
     is_eligible_value_stream_owner,
 )
+from ki_radar.architecture.models import EvidenceBasis, TimeToValue
 from ki_radar.use_cases.forms import UseCaseForm
 
 from .scenario_blueprint import blueprint_checksum, load_blueprint_json
@@ -514,7 +515,14 @@ def _validate_forms(
         "architecture_fit",
     )
     for index, option in enumerate(payload["solution_options"]):
-        form = SolutionOptionForm(data=_pick(option, option_fields))
+        option_data = _pick(option, option_fields)
+        option_data.update(
+            {
+                "evidence_basis": EvidenceBasis.HYPOTHESIS,
+                "time_to_value": TimeToValue.NOT_ASSESSED,
+            }
+        )
+        form = SolutionOptionForm(data=option_data)
         if not form.is_valid():
             errors.extend(_form_errors(f"solution_options[{index}]", form))
 

@@ -15,6 +15,7 @@ from ki_radar.architecture.models import (
     ProcessValidation,
     SolutionOption,
     SolutionSelectionDecision,
+    TimeToValue,
     UseCaseOrigin,
     ValueStream,
     ValueStreamStage,
@@ -89,6 +90,7 @@ def comparison_setup(db, business_unit, owner):
             technology_constraints="Bestehender Stack",
             risks="Begrenztes Betriebsrisiko",
             architecture_fit="Passt in das Zielbild",
+            time_to_value=TimeToValue.UNKNOWN,
             created_by=owner,
         )
 

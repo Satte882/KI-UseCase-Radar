@@ -2,13 +2,13 @@
 {% load static %}
 {% block title %}Lösungsoptionen vergleichen – KI-Radar{% endblock %}
 {% block body_class %}page-detail-workspace page-solution-compare{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/ui-control-room-primitives.css' %}"><link rel="stylesheet" href="{% static 'css/ui-control-room-workspaces.css' %}?v=issue-318-readiness-2">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/ui-control-room-primitives.css' %}"><link rel="stylesheet" href="{% static 'css/ui-control-room-workspaces.css' %}?v=issue-331-solution-comparison">{% endblock %}
 {% block content %}
 <div class="page-header">
   <div>
     <div class="eyebrow mb-2">{{ process_analysis.name }}</div>
     <h1 class="page-title">Lösungsoptionen vergleichen</h1>
-    <p class="page-subtitle">Einheitliche Entscheidungsmatrix in lösungsoffener Reihenfolge: organisatorisch und regelbasiert vor komplexeren technischen Optionen.</p>
+    <p class="page-subtitle">Einheitliche Entscheidungsmatrix für organisatorische, klassische, KI- und hybride Optionen – ohne vorgegebene Technologiereihenfolge.</p>
   </div>
   <a class="btn btn-outline-secondary" href="{{ process_analysis.get_absolute_url }}">Zur Prozessanalyse</a>
 </div>
@@ -17,7 +17,7 @@
 
 <div class="app-card mb-4">
   <div class="card-header d-flex justify-content-between align-items-start gap-3 flex-wrap">
-    <div><strong>Vergleichsmatrix</strong><div class="small text-muted mt-1">Alle aktiven Optionen werden anhand derselben Kriterien gegenübergestellt. Nicht weiterverfolgte Optionen bleiben auditierbar, zählen aber nicht mehr für Vergleich oder Auswahl.</div></div>
+    <div><strong>Vergleichsmatrix</strong><div class="small text-muted mt-1">Alle aktiven Optionen werden anhand derselben Kriterien gegenübergestellt. Time-to-Value ist ein sichtbarer Trade-off, kein automatischer Sieger-Score. Nicht weiterverfolgte Optionen bleiben auditierbar.</div></div>
     {% if can_select %}
       <div class="d-flex gap-2 flex-wrap">
         <a class="btn btn-sm btn-outline-secondary" href="{% url 'architecture:solution_option_create' process_analysis.pk %}">Option ergänzen</a>
@@ -37,7 +37,7 @@
       <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
         <div>
           <strong>KI-Unterstützung</strong>
-          <div class="small text-muted mt-1">Quellstand: {{ generation_validation_label }}</div>
+          <div class="small text-muted mt-1">Quellstand: {{ generation_validation_label }}. KI kann Alternativen entwerfen, aber keine bevorzugte Lösung festlegen.</div>
         </div>
         {% if latest_generation_run %}
           <a class="btn btn-sm btn-outline-secondary" href="{% url 'accelerator:solution_generation_preview' latest_generation_run.pk %}">Letzten KI-Entwurf ansehen</a>
@@ -61,6 +61,9 @@
       <tbody>
         <tr><th scope="row">Lösungsbeschreibung</th>{% for option in options %}<td class="text-preline">{{ option.description }}</td>{% endfor %}</tr>
         <tr><th scope="row">Erwarteter Beitrag</th>{% for option in options %}<td class="text-preline">{{ option.expected_value }}</td>{% endfor %}</tr>
+        <tr><th scope="row">Evidenzbasis<span class="d-block small text-muted mt-1">Belastbarkeit der Aussagen zu Nutzen und Lösungsfit</span></th>{% for option in options %}<td>{{ option.get_evidence_basis_display }}</td>{% endfor %}</tr>
+        <tr><th scope="row">Time-to-Value<span class="d-block small text-muted mt-1">Trade-off, keine automatische Priorisierung</span></th>{% for option in options %}<td>{{ option.get_time_to_value_display }}</td>{% endfor %}</tr>
+        <tr><th scope="row">KI-Komponente</th>{% for option in options %}<td>{% if option.starts_ai_use_case %}Ja – KI-Use-Case-Pfad möglich{% else %}Nein – kein KI-Use-Case erforderlich{% endif %}</td>{% endfor %}</tr>
         <tr><th scope="row">Bottleneck-Abdeckung und Diagnosebezug<span class="d-block small text-muted mt-1">Problem / bestätigte Ursache</span></th>{% for option in options %}<td class="text-preline">{{ option.bottleneck_coverage|default:"–" }}</td>{% endfor %}</tr>
         <tr><th scope="row">Machbarkeit</th>{% for option in options %}<td>{{ option.get_feasibility_display }}</td>{% endfor %}</tr>
         <tr><th scope="row">Datenanforderungen</th>{% for option in options %}<td class="text-preline">{{ option.data_requirements|default:"–" }}</td>{% endfor %}</tr>
@@ -110,6 +113,11 @@
       <div class="alert alert-success" id="selection-result" tabindex="-1">
         <strong>Aktuell bevorzugt: {{ latest_selection.selected_option.name }}</strong>
         <div class="small mt-1">Entschieden am {{ latest_selection.decided_at|date:"d.m.Y H:i" }}. Die Entscheidung ist in der Auswahlhistorie auditierbar.</div>
+        {% if latest_selection.selected_option.starts_ai_use_case %}
+          <div class="small mt-2"><strong>Journey-Ausgang:</strong> Die Lösung enthält eine KI-Komponente; ein KI-Use-Case kann regulär weitergeführt werden.</div>
+        {% else %}
+          <div class="small mt-2"><strong>Journey-Ausgang:</strong> Kein KI-Use-Case erforderlich. Die Analyseentscheidung bleibt als gültiges Ergebnis erhalten.</div>
+        {% endif %}
       </div>
     {% else %}
       <div id="selection-result"></div>
@@ -169,12 +177,17 @@
         <div class="small text-muted mt-1">Entschieden von {{ decision.decided_by|default:"Gelöschter Nutzer" }} · {{ decision.comparison_snapshot|length }} verglichene Optionen{% if decision.process_version %} · Prozessversion v{{ decision.process_version }}{% endif %}</div>
         {% if decision.diagnosis_snapshot %}
           <details class="mt-2">
-            <summary class="small">Diagnosestand der Entscheidung</summary>
+            <summary class="small">Diagnose- und Evidenzstand der Entscheidung</summary>
             <dl class="small mt-2 mb-0">
               <dt>Beobachtung / Problem</dt><dd class="text-preline">{{ decision.diagnosis_snapshot.diagnostic_observations }}</dd>
               {% if decision.diagnosis_snapshot.cause_hypotheses %}<dt>Ursachenhypothese</dt><dd class="text-preline">{{ decision.diagnosis_snapshot.cause_hypotheses }}</dd>{% endif %}
               <dt>Bestätigte Ursache</dt><dd class="text-preline">{{ decision.diagnosis_snapshot.confirmed_causes }}</dd>
               {% if decision.diagnosis_snapshot.constraints %}<dt>Randbedingung / Constraint</dt><dd class="text-preline">{{ decision.diagnosis_snapshot.constraints }}</dd>{% endif %}
+              {% if decision.diagnosis_snapshot.validation %}
+                <dt>Prozessvalidierung</dt><dd>Version v{{ decision.diagnosis_snapshot.validation.process_version }} · {{ decision.diagnosis_snapshot.validation.validator_role }}{% if decision.diagnosis_snapshot.validation.evidence_url %} · Nachweis gespeichert{% endif %}</dd>
+              {% else %}
+                <dt>Prozessvalidierung</dt><dd>Für diesen Entscheidungsstand kein eigenständiges Validierungsartefakt gespeichert.</dd>
+              {% endif %}
             </dl>
           </details>
         {% endif %}

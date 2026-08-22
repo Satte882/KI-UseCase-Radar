@@ -158,6 +158,23 @@ def test_preferred_ai_option_advances_to_use_case(coordinator):
 
 
 @pytest.mark.django_db
+def test_preferred_non_ai_option_finishes_discovery_without_forcing_use_case(coordinator):
+    process = _complete_process(coordinator)
+    option = _candidate_option(process, coordinator)
+    option.recommendation = SolutionOption.Recommendation.PREFERRED
+    option.save(update_fields=["recommendation", "updated_at"])
+
+    journey = build_process_analysis_journey(process, coordinator)
+    steps = {step.key: step for step in journey.steps}
+
+    assert option.starts_ai_use_case is False
+    assert steps["solution"].state == "complete"
+    assert steps["use_case"].state == "optional"
+    assert journey.next_action is None
+    assert "Nicht-KI-Lösung" in journey.completion_message
+
+
+@pytest.mark.django_db
 def test_first_option_action_is_visible_on_process_page(client, coordinator):
     process = _complete_process(coordinator)
     client.force_login(coordinator)

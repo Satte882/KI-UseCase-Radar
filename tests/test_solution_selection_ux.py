@@ -5,6 +5,7 @@ from ki_radar.architecture.focus import ValueStreamFocus
 from ki_radar.architecture.models import (
     ProcessAnalysis,
     SolutionOption,
+    TimeToValue,
     ValueStream,
     ValueStreamStage,
 )
@@ -67,6 +68,7 @@ def make_option(process, owner, *, name, option_type, assessed):
     )
     feasibility = SolutionOption.Effort.HIGH if assessed else SolutionOption.Effort.NOT_ASSESSED
     integration = SolutionOption.Effort.MEDIUM if assessed else SolutionOption.Effort.NOT_ASSESSED
+    time_to_value = TimeToValue.UNKNOWN if assessed else TimeToValue.NOT_ASSESSED
     return SolutionOption.objects.create(
         process_analysis=process,
         name=name,
@@ -83,6 +85,7 @@ def make_option(process, owner, *, name, option_type, assessed):
         technology_constraints="Nachvollziehbare Verarbeitung",
         risks="Fehlerhafte Eingaben",
         architecture_fit="Passt zur bestehenden Architektur",
+        time_to_value=time_to_value,
         created_by=owner,
     )
 

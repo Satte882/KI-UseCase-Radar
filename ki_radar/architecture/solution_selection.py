@@ -17,7 +17,8 @@ OPTION_TYPE_PRIORITY = {
     SolutionOption.OptionType.ANALYTICS_ML: 5,
     SolutionOption.OptionType.GENERATIVE_AI: 6,
     SolutionOption.OptionType.ASSISTANT: 7,
-    SolutionOption.OptionType.OTHER: 8,
+    SolutionOption.OptionType.HYBRID: 8,
+    SolutionOption.OptionType.OTHER: 9,
 }
 
 
@@ -63,9 +64,14 @@ def build_comparison_snapshot(options: list[SolutionOption]) -> list[dict]:
             "name": option.name,
             "option_type": option.option_type,
             "option_type_label": option.get_option_type_display(),
+            "contains_ai_component": option.starts_ai_use_case,
             "evaluation_status": option.evaluation_status,
+            "evidence_basis": option.evidence_basis,
+            "evidence_basis_label": option.get_evidence_basis_display(),
             "description": option.description,
             "expected_value": option.expected_value,
+            "time_to_value": option.time_to_value,
+            "time_to_value_label": option.get_time_to_value_display(),
             "bottleneck_coverage": option.bottleneck_coverage,
             "feasibility": option.feasibility,
             "data_requirements": option.data_requirements,
@@ -82,11 +88,24 @@ def build_comparison_snapshot(options: list[SolutionOption]) -> list[dict]:
 
 
 def build_diagnosis_snapshot(process_analysis: ProcessAnalysis) -> dict:
+    validation = process_analysis.validations.filter(
+        process_version=process_analysis.version
+    ).first()
     return {
         "diagnostic_observations": process_analysis.diagnostic_observations,
         "cause_hypotheses": process_analysis.cause_hypotheses,
         "confirmed_causes": process_analysis.confirmed_causes,
         "constraints": process_analysis.constraints,
+        "validation": (
+            {
+                "process_version": validation.process_version,
+                "validated_at": validation.validated_at.isoformat(),
+                "validator_role": validation.validator_role,
+                "evidence_url": validation.evidence_url,
+            }
+            if validation
+            else None
+        ),
     }
 
 

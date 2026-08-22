@@ -12,6 +12,7 @@ from ki_radar.architecture.models import (
     ProcessValidation,
     SolutionOption,
     SolutionSelectionDecision,
+    TimeToValue,
     ValueStream,
     ValueStreamStage,
 )
@@ -98,6 +99,7 @@ def make_complete_option(process, owner, *, name, option_type):
         technology_constraints="Nachvollziehbare Verarbeitung",
         risks="Fehlerhafte Eingaben",
         architecture_fit="Passt zur bestehenden Architektur",
+        time_to_value=TimeToValue.UNKNOWN,
         created_by=owner,
     )
 
