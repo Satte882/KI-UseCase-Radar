@@ -22,6 +22,8 @@ Die Produkt-Roadmap unter [`../ROADMAP.md`](../ROADMAP.md) bleibt davon getrennt
 
 ## Kürzlich abgeschlossen
 
+**#340 – Unbekannte Baseline/Zielwerte im Guided Intake** wurde am 22.08.2026 als fokussierter P1-Fix umgesetzt. Frühe Use Cases können nun ohne erfundene numerische Baseline oder Zielwerte bis zur strukturierten Bewertung aufgenommen werden. Positive Freigaben sowie Pilot-/Go-live-Gates verlangen die relevanten Messwerte weiterhin serverseitig; die Diagnose-Readiness aus #318 blieb unverändert.
+
 **#323 – SIPOC-Leitfrage** wurde am 22.08.2026 als kleines Methodik-/UX-Inkrement umgesetzt. Die bestehende `ProcessAnalysis` zeigt SIPOC nun als kompakten Denk- und Scopingrahmen `Supplier → Input → Process → Output → Customer`. Vorhandene Felder für Daten/Dokumente, Ergebnis sowie Übergaben/Schnittstellen werden weiterverwendet; es entstanden keine neuen SIPOC-Modelle, Pflichtfelder oder Journey-Stufen.
 
 **#331 – Fokuswahl, Evidenz, Time-to-Value und No-AI-Ausgang** wurde am 22.08.2026 abgeschlossen. Damit ist die Discovery-Lösungsentscheidung stabilisiert: hypothesenfähige Fokuswahl, separates Verbesserungspotenzial, persistente Evidenzbasis, Time-to-Value als Trade-off, Hybrid-Semantik und ein gültiger No-AI-Ausgang sind umgesetzt.
@@ -34,7 +36,7 @@ Die Produkt-Roadmap unter [`../ROADMAP.md`](../ROADMAP.md) bleibt davon getrennt
 
 | Reihenfolge | Issue | Inhalt | Warum an dieser Stelle? | Geschätzter Aufwand | Komplexität |
 |---:|---|---|---|---:|---|
-| **1** | **#310 – Reiseveranstalter E2E-Demo** | Führt den kompletten Referenzfall vom Value Stream über Fokus, Prozessanalyse und technologieoffenen Lösungsvergleich bis zum bewerteten und governance-seitig vorbereiteten Use Case manuell durch. Die neuen #331-Dimensionen Evidenzbasis, Verbesserungspotenzial und Time-to-Value werden sichtbar mitgeführt. | #323 ist abgeschlossen; damit kann die Discovery→Use-Case-Strecke nun einmal vollständig auf stabilem Stand geprüft werden. | **0,5–1 Tag** | **niedrig–mittel** |
+| **1** | **#310 – Reiseveranstalter E2E-Demo** | Führt den kompletten Referenzfall vom Value Stream über Fokus, Prozessanalyse und technologieoffenen Lösungsvergleich bis zum bewerteten und governance-seitig vorbereiteten Use Case manuell durch. Die neuen #331-Dimensionen Evidenzbasis, Verbesserungspotenzial und Time-to-Value werden sichtbar mitgeführt. | #323 und #340 sind abgeschlossen; damit kann die Discovery→Use-Case-Strecke nun ohne künstliche Messwerte auf stabilem Stand vollständig geprüft werden. | **0,5–1 Tag** | **niedrig–mittel** |
 | **2** | **#320 – Delivery-Readiness analysieren** | Prüft `ReadinessFinding → ActionableFinding → Next Action → Bearbeitung` sowie Technical-Owner- und Sektionsstatus-Semantik Ende-zu-Ende. Das Issue ist ausschließlich Analyse und darf selbst keine Codeänderungen enthalten. | Vor #333 und nachgelagerten Verbrauchern klären, ob die Delivery-/Readiness-Semantik noch reale Lücken besitzt. | **0,5–1 Tag** | **mittel** |
 | **3** | **ggf. separates Fix-Issue aus #320** | Nur wenn #320 erneut eine echte Lücke nachweist, wird diese in einem separaten Implementierungs-Issue geschlossen. Inhalt und Umfang hängen vom Analyseergebnis ab. | Eine bestätigte Readiness-/Finding-/Action-Lücke sollte vor weiterem Lifecycle-Hardening geschlossen werden. | **0,5–2 Tage*** | **mittel*** |
 | **4** | **#333 – Scale Readiness** | Bündelt vorhandene Pilot-, Wirkungs-, Governance-, Delivery- und ML-Test-Score-Nachweise zu einer kompakten Go-live-/Scale-Readiness-Entscheidung zwischen Pilot/Wirkung und Betrieb. | Erst nach der lokalen Kern-Demo und nach Klärung der Delivery-Readiness-Semantik; #333 soll bestehende Gates aggregieren, nicht duplizieren. | **2–4 Tage*** | **hoch*** |
@@ -52,7 +54,7 @@ Die Produkt-Roadmap unter [`../ROADMAP.md`](../ROADMAP.md) bleibt davon getrennt
 # Abhängigkeitsbild
 
 ```text
-#331 + #322 + #323 abgeschlossen
+#331 + #322 + #323 + #340 abgeschlossen
   ↓
 #310 lokale E2E-/Interview-Demo
   ↓
