@@ -193,6 +193,7 @@ def request_openrouter(
     temperature: float | None = 0.1,
     response_format: dict[str, Any] | None = None,
     provider: dict[str, Any] | None = None,
+    reasoning_effort: str | None = None,
 ) -> OpenRouterResult:
     api_key = _setting("OPENROUTER_API_KEY")
     if not api_key:
@@ -203,8 +204,13 @@ def request_openrouter(
 
     model = _setting("OPENROUTER_MODEL")
     body: dict[str, Any] = {"max_tokens": max_tokens, "messages": messages}
+    reasoning: dict[str, Any] = {}
+    if reasoning_effort is not None:
+        reasoning["effort"] = reasoning_effort
     if reasoning_response_excluded():
-        body["reasoning"] = {"exclude": True}
+        reasoning["exclude"] = True
+    if reasoning:
+        body["reasoning"] = reasoning
     if temperature is not None:
         body["temperature"] = temperature
     if model:

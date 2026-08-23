@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from typing import Any
 
@@ -7,7 +8,7 @@ from django.conf import settings
 
 
 class LLMConfigurationError(RuntimeError):
-    """Raised when an Accelerator LLM setting is invalid."""
+    """Raised when an LLM setting is invalid."""
 
 
 @dataclass(frozen=True)
@@ -25,6 +26,20 @@ class AcceleratorLLMPolicy:
     solution_critic_max_input_chars: int
 
 
+@dataclass(frozen=True)
+class LLMTaskPolicy:
+    task_type: str
+    timeout_seconds: int
+    max_input_chars: int
+    max_output_tokens: int
+    reasoning_effort: str
+    temperature: float
+    max_calls_per_context_day: int
+    max_calls_per_user_day: int
+    max_calls_global_day: int
+    run_retention_days: int
+
+
 _SETTING_BOUNDS = {
     "ACCELERATOR_LLM_TIMEOUT_SECONDS": (1, 120),
     "ACCELERATOR_LLM_MAX_INPUT_CHARS": (1, 100_000),
@@ -38,9 +53,49 @@ _SETTING_BOUNDS = {
     "ACCELERATOR_SOLUTION_CRITIC_MAX_INPUT_CHARS": (1, 100_000),
 }
 
+_TASK_SETTING_BOUNDS = {
+    "LLM_TASK_TIMEOUT_SECONDS": (1, 120),
+    "LLM_TASK_MAX_CALLS_PER_CONTEXT_DAY": (1, 50),
+    "LLM_TASK_MAX_CALLS_PER_USER_DAY": (1, 1_000),
+    "LLM_TASK_MAX_CALLS_GLOBAL_DAY": (1, 100_000),
+    "LLM_TASK_RUN_RETENTION_DAYS": (1, 365),
+    "LLM_DELIVERY_FIELD_DRAFT_MAX_INPUT_CHARS": (1, 100_000),
+    "LLM_DELIVERY_FIELD_DRAFT_MAX_OUTPUT_TOKENS": (1, 32_768),
+    "LLM_ORIGIN_CONSISTENCY_REVIEW_MAX_INPUT_CHARS": (1, 100_000),
+    "LLM_ORIGIN_CONSISTENCY_REVIEW_MAX_OUTPUT_TOKENS": (1, 32_768),
+}
 
-def _positive_int(name: str, value: Any) -> int:
-    lower, upper = _SETTING_BOUNDS[name]
+_TASK_DEFAULTS = {
+    "LLM_TASK_TIMEOUT_SECONDS": "60",
+    "LLM_TASK_MAX_CALLS_PER_CONTEXT_DAY": "3",
+    "LLM_TASK_MAX_CALLS_PER_USER_DAY": "20",
+    "LLM_TASK_MAX_CALLS_GLOBAL_DAY": "100",
+    "LLM_TASK_RUN_RETENTION_DAYS": "90",
+    "LLM_TASK_TEMPERATURE": "0.1",
+    "LLM_DELIVERY_FIELD_DRAFT_MAX_INPUT_CHARS": "12000",
+    "LLM_DELIVERY_FIELD_DRAFT_MAX_OUTPUT_TOKENS": "16384",
+    "LLM_DELIVERY_FIELD_DRAFT_REASONING_EFFORT": "low",
+    "LLM_ORIGIN_CONSISTENCY_REVIEW_MAX_INPUT_CHARS": "16000",
+    "LLM_ORIGIN_CONSISTENCY_REVIEW_MAX_OUTPUT_TOKENS": "4096",
+    "LLM_ORIGIN_CONSISTENCY_REVIEW_REASONING_EFFORT": "medium",
+}
+
+_TASK_SETTINGS = {
+    "delivery_field_draft": {
+        "input": "LLM_DELIVERY_FIELD_DRAFT_MAX_INPUT_CHARS",
+        "output": "LLM_DELIVERY_FIELD_DRAFT_MAX_OUTPUT_TOKENS",
+        "reasoning": "LLM_DELIVERY_FIELD_DRAFT_REASONING_EFFORT",
+    },
+    "origin_consistency_review": {
+        "input": "LLM_ORIGIN_CONSISTENCY_REVIEW_MAX_INPUT_CHARS",
+        "output": "LLM_ORIGIN_CONSISTENCY_REVIEW_MAX_OUTPUT_TOKENS",
+        "reasoning": "LLM_ORIGIN_CONSISTENCY_REVIEW_REASONING_EFFORT",
+    },
+}
+
+
+def _bounded_int(name: str, value: Any, bounds: dict[str, tuple[int, int]]) -> int:
+    lower, upper = bounds[name]
     if isinstance(value, bool):
         raise LLMConfigurationError(f"{name} muss eine ganze Zahl sein.")
     raw = str(value).strip()
@@ -51,6 +106,10 @@ def _positive_int(name: str, value: Any) -> int:
     if not lower <= parsed <= upper:
         raise LLMConfigurationError(f"{name} muss zwischen {lower} und {upper} liegen.")
     return parsed
+
+
+def _positive_int(name: str, value: Any) -> int:
+    return _bounded_int(name, value, _SETTING_BOUNDS)
 
 
 def _optional_temperature(value: Any) -> float | None:
@@ -66,6 +125,28 @@ def _optional_temperature(value: Any) -> float | None:
     if not 0.0 <= parsed <= 2.0:
         raise LLMConfigurationError("ACCELERATOR_CAPTURE_TEMPERATURE muss zwischen 0 und 2 liegen.")
     return parsed
+
+
+def _task_temperature(value: Any) -> float:
+    try:
+        parsed = float(str(value).strip())
+    except (TypeError, ValueError) as exc:
+        raise LLMConfigurationError("LLM_TASK_TEMPERATURE muss eine Zahl sein.") from exc
+    if not 0.0 <= parsed <= 2.0:
+        raise LLMConfigurationError("LLM_TASK_TEMPERATURE muss zwischen 0 und 2 liegen.")
+    return parsed
+
+
+def _reasoning_effort(name: str, value: Any) -> str:
+    parsed = str(value).strip().casefold()
+    if parsed not in {"low", "medium", "high"}:
+        raise LLMConfigurationError(f"{name} muss low, medium oder high sein.")
+    return parsed
+
+
+def _task_setting(name: str) -> Any:
+    default = _TASK_DEFAULTS[name]
+    return getattr(settings, name, os.getenv(name, default))
 
 
 def get_accelerator_llm_policy() -> AcceleratorLLMPolicy:
@@ -109,4 +190,46 @@ def get_accelerator_llm_policy() -> AcceleratorLLMPolicy:
         ],
         solution_generation_max_calls_per_context=solution_context_limit,
         solution_critic_max_input_chars=values["ACCELERATOR_SOLUTION_CRITIC_MAX_INPUT_CHARS"],
+    )
+
+
+def get_llm_task_policy(task_type: str) -> LLMTaskPolicy:
+    """Return validated limits for one explicitly supported first-wave task."""
+
+    task_settings = _TASK_SETTINGS.get(task_type)
+    if task_settings is None:
+        raise LLMConfigurationError(f"Unbekannter LLM-Task: {task_type}.")
+
+    values = {
+        name: _bounded_int(name, _task_setting(name), _TASK_SETTING_BOUNDS)
+        for name in _TASK_SETTING_BOUNDS
+    }
+    context_limit = values["LLM_TASK_MAX_CALLS_PER_CONTEXT_DAY"]
+    user_limit = values["LLM_TASK_MAX_CALLS_PER_USER_DAY"]
+    global_limit = values["LLM_TASK_MAX_CALLS_GLOBAL_DAY"]
+    if context_limit > user_limit:
+        raise LLMConfigurationError(
+            "LLM_TASK_MAX_CALLS_PER_CONTEXT_DAY darf die nutzerbezogene "
+            "Tagesgrenze nicht überschreiten."
+        )
+    if user_limit > global_limit:
+        raise LLMConfigurationError(
+            "LLM_TASK_MAX_CALLS_PER_USER_DAY darf die globale Tagesgrenze nicht überschreiten."
+        )
+
+    reasoning_setting = task_settings["reasoning"]
+    return LLMTaskPolicy(
+        task_type=task_type,
+        timeout_seconds=values["LLM_TASK_TIMEOUT_SECONDS"],
+        max_input_chars=values[task_settings["input"]],
+        max_output_tokens=values[task_settings["output"]],
+        reasoning_effort=_reasoning_effort(
+            reasoning_setting,
+            _task_setting(reasoning_setting),
+        ),
+        temperature=_task_temperature(_task_setting("LLM_TASK_TEMPERATURE")),
+        max_calls_per_context_day=context_limit,
+        max_calls_per_user_day=user_limit,
+        max_calls_global_day=global_limit,
+        run_retention_days=values["LLM_TASK_RUN_RETENTION_DAYS"],
     )
