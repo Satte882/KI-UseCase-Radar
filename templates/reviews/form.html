@@ -33,6 +33,8 @@
           <dt class="col-8">ML Test Score</dt><dd class="col-4 text-end">{% if form.scale_readiness_result.final_ml_score != None %}{{ form.scale_readiness_result.final_ml_score }}{% else %}Offen{% endif %}</dd>
         </dl>
         {% if form.scale_readiness_result.findings %}<div class="section-title mt-3">Aktuelle Findings</div><ul class="decision-list">{% for finding in form.scale_readiness_result.findings %}<li><strong>{% if finding.severity == "blocker" %}Blocker{% else %}Auflage{% endif %}:</strong> {{ finding.message }}</li>{% endfor %}</ul>{% endif %}
+        <div class="section-title mt-3">Nächste Aktion</div>
+        {% if form.scale_readiness_result.blockers %}<p class="small mb-0"><strong>Hard Blocker beheben:</strong> {{ form.scale_readiness_result.blockers.0.message }}</p>{% elif form.scale_readiness_result.conditions %}<p class="small mb-0"><strong>Auflage schließen:</strong> {{ form.scale_readiness_result.conditions.0.message }} Maßnahme, Owner und Frist verbindlich dokumentieren.</p>{% else %}<p class="small mb-0">Keine blockierende Aktion – Go-live-Entscheidung dokumentieren.</p>{% endif %}
       </div>
     </div>
     {% endif %}
