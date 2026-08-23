@@ -348,10 +348,7 @@ def _normalize_number(token: str) -> str:
 
 
 def _quantitative_tokens(text: str) -> set[str]:
-    return {
-        _normalize_number(match.group(0))
-        for match in _QUANTITATIVE_TOKEN_RE.finditer(text)
-    }
+    return {_normalize_number(match.group(0)) for match in _QUANTITATIVE_TOKEN_RE.finditer(text)}
 
 
 def _require_exact_keys(payload: dict[str, Any], expected: set[str], *, code: str) -> None:
@@ -475,9 +472,7 @@ def validate_mvp_scope_draft_payload(
         source.value for source in context.sources if source.source_id in cited_source_ids
     )
     grounded_numbers = _quantitative_tokens(source_values)
-    generated_text = "\n".join(
-        [draft_text, *missing_facts, *assumptions, *conflicts, reason]
-    )
+    generated_text = "\n".join([draft_text, *missing_facts, *assumptions, *conflicts, reason])
     if _quantitative_tokens(generated_text) - grounded_numbers:
         raise DeliveryDraftValidationError(
             "Die KI-Antwort enthält eine nicht belegte quantitative Aussage.",
@@ -514,9 +509,7 @@ def log_ai_assist_event(
     run_id: object = "",
     **metadata: object,
 ) -> None:
-    safe_metadata = {
-        key: value for key, value in metadata.items() if key in _SAFE_TELEMETRY_KEYS
-    }
+    safe_metadata = {key: value for key, value in metadata.items() if key in _SAFE_TELEMETRY_KEYS}
     payload = {
         "event": event,
         "task_type": TASK_TYPE,

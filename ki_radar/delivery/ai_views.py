@@ -47,9 +47,7 @@ def _package(pk):
 
 
 def _overrides(request) -> dict[str, str]:
-    return {
-        field_name: request.POST.get(field_name, "") for field_name in EDITABLE_CONTEXT_FIELDS
-    }
+    return {field_name: request.POST.get(field_name, "") for field_name in EDITABLE_CONTEXT_FIELDS}
 
 
 def _contains_prompt_injection(package: DeliveryPackage, overrides: dict[str, str]) -> bool:
