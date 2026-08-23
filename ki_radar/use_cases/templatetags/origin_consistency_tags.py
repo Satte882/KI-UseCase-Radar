@@ -14,9 +14,7 @@ def origin_consistency_panel(context, use_case):
     state = origin_consistency_eligibility(use_case)
     provider_configured = bool(settings.OPENROUTER_API_KEY)
     permitted = bool(
-        request
-        and request.user.is_authenticated
-        and can_view_use_case(request.user, use_case)
+        request and request.user.is_authenticated and can_view_use_case(request.user, use_case)
     )
     enabled = state.eligible and provider_configured and permitted
     disabled_reason = state.message

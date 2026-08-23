@@ -162,9 +162,7 @@ def _make_origin_use_case(*, owner, business_unit, with_decision=True):
 
 def _finding_payload(context, *, count=1):
     source = next(
-        source
-        for source in context.sources
-        if source.source_id == "origin.problem_statement"
+        source for source in context.sources if source.source_id == "origin.problem_statement"
     )
     finding = {
         "finding": "Der aktuelle Problemtext weicht von der dokumentierten Herkunft ab.",
@@ -234,9 +232,7 @@ def test_context_uses_explicit_allowlist_and_treats_prompt_injection_as_untruste
 
 
 @pytest.mark.django_db
-def test_missing_selection_decision_blocks_before_runtime(
-    owner, business_unit, monkeypatch
-):
+def test_missing_selection_decision_blocks_before_runtime(owner, business_unit, monkeypatch):
     use_case, _origin, _process, _option, _decision = _make_origin_use_case(
         owner=owner,
         business_unit=business_unit,
@@ -289,9 +285,7 @@ def test_stale_process_version_blocks_before_runtime(owner, business_unit, monke
 
 
 @pytest.mark.django_db
-def test_ambiguous_selection_decision_blocks_before_runtime(
-    owner, business_unit, monkeypatch
-):
+def test_ambiguous_selection_decision_blocks_before_runtime(owner, business_unit, monkeypatch):
     use_case, origin, process, option, _decision = _make_origin_use_case(
         owner=owner,
         business_unit=business_unit,
@@ -353,8 +347,7 @@ def test_positive_review_uses_shared_runtime_max_five_and_never_mutates_domain(
     context = build_origin_consistency_context(use_case)
     payload = _finding_payload(context, count=5)
     original_values = {
-        field: getattr(use_case, field)
-        for field in origin_consistency.TARGET_FIELDS
+        field: getattr(use_case, field) for field in origin_consistency.TARGET_FIELDS
     }
     original_snapshot = origin.source_snapshot
     captured = {}
@@ -376,10 +369,7 @@ def test_positive_review_uses_shared_runtime_max_five_and_never_mutates_domain(
     assert captured["prepared"].run.status == LLMTaskRun.Status.SUCCESS
     use_case.refresh_from_db()
     origin.refresh_from_db()
-    current_values = {
-        field: getattr(use_case, field)
-        for field in origin_consistency.TARGET_FIELDS
-    }
+    current_values = {field: getattr(use_case, field) for field in origin_consistency.TARGET_FIELDS}
     assert current_values == original_values
     assert origin.source_snapshot == original_snapshot
     assert "finding_count=5" in caplog.text
@@ -407,9 +397,7 @@ def test_no_material_drift_is_valid_result(owner, business_unit, monkeypatch):
 
 @pytest.mark.django_db
 @override_settings(**TASK_SETTINGS)
-def test_provider_error_fails_closed_without_domain_mutation(
-    owner, business_unit, monkeypatch
-):
+def test_provider_error_fails_closed_without_domain_mutation(owner, business_unit, monkeypatch):
     use_case, origin, _process, _option, _decision = _make_origin_use_case(
         owner=owner,
         business_unit=business_unit,
