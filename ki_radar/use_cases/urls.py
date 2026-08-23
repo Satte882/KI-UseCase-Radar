@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import decision_views, intake_views, views
+from . import decision_views, intake_views, origin_consistency_views, views
 
 app_name = "use_cases"
 urlpatterns = [
@@ -20,6 +20,16 @@ urlpatterns = [
         "decision/<int:decision_id>/second-approval/",
         decision_views.second_approval_review,
         name="second_approval_review",
+    ),
+    path(
+        "<uuid:pk>/origin-consistency/",
+        origin_consistency_views.origin_consistency_review,
+        name="origin_consistency_review",
+    ),
+    path(
+        "<uuid:pk>/origin-consistency/feedback/",
+        origin_consistency_views.origin_consistency_feedback,
+        name="origin_consistency_feedback",
     ),
     path("<uuid:pk>/copilot/", views.use_case_copilot, name="copilot"),
 ]
