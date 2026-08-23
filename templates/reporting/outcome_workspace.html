@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static metric_tags %}
 
-{% block title %}{{ active_stage_copy.title }} · Wirkung & Betrieb · KI-Radar{% endblock %}
+{% block title %}{% if active_stage == "decision" %}Scale Readiness &amp; Ergebnisentscheidung{% else %}{{ active_stage_copy.title }}{% endif %} · Wirkung & Betrieb · KI-Radar{% endblock %}
 {% block body_class %}page-outcome-workspace{% endblock %}
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/ui-control-room-primitives.css' %}?v=ap7-lifecycle-unification">
@@ -14,8 +14,8 @@
 <div class="page-header outcome-page-header">
   <div>
     <div class="outcome-eyebrow">Wirkung &amp; Betrieb · Review- und Entscheidungsinformationen</div>
-    <h1 class="page-title">{{ active_stage_copy.title }}</h1>
-    <p class="page-subtitle">{{ active_stage_copy.purpose }}</p>
+    <h1 class="page-title">{% if active_stage == "decision" %}Scale Readiness &amp; Ergebnisentscheidung{% else %}{{ active_stage_copy.title }}{% endif %}</h1>
+    <p class="page-subtitle">{% if active_stage == "decision" %}Produktionsfähigkeit nach der Wirkungsmessung bündeln und die bestehende Lifecycle-Entscheidung treffen.{% else %}{{ active_stage_copy.purpose }}{% endif %}</p>
   </div>
 </div>
 
@@ -27,7 +27,7 @@
           <div class="outcome-eyebrow">Steuerung</div>
           <h2>Status und nächste Handlung</h2>
         </div>
-        <span class="badge badge-soft">{{ active_stage_copy.title }}</span>
+        <span class="badge badge-soft">{% if active_stage == "decision" %}Scale Readiness{% else %}{{ active_stage_copy.title }}{% endif %}</span>
       </div>
 
       <form method="get" class="outcome-use-case-picker">
@@ -57,6 +57,13 @@
         {% else %}
         <span class="badge badge-soft">Keine Aktion erforderlich</span>
         {% endif %}
+      </div>
+      {% endif %}
+
+      {% if active_stage == "decision" %}
+      <div class="alert alert-secondary mt-3 mb-0">
+        <strong>Scale Readiness bündelt, dupliziert nicht.</strong>
+        Pilotwirkung, Governance und Delivery bleiben in ihren bestehenden Sources of Truth. ML-Test-Score-, Release-, Rollback- und Monitoring-Nachweise werden im bestehenden Review nur in der für die Entscheidung verwendeten Version referenziert.
       </div>
       {% endif %}
 

@@ -8,6 +8,11 @@ from ki_radar.use_cases.permissions import (
     can_confirm_early_go_live_exception,
     can_confirm_go_live_exception,
 )
+from ki_radar.use_cases.scale_readiness import (
+    SCALE_EVIDENCE_FIELDS,
+    evaluate_scale_readiness,
+    scale_evidence_from_mapping,
+)
 from ki_radar.use_cases.services import current_decision_check, validate_pilot_start_date
 
 from .models import Review
@@ -18,6 +23,9 @@ class DateInput(forms.DateInput):
 
     def __init__(self, attrs=None):
         super().__init__(attrs=attrs, format="%Y-%m-%d")
+
+
+ML_SCORE_CHOICES = tuple((str(value / 2), f"{value / 2:g}") for value in range(15))
 
 
 class ReviewForm(forms.ModelForm):
@@ -85,6 +93,115 @@ class ReviewForm(forms.ModelForm):
         label="Maßnahmen zur Risikobegrenzung",
     )
 
+    scale_tailoring_level = forms.ChoiceField(
+        required=False,
+        choices=(
+            ("", "Bitte wählen"),
+            ("A", "A · Kompakt"),
+            ("B", "B · Standard"),
+            ("C", "C · Erweitert"),
+        ),
+        label="Tailoring-Stufe",
+        help_text="Projektumfang nach der bestehenden Delivery-Methodik; kein eigener Reifegrad.",
+    )
+    scale_pilot_validation_confirmed = forms.BooleanField(
+        required=False,
+        label="Pilot-Evidenz für den geplanten Produktivscope bestätigt",
+        help_text=(
+            "Pilotumfang, Repräsentativität sowie relevante Fehler- und Ausnahmefälle "
+            "wurden geprüft."
+        ),
+    )
+    scale_production_version = forms.CharField(
+        required=False,
+        max_length=200,
+        label="Freigegebene Produktivversion",
+        help_text="Eindeutige Release-, Modell-, Prompt- oder Systemversion.",
+    )
+    scale_rollback_tested = forms.BooleanField(
+        required=False,
+        label="Rollback oder Deaktivierung praktisch getestet",
+    )
+    scale_technical_monitoring_ready = forms.BooleanField(
+        required=False,
+        label="Technisches Monitoring und Alarmierung nachgewiesen",
+    )
+    scale_ai_quality_monitoring_ready = forms.BooleanField(
+        required=False,
+        label="AI-/fachliches Qualitätsmonitoring nachgewiesen",
+    )
+    scale_incident_process_ready = forms.BooleanField(
+        required=False,
+        label="Incident- und Eskalationsprozess nachgewiesen",
+        help_text="Für Tailoring B/C verbindlich; bei A optional.",
+    )
+    scale_extended_controls_completed = forms.BooleanField(
+        required=False,
+        label="Zusätzliche Kontrollen für Tailoring C vollständig",
+        help_text=(
+            "Bestätigt die je Relevanz erforderlichen unabhängigen Reviews, Recovery-/Security- "
+            "und Notfall-/Abschaltnachweise."
+        ),
+    )
+    scale_evidence_url = forms.URLField(
+        required=False,
+        label="Betriebs-/Release-Nachweis",
+        help_text=(
+            "Referenz auf Runbook, Release-/Rollback-, Monitoring- und Betriebsnachweise."
+        ),
+    )
+    ml_score_data = forms.ChoiceField(
+        required=False,
+        choices=(("", "Bitte wählen"),) + ML_SCORE_CHOICES,
+        label="ML Test Score · Data",
+    )
+    ml_score_model = forms.ChoiceField(
+        required=False,
+        choices=(("", "Bitte wählen"),) + ML_SCORE_CHOICES,
+        label="ML Test Score · Model",
+    )
+    ml_score_infrastructure = forms.ChoiceField(
+        required=False,
+        choices=(("", "Bitte wählen"),) + ML_SCORE_CHOICES,
+        label="ML Test Score · Infrastructure",
+    )
+    ml_score_monitoring = forms.ChoiceField(
+        required=False,
+        choices=(("", "Bitte wählen"),) + ML_SCORE_CHOICES,
+        label="ML Test Score · Monitoring",
+    )
+    ml_score_minimum = forms.ChoiceField(
+        required=False,
+        choices=(("", "Bitte wählen"),) + ML_SCORE_CHOICES,
+        label="Projektspezifischer ML-Test-Score-Mindestwert",
+    )
+    ml_score_version = forms.CharField(
+        required=False,
+        max_length=100,
+        label="ML-Test-Score-Version",
+    )
+    ml_score_date = forms.DateField(
+        required=False,
+        widget=DateInput(),
+        label="Datum der ML-Test-Score-Erhebung",
+    )
+    ml_score_evidence_url = forms.URLField(
+        required=False,
+        label="ML-Test-Score-Nachweis",
+    )
+    ml_score_open_core_checks = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 2}),
+        label="Offene Kernprüfungen",
+        help_text="Nur offene, nicht zwingende Kernprüfungen; sie führen zu einer Auflage.",
+    )
+    ml_score_failed_mandatory_checks = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 2}),
+        label="Nicht erfüllte zwingende Einzelprüfungen",
+        help_text="Jeder Eintrag ist ein Hard Blocker und kann nicht kompensiert werden.",
+    )
+
     class Meta:
         model = Review
         fields = [
@@ -93,6 +210,7 @@ class ReviewForm(forms.ModelForm):
             "decision",
             "new_status",
             "rationale",
+            *SCALE_EVIDENCE_FIELDS,
             "go_live_exception_confirmed",
             "early_go_live_exception_confirmed",
             "early_go_live_original_pilot_end",
@@ -116,7 +234,7 @@ class ReviewForm(forms.ModelForm):
             "decision": "Entscheidung",
             "new_status": "Neuer Status",
             "rationale": "Entscheidungsbegründung",
-            "open_actions": "Offene Maßnahmen",
+            "open_actions": "Offene Maßnahmen / Kompensationsmaßnahme",
             "action_owner": "Maßnahmenverantwortliche Person",
             "action_due_date": "Fälligkeitsdatum der Maßnahme",
             "next_review_date": "Nächster Entscheidungstermin",
@@ -135,6 +253,7 @@ class ReviewForm(forms.ModelForm):
         self.actor = actor
         self.pilot_start_only = pilot_start_only
         self.requested_action = requested_action
+        self.scale_readiness_result = None
         super().__init__(*args, **kwargs)
         today = timezone.localdate()
         self.fields["review_date"].initial = today
@@ -182,6 +301,7 @@ class ReviewForm(forms.ModelForm):
                 "early_go_live_evidence_basis",
                 "early_go_live_unobserved_risks",
                 "early_go_live_mitigation_measures",
+                *SCALE_EVIDENCE_FIELDS,
             ]:
                 self.fields.pop(name, None)
         elif use_case.status != UseCase.Status.REVIEW:
@@ -190,6 +310,21 @@ class ReviewForm(forms.ModelForm):
         selected_decision = self.fields["decision"].initial
         if self.is_bound:
             selected_decision = self.data.get("decision")
+        scale_visible = bool(
+            not pilot_start_only
+            and use_case.status == UseCase.Status.PILOT
+            and requested_action != "closure"
+        )
+        if not scale_visible:
+            for name in SCALE_EVIDENCE_FIELDS:
+                self.fields.pop(name, None)
+        else:
+            source = self.data if self.is_bound else {}
+            self.scale_readiness_result = evaluate_scale_readiness(
+                use_case,
+                scale_evidence_from_mapping(source),
+            )
+
         early_exception_visible = bool(
             use_case.status == UseCase.Status.PILOT
             and use_case.planned_pilot_end
@@ -219,12 +354,28 @@ class ReviewForm(forms.ModelForm):
         )
         for field in self.fields.values():
             field.widget.attrs.setdefault("class", "form-control")
-        for name in ["decision", "new_status", "action_owner"]:
+        for name in [
+            "decision",
+            "new_status",
+            "action_owner",
+            "scale_tailoring_level",
+            "ml_score_data",
+            "ml_score_model",
+            "ml_score_infrastructure",
+            "ml_score_monitoring",
+            "ml_score_minimum",
+        ]:
             if name in self.fields and not self.fields[name].widget.is_hidden:
                 self.fields[name].widget.attrs["class"] = "form-select"
         for name in [
             "go_live_exception_confirmed",
             "early_go_live_exception_confirmed",
+            "scale_pilot_validation_confirmed",
+            "scale_rollback_tested",
+            "scale_technical_monitoring_ready",
+            "scale_ai_quality_monitoring_ready",
+            "scale_incident_process_ready",
+            "scale_extended_controls_completed",
         ]:
             if name in self.fields and not self.fields[name].widget.is_hidden:
                 self.fields[name].widget.attrs["class"] = "form-check-input"
@@ -291,6 +442,35 @@ class ReviewForm(forms.ModelForm):
                     self.add_error("pilot_start", exc)
         else:
             cleaned["pilot_start"] = None
+
+        scale_evidence = scale_evidence_from_mapping(cleaned)
+        if self.use_case.status == UseCase.Status.PILOT and decision in {
+            Review.Decision.GO_LIVE,
+            Review.Decision.CONTINUE,
+            Review.Decision.REWORK,
+        }:
+            self.scale_readiness_result = evaluate_scale_readiness(self.use_case, scale_evidence)
+            if decision == Review.Decision.GO_LIVE:
+                for finding in self.scale_readiness_result.blockers:
+                    self.add_error(None, f"Scale Readiness: {finding.message}")
+                if self.scale_readiness_result.state == "conditional":
+                    for field_name, label in (
+                        ("open_actions", "Kompensationsmaßnahme"),
+                        ("action_owner", "Maßnahmenverantwortliche Person"),
+                        ("action_due_date", "Fälligkeitsdatum der Maßnahme"),
+                    ):
+                        if not cleaned.get(field_name):
+                            self.add_error(
+                                field_name,
+                                f"{label} ist für ein Conditional Go erforderlich.",
+                            )
+
+        ml_score_date = cleaned.get("ml_score_date")
+        if ml_score_date and ml_score_date > timezone.localdate():
+            self.add_error(
+                "ml_score_date",
+                "Das Datum der ML-Test-Score-Erhebung darf nicht in der Zukunft liegen.",
+            )
 
         exception_required = (
             decision == Review.Decision.GO_LIVE

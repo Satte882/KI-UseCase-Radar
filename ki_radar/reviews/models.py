@@ -43,6 +43,8 @@ class Review(TimeStampedModel):
     )
     action_due_date = models.DateField(null=True, blank=True)
     next_review_date = models.DateField(null=True, blank=True)
+    scale_readiness_schema_version = models.PositiveSmallIntegerField(default=1)
+    scale_readiness_snapshot = models.JSONField(default=dict, blank=True)
     history = HistoricalRecords(inherit=True)
 
     class Meta:
