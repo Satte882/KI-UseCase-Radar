@@ -78,4 +78,13 @@ Eine separate vorgelagerte Gap-Analyse ist für #310 nicht erforderlich: Der ver
 
 ## Veröffentlichungs- und Abschlussstatus
 
-PR-, Merge-, CI- und Issue-Abschlussdaten werden nach erfolgreicher Veröffentlichung auf `main` in diesem Abschnitt finalisiert.
+- Implementierungscommit: `5a7495ad1c8630176a241aff6e76d26f07ee450e`
+- Pull Request: #344
+- GitHub Actions: Run `32627185128`, Job `97164180854`, vollständig grün
+- Linux-CI: 1 Architecture Real-DEMO E2E-Test und 1.316 Projekttests grün
+- weitere CI-Nachweise: Ruff, Django-Systemcheck, Migrationen, Bandit, Dependency Audit, lokale/Produktions-/Staging-Compose-Validierung sowie Produktions- und Entwicklungs-Image-Build grün
+- Merge nach `main`: 23.08.2026
+- Merge-Commit: `4ce23afb5b3b6c10643b394308b30e7a5dcba1db`
+- Issue #310 mit dokumentiertem Abnahmekommentar als `completed` geschlossen
+
+Damit ist #310 fachlich, technisch und dokumentarisch abgeschlossen. #320 ist gemäß Ausführungsplan der nächste Read-only-Analyseschritt.
