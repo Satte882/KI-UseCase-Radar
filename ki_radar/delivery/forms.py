@@ -162,6 +162,7 @@ class DeliveryPackageForm(forms.ModelForm):
                 for field_name in field_names:
                     if field_name in self.fields:
                         self.fields[field_name].disabled = True
+                        self.fields[field_name].required = False
 
     @cached_property
     def mvp_scope_ai_state(self):
