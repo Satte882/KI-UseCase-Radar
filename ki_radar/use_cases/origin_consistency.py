@@ -231,7 +231,10 @@ def _origin_for(use_case: UseCase) -> UseCaseOrigin | None:
         return None
 
 
-def _snapshot_option(decision: SolutionSelectionDecision, option_id: object) -> dict[str, Any] | None:
+def _snapshot_option(
+    decision: SolutionSelectionDecision,
+    option_id: object,
+) -> dict[str, Any] | None:
     option_id = str(option_id)
     matches = [
         option
@@ -337,7 +340,10 @@ def origin_consistency_eligibility(use_case: UseCase) -> OriginConsistencyEligib
             True,
             False,
             "stale_diagnosis",
-            "Die Diagnosebasis der Lösungsentscheidung ist gegenüber der aktuellen Version veraltet.",
+            (
+                "Die Diagnosebasis der Lösungsentscheidung ist gegenüber der aktuellen "
+                "Version veraltet."
+            ),
         )
     if decision.process_version != process.version:
         return OriginConsistencyEligibility(

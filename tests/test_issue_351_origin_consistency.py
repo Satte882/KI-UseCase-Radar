@@ -4,7 +4,6 @@ import logging
 import pytest
 from django.test import override_settings
 from django.urls import reverse
-from django.utils import timezone
 
 from ki_radar.architecture.models import (
     ProcessAnalysis,
@@ -162,7 +161,11 @@ def _make_origin_use_case(*, owner, business_unit, with_decision=True):
 
 
 def _finding_payload(context, *, count=1):
-    source = next(source for source in context.sources if source.source_id == "origin.problem_statement")
+    source = next(
+        source
+        for source in context.sources
+        if source.source_id == "origin.problem_statement"
+    )
     finding = {
         "finding": "Der aktuelle Problemtext weicht von der dokumentierten Herkunft ab.",
         "source_refs": [{"id": source.source_id, "version": source.version}],
@@ -373,7 +376,11 @@ def test_positive_review_uses_shared_runtime_max_five_and_never_mutates_domain(
     assert captured["prepared"].run.status == LLMTaskRun.Status.SUCCESS
     use_case.refresh_from_db()
     origin.refresh_from_db()
-    assert {field: getattr(use_case, field) for field in origin_consistency.TARGET_FIELDS} == original_values
+    current_values = {
+        field: getattr(use_case, field)
+        for field in origin_consistency.TARGET_FIELDS
+    }
+    assert current_values == original_values
     assert origin.source_snapshot == original_snapshot
     assert "finding_count=5" in caplog.text
     assert payload["findings"][0]["finding"] not in caplog.text
