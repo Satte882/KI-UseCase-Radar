@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import timedelta
 
 import pytest
@@ -66,6 +67,21 @@ def _prepare_delivery(owner, **overrides):
     return llm_tasks.prepare_llm_task(**values)
 
 
+def _prepare_consistency(owner, **overrides):
+    values = {
+        "task_type": LLMTaskRun.TaskType.ORIGIN_CONSISTENCY_REVIEW,
+        "actor": owner,
+        "object_type": "use_case",
+        "object_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+        "source_hash": "b" * 64,
+        "prompt_version": "1.0",
+        "schema_version": "1.0",
+        "messages": _messages(),
+    }
+    values.update(overrides)
+    return llm_tasks.prepare_llm_task(**values)
+
+
 @override_settings(**TASK_SETTINGS)
 def test_first_wave_task_policies_are_explicit_and_separate():
     delivery = get_llm_task_policy(LLMTaskRun.TaskType.DELIVERY_FIELD_DRAFT)
@@ -98,7 +114,12 @@ def test_openrouter_combines_reasoning_effort_and_exclusion(monkeypatch):
     captured = {}
     payload = {
         "model": "test/model",
-        "choices": [{"message": {"content": '{"ok":true}'}, "finish_reason": "stop"}],
+        "choices": [
+            {
+                "message": {"content": '{"ok":true}'},
+                "finish_reason": "stop",
+            }
+        ],
         "usage": {},
     }
 
@@ -174,10 +195,16 @@ def test_oversized_input_fails_before_run_or_quota(owner):
 
 @pytest.mark.django_db
 @override_settings(**TASK_SETTINGS)
-def test_runtime_forwards_privacy_reasoning_and_records_only_metadata(owner, monkeypatch):
+def test_runtime_forwards_privacy_reasoning_and_records_only_metadata(
+    owner,
+    monkeypatch,
+    caplog,
+):
     captured = {}
+    sensitive_input = "SEHR-VERTRAULICHER-INPUT"
+    sensitive_output = "SEHR-VERTRAULICHER-OUTPUT"
     result = OpenRouterResult(
-        content='{"draft_text":"sensitive output"}',
+        content=f'{{"draft_text":"{sensitive_output}"}}',
         model="provider/model",
         usage={
             "prompt_tokens": 10,
@@ -194,7 +221,8 @@ def test_runtime_forwards_privacy_reasoning_and_records_only_metadata(owner, mon
         return result
 
     monkeypatch.setattr(llm_tasks, "request_openrouter", fake_request_openrouter)
-    prepared = _prepare_delivery(owner)
+    caplog.set_level(logging.INFO, logger="ki_radar.core.llm_tasks")
+    prepared = _prepare_delivery(owner, messages=_messages(sensitive_input))
 
     returned = llm_tasks.request_llm_task_provider(
         prepared,
@@ -217,6 +245,8 @@ def test_runtime_forwards_privacy_reasoning_and_records_only_metadata(owner, mon
     llm_tasks.mark_llm_task_success(run_id=prepared.run.pk)
     prepared.run.refresh_from_db()
     assert prepared.run.status == LLMTaskRun.Status.SUCCESS
+    assert sensitive_input not in caplog.text
+    assert sensitive_output not in caplog.text
 
 
 @pytest.mark.django_db
@@ -260,6 +290,53 @@ def test_fourth_context_call_is_blocked_atomically(owner):
     user = LLMTaskQuota.objects.get(scope=LLMTaskQuota.Scope.USER)
     global_quota = LLMTaskQuota.objects.get(scope=LLMTaskQuota.Scope.GLOBAL)
     assert context.calls == user.calls == global_quota.calls == 3
+
+
+@pytest.mark.django_db
+@override_settings(
+    **{
+        **TASK_SETTINGS,
+        "LLM_TASK_MAX_CALLS_PER_CONTEXT_DAY": "10",
+        "LLM_TASK_MAX_CALLS_PER_USER_DAY": "2",
+    }
+)
+def test_user_quota_is_shared_across_first_wave_tasks(owner):
+    _prepare_delivery(owner)
+    _prepare_consistency(owner)
+
+    with pytest.raises(llm_tasks.LLMTaskQuotaExceeded) as exc_info:
+        _prepare_delivery(
+            owner,
+            object_id="44444444-4444-4444-4444-444444444444",
+        )
+
+    assert exc_info.value.code == "user_quota_exceeded"
+    assert LLMTaskRun.objects.count() == 2
+    assert LLMTaskQuota.objects.get(scope=LLMTaskQuota.Scope.USER).calls == 2
+
+
+@pytest.mark.django_db
+@override_settings(
+    **{
+        **TASK_SETTINGS,
+        "LLM_TASK_MAX_CALLS_PER_CONTEXT_DAY": "10",
+        "LLM_TASK_MAX_CALLS_PER_USER_DAY": "10",
+        "LLM_TASK_MAX_CALLS_GLOBAL_DAY": "2",
+    }
+)
+def test_global_quota_is_shared_across_users(owner, other_owner):
+    _prepare_delivery(owner)
+    _prepare_consistency(other_owner)
+
+    with pytest.raises(llm_tasks.LLMTaskQuotaExceeded) as exc_info:
+        _prepare_delivery(
+            owner,
+            object_id="55555555-5555-5555-5555-555555555555",
+        )
+
+    assert exc_info.value.code == "global_quota_exceeded"
+    assert LLMTaskRun.objects.count() == 2
+    assert LLMTaskQuota.objects.get(scope=LLMTaskQuota.Scope.GLOBAL).calls == 2
 
 
 @pytest.mark.django_db
