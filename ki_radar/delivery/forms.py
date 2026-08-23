@@ -1,6 +1,9 @@
+from functools import cached_property
+
 from django import forms
 
 from .actions import section_responsibility
+from .ai_draft import log_ai_assist_event, mvp_scope_page_state, record_saved_assist
 from .architecture_artifacts import get_delivery_architecture_artifacts
 from .models import DELIVERY_SECTION_DEFINITIONS, DeliveryPackage
 from .permissions import allowed_edit_sections
@@ -78,6 +81,9 @@ FIELD_TO_SECTION = {
 
 
 class DeliveryPackageForm(forms.ModelForm):
+    ai_assist_run_id = forms.CharField(required=False, widget=forms.HiddenInput())
+    ai_assist_edited = forms.CharField(required=False, widget=forms.HiddenInput())
+    ai_assist_edit_ratio = forms.CharField(required=False, widget=forms.HiddenInput())
     system_landscape = forms.CharField(
         widget=forms.Textarea(attrs={"rows": 6}),
         label="Ist-/Ziel-Systemlandschaft",
@@ -125,6 +131,7 @@ class DeliveryPackageForm(forms.ModelForm):
         self.active_section = active_section
         self.editable_sections: set[str] = set()
         super().__init__(*args, **kwargs)
+        self._original_mvp_scope = self.instance.mvp_scope if self.instance.pk else ""
         artifacts = get_delivery_architecture_artifacts(self.instance) if self.instance.pk else None
         if artifacts is not None:
             self.initial.update(
@@ -155,6 +162,24 @@ class DeliveryPackageForm(forms.ModelForm):
                 for field_name in field_names:
                     if field_name in self.fields:
                         self.fields[field_name].disabled = True
+
+    @cached_property
+    def mvp_scope_ai_state(self):
+        show = bool(
+            self.instance.pk
+            and self.actor is not None
+            and self.active_section == "scope_and_users"
+            and "scope_and_users" in self.editable_sections
+        )
+        state = mvp_scope_page_state(self.instance, show=show)
+        if state.show:
+            log_ai_assist_event(
+                "ai_assist_offered",
+                package=self.instance,
+                actor=self.actor,
+                missing_count=len(state.static_missing),
+            )
+        return state
 
     @property
     def section_groups(self):
@@ -188,6 +213,7 @@ class DeliveryPackageForm(forms.ModelForm):
         }
 
     def save(self, commit=True):
+        blocker_before = not bool((self._original_mvp_scope or "").strip())
         package = super().save(commit=False)
         package._architecture_artifacts_payload = {
             "system_landscape": self.cleaned_data["system_landscape"],
@@ -204,4 +230,13 @@ class DeliveryPackageForm(forms.ModelForm):
             self.save_m2m()
             if changed_sections:
                 reset_section_reviews(package, changed_sections)
+            record_saved_assist(
+                package=package,
+                actor=self.actor,
+                run_id=self.cleaned_data.get("ai_assist_run_id", ""),
+                edited_before_save=self.cleaned_data.get("ai_assist_edited", ""),
+                edit_ratio=self.cleaned_data.get("ai_assist_edit_ratio", ""),
+                blocker_before=blocker_before,
+                blocker_after=not bool((package.mvp_scope or "").strip()),
+            )
         return package
