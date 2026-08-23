@@ -70,7 +70,10 @@ class DecisionAssessmentForm(forms.ModelForm):
             "recommendation": "Empfohlene Entscheidung",
         }
         help_texts = {
-            "evidence_url": "Verbindlicher Link auf Analyse, Messung oder freigegebenen Nachweis.",
+            "evidence_url": (
+                "Bei einer unbestätigten Annahme optional. Ab einer fachlichen Einschätzung "
+                "ist ein Link auf Analyse, Messung oder freigegebenen Nachweis erforderlich."
+            ),
             "governance_precheck_completed": (
                 "Dieses Screening identifiziert nur Governance-Themen. Es ersetzt keine formale "
                 "Datenschutz-, Security- oder Rechtsprüfung und deren Nachweise."
@@ -79,6 +82,20 @@ class DecisionAssessmentForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        selected_quality = (
+            self.data.get("evidence_quality")
+            if self.is_bound
+            else self.initial.get("evidence_quality", self.instance.evidence_quality)
+        )
+        evidence_required = bool(selected_quality) and str(selected_quality) != str(
+            DecisionAssessment.EvidenceQuality.ASSUMPTION
+        )
+        self.fields["evidence_url"].required = evidence_required
+        self.fields["evidence_url"].widget.attrs["data-evidence-url"] = "true"
+        self.fields["evidence_url"].widget.attrs["aria-required"] = (
+            "true" if evidence_required else "false"
+        )
+        self.fields["evidence_quality"].widget.attrs["data-evidence-quality"] = "true"
         for field in self.fields.values():
             field.widget.attrs.setdefault("class", "form-control")
         for name in [

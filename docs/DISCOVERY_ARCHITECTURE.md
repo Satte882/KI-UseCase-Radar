@@ -161,6 +161,8 @@ Für die Aufnahme bleiben fachlich erforderlich:
 
 `metric_baseline` und `metric_target` dürfen in dieser frühen Reifestufe dagegen unbekannt bleiben und werden als `NULL` gespeichert. Es werden keine Platzhalterwerte wie `0` erzeugt. Das gilt für direkte Use Cases ebenso wie für Use Cases, die aus einer Discovery-Lösungsoption entstehen.
 
+Sobald Name, Typ, Richtung, Einheit und Messmethode vorliegen, zeigt die Oberfläche die Erfolgsmetrik als **definiert**. Fehlende Baseline oder fehlender Zielwert werden davon getrennt und ausdrücklich als noch offen dargestellt; sie dürfen nicht den falschen Eindruck erzeugen, es sei überhaupt keine Metrik definiert.
+
 Die Entscheidungsgrenze wird dadurch nicht aufgeweicht: Eine positive Freigabe bleibt ohne Baseline oder Zielwert serverseitig blockiert; Pilot- und Go-live-Metrikgates bleiben zusätzlich unverändert. Negative Entscheidungen wie `Zurückgestellt` oder `Nicht weiterverfolgt` können dagegen auch dann fachlich sinnvoll sein, wenn die Messreife für eine positive Freigabe noch nicht erreicht ist.
 
 ## Prozessanalyse
@@ -179,6 +181,8 @@ Eine Prozessanalyse erfasst genau die Informationen, die zur Beurteilung des Pro
 - Ausnahmen und Fehlerfälle
 - Baseline und Prozesskennzahlen
 - Prinzipien für den Soll-Prozess
+
+Beim Anlegen aus einer Fokusphase bleibt deren Value-Stream-Kontext sichtbar, wird aber nicht als vermeintlich präziser Prozessinhalt vorausgefüllt. Insbesondere sind der Value-Stream-Auslöser nicht automatisch der Prozessauslöser und die Phasenbeschreibung nicht automatisch das Prozessergebnis. Prozessspezifische Grenzen werden bewusst eingegeben oder als noch offen benannt; unbekannte Fakten und Zahlen werden nicht erfunden.
 
 Beobachtung beziehungsweise Problem, Ursachenhypothese und bestätigte Ursache werden semantisch getrennt. `ProcessValidation`, Provenance und Versions-/Stale-Mechanismen bleiben die kanonischen Nachweise für fachliche Validierung und Herkunft.
 
@@ -204,6 +208,8 @@ Für jede bewertete Option werden die vorhandenen Vergleichsdimensionen um **Evi
 Maximal eine Option kann je Prozessanalyse als bevorzugt markiert werden. Die Auswahl bleibt eine menschliche Entscheidung und wird mit Vergleichs-, Diagnose- und Evidenzsnapshot historisiert. LLM-Unterstützung darf Alternativen entwerfen, aber keine bindende Präferenz erzeugen.
 
 Nur eine bevorzugte Lösung mit tatsächlicher KI-Komponente führt regulär in den KI-Use-Case-Pfad. Eine organisatorische, regelbasierte, Standardsoftware- oder andere Non-AI-Lösung kann die Discovery bewusst erfolgreich ohne KI-Use-Case abschließen. Analyse, Entscheidung und Begründung bleiben dabei auditierbar.
+
+Beim Übergang aus einer bevorzugten KI-Lösungsoption beschreibt die Kurzbeschreibung des neuen Use Cases das konkrete Vorhaben. Der vollständige heutige Prozessablauf bleibt im kanonisch verknüpften Prozesskontext und wird nicht als scheinbare Use-Case-Lösungsbeschreibung dupliziert.
 
 ## Portfolio als Querschnitt
 

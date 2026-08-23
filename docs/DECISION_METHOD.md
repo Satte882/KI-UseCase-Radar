@@ -56,6 +56,8 @@ Die Erfolgsmetrik wird bereits im Guided Intake fachlich definiert. Dafür bleib
 
 `metric_baseline` und `metric_target` dürfen dagegen solange `NULL` bleiben, wie noch keine belastbaren Werte vorliegen. Das verhindert künstliche Platzhalter oder scheinpräzise Demo-Zahlen und erlaubt dennoch eine strukturierte Bewertung des Use Cases.
 
+Eine fachlich definierte Erfolgsmetrik wird auch dann als **definiert** ausgewiesen, wenn Baseline oder Zielwert noch offen sind. Messdefinition und numerische Messreife sind getrennte Zustände.
+
 Die Reifegrenze liegt bewusst später:
 
 ```text
@@ -97,6 +99,8 @@ Confidence ist keine freie Selbsteinschätzung. Sie wird aus fünf Faktoren abge
 3. Abdeckung
 4. unabhängige Prüfung
 5. Klärung offener Annahmen
+
+Für die Evidenzstufe **Unbestätigte Annahme** ist ein externer Nachweislink optional: Gerade die fehlende Bestätigung ist Teil der transparenten Einordnung. Ab **Fachlicher Einschätzung** ist ein Nachweislink verpflichtend, damit eine stärkere Evidenzbehauptung überprüfbar bleibt.
 
 **Hoch:** mindestens repräsentative Evidenz und alle übrigen Faktoren mindestens belastbar.  
 **Mittel:** mindestens fachliche Einschätzung und alle übrigen Faktoren mindestens eingeschränkt.  

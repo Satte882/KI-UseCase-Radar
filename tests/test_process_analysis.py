@@ -220,6 +220,7 @@ def test_only_preferred_solution_prefills_governed_intake(
     assert response.url == reverse("use_cases:create")
     assert stored["title"] == preferred_option.name
     assert stored["problem_statement"] == process.bottlenecks
+    assert stored["summary"] == preferred_option.description
     assert stored["solution_type"] == UseCase.SolutionType.ASSISTANT
     assert stored["source_process_analysis_id"] == str(process.pk)
     assert stored["source_solution_option_id"] == str(preferred_option.pk)

@@ -294,8 +294,6 @@ def process_analysis_create(request, stage_id):
         request.POST or None,
         initial={
             "name": stage.name,
-            "trigger": stage.value_stream.trigger,
-            "outcome": stage.description or stage.value_stream.outcome,
             "roles": stage.actors,
             "systems": stage.systems,
             "data_objects": stage.documents,
@@ -535,7 +533,7 @@ def solution_option_start_use_case(request, pk):
         "business_unit": stage.value_stream.business_unit_id,
         "problem_statement": process_analysis.bottlenecks,
         "affected_process": process_analysis.name,
-        "summary": process_analysis.current_flow,
+        "summary": option.description,
         "target_users": process_analysis.roles,
         "source_systems": process_analysis.systems,
         "intended_users": process_analysis.roles,

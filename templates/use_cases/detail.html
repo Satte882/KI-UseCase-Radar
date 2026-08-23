@@ -61,7 +61,7 @@
     </div>
     <div class="uc-assessment-rationale">
       <p>{{ latest_assessment.rationale }}</p>
-      <a href="{{ latest_assessment.evidence_url }}" target="_blank" rel="noopener noreferrer">Bewertungsnachweis öffnen</a>
+      {% if latest_assessment.evidence_url %}<a href="{{ latest_assessment.evidence_url }}" target="_blank" rel="noopener noreferrer">Bewertungsnachweis öffnen</a>{% else %}<span class="uc-secondary-copy">Kein externer Nachweis verlinkt · Bewertung auf Annahmenbasis</span>{% endif %}
     </div>
     {% else %}
     <p class="cr-empty-state">Der Use Case ist aufgenommen, aber noch nicht strukturiert bewertet. Ohne Bewertung kann keine Freigabeentscheidung erfolgen.</p>
@@ -110,6 +110,7 @@
       <div class="uc-section-body">
         <dl class="uc-detail-list">
           <dt>Value Stream</dt><dd><a href="{{ architecture_origin.stage.value_stream.get_absolute_url }}">{{ architecture_origin.stage.value_stream.name }}</a></dd>
+          <dt>Value-Stream-Verantwortung</dt><dd>{% if architecture_origin.stage.value_stream.owner %}{{ architecture_origin.stage.value_stream.owner.get_display_name }}{% else %}–{% endif %}</dd>
           <dt>Phase</dt><dd>{{ architecture_origin.stage.name }}</dd>
           <dt>Prozessanalyse</dt><dd>{% if architecture_origin.process_analysis %}<a href="{{ architecture_origin.process_analysis.get_absolute_url }}">{{ architecture_origin.process_analysis.name }}</a>{% else %}–{% endif %}</dd>
           <dt>Lösungsoption</dt><dd>{% if architecture_origin.solution_option %}{{ architecture_origin.solution_option.name }}{% else %}–{% endif %}</dd>

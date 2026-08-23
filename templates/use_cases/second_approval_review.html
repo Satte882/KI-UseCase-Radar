@@ -30,7 +30,7 @@
           <dt class="col-sm-5 text-muted">Empfehlung</dt><dd class="col-sm-7">{{ assessment.get_recommendation_display }}</dd>
         </dl>
         <p>{{ assessment.rationale }}</p>
-        <a href="{{ assessment.evidence_url }}" target="_blank" rel="noopener noreferrer">Bewertungsnachweis öffnen</a>
+        {% if assessment.evidence_url %}<a href="{{ assessment.evidence_url }}" target="_blank" rel="noopener noreferrer">Bewertungsnachweis öffnen</a>{% else %}<span class="small text-muted">Kein externer Nachweis verlinkt.</span>{% endif %}
       </div>
     </section>
   </div>

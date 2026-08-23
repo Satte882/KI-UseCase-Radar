@@ -141,10 +141,26 @@ def current_work_check(use_case: UseCase) -> WorkCheck:
     blockers = list(check.blockers)
     if use_case.coordinator_id is None:
         blockers.append("KI-Koordination nicht zugewiesen")
+    positive_recommendation = assessment.recommendation in {
+        UseCase.DecisionStatus.APPROVED,
+        UseCase.DecisionStatus.APPROVED_WITH_CONDITIONS,
+    }
     return WorkCheck(
-        title="Freigabe vorbereiten" if blockers else "Freigabe entscheiden",
+        title=(
+            "Freigabe vorbereiten"
+            if blockers and positive_recommendation
+            else "Portfolioentscheidung vorbereiten"
+            if blockers
+            else "Portfolioentscheidung treffen"
+        ),
         state="blocked" if blockers else ("review" if check.warnings else "ready"),
-        state_label="Freigabe blockiert" if blockers else "Entscheidungsbereit",
+        state_label=(
+            "Freigabe blockiert"
+            if blockers and positive_recommendation
+            else "Entscheidung blockiert"
+            if blockers
+            else "Entscheidung möglich"
+        ),
         blockers=blockers,
         warnings=list(check.warnings),
     )
@@ -241,7 +257,7 @@ def _approval_dimension(use_case: UseCase) -> StatusDimension:
 
     return StatusDimension(
         key="approval",
-        title="Freigabe",
+        title="Entscheidung",
         label=work_check.state_label,
         state=work_check.state,
         explanation=(
@@ -260,22 +276,29 @@ def _measurement_dimension(use_case: UseCase) -> StatusDimension:
         UseCase.MetricResult.NOT_MEASURED: "review",
         UseCase.MetricResult.NOT_DEFINED: "blocked",
     }[result]
-    explanations = {
-        UseCase.MetricResult.ACHIEVED: "Der gemessene Ist-Wert erfüllt das definierte Ziel.",
-        UseCase.MetricResult.NOT_ACHIEVED: ("Der gemessene Ist-Wert verfehlt das definierte Ziel."),
-        UseCase.MetricResult.NOT_MEASURED: (
-            "Ziel und Messlogik sind definiert; ein Ist-Wert fehlt."
-        ),
-        UseCase.MetricResult.NOT_DEFINED: (
-            "Eine vollständige Erfolgsmetrik ist noch nicht definiert."
-        ),
-    }
+    if use_case.metric_result_label.startswith("Metrik definiert ·"):
+        explanation = (
+            "Die Messlogik ist angelegt; noch offene Baseline- oder Zielwerte bleiben sichtbar."
+        )
+    else:
+        explanation = {
+            UseCase.MetricResult.ACHIEVED: "Der gemessene Ist-Wert erfüllt das definierte Ziel.",
+            UseCase.MetricResult.NOT_ACHIEVED: (
+                "Der gemessene Ist-Wert verfehlt das definierte Ziel."
+            ),
+            UseCase.MetricResult.NOT_MEASURED: (
+                "Ziel und Messlogik sind definiert; ein Ist-Wert fehlt."
+            ),
+            UseCase.MetricResult.NOT_DEFINED: (
+                "Eine vollständige Erfolgsmetrik ist noch nicht definiert."
+            ),
+        }[result]
     return StatusDimension(
         key="measurement",
         title="Messung",
         label=use_case.metric_result_label,
         state=state,
-        explanation=explanations[result],
+        explanation=explanation,
     )
 
 
