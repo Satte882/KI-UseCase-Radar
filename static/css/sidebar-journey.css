@@ -158,3 +158,14 @@
     display: none;
   }
 }
+
+.sidebar-local-step > .sidebar-local-step-copy {
+  display: grid;
+  gap: 2px;
+  white-space: normal;
+}
+
+.sidebar-local-step-copy small {
+  color: var(--muted);
+  font-size: .62rem;
+}

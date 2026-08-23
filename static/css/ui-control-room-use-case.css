@@ -502,6 +502,17 @@
   gap: 7px;
 }
 
+.ui-control-room.page-use-case .uc-scale-snapshot {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: .7rem;
+}
+
+.ui-control-room.page-use-case .uc-scale-snapshot summary {
+  color: var(--ice);
+  cursor: pointer;
+}
+
 .ui-control-room.page-use-case .history-list {
   max-height: 420px;
   overflow-y: auto;

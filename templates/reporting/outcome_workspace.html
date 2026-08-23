@@ -65,6 +65,25 @@
         <strong>Scale Readiness bündelt, dupliziert nicht.</strong>
         Pilotwirkung, Governance und Delivery bleiben in ihren bestehenden Sources of Truth. ML-Test-Score-, Release-, Rollback- und Monitoring-Nachweise werden im bestehenden Review nur in der für die Entscheidung verwendeten Version referenziert.
       </div>
+      {% if latest_scale_review %}
+      <section class="outcome-scale-decision" aria-labelledby="saved-scale-decision-title">
+        <div class="outcome-scale-decision__heading">
+          <div>
+            <div class="outcome-eyebrow">Gespeicherte Entscheidung</div>
+            <h3 id="saved-scale-decision-title">Scale-Readiness-Snapshot vom {{ latest_scale_review.review_date|date:"d.m.Y" }}</h3>
+          </div>
+          {% if latest_scale_review.scale_readiness_snapshot.state == "ready" %}<span class="badge state-ready">GO · Bereit</span>{% elif latest_scale_review.scale_readiness_snapshot.state == "conditional" %}<span class="badge state-review">CONDITIONAL GO · Bereit mit Auflagen</span>{% else %}<span class="badge state-blocked">NO-GO · Nicht bereit</span>{% endif %}
+        </div>
+        <dl class="outcome-scale-decision__facts">
+          <div><dt>Tailoring</dt><dd>{{ latest_scale_review.scale_readiness_snapshot.tailoring_level|default:"–" }}</dd></div>
+          <div><dt>ML Test Score</dt><dd>{{ latest_scale_review.scale_readiness_snapshot.ml_test_score.final|default:"–" }}</dd></div>
+          <div><dt>Produktivversion</dt><dd>{{ latest_scale_review.scale_readiness_snapshot.delivery.production_version|default:"–" }}</dd></div>
+          <div><dt>Nächster Review</dt><dd>{{ latest_scale_review.next_review_date|date:"d.m.Y"|default:"–" }}</dd></div>
+        </dl>
+        {% if latest_scale_review.scale_readiness_snapshot.dimensions %}<dl class="outcome-scale-decision__dimensions">{% for dimension in latest_scale_review.scale_readiness_snapshot.dimensions %}<div><dt>{{ dimension.label }}</dt><dd>{% if dimension.state == "ready" %}Erfüllt{% elif dimension.state == "conditional" %}Mit Auflage{% else %}Nicht erfüllt{% endif %}</dd></div>{% endfor %}</dl>{% endif %}
+        {% if latest_scale_review.open_actions %}<p class="mb-1"><strong>Maßnahme:</strong> {{ latest_scale_review.open_actions }}</p><p class="small text-muted mb-0"><strong>Owner:</strong> {% if latest_scale_review.action_owner %}{{ latest_scale_review.action_owner.get_display_name }}{% else %}–{% endif %} · <strong>Frist:</strong> {{ latest_scale_review.action_due_date|date:"d.m.Y"|default:"–" }}</p>{% endif %}
+      </section>
+      {% endif %}
       {% endif %}
 
       <div class="outcome-responsibility-pair">

@@ -81,9 +81,9 @@ class ScaleReadinessResult:
     @property
     def state_label(self) -> str:
         return {
-            "ready": "Bereit",
-            "conditional": "Bereit mit Auflagen",
-            "not_ready": "Nicht bereit",
+            "ready": "GO · Bereit",
+            "conditional": "CONDITIONAL GO · Bereit mit Auflagen",
+            "not_ready": "NO-GO · Nicht bereit",
         }[self.state]
 
 
@@ -567,6 +567,14 @@ def build_scale_readiness_snapshot(
         "captured_at": timezone.now().isoformat(),
         "state": result.state,
         "tailoring_level": result.tailoring_level,
+        "dimensions": [
+            {
+                "key": dimension.key,
+                "label": dimension.label,
+                "state": dimension.state,
+            }
+            for dimension in result.dimensions
+        ],
         "pilot": {
             "use_case_id": str(use_case.pk),
             "pilot_start": _iso(use_case.pilot_start),

@@ -5,11 +5,16 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from ki_radar.accounts.permissions import is_coordinator
 from ki_radar.use_cases.models import UseCase
-from ki_radar.use_cases.outcome_workspace import outcome_workspace_url
+from ki_radar.use_cases.outcome_workspace import (
+    build_outcome_workspace_journey,
+    outcome_workspace_url,
+)
 from ki_radar.use_cases.permissions import can_start_pilot
+from ki_radar.use_cases.scale_readiness import evaluate_scale_readiness
 from ki_radar.use_cases.services import current_decision_check
 
 from .forms import ReviewForm
@@ -54,6 +59,8 @@ def review_create(request, use_case_id):
                     messages.success(request, "Der Pilot wurde verbindlich gestartet.")
                     return redirect(outcome_workspace_url("pilot", use_case=use_case))
                 messages.success(request, "Review und Entscheidung wurden gespeichert.")
+                if form.scale_readiness_result is not None:
+                    return redirect(outcome_workspace_url("decision", use_case=use_case))
                 return redirect(use_case)
     else:
         form = ReviewForm(
@@ -70,7 +77,29 @@ def review_create(request, use_case_id):
             "use_case": use_case,
             "decision_check": current_decision_check(use_case),
             "pilot_start_only": pilot_start_only,
+            "journey": build_outcome_workspace_journey(use_case, request.user),
         },
+    )
+
+
+@login_required
+@require_POST
+def scale_readiness_preview(request, use_case_id):
+    if not is_coordinator(request.user):
+        raise PermissionDenied
+    use_case = get_object_or_404(
+        UseCase.objects.select_related("business_owner", "technical_owner").prefetch_related(
+            "governance_assessments",
+            "governance_reviews",
+            "delivery_packages",
+        ),
+        pk=use_case_id,
+    )
+    result = evaluate_scale_readiness(use_case, request.POST)
+    return render(
+        request,
+        "reviews/includes/scale_readiness_summary.html",
+        {"scale_result": result, "use_case": use_case, "is_preview_update": True},
     )
 
 

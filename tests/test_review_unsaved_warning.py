@@ -41,7 +41,7 @@ def test_review_get_warns_only_after_form_changes(client, coordinator, use_case)
     assert response.status_code == 200
     assert 'id="review-form"' in content
     assert 'data-initially-dirty="false"' in content
-    assert 'window.addEventListener("beforeunload"' in content
+    assert 'src="/static/js/review-form-dirty-guard.js"' in content
     assert "Bei ungespeicherten Änderungen warnt der Browser" in content
 
 

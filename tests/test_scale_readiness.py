@@ -132,6 +132,14 @@ def test_scale_readiness_go_live_reuses_review_and_persists_snapshot(scale_candi
     assert review.decision == Review.Decision.GO_LIVE
     assert review.scale_readiness_schema_version == 1
     assert review.scale_readiness_snapshot["state"] == "ready"
+    assert [item["key"] for item in review.scale_readiness_snapshot["dimensions"]] == [
+        "pilot",
+        "data",
+        "quality",
+        "deployment",
+        "monitoring",
+        "responsibility",
+    ]
     assert review.scale_readiness_snapshot["ml_test_score"]["final"] == "6.0"
     assert review.scale_readiness_snapshot["delivery"]["package_version"] == package.version
     assert review.scale_readiness_snapshot["delivery"]["production_version"] == "release-2026.08.23"
@@ -237,6 +245,58 @@ def test_go_live_form_exposes_compact_scale_gate(client, scale_candidate):
     assert 'name="ml_score_data"' in content
     assert 'name="scale_rollback_tested"' in content
     assert "kein zusätzlicher Gesamtscore" in content
+    assert "NO-GO · Nicht bereit" in content
+    assert "Pilot → Wirkung → Scale" in content
+    assert "scale-readiness-preview.js" in content
+    assert 'name="ending_reason"' not in content
+    assert 'name="lessons_learned"' not in content
+
+
+@pytest.mark.django_db
+def test_scale_readiness_preview_updates_to_go_and_conditional_go(client, scale_candidate):
+    use_case, _package, coordinator = scale_candidate
+    client.force_login(coordinator)
+    url = reverse("reviews:scale_readiness_preview", kwargs={"use_case_id": use_case.pk})
+
+    go_response = client.post(url, _scale_evidence())
+    go_content = go_response.content.decode()
+
+    assert go_response.status_code == 200
+    assert "GO · Bereit" in go_content
+    assert "GO dokumentieren" in go_content
+    assert "Pilot-Evidenz / Wirkung" in go_content
+    assert "Verantwortung, Governance &amp; Restrisiko" in go_content
+
+    conditional_response = client.post(
+        url,
+        _scale_evidence(
+            ml_score_open_core_checks="Nichtkritische Monitoring-Automatisierung offen."
+        ),
+    )
+    conditional_content = conditional_response.content.decode()
+
+    assert conditional_response.status_code == 200
+    assert "CONDITIONAL GO · Bereit mit Auflagen" in conditional_content
+    assert "Maßnahme, Owner und Frist" in conditional_content
+
+
+@pytest.mark.django_db
+def test_saved_scale_decision_remains_visible_in_outcome_workspace(client, scale_candidate):
+    use_case, _package, coordinator = scale_candidate
+    client.force_login(coordinator)
+    create_review(use_case=use_case, actor=coordinator, data=_go_live_data(coordinator))
+
+    response = client.get(
+        reverse("reporting:outcome_workspace"),
+        {"stage": "decision", "use_case": use_case.pk},
+    )
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Gespeicherte Entscheidung" in content
+    assert "GO · Bereit" in content
+    assert "release-2026.08.23" in content
+    assert "Scale-Readiness-Snapshot" in content
 
 
 @pytest.mark.django_db

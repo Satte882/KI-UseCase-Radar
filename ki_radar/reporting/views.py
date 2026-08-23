@@ -469,7 +469,7 @@ def outcome_workspace(request):
     use_cases = list(
         UseCase.objects.filter(is_archived=False)
         .select_related("business_owner", "technical_owner", "business_unit")
-        .prefetch_related("delivery_packages")
+        .prefetch_related("delivery_packages", "reviews")
         .order_by("-updated_at")
     )
     for use_case in use_cases:
@@ -496,6 +496,17 @@ def outcome_workspace(request):
             use_cases[0] if use_cases else None,
         )
 
+    latest_scale_review = None
+    if selected_use_case is not None:
+        latest_scale_review = next(
+            (
+                review
+                for review in selected_use_case.reviews.all()
+                if review.scale_readiness_snapshot
+            ),
+            None,
+        )
+
     journey = (
         build_outcome_workspace_journey(
             selected_use_case,
@@ -519,6 +530,7 @@ def outcome_workspace(request):
         "active_stage_action": active_stage_action,
         "journey": journey,
         "selected_use_case": selected_use_case,
+        "latest_scale_review": latest_scale_review,
         "use_cases": use_cases,
         "pilot_total": sum(item.status == UseCase.Status.PILOT for item in use_cases),
         "measured_total": sum(item.metric_actual is not None for item in use_cases),

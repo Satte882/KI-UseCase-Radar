@@ -306,6 +306,16 @@ class ReviewForm(forms.ModelForm):
         elif use_case.status != UseCase.Status.REVIEW:
             self.fields.pop("pilot_start", None)
 
+        if requested_action == "go_live":
+            for name in [
+                "ending_reason",
+                "data_and_access_handling",
+                "replacement_solution",
+                "final_assessment",
+                "lessons_learned",
+            ]:
+                self.fields.pop(name, None)
+
         selected_decision = self.fields["decision"].initial
         if self.is_bound:
             selected_decision = self.data.get("decision")
@@ -346,6 +356,49 @@ class ReviewForm(forms.ModelForm):
                 "Eine vorzeitige Produktivsetzung darf ausschließlich ein Mitglied der "
                 "Gruppe KI-Koordinator bestätigen."
             )
+
+        self.order_fields(
+            [
+                "review_date",
+                "decision",
+                "new_status",
+                "rationale",
+                "scale_tailoring_level",
+                "scale_pilot_validation_confirmed",
+                "ml_score_data",
+                "ml_score_model",
+                "ml_score_minimum",
+                "ml_score_version",
+                "ml_score_date",
+                "ml_score_evidence_url",
+                "ml_score_open_core_checks",
+                "ml_score_failed_mandatory_checks",
+                "scale_production_version",
+                "ml_score_infrastructure",
+                "scale_rollback_tested",
+                "scale_evidence_url",
+                "scale_technical_monitoring_ready",
+                "scale_ai_quality_monitoring_ready",
+                "ml_score_monitoring",
+                "scale_incident_process_ready",
+                "scale_extended_controls_completed",
+                "go_live_exception_confirmed",
+                "early_go_live_exception_confirmed",
+                "early_go_live_original_pilot_end",
+                "early_go_live_evidence_basis",
+                "early_go_live_unobserved_risks",
+                "early_go_live_mitigation_measures",
+                "open_actions",
+                "action_owner",
+                "action_due_date",
+                "next_review_date",
+                "ending_reason",
+                "data_and_access_handling",
+                "replacement_solution",
+                "final_assessment",
+                "lessons_learned",
+            ]
+        )
 
         user_model = get_user_model()
         self.fields["action_owner"].queryset = user_model.objects.filter(
