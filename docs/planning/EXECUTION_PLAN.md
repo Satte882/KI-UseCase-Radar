@@ -23,19 +23,19 @@ Die Produkt-Roadmap unter [`../ROADMAP.md`](../ROADMAP.md) bleibt davon getrennt
 
 ## Kürzlich abgeschlossen
 
-**#333 – Scale Readiness vor produktivem Betrieb** wurde am 23.08.2026 abgeschlossen. Die bestehende Ergebnisentscheidung bündelt nun sechs Prüfdimensionen aus Pilotwirkung, Governance, Delivery, ML Test Score und Betriebsnachweisen. Hard Blocker verhindern den Go-live, ein Conditional Go verlangt Maßnahme, Owner und Frist, und der bestehende `Review` bleibt die einzige persistente Lifecycle-Entscheidungsquelle. Die lokale Anwenderabnahme schärfte anschließend Auffindbarkeit, Live-Vorschau und gespeicherten Snapshot.
+**#351 – Discovery→Use-Case-Konsistenzprüfung** wurde am 23.08.2026 als dritter Schritt der First Wave abgeschlossen. Die Prüfung wird explizit durch den Nutzer gestartet, vergleicht den aktuellen Use Case read-only mit seiner belastbaren Discovery-Herkunft, arbeitet mit einer engen Context-Allowlist und source-gebundenen Findings und verändert keine fachlichen Daten oder Entscheidungen. Bei fehlender, veralteter oder mehrdeutiger Herkunft wird fail-closed gearbeitet.
 
-**#320 – Delivery-Readiness analysieren** wurde am 23.08.2026 als reine Re-Analyse abgeschlossen. Die mit #321 geschlossenen Owner-, Source-Decision-, Finding- und Review-Reset-Lücken sind weiterhin wirksam; es wurde keine verbleibende Restlücke und damit kein weiteres Fix-Issue festgestellt.
+**#350 – Grounded KI-Entwurf für Delivery-MVP-Scope** wurde am 23.08.2026 abgeschlossen. Der Delivery-Bereich kann nun auf Nutzeranforderung einen source-gebundenen, editierbaren MVP-Scope-Entwurf erzeugen; Übernahme bleibt eine bewusste fachliche Aktion über den regulären Schreibpfad.
 
-**#310 – Reiseveranstalter E2E-Demo und lokale UI-Abnahme** wurde am 23.08.2026 im regulären Browser abgeschlossen. Der Referenzfall wurde vom Value Stream über Fokus, Prozessanalyse und technologieoffenen Lösungsvergleich bis zum bewerteten und governance-seitig vorbereiteten KI-Use-Case durchgeführt. No-AI- und Hybrid-Semantik wurden gegengeprüft; unbekannte Baseline und Zielwerte blieben ohne künstliche Platzhalter offen. Die dabei gefundenen Darstellungs- und Eingabeschärfen wurden als eng begrenzte UI-Korrekturen behoben und regressionsseitig abgesichert.
+**#349 – First-Wave LLM-Task-Runtime** wurde am 23.08.2026 abgeschlossen. Der gemeinsame Runtime-Layer bündelt Provider-/Privacy-Policy, Quotas, technische Run-Metadaten und Fehlerbehandlung für die ersten task-spezifischen KI-Funktionen, ohne fachliche Kontexte oder Ergebnisse in den Core-Layer zu ziehen.
 
-**#340 – Unbekannte Baseline/Zielwerte im Guided Intake** wurde am 22.08.2026 als fokussierter P1-Fix umgesetzt. Frühe Use Cases können nun ohne erfundene numerische Baseline oder Zielwerte bis zur strukturierten Bewertung aufgenommen werden. Positive Freigaben sowie Pilot-/Go-live-Gates verlangen die relevanten Messwerte weiterhin serverseitig; die Diagnose-Readiness aus #318 blieb unverändert.
+**#328 – KI-Rollout konsolidieren** wurde am 23.08.2026 abgeschlossen. Die Analysen #325, #326 und #327 wurden in eine bewusst kleine First Wave überführt; daraus entstanden #349, #350 und #351. Der Rollout bleibt task-spezifisch, nutzerinitiiert und ohne automatische Freigabe-, Status- oder Domainänderungen.
 
-**#323 – SIPOC-Leitfrage** wurde am 22.08.2026 als kleines Methodik-/UX-Inkrement umgesetzt. Die bestehende `ProcessAnalysis` zeigt SIPOC nun als kompakten Denk- und Scopingrahmen `Supplier → Input → Process → Output → Customer`. Vorhandene Felder für Daten/Dokumente, Ergebnis sowie Übergaben/Schnittstellen werden weiterverwendet; es entstanden keine neuen SIPOC-Modelle, Pflichtfelder oder Journey-Stufen.
+**#333 – Scale Readiness vor produktivem Betrieb** wurde am 23.08.2026 abgeschlossen. Die bestehende Ergebnisentscheidung bündelt nun sechs Prüfdimensionen aus Pilotwirkung, Governance, Delivery, ML Test Score und Betriebsnachweisen. Hard Blocker verhindern den Go-live, ein Conditional Go verlangt Maßnahme, Owner und Frist, und der bestehende `Review` bleibt die einzige persistente Lifecycle-Entscheidungsquelle.
 
-**#331 – Fokuswahl, Evidenz, Time-to-Value und No-AI-Ausgang** wurde am 22.08.2026 abgeschlossen. Damit ist die Discovery-Lösungsentscheidung stabilisiert: hypothesenfähige Fokuswahl, separates Verbesserungspotenzial, persistente Evidenzbasis, Time-to-Value als Trade-off, Hybrid-Semantik und ein gültiger No-AI-Ausgang sind umgesetzt.
+**#320 – Delivery-Readiness analysieren** wurde am 23.08.2026 als reine Re-Analyse abgeschlossen. Die mit #321 geschlossenen Owner-, Source-Decision-, Finding- und Review-Reset-Lücken sind weiterhin wirksam; es wurde keine verbleibende Restlücke festgestellt.
 
-**#322 – Ursprungsprozess → Use Case** wurde am 22.08.2026 umgesetzt. Der direkte Intake kann optional eine vorhandene Prozessanalyse als kanonischen Ursprung verwenden; Discovery übernimmt den bereits bekannten Prozess. Phase, Value Stream, strategisches Ziel und vorhandener Fokuskontext werden aus `UseCaseOrigin` und der bestehenden Architecture-Hierarchie abgeleitet statt redundant am Use Case gespeichert. Bestehende Use Cases ohne Ursprung bleiben unverändert gültig.
+**#310 – Reiseveranstalter E2E-Demo und lokale UI-Abnahme** wurde am 23.08.2026 im regulären Browser abgeschlossen. Der Referenzfall wurde vom Value Stream über Fokus, Prozessanalyse und technologieoffenen Lösungsvergleich bis zum bewerteten und governance-seitig vorbereiteten KI-Use-Case durchgeführt.
 
 ---
 
@@ -43,34 +43,26 @@ Die Produkt-Roadmap unter [`../ROADMAP.md`](../ROADMAP.md) bleibt davon getrennt
 
 | Reihenfolge | Issue | Inhalt | Warum an dieser Stelle? | Geschätzter Aufwand | Komplexität |
 |---:|---|---|---|---:|---|
-| **1A** | **#330 – Django-Ninja Read-only API** | Ergänzt eine kleine Read-only API für Use Cases und Delivery Readiness mit expliziten Response-Schemas, API-Key und OpenAPI/Swagger. Bestehende Domain-/Readiness-Logik wird wiederverwendet und nicht dupliziert. | Die intern konsumierte Delivery-/Readiness-Semantik ist nach #320/#321 und #333 stabil genug für einen expliziten externen Vertrag. | **1–1,5 Tage / 8–12 h** | **mittel** |
-| **1B** | **#325 – KI-Einsatzbereiche analysieren** | Inventarisiert entlang Use Case, Architektur, Delivery, Governance und Reviews, wo KI-Entwürfe, Rückfragen oder Konsistenzprüfungen einen belastbaren Mehrwert liefern und wo nicht. Es findet noch keine Implementierung statt. | Die Analyse kann nach Abschluss von #320 unabhängig von #330 beginnen. | **0,5–1 Tag** | **mittel** |
-| **2A** | **#326 – UX, Qualität und Wirkungsmessung** | Definiert das wiederverwendbare UX-Muster für Erzeugen, Prüfen, Übernehmen, Verwerfen und Fehlerzustände sowie Qualitäts- und Erfolgsmetriken für KI-Entwürfe. | Baut auf den in #325 identifizierten Aufgabentypen auf und kann danach parallel zu #327 bearbeitet werden. | **0,5–1 Tag** | **mittel** |
-| **2B** | **#327 – technische und fachliche KI-Leitplanken** | Definiert Kontextminimierung, Prompt-/Output-Verträge, Provider-Fehler, Tokenbudgets, Datenschutz, Logging, Kosten und Sicherheitsgrenzen für den KI-Rollout. | Ebenfalls nach #325; technische Leitplanken und UX/Messung können anschließend parallel konkretisiert werden. | **1–1,5 Tage** | **mittel–hoch** |
-| **3** | **#328 – KI-Rollout konsolidieren** | Führt #325, #326 und #327 zusammen, entscheidet über priorisierte Rollout-Wellen und leitet daraus kleine Implementierungs-Issues ab. | Erst wenn alle drei Analyseergebnisse vorliegen; sonst würden Rollout-Entscheidungen vorweggenommen. | **0,5 Tag** | **niedrig–mittel** |
-| **4** | **#307 – optionaler Entscheidungsraum** | Ergänzt für echte strittige Entscheidungen einen zusätzlichen Decision Case mit Perspektiven, Evidenz, Readiness, RAPID/DACI, Constraints und Eskalation. Das ist ein größerer Governance-Subworkflow. | Spät aufsetzen, wenn Use-Case-, Governance-, Next-Action- und Delivery-Semantik stabiler sind; dadurch sinkt das Integrations- und Rework-Risiko. | **5–10 Tage** | **sehr hoch** |
+| **1** | **#330 – Django-Ninja Read-only API** | Ergänzt eine kleine Read-only API für Use Cases und Delivery Readiness mit expliziten Response-Schemas, API-Key und OpenAPI/Swagger. Bestehende Domain-/Readiness-Logik wird wiederverwendet und nicht dupliziert. | Die von der API konsumierten Use-Case-, Delivery- und Readiness-Verträge sind stabil. Die First-Wave-KI-Änderungen #349–#351 sind abgeschlossen und erzeugen keine notwendige Vorbedingung mehr. | **1–1,5 Tage / 8–12 h** | **mittel** |
+| **2 / geparkt** | **#307 – optionaler Entscheidungsraum** | Ergänzt für echte strittige Entscheidungen einen zusätzlichen Decision Case mit Perspektiven, Evidenz, Readiness, RAPID/DACI, Constraints und Eskalation. | Das Issue ist ausdrücklich als Prio 3 geparkt und wird nicht automatisch nach #330 umgesetzt. Vor Start ist eine neue Priorisierungsentscheidung plus Gap-Analyse gegen `main` erforderlich. | **5–10 Tage** | **sehr hoch** |
 
 ---
 
 # Abhängigkeitsbild
 
 ```text
-#331 + #322 + #323 + #340 + #310 abgeschlossen
-  ↓
-#320 Analyse abgeschlossen → keine weitere Restlücke
-  ↓
-#333 Scale Readiness abgeschlossen
-  ↓
-┌───────────────────────────────┐
-│ #330 API                      │
-│                               │
-│ #325 → #326 + #327 → #328    │
-└───────────────────────────────┘
-  ↓
-#307
+#310 + #320/#321 + #333 abgeschlossen
+              ↓
+#325 → #326 + #327 → #328 abgeschlossen
+              ↓
+#349 → #350 → #351 abgeschlossen
+              ↓
+#330 Read-only API
+              ↓
+#307 optionaler Entscheidungsraum (geparkt / nur nach expliziter Re-Priorisierung)
 ```
 
-`#330` und der `#325 → #326/#327 → #328`-Strang besitzen keine harte gegenseitige Abhängigkeit und können bei Bedarf parallel laufen.
+Zwischen #330 und #307 besteht keine harte technische Abhängigkeit. Die Reihenfolge ist eine Produkt-/Rework-Entscheidung: #330 ist klein, klar abgegrenzt und nutzt bereits stabile Verträge; #307 ist ein bewusst geparkter, großer Governance-Subworkflow.
 
 **Demo-/Deployment-Leitlinie:** Die #310-Strecke ist lokal fachlich abgenommen. Render bleibt ein separater Deployment-/Smoke-Check und war kein Bestandteil oder Blocker dieser Abnahme.
 
