@@ -22,6 +22,8 @@ Die Produkt-Roadmap unter [`../ROADMAP.md`](../ROADMAP.md) bleibt davon getrennt
 
 ## Kürzlich abgeschlossen
 
+**#310 – Reiseveranstalter E2E-Demo und lokale UI-Abnahme** wurde am 23.08.2026 im regulären Browser abgeschlossen. Der Referenzfall wurde vom Value Stream über Fokus, Prozessanalyse und technologieoffenen Lösungsvergleich bis zum bewerteten und governance-seitig vorbereiteten KI-Use-Case durchgeführt. No-AI- und Hybrid-Semantik wurden gegengeprüft; unbekannte Baseline und Zielwerte blieben ohne künstliche Platzhalter offen. Die dabei gefundenen Darstellungs- und Eingabeschärfen wurden als eng begrenzte UI-Korrekturen behoben und regressionsseitig abgesichert.
+
 **#340 – Unbekannte Baseline/Zielwerte im Guided Intake** wurde am 22.08.2026 als fokussierter P1-Fix umgesetzt. Frühe Use Cases können nun ohne erfundene numerische Baseline oder Zielwerte bis zur strukturierten Bewertung aufgenommen werden. Positive Freigaben sowie Pilot-/Go-live-Gates verlangen die relevanten Messwerte weiterhin serverseitig; die Diagnose-Readiness aus #318 blieb unverändert.
 
 **#323 – SIPOC-Leitfrage** wurde am 22.08.2026 als kleines Methodik-/UX-Inkrement umgesetzt. Die bestehende `ProcessAnalysis` zeigt SIPOC nun als kompakten Denk- und Scopingrahmen `Supplier → Input → Process → Output → Customer`. Vorhandene Felder für Daten/Dokumente, Ergebnis sowie Übergaben/Schnittstellen werden weiterverwendet; es entstanden keine neuen SIPOC-Modelle, Pflichtfelder oder Journey-Stufen.
@@ -36,16 +38,15 @@ Die Produkt-Roadmap unter [`../ROADMAP.md`](../ROADMAP.md) bleibt davon getrennt
 
 | Reihenfolge | Issue | Inhalt | Warum an dieser Stelle? | Geschätzter Aufwand | Komplexität |
 |---:|---|---|---|---:|---|
-| **1** | **#310 – Reiseveranstalter E2E-Demo** | Führt den kompletten Referenzfall vom Value Stream über Fokus, Prozessanalyse und technologieoffenen Lösungsvergleich bis zum bewerteten und governance-seitig vorbereiteten Use Case manuell durch. Die neuen #331-Dimensionen Evidenzbasis, Verbesserungspotenzial und Time-to-Value werden sichtbar mitgeführt. | #323 und #340 sind abgeschlossen; damit kann die Discovery→Use-Case-Strecke nun ohne künstliche Messwerte auf stabilem Stand vollständig geprüft werden. | **0,5–1 Tag** | **niedrig–mittel** |
-| **2** | **#320 – Delivery-Readiness analysieren** | Prüft `ReadinessFinding → ActionableFinding → Next Action → Bearbeitung` sowie Technical-Owner- und Sektionsstatus-Semantik Ende-zu-Ende. Das Issue ist ausschließlich Analyse und darf selbst keine Codeänderungen enthalten. | Vor #333 und nachgelagerten Verbrauchern klären, ob die Delivery-/Readiness-Semantik noch reale Lücken besitzt. | **0,5–1 Tag** | **mittel** |
-| **3** | **ggf. separates Fix-Issue aus #320** | Nur wenn #320 erneut eine echte Lücke nachweist, wird diese in einem separaten Implementierungs-Issue geschlossen. Inhalt und Umfang hängen vom Analyseergebnis ab. | Eine bestätigte Readiness-/Finding-/Action-Lücke sollte vor weiterem Lifecycle-Hardening geschlossen werden. | **0,5–2 Tage*** | **mittel*** |
-| **4** | **#333 – Scale Readiness** | Bündelt vorhandene Pilot-, Wirkungs-, Governance-, Delivery- und ML-Test-Score-Nachweise zu einer kompakten Go-live-/Scale-Readiness-Entscheidung zwischen Pilot/Wirkung und Betrieb. | Erst nach der lokalen Kern-Demo und nach Klärung der Delivery-Readiness-Semantik; #333 soll bestehende Gates aggregieren, nicht duplizieren. | **2–4 Tage*** | **hoch*** |
-| **5A** | **#330 – Django-Ninja Read-only API** | Ergänzt eine kleine Read-only API für Use Cases und Delivery Readiness mit expliziten Response-Schemas, API-Key und OpenAPI/Swagger. Bestehende Domain-/Readiness-Logik wird wiederverwendet und nicht dupliziert. | Nach stabiler Delivery-Readiness-Semantik, damit der externe API-Contract nicht kurz danach wegen interner Änderungen nachgezogen werden muss. | **1–1,5 Tage / 8–12 h** | **mittel** |
-| **5B** | **#325 – KI-Einsatzbereiche analysieren** | Inventarisiert entlang Use Case, Architektur, Delivery, Governance und Reviews, wo KI-Entwürfe, Rückfragen oder Konsistenzprüfungen einen belastbaren Mehrwert liefern und wo nicht. Es findet noch keine Implementierung statt. | Ebenfalls erst nach #320, damit die Analyse nicht auf einer noch wechselnden Delivery-/Finding-Semantik basiert. Kann danach unabhängig von #330 laufen. | **0,5–1 Tag** | **mittel** |
-| **6A** | **#326 – UX, Qualität und Wirkungsmessung** | Definiert das wiederverwendbare UX-Muster für Erzeugen, Prüfen, Übernehmen, Verwerfen und Fehlerzustände sowie Qualitäts- und Erfolgsmetriken für KI-Entwürfe. | Baut auf den in #325 identifizierten Aufgabentypen auf und kann danach parallel zu #327 bearbeitet werden. | **0,5–1 Tag** | **mittel** |
-| **6B** | **#327 – technische und fachliche KI-Leitplanken** | Definiert Kontextminimierung, Prompt-/Output-Verträge, Provider-Fehler, Tokenbudgets, Datenschutz, Logging, Kosten und Sicherheitsgrenzen für den KI-Rollout. | Ebenfalls nach #325; technische Leitplanken und UX/Messung können anschließend parallel konkretisiert werden. | **1–1,5 Tage** | **mittel–hoch** |
-| **7** | **#328 – KI-Rollout konsolidieren** | Führt #325, #326 und #327 zusammen, entscheidet über priorisierte Rollout-Wellen und leitet daraus kleine Implementierungs-Issues ab. | Erst wenn alle drei Analyseergebnisse vorliegen; sonst würden Rollout-Entscheidungen vorweggenommen. | **0,5 Tag** | **niedrig–mittel** |
-| **8** | **#307 – optionaler Entscheidungsraum** | Ergänzt für echte strittige Entscheidungen einen zusätzlichen Decision Case mit Perspektiven, Evidenz, Readiness, RAPID/DACI, Constraints und Eskalation. Das ist ein größerer Governance-Subworkflow. | Spät aufsetzen, wenn Use-Case-, Governance-, Next-Action- und Delivery-Semantik stabiler sind; dadurch sinkt das Integrations- und Rework-Risiko. | **5–10 Tage** | **sehr hoch** |
+| **1** | **#320 – Delivery-Readiness analysieren** | Prüft `ReadinessFinding → ActionableFinding → Next Action → Bearbeitung` sowie Technical-Owner- und Sektionsstatus-Semantik Ende-zu-Ende. Das Issue ist ausschließlich Analyse und darf selbst keine Codeänderungen enthalten. | Vor #333 und nachgelagerten Verbrauchern klären, ob die Delivery-/Readiness-Semantik noch reale Lücken besitzt. | **0,5–1 Tag** | **mittel** |
+| **2** | **ggf. separates Fix-Issue aus #320** | Nur wenn #320 erneut eine echte Lücke nachweist, wird diese in einem separaten Implementierungs-Issue geschlossen. Inhalt und Umfang hängen vom Analyseergebnis ab. | Eine bestätigte Readiness-/Finding-/Action-Lücke sollte vor weiterem Lifecycle-Hardening geschlossen werden. | **0,5–2 Tage*** | **mittel*** |
+| **3** | **#333 – Scale Readiness** | Bündelt vorhandene Pilot-, Wirkungs-, Governance-, Delivery- und ML-Test-Score-Nachweise zu einer kompakten Go-live-/Scale-Readiness-Entscheidung zwischen Pilot/Wirkung und Betrieb. | Erst nach der lokalen Kern-Demo und nach Klärung der Delivery-Readiness-Semantik; #333 soll bestehende Gates aggregieren, nicht duplizieren. | **2–4 Tage*** | **hoch*** |
+| **4A** | **#330 – Django-Ninja Read-only API** | Ergänzt eine kleine Read-only API für Use Cases und Delivery Readiness mit expliziten Response-Schemas, API-Key und OpenAPI/Swagger. Bestehende Domain-/Readiness-Logik wird wiederverwendet und nicht dupliziert. | Nach stabiler Delivery-Readiness-Semantik, damit der externe API-Contract nicht kurz danach wegen interner Änderungen nachgezogen werden muss. | **1–1,5 Tage / 8–12 h** | **mittel** |
+| **4B** | **#325 – KI-Einsatzbereiche analysieren** | Inventarisiert entlang Use Case, Architektur, Delivery, Governance und Reviews, wo KI-Entwürfe, Rückfragen oder Konsistenzprüfungen einen belastbaren Mehrwert liefern und wo nicht. Es findet noch keine Implementierung statt. | Ebenfalls erst nach #320, damit die Analyse nicht auf einer noch wechselnden Delivery-/Finding-Semantik basiert. Kann danach unabhängig von #330 laufen. | **0,5–1 Tag** | **mittel** |
+| **5A** | **#326 – UX, Qualität und Wirkungsmessung** | Definiert das wiederverwendbare UX-Muster für Erzeugen, Prüfen, Übernehmen, Verwerfen und Fehlerzustände sowie Qualitäts- und Erfolgsmetriken für KI-Entwürfe. | Baut auf den in #325 identifizierten Aufgabentypen auf und kann danach parallel zu #327 bearbeitet werden. | **0,5–1 Tag** | **mittel** |
+| **5B** | **#327 – technische und fachliche KI-Leitplanken** | Definiert Kontextminimierung, Prompt-/Output-Verträge, Provider-Fehler, Tokenbudgets, Datenschutz, Logging, Kosten und Sicherheitsgrenzen für den KI-Rollout. | Ebenfalls nach #325; technische Leitplanken und UX/Messung können anschließend parallel konkretisiert werden. | **1–1,5 Tage** | **mittel–hoch** |
+| **6** | **#328 – KI-Rollout konsolidieren** | Führt #325, #326 und #327 zusammen, entscheidet über priorisierte Rollout-Wellen und leitet daraus kleine Implementierungs-Issues ab. | Erst wenn alle drei Analyseergebnisse vorliegen; sonst würden Rollout-Entscheidungen vorweggenommen. | **0,5 Tag** | **niedrig–mittel** |
+| **7** | **#307 – optionaler Entscheidungsraum** | Ergänzt für echte strittige Entscheidungen einen zusätzlichen Decision Case mit Perspektiven, Evidenz, Readiness, RAPID/DACI, Constraints und Eskalation. Das ist ein größerer Governance-Subworkflow. | Spät aufsetzen, wenn Use-Case-, Governance-, Next-Action- und Delivery-Semantik stabiler sind; dadurch sinkt das Integrations- und Rework-Risiko. | **5–10 Tage** | **sehr hoch** |
 
 \* Schritte 3 und 4 sind vor ihrem jeweiligen Gap-Check nur Planungswerte.
 
@@ -54,9 +55,7 @@ Die Produkt-Roadmap unter [`../ROADMAP.md`](../ROADMAP.md) bleibt davon getrennt
 # Abhängigkeitsbild
 
 ```text
-#331 + #322 + #323 + #340 abgeschlossen
-  ↓
-#310 lokale E2E-/Interview-Demo
+#331 + #322 + #323 + #340 + #310 abgeschlossen
   ↓
 #320 Analyse
   ↓
@@ -75,7 +74,7 @@ ggf. separates Fix-Issue
 
 `#330` und der `#325 → #326/#327 → #328`-Strang besitzen nach Abschluss von #320 keine harte gegenseitige Abhängigkeit und können bei Bedarf parallel laufen.
 
-**Demo-/Deployment-Leitlinie:** Für die kurzfristige Interviewvorbereitung ist die lokal funktionierende #310-Strecke führend. Render ist ein separater Deployment-/Smoke-Check und kein Blocker für die lokale fachliche Abnahme.
+**Demo-/Deployment-Leitlinie:** Die #310-Strecke ist lokal fachlich abgenommen. Render bleibt ein separater Deployment-/Smoke-Check und war kein Bestandteil oder Blocker dieser Abnahme.
 
 ---
 

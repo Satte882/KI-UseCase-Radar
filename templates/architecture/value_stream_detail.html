@@ -92,7 +92,7 @@
     {% if value_stream.stage_focus_decision.is_short_path %}<div class="alert alert-secondary"><strong>Kurzpfad begründet:</strong> {{ value_stream.stage_focus_decision.short_path_reason }}</div>{% endif %}
     <div class="table-responsive stage-focus-table-wrap">
       <table class="table align-middle mb-0 stage-focus-table">
-        <thead><tr><th>Phase</th><th>Impact</th><th>Problemintensität</th><th>Datenlage</th><th>Veränderungsaufwand</th><th>Indikatoren</th></tr></thead>
+        <thead><tr><th>Phase</th><th>Impact</th><th>Problemintensität</th><th>Verbesserungspotenzial</th><th>Datenlage</th><th>Veränderungsaufwand</th><th>Time-to-Value</th><th>Evidenzbasis</th><th>Indikatoren</th></tr></thead>
         <tbody>
           {% for stage in value_stream.stages.all %}
           {% stage_focus_item value_stream.stage_focus_decision stage as item %}
@@ -100,8 +100,11 @@
             <td><strong>{{ stage.sequence }}. {{ stage.name }}</strong>{% if stage|is_selected_focus_stage %}<div><span class="badge state-ready mt-1">Fokusphase</span></div>{% endif %}</td>
             <td>{{ item.impact|screening_label }}</td>
             <td>{{ item.pain_intensity|screening_label }}</td>
+            <td>{{ item.improvement_potential|screening_label }}</td>
             <td>{{ item.data_accessibility|screening_label }}</td>
             <td>{{ item.change_effort|screening_label }}</td>
+            <td>{{ item.time_to_value|time_to_value_label }}</td>
+            <td>{{ item.evidence_basis|evidence_basis_label }}</td>
             <td><div class="small"><strong>Engpässe:</strong> {{ item.indicators.pain_points|default:"–" }}</div><div class="small"><strong>Baseline:</strong> {{ item.indicators.baseline_metrics|default:"–" }}</div></td>
           </tr>
           {% endfor %}

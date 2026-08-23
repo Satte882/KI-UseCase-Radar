@@ -20,9 +20,11 @@ Für den aktuellen Stand gelten vorrangig:
 - `accelerator/` – historische Workplans, Gap-Analysen, Completion-/Closure-Berichte, Follow-ups und abgelöste Benchmarkstände;
 - `lifecycle/` – historische Issue-Nachweise zu Lifecycle-, Journey- und Statuskorrekturen;
 - `issue-308/` – abgeschlossene Gap-Analyse zur Value-Stream-Methodik;
+- `issue-310/` – lokale UI-Abnahme und Abschlussnachweis der neutralen Reiseveranstalter-Referenzstrecke einschließlich der daraus abgeleiteten gezielten Korrekturen;
 - `issue-311/` – abgeschlossene Gap-Analyse zum Delivery-Hardening;
 - `issue-322/` – Gap-Analyse und Abschlussnachweis zur optionalen kanonischen Prozessherkunft und zum abgeleiteten strategischen Value-Stream-Kontext von Use Cases;
 - `issue-331/` – Gap-Analyse und Abschlussnachweis zur evidenzbewussten Fokuswahl sowie technologieoffenen Lösungsentscheidung mit TTV-, Hybrid- und No-AI-Semantik;
+- `issue-340/` – Gap-Analyse und Abschlussnachweis zur hypothesenfähigen Messreife im Guided Intake;
 - `pr-a/` – historische Scope- und Abnahmeunterlagen von PR A;
 - `ui-control-room/` – abgeschlossene Migrations- und Auditunterlagen der UI-Control-Room-Einführung.
 

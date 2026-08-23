@@ -2,6 +2,7 @@ import pytest
 from django.urls import reverse
 
 from ki_radar.core.taxonomy import BusinessDomain
+from ki_radar.use_cases.decision_forms import DecisionAssessmentForm
 from ki_radar.use_cases.intake import BenefitStepForm
 from ki_radar.use_cases.intake_views import SESSION_KEY
 from ki_radar.use_cases.models import DecisionAssessment, UseCase
@@ -53,6 +54,55 @@ def test_benefit_step_allows_unknown_baseline_and_target():
     assert form.is_valid(), form.errors
     assert form.cleaned_data["metric_baseline"] is None
     assert form.cleaned_data["metric_target"] is None
+
+
+def test_assumption_assessment_does_not_require_a_fake_evidence_link():
+    data = {
+        "assessment_date": "2026-08-23",
+        "business_value": UseCase.Level.MEDIUM,
+        "strategic_fit": UseCase.Level.MEDIUM,
+        "technical_feasibility": UseCase.Level.MEDIUM,
+        "data_readiness": UseCase.Level.LOW,
+        "risk_complexity": UseCase.Level.MEDIUM,
+        "evidence_quality": DecisionAssessment.EvidenceQuality.ASSUMPTION,
+        "evidence_recency": DecisionAssessment.ConfidenceFactor.CRITICAL,
+        "evidence_coverage": DecisionAssessment.ConfidenceFactor.CRITICAL,
+        "independent_review": DecisionAssessment.ConfidenceFactor.CRITICAL,
+        "assumptions_resolved": DecisionAssessment.ConfidenceFactor.CRITICAL,
+        "evidence_url": "",
+        "rationale": "Frühe Hypothese ohne externen Nachweis.",
+        "recommendation": UseCase.DecisionStatus.DEFERRED,
+    }
+
+    form = DecisionAssessmentForm(data=data)
+
+    assert form.fields["evidence_url"].required is False
+    assert form.is_valid(), form.errors
+
+
+def test_stronger_assessment_still_requires_evidence_link():
+    data = {
+        "assessment_date": "2026-08-23",
+        "business_value": UseCase.Level.MEDIUM,
+        "strategic_fit": UseCase.Level.MEDIUM,
+        "technical_feasibility": UseCase.Level.MEDIUM,
+        "data_readiness": UseCase.Level.MEDIUM,
+        "risk_complexity": UseCase.Level.MEDIUM,
+        "evidence_quality": DecisionAssessment.EvidenceQuality.EXPERT_OPINION,
+        "evidence_recency": DecisionAssessment.ConfidenceFactor.LIMITED,
+        "evidence_coverage": DecisionAssessment.ConfidenceFactor.LIMITED,
+        "independent_review": DecisionAssessment.ConfidenceFactor.LIMITED,
+        "assumptions_resolved": DecisionAssessment.ConfidenceFactor.LIMITED,
+        "evidence_url": "",
+        "rationale": "Fachliche Einschätzung.",
+        "recommendation": UseCase.DecisionStatus.DEFERRED,
+    }
+
+    form = DecisionAssessmentForm(data=data)
+
+    assert form.fields["evidence_url"].required is True
+    assert not form.is_valid()
+    assert "evidence_url" in form.errors
 
 
 def test_benefit_step_validates_present_percentage_value_even_if_other_value_is_unknown():
@@ -137,6 +187,7 @@ def test_guided_intake_persists_unknown_metrics_as_null(client, owner, business_
     assert use_case.metric_baseline is None
     assert use_case.metric_target is None
     assert use_case.decision_status == UseCase.DecisionStatus.READY
+    assert use_case.metric_result_label == "Metrik definiert · Baseline und Ziel offen"
 
 
 @pytest.mark.django_db

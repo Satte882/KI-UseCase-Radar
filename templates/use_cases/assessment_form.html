@@ -23,11 +23,30 @@
       {% if field.name == 'evidence_url' %}</div></div></div><div class="app-card mb-4"><div class="card-header"><strong>Nachweis und Empfehlung</strong></div><div class="card-body"><div class="row g-3">{% endif %}
       <div class="{% if field.name == 'rationale' or field.name == 'evidence_url' or field.field.widget.input_type == 'checkbox' %}col-12{% else %}col-md-6{% endif %}">
         {% if field.field.widget.input_type == 'checkbox' %}<div class="form-check mt-3">{{ field }}<label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label></div>
-        {% else %}<label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>{{ field }}{% endif %}
+        {% else %}<label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}<span{% if field.name == 'evidence_url' %} data-evidence-required-marker{% endif %}{% if not field.field.required %} class="d-none"{% endif %}> *</span></label>{{ field }}{% endif %}
         <div class="text-danger small">{{ field.errors }}</div>{% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
       </div>
       {% endfor %}
     </div></div></div>
   <div class="d-flex justify-content-end gap-2"><a class="btn btn-outline-secondary" href="{{ return_to }}">Abbrechen</a><button class="btn btn-primary">Bewertung speichern und zurückkehren</button></div>
 </form>
+{% endblock %}
+{% block extra_js %}
+<script>
+(() => {
+  "use strict";
+  const quality = document.querySelector("[data-evidence-quality]");
+  const evidence = document.querySelector("[data-evidence-url]");
+  const marker = document.querySelector("[data-evidence-required-marker]");
+  if (!quality || !evidence || !marker) return;
+  const syncEvidenceRequirement = () => {
+    const required = Number(quality.value) > 1;
+    evidence.required = required;
+    evidence.setAttribute("aria-required", required ? "true" : "false");
+    marker.classList.toggle("d-none", !required);
+  };
+  syncEvidenceRequirement();
+  quality.addEventListener("change", syncEvidenceRequirement);
+})();
+</script>
 {% endblock %}

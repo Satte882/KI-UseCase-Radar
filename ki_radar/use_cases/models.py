@@ -2,6 +2,7 @@ import uuid
 from decimal import Decimal
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.urls import reverse
@@ -281,6 +282,22 @@ class UseCase(TimeStampedModel):
 
     @property
     def metric_result_label(self) -> str:
+        metric_definition_complete = all(
+            [
+                self.metric_name,
+                self.metric_type,
+                self.metric_direction,
+                self.metric_unit,
+                self.metric_measurement_method,
+            ]
+        )
+        if metric_definition_complete:
+            if self.metric_baseline is None and self.metric_target is None:
+                return "Metrik definiert · Baseline und Ziel offen"
+            if self.metric_baseline is None:
+                return "Metrik definiert · Baseline offen"
+            if self.metric_target is None:
+                return "Metrik definiert · Zielwert offen"
         return self.MetricResult(self.metric_result).label
 
     @property
@@ -346,7 +363,7 @@ class DecisionAssessment(TimeStampedModel):
     evidence_coverage = models.PositiveSmallIntegerField(choices=ConfidenceFactor.choices)
     independent_review = models.PositiveSmallIntegerField(choices=ConfidenceFactor.choices)
     assumptions_resolved = models.PositiveSmallIntegerField(choices=ConfidenceFactor.choices)
-    evidence_url = models.URLField()
+    evidence_url = models.URLField(blank=True)
     rationale = models.TextField()
     governance_precheck_completed = models.BooleanField(
         default=False,
@@ -365,6 +382,21 @@ class DecisionAssessment(TimeStampedModel):
 
     def __str__(self) -> str:
         return f"{self.use_case.short_id} - Bewertung v{self.version}"
+
+    def clean(self):
+        super().clean()
+        if (
+            self.evidence_quality is not None
+            and self.evidence_quality > self.EvidenceQuality.ASSUMPTION
+            and not self.evidence_url
+        ):
+            raise ValidationError(
+                {
+                    "evidence_url": (
+                        "Ab einer fachlichen Einschätzung ist ein Nachweislink erforderlich."
+                    )
+                }
+            )
 
     @property
     def confidence_level(self) -> str:

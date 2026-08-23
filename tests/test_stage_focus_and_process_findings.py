@@ -138,7 +138,21 @@ def test_process_analysis_requires_saved_focus_stage_and_uses_selected_stage(
         reverse("architecture:process_analysis_create", kwargs={"stage_id": stage_two.pk})
     )
     assert allowed.status_code == 200
-    assert "Angebote vergleichen" in allowed.content.decode()
+    content = allowed.content.decode()
+    assert "Angebote vergleichen" in content
+    assert "novalidate" in content
+    assert "Baseline und Prozesskennzahlen *" in content
+    assert "Bottlenecks und Ursachen *" in content
+    assert 'name="trigger"' in content
+    assert allowed.context["form"].initial.get("trigger", "") == ""
+    assert allowed.context["form"].initial.get("outcome", "") == ""
+
+    detail = client.get(value_stream.get_absolute_url()).content.decode()
+    assert "Verbesserungspotenzial" in detail
+    assert "Time-to-Value" in detail
+    assert "Evidenzbasis" in detail
+    assert "Kurz" in detail
+    assert "Gemessen / nachgewiesen" in detail
 
 
 @pytest.mark.django_db

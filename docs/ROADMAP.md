@@ -175,23 +175,22 @@ Die Oberfläche wurde auf die fachliche Arbeit und die jeweils nächste Entschei
 - gemeinsame UI-Archetypen für Listen, Workspaces und Formulare;
 - konsistente Desktop-, Tablet- und Mobile-Darstellung;
 - sichtbarer Tastaturfokus, semantische Zustände und zugängliche Interaktionen;
-- reduzierte Legacy- und Duplicate-Journey-Strukturen.
+- reduzierte Legacy- und Duplicate-Journey-Strukturen;
+- lokal im regulären Browser abgenommene Referenzstrecke vom Value Stream bis zur bewerteten, governance-seitig vorbereiteten KI-Idee einschließlich No-AI-Gegenprobe und hypothesenfähiger Messreife.
 
-Zentrale Nachweise: #279–#287 und #295.
+Zentrale Nachweise: #279–#287, #295 und #310.
 
 ---
 
 # Now – aktueller Fokus
 
-## Reproduzierbare End-to-End-Demonstration und reale Validierung
+## Delivery-Readiness analysieren und Folgearbeit priorisieren
 
-Der aktuelle Produktfokus liegt nicht auf dem Aufbau einer weiteren großen Capability, sondern darauf, die vorhandene Kernstrecke **realitätsnah und nachvollziehbar demonstrierbar** zu halten.
+Die neutrale Reiseveranstalter-Referenzstrecke aus #310 wurde am 23.08.2026 lokal im regulären Browser Ende-zu-Ende abgenommen. Der Durchlauf bestätigte die geschärfte Discovery-Semantik mit Verbesserungspotenzial, Evidenzbasis, Time-to-Value, SIPOC-Prozesskontext, technologieoffenem Vergleich und einem gültigen No-AI-Ausgang. Ein tatsächlich KI-haltiger Lösungsweg konnte bis zur strukturierten Bewertung und Governance-Vorbereitung geführt werden, ohne unbekannte numerische Baseline oder Zielwerte zu erfinden.
 
-Dazu gehört insbesondere der neutrale Reiseveranstalter-Demo-/Runbook-Kontext aus #310. Der Durchlauf muss die geschärfte Discovery-Semantik sichtbar mitführen: Verbesserungspotenzial, Evidenzbasis, Time-to-Value, SIPOC-Prozesskontext, technologieoffener Vergleich sowie der Grundsatz, dass nur eine tatsächlich KI-haltige bevorzugte Lösung in einen KI-Use-Case übergeht.
+Der nächste Ausführungsschritt ist #320: eine ausschließlich lesende Ende-zu-Ende-Analyse der Delivery-Readiness-Semantik. Erst wenn diese Analyse eine konkrete Lücke nachweist, folgt ein separates Implementierungs-Issue. Der größere KI-Rollout-Fokus #328 und das nachgelagerte Lifecycle-/Go-live-Hardening #333 bleiben davon getrennt.
 
-Seit #340 darf dieser Durchlauf den Use Case ohne erfundene numerische Baseline oder Zielwerte bis zur strukturierten Bewertung führen. Die Erfolgsmetrik und Messmethode bleiben definiert; positive Freigabe sowie Pilot-/Go-live-Gates bleiben bis zur erforderlichen Messreife geschützt.
-
-Für die kurzfristige Demonstration gilt **lokal zuerst**. Ein Render-Deployment beziehungsweise externer Smoke-Test ist nützlich für die Präsentation, aber kein fachlicher Blocker für den lokalen #310-E2E-Durchlauf und wird separat behandelt.
+Ein Render-Deployment beziehungsweise externer Smoke-Test bleibt ein separater Betriebsnachweis und ist weder Bestandteil noch rückwirkender Blocker der lokalen fachlichen #310-Abnahme.
 
 **Aktuell ist kein zusätzliches großes Produktinkrement verbindlich in Umsetzung.**
 
@@ -199,8 +198,8 @@ Für die kurzfristige Demonstration gilt **lokal zuerst**. Ein Render-Deployment
 
 # Next – priorisierte nächste Probleme
 
-**Next zuletzt geprüft:** 2026-08-22  
-**Aktuelle Priorität:** lokale #310-Demonstrierbarkeit; #328 bleibt der nächste größere KI-Rollout-Fokus. #333 ist ein nachgelagertes Lifecycle-/Go-live-Hardening.
+**Next zuletzt geprüft:** 2026-08-23
+**Aktuelle Ausführung:** #320 als Read-only-Analyse; #328 bleibt der nächste größere KI-Rollout-Fokus. #333 ist ein nachgelagertes Lifecycle-/Go-live-Hardening.
 
 ## 1. KI-gestützte Bearbeitung fachlicher Lücken gezielt ausrollen – #328
 

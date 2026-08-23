@@ -130,9 +130,12 @@ class ProcessStepForm(IntakeStepForm):
         ),
     )
     summary = forms.CharField(
-        label="Heutiger Ablauf und Auslöser",
+        label="Kurzbeschreibung des Vorhabens",
         widget=forms.Textarea(attrs={"rows": 4}),
-        help_text="Was löst den Vorgang aus, was geschieht heute und welches Ergebnis entsteht?",
+        help_text=(
+            "Fasse die geplante Unterstützung und ihren fachlichen Zweck in zwei bis drei "
+            "Sätzen zusammen. Der heutige Ablauf bleibt über den Ursprungsprozess nachvollziehbar."
+        ),
     )
     target_users = forms.CharField(
         label="Beteiligte und betroffene Personen",
