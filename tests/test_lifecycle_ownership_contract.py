@@ -127,11 +127,12 @@ def test_outcome_workspace_owns_subordinate_lifecycle_once_and_locally():
     assert 'lifecycle_kicker="Teilprozess"' in OUTCOME
     assert OUTCOME.count('data-testid="outcome-primary-action"') == 1
     assert "Wirkung & Betrieb owns its subordinate outcome lifecycle locally" in TOPBAR
-    assert BASE.count("reporting:outcome_workspace") == 1
+    assert BASE.count("reporting:outcome_workspace") == 2
+    assert "Pilot → Wirkung → Scale Readiness → Betrieb" in BASE
+    assert BASE.count("?stage=decision") == 1
     for duplicate_stage in (
         "?stage=handover",
         "?stage=effect",
-        "?stage=decision",
         "?stage=operation",
         "?stage=closure",
     ):

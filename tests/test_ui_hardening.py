@@ -27,7 +27,7 @@ def test_control_room_is_the_single_normal_application_state():
 
 
 def test_sidebar_starts_with_steering_then_follows_the_workflow():
-    labels = (
+    primary_labels = (
         "Steuerung",
         "Arbeitsvorrat",
         "Portfolio",
@@ -35,11 +35,13 @@ def test_sidebar_starts_with_steering_then_follows_the_workflow():
         "Vorhaben",
         "Analyse",
         "Use Cases",
-        "Delivery",
-        "Wirkung &amp; Betrieb",
     )
-    positions = [BASE.index(label) for label in labels]
+    positions = [BASE.index(label) for label in primary_labels]
     assert positions == sorted(positions)
+    delivery_position = BASE.index("href=\"{% url 'delivery:package_list' %}\"")
+    workspace_separator_position = BASE.index("sidebar-workspace-separator")
+    outcome_position = BASE.index("reporting:outcome_workspace", workspace_separator_position)
+    assert positions[-1] < delivery_position < workspace_separator_position < outcome_position
     assert "href=\"{% url 'reporting:dashboard' %}\"" in BASE
     assert 'LOGIN_REDIRECT_URL = "reporting:dashboard"' in SETTINGS
 

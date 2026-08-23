@@ -37,7 +37,8 @@ def test_outcome_workspace_assets_document_scope_and_final_navigation():
 
     assert "sidebar-workspace-separator" in base
     assert "Wirkung &amp; Betrieb" in base
-    assert base.count("reporting:outcome_workspace") == 1
+    assert base.count("reporting:outcome_workspace") == 2
+    assert "Pilot → Wirkung → Scale Readiness → Betrieb" in base
     assert "css/outcome-workspace.css" in base
     assert "Entscheidungsrelevanter Review-Snapshot" in template
     assert "B · Gesamtleiste" not in template
