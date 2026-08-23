@@ -1,0 +1,393 @@
+/*
+ * AP9: information hierarchy and progressive disclosure.
+ * Page-local structure only; colors and states use existing semantic tokens.
+ */
+
+.ui-control-room .cr-disclosure {
+  margin-top: 28px;
+  border-block: 1px solid var(--line-soft);
+  background: transparent;
+}
+
+.ui-control-room .cr-disclosure > summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 15px 2px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  list-style-position: inside;
+}
+
+.ui-control-room .cr-disclosure > summary::marker {
+  color: var(--ice);
+}
+
+.ui-control-room .cr-disclosure > summary strong {
+  font-size: .86rem;
+  font-weight: 680;
+}
+
+.ui-control-room .cr-disclosure > summary span {
+  color: var(--muted);
+  font-size: .7rem;
+  font-weight: 500;
+}
+
+.ui-control-room .cr-disclosure > summary:focus-visible {
+  outline: 2px solid var(--ice);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+.ui-control-room .cr-disclosure[open] > summary {
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.ui-control-room .cr-disclosure__body {
+  padding: 18px 2px 22px;
+}
+
+.ui-control-room .cr-readonly-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  border-block: 1px solid var(--line-soft);
+}
+
+.ui-control-room .cr-readonly-item {
+  min-width: 0;
+  padding: 15px 18px 15px 0;
+}
+
+.ui-control-room .cr-readonly-item:nth-child(even) {
+  padding-left: 18px;
+  border-left: 1px solid var(--line-soft);
+}
+
+.ui-control-room .cr-readonly-item:nth-child(n + 3) {
+  border-top: 1px solid var(--line-soft);
+}
+
+.ui-control-room .cr-readonly-item > :last-child {
+  margin-bottom: 0;
+}
+
+/* Use Case: orientation first, then one work-state block and primary decision data. */
+.ui-control-room.page-use-case .uc-lifecycle {
+  margin: 0 0 26px;
+}
+
+.ui-control-room.page-use-case .uc-page-header {
+  margin-bottom: 24px;
+}
+
+.ui-control-room.page-use-case .uc-action-help {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: .68rem;
+  font-weight: 500;
+}
+
+.ui-control-room.page-use-case .uc-work-state {
+  margin-bottom: 28px;
+  border-block: 1px solid var(--line);
+  border-left: 2px solid var(--ice);
+  background: color-mix(in srgb, var(--surface-1) 68%, transparent);
+}
+
+.ui-control-room.page-use-case .uc-work-state__facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+}
+
+.ui-control-room.page-use-case .uc-work-state__facts > div {
+  min-width: 0;
+  padding: 15px 18px;
+}
+
+.ui-control-room.page-use-case .uc-work-state__facts > div + div {
+  border-left: 1px solid var(--line-soft);
+}
+
+.ui-control-room.page-use-case .uc-work-state__facts dt {
+  color: var(--muted);
+  font-size: .64rem;
+  font-weight: 720;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.ui-control-room.page-use-case .uc-work-state__facts dd {
+  margin: 5px 0 0;
+  color: var(--ink);
+  font-size: .82rem;
+  font-weight: 660;
+}
+
+.ui-control-room.page-use-case .uc-work-state__readiness {
+  padding: 14px 18px 0;
+  border-top: 1px solid var(--line-soft);
+}
+
+.ui-control-room.page-use-case .uc-work-state__readiness-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.ui-control-room.page-use-case .uc-work-state__readiness-header strong {
+  color: var(--ink-soft);
+  font-size: .8rem;
+}
+
+.ui-control-room.page-use-case .uc-work-state__readiness-copy {
+  margin: 0;
+  color: var(--muted);
+  font-size: .72rem;
+}
+
+.ui-control-room.page-use-case .uc-work-state__next {
+  padding: 0 16px 14px;
+}
+
+.ui-control-room.page-use-case .uc-work-state__next .primary-next-action {
+  margin: 0 !important;
+  border: 0;
+  border-top: 1px solid var(--line-soft);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ui-control-room.page-use-case .uc-work-state__next .primary-next-action .card-body {
+  padding: 14px 2px 0;
+}
+
+.ui-control-room.page-use-case .uc-primary-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 30px;
+  margin-top: 34px;
+}
+
+.ui-control-room.page-use-case .uc-primary-grid > .cr-section {
+  margin-top: 0;
+}
+
+.ui-control-room.page-use-case .uc-inline-disclosure {
+  margin-top: 13px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.ui-control-room.page-use-case .uc-inline-disclosure > summary {
+  padding: 10px 0 3px;
+  color: var(--ice);
+  font-size: .72rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.ui-control-room.page-use-case .uc-inline-disclosure > summary:focus-visible {
+  outline: 2px solid var(--ice);
+  outline-offset: 3px;
+}
+
+.ui-control-room.page-use-case .uc-secondary-grid {
+  display: grid;
+  grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
+  gap: 30px;
+}
+
+.ui-control-room.page-use-case .uc-secondary-grid .uc-side-panel,
+.ui-control-room.page-use-case .uc-secondary-grid .uc-side-panel:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.ui-control-room.page-use-case .uc-secondary-disclosure + .uc-secondary-disclosure {
+  margin-top: 0;
+  border-top: 0;
+}
+
+.ui-control-room.page-use-case .uc-history-disclosure .uc-history-grid {
+  padding-top: 0;
+}
+
+/* Value Stream: outcome-oriented summary; scope and architecture framing are secondary. */
+.ui-control-room.page-value-stream .vs-overview {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 24px 0 30px;
+  border-block: 1px solid var(--line-soft);
+}
+
+.ui-control-room.page-value-stream .vs-overview > section {
+  min-width: 0;
+  padding: 18px 20px 18px 0;
+}
+
+.ui-control-room.page-value-stream .vs-overview > section + section {
+  padding-left: 20px;
+  border-left: 1px solid var(--line-soft);
+}
+
+.ui-control-room.page-value-stream .vs-overview p {
+  margin: 6px 0 0;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+
+.ui-control-room.page-value-stream .vs-frame-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.ui-control-room.page-value-stream .vs-frame-grid > div {
+  min-width: 0;
+}
+
+.ui-control-room.page-value-stream .vs-guardrails {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line-soft);
+}
+
+/* Process Analysis: read-only diagnosis without a card per field. */
+.ui-control-room.page-process-analysis .process-frame-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 24px 0 30px;
+  border-block: 1px solid var(--line-soft);
+}
+
+.ui-control-room.page-process-analysis .process-frame-grid > div {
+  min-width: 0;
+  padding: 15px 18px;
+}
+
+.ui-control-room.page-process-analysis .process-frame-grid > div + div {
+  border-left: 1px solid var(--line-soft);
+}
+
+.ui-control-room.page-process-analysis .process-diagnosis {
+  margin-top: 0;
+}
+
+.ui-control-room.page-process-analysis .process-primary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-block: 1px solid var(--line-soft);
+}
+
+.ui-control-room.page-process-analysis .process-primary-grid > section {
+  min-width: 0;
+  padding: 17px 20px 17px 0;
+}
+
+.ui-control-room.page-process-analysis .process-primary-grid > section:nth-child(even) {
+  padding-left: 20px;
+  border-left: 1px solid var(--line-soft);
+}
+
+.ui-control-room.page-process-analysis .process-primary-grid > section:nth-child(n + 3) {
+  border-top: 1px solid var(--line-soft);
+}
+
+.ui-control-room.page-process-analysis .process-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px 30px;
+}
+
+.ui-control-room.page-process-analysis .process-system-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 30px;
+}
+
+/* Portfolio: matrix and actionable gaps remain primary; distribution is analytical detail. */
+.ui-control-room.page-portfolio .portfolio-analysis-disclosure {
+  margin-top: 34px;
+}
+
+.ui-control-room.page-portfolio .portfolio-analysis-disclosure .portfolio-domain-section,
+.ui-control-room.page-portfolio .portfolio-analysis-disclosure .portfolio-landscape-section {
+  margin-top: 0;
+}
+
+.ui-control-room.page-portfolio .portfolio-analysis-disclosure .portfolio-landscape-section {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.ui-control-room.page-portfolio .portfolio-unclassified-section {
+  margin-top: 34px;
+}
+
+@media (max-width: 1000px) {
+  .ui-control-room.page-use-case .uc-work-state__facts,
+  .ui-control-room.page-process-analysis .process-frame-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ui-control-room.page-use-case .uc-work-state__facts > div:nth-child(3),
+  .ui-control-room.page-process-analysis .process-frame-grid > div:nth-child(3) {
+    border-top: 1px solid var(--line-soft);
+    border-left: 0;
+  }
+
+  .ui-control-room.page-use-case .uc-work-state__facts > div:nth-child(4),
+  .ui-control-room.page-process-analysis .process-frame-grid > div:nth-child(4) {
+    border-top: 1px solid var(--line-soft);
+  }
+}
+
+@media (max-width: 760px) {
+  .ui-control-room .cr-disclosure > summary {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .ui-control-room .cr-readonly-grid,
+  .ui-control-room.page-use-case .uc-work-state__facts,
+  .ui-control-room.page-use-case .uc-primary-grid,
+  .ui-control-room.page-use-case .uc-secondary-grid,
+  .ui-control-room.page-value-stream .vs-overview,
+  .ui-control-room.page-value-stream .vs-frame-grid,
+  .ui-control-room.page-value-stream .vs-guardrails,
+  .ui-control-room.page-process-analysis .process-frame-grid,
+  .ui-control-room.page-process-analysis .process-primary-grid,
+  .ui-control-room.page-process-analysis .process-detail-grid,
+  .ui-control-room.page-process-analysis .process-system-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ui-control-room .cr-readonly-item:nth-child(even),
+  .ui-control-room .cr-readonly-item:nth-child(n + 3),
+  .ui-control-room.page-use-case .uc-work-state__facts > div + div,
+  .ui-control-room.page-value-stream .vs-overview > section + section,
+  .ui-control-room.page-process-analysis .process-frame-grid > div + div,
+  .ui-control-room.page-process-analysis .process-primary-grid > section:nth-child(even),
+  .ui-control-room.page-process-analysis .process-primary-grid > section:nth-child(n + 3) {
+    padding-left: 0;
+    border-top: 1px solid var(--line-soft);
+    border-left: 0;
+  }
+
+  .ui-control-room.page-use-case .uc-work-state__readiness-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
