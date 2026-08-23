@@ -10,6 +10,15 @@ Sie beantwortet genau eine Managementfrage:
 
 Scale Readiness ist **kein neues Framework**, keine zusätzliche CRISP-ML(Q)-Phase und kein Ersatz für Delivery Readiness, Governance oder den Google ML Test Score.
 
+Der sichtbare Ablauf lautet:
+
+```text
+Use Case → Delivery/Handover → Pilot → Wirkung validieren
+→ Scale Readiness & Ergebnisentscheidung → Betrieb → Abschluss
+```
+
+Scale Readiness liegt damit bewusst **vor** dem Betrieb. Skalierung im Sinne regulärer produktiver Nutzung beginnt erst nach einer positiven, gespeicherten Ergebnisentscheidung.
+
 ## Architektur und Sources of Truth
 
 Die bestehende Architektur bleibt führend:
@@ -70,6 +79,8 @@ Die verbindliche Entscheidung bleibt das bestehende `Review`:
 
 Ein Conditional Go ist nur zulässig, wenn **kein Hard Blocker** besteht und mindestens Kompensationsmaßnahme, Owner und Frist im bestehenden Review dokumentiert sind.
 
+Im UI werden diese Zustände ausdrücklich als `GO · Bereit`, `CONDITIONAL GO · Bereit mit Auflagen` und `NO-GO · Nicht bereit` bezeichnet.
+
 ## Nicht überstimmbare Hard Blocker
 
 Unter anderem blockieren:
@@ -91,7 +102,7 @@ Diese Blocker können weder durch einen hohen Score in einer anderen Kategorie n
 
 ADR 0007 bleibt unverändert gültig: `Review` ist die einzige führende Entscheidungs- und Historienquelle.
 
-Für #333 wird `Review` minimal ergänzt um:
+Mit #333 wurde `Review` minimal ergänzt um:
 
 - `scale_readiness_schema_version`
 - `scale_readiness_snapshot`
@@ -109,6 +120,22 @@ Der Snapshot wird **serverseitig erzeugt**. Er enthält keine vollständige Kopi
 - Findings zum Entscheidungszeitpunkt.
 
 Spätere Änderungen überschreiben diesen Snapshot nicht. Ein späterer Review erzeugt einen neuen Stand.
+
+## Platzierung und Bedienung im UI
+
+Scale Readiness ist kein zusätzlicher globaler Lifecycle-Status und kein paralleler Workspace. Die Sicht ist in `Wirkung & Betrieb` unter `Ergebnisentscheidung` platziert – nach der Wirkungsmessung und unmittelbar vor `Betrieb`.
+
+Am konkreten Use Case führt die lokale linke Navigation über `Wirkung & Betrieb` in diesen Teilprozess und zeigt die Einordnung `Pilot → Wirkung → Scale Readiness → Betrieb`. Der globale Workspace-Einstieg bleibt zusätzlich erhalten.
+
+Das bestehende Lifecycle-Review zeigt:
+
+- die sechs Prüfdimensionen in fachlicher Reihenfolge;
+- eine live aktualisierte, noch nicht gespeicherte Entscheidungsvorschau;
+- einbezogene Pilot-, Governance-, Delivery-, Rollen- und ML-Test-Score-Evidenz;
+- aktuelle Findings und genau eine konkrete nächste Aktion;
+- bei `CONDITIONAL GO` die Pflichtangaben Maßnahme, Owner und Frist.
+
+Nach dem Speichern führt der Ablauf zurück zur Ergebnisentscheidung. Dort bleibt der serverseitig erzeugte Snapshot mit Entscheidung, sechs Dimensionen, verwendeter Evidenz und gegebenenfalls Auflagen sichtbar. Die Use-Case-Historie zeigt denselben gespeicherten Entscheidungsstand.
 
 ## Legacy und Änderungen nach Go-live
 

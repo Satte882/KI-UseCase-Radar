@@ -32,7 +32,8 @@ Business Architecture & Discovery
 → Freigabe
 → Delivery Readiness & Übergabe
 → Pilot
-→ Wirkung
+→ Wirkung validieren
+→ Scale Readiness & Ergebnisentscheidung
 → Betrieb oder Abschluss
 ```
 
@@ -192,20 +193,26 @@ KI-Radar führt den Lifecycle:
 Idee → Prüfung → Pilot → Betrieb → Beendet
 ```
 
+`Scale Readiness` ist dabei bewusst kein zusätzlicher Status, sondern die verbindliche Ergebnisentscheidung vor dem Statuswechsel von `Pilot` nach `Betrieb`.
+
 Dazu gehören:
 
 - expliziter Pilotstart erst nach verbindlicher Übergabe;
 - Baseline, Zielwert, aktueller Ist-Wert und Messmethode;
 - Messzeitraum, Messdatum und Nachweis;
 - geplantes Pilotende und nächster Review;
-- Go-live-Gate mit technischen, fachlichen und Governance-Voraussetzungen;
+- Scale Readiness als explizites Gate zwischen validierter Pilotwirkung und Betrieb;
+- sechs Prüfdimensionen mit Pilot-, Governance-, Delivery-, ML-Test-Score- und Betriebsinformationen;
+- nachvollziehbare Vorschläge `GO`, `CONDITIONAL GO` oder `NO-GO`, Hard Blocker und eine konkrete nächste Aktion;
+- Conditional Go nur mit Maßnahme, Owner und Frist;
+- historischer Scale-Readiness-Snapshot im bestehenden Lifecycle-Review;
 - dokumentierte Ausnahme für eine vorzeitige Produktivsetzung;
 - Betriebsreviews und Hinweis auf veraltete Nutzenmessungen;
 - Abschluss mit Beendigungsgrund, Daten-/Zugangsbehandlung und Lessons Learned.
 
-Der Workspace **„Wirkung & Betrieb“** verdichtet diese Informationen für Review- und Managemententscheidungen. Eine historische Messreihe mehrerer eigenständiger Wirkungsmessungen ist bewusst noch kein Kernbestandteil.
+Der Workspace **„Wirkung & Betrieb“** verdichtet diese Informationen für Review- und Managemententscheidungen. Scale Readiness liegt dort unter **„Ergebnisentscheidung“** unmittelbar vor dem Betrieb; ein erfolgreicher Pilot allein kann den Go-live nicht auslösen. Eine historische Messreihe mehrerer eigenständiger Wirkungsmessungen ist bewusst noch kein Kernbestandteil.
 
-Details: [Outcome Workspace](docs/OUTCOME_WORKSPACE.md)
+Details: [Outcome Workspace](docs/OUTCOME_WORKSPACE.md) und [Scale Readiness](docs/SCALE_READINESS.md)
 
 ### 8. Business & Decision Control Room
 
@@ -234,7 +241,8 @@ Der mitgelieferte Demo-Datensatz zeigt einen reproduzierbaren End-to-End-Fall:
 5. Eine bevorzugte Lösungsrichtung wird nachvollziehbar ausgewählt.
 6. Der daraus abgeleitete Use Case wird hinsichtlich Nutzen, Datenreife, Machbarkeit, Risiko und Governance bewertet.
 7. Nach der finalen Freigabe entsteht ein versioniertes Delivery Package mit Systemlandschaft, Datenflüssen, MVP-Scope, Anforderungen und Akzeptanzkriterien.
-8. Nach verbindlicher Übergabe kann der Pilot explizit gestartet, gemessen und später in Betrieb oder Abschluss überführt werden.
+8. Nach verbindlicher Übergabe wird der Pilot explizit gestartet und seine Wirkung gemessen.
+9. Scale Readiness bündelt die vorhandenen Nachweise; erst die gespeicherte Ergebnisentscheidung erlaubt den Übergang in Betrieb oder Abschluss.
 
 Damit wird nicht nur ein KI-Use-Case dokumentiert, sondern seine fachliche Herkunft, Diagnose, Lösungswahl, Entscheidungsgrundlage, Umsetzungsreife und spätere Wirkung nachvollziehbar gemacht.
 

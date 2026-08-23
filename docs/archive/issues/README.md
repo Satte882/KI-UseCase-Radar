@@ -24,6 +24,7 @@ Für den aktuellen Stand gelten vorrangig:
 - `issue-311/` – abgeschlossene Gap-Analyse zum Delivery-Hardening;
 - `issue-322/` – Gap-Analyse und Abschlussnachweis zur optionalen kanonischen Prozessherkunft und zum abgeleiteten strategischen Value-Stream-Kontext von Use Cases;
 - `issue-331/` – Gap-Analyse und Abschlussnachweis zur evidenzbewussten Fokuswahl sowie technologieoffenen Lösungsentscheidung mit TTV-, Hybrid- und No-AI-Semantik;
+- `issue-333/` – Gap-Analyse und Abschlussnachweis zur reuse-first Scale-Readiness-Entscheidung zwischen validierter Pilotwirkung und produktivem Betrieb;
 - `issue-340/` – Gap-Analyse und Abschlussnachweis zur hypothesenfähigen Messreife im Guided Intake;
 - `pr-a/` – historische Scope- und Abnahmeunterlagen von PR A;
 - `ui-control-room/` – abgeschlossene Migrations- und Auditunterlagen der UI-Control-Room-Einführung.

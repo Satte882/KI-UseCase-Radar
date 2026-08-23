@@ -71,6 +71,7 @@ Die Deep Links verwenden das bestehende Lifecycle-Review:
 
 - `Go-live entscheiden` öffnet das Review-Formular mit `GO_LIVE` und Zielstatus `Betrieb` vorbelegt.
 - Für einen Pilot-Review zeigt dasselbe Formular den kompakten Scale-Readiness-Block mit sechs Prüffeldern.
+- Die Entscheidungsvorschau aktualisiert `GO`, `CONDITIONAL GO` oder `NO-GO`, Findings und nächste Aktion bereits beim Bearbeiten der Nachweise; verbindlich wird der Stand erst durch das serverseitige Speichern.
 - Hard Blocker verhindern `Pilot → Betrieb` serverseitig. Sie können nicht durch einen hohen anderen Wert oder eine Ausnahme kompensiert werden.
 - `CONDITIONAL GO` verwendet weiterhin `GO_LIVE`, verlangt aber im bestehenden Review eine Kompensationsmaßnahme, einen Owner und eine Frist.
 - `CONTINUE` beziehungsweise `REWORK` lassen den Lifecycle im Pilot.
@@ -90,11 +91,15 @@ Der gemeinsame Use-Case-Bereich zeigt weiterhin:
 
 Der Scale-Readiness-Snapshot im Review referenziert zusätzlich die zum Entscheidungszeitpunkt verwendete Delivery-Version, Governance-Prüfungen, ML-Test-Score-Version/-Datum und Betriebsnachweise. Er dupliziert nicht die vollständigen fachlichen Quellobjekte.
 
+Nach dem Speichern wird direkt wieder die Stufe `Ergebnisentscheidung` geöffnet. Dort ist die gespeicherte Entscheidung mit allen sechs Dimensionen sichtbar; die Use-Case-Historie zeigt denselben Snapshot als nachgelagerten Nachweis.
+
 Die Darstellung ist verdichtet, damit der phasenspezifische Handlungsstatus sichtbar bleibt.
 
 ## Sidebar und Benutzer-Menü
 
-Die sechs Bereiche besitzen getrennte Sidebar-Einstiege. Der Footer zeigt dauerhaft nur Avatar und Benutzername. Administration und Abmelden liegen in einem aufklappbaren Account-Menü.
+Der globale Sidebar-Einstieg `Wirkung & Betrieb` öffnet den Arbeitsraum. Am konkreten Use Case und im Scale-Review ergänzt die lokale Initiative den Einstieg `Wirkung & Betrieb` mit der Einordnung `Pilot → Wirkung → Scale Readiness → Betrieb`. Die sechs Bereiche bleiben als kontextuelle Phasennavigation innerhalb des Arbeitsraums sichtbar und werden nicht als sechs weitere globale Navigationspunkte dupliziert.
+
+Der Footer zeigt dauerhaft nur Avatar und Benutzername. Administration und Abmelden liegen in einem aufklappbaren Account-Menü.
 
 ## Topbar: Lifecycle-Status und geöffnete Ansicht
 

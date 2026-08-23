@@ -1,6 +1,7 @@
 # KI-Radar Produkt-Roadmap
 
-**Stand:** 22.08.2026  
+**Stand:** 23.08.2026
+
 **Status:** Produktstand und strategische Richtung, kein Terminversprechen
 
 ## Zweck dieser Roadmap
@@ -156,13 +157,20 @@ Die fachliche Journey endet nicht mit dem Delivery-Handover:
 - Lifecycle `Idee → Prüfung → Pilot → Betrieb → Beendet`;
 - expliziter Pilotstart nach verbindlicher Übergabe;
 - Baseline, Ziel, aktueller Ist-Wert, Messzeitraum, Messdatum und Messnachweis;
-- Go-live-Gate mit aktuellen Mess- und Betriebsinformationen;
+- Scale Readiness als explizites Gate zwischen validierter Pilotwirkung und produktivem Betrieb;
+- sechs verständliche Prüfdimensionen für Pilotwirkung, Daten/Wissen, AI-/Systemqualität, Deployment, Monitoring/Betrieb sowie Verantwortung/Governance/Restrisiko;
+- deterministische Vorschläge `GO`, `CONDITIONAL GO` und `NO-GO` ohne neuen Scale-Gesamtscore;
+- Go-live-Gate mit aktuellen Pilot-, Governance-, Delivery-, ML-Test-Score- und Betriebsinformationen;
+- nicht überstimmbare Hard Blocker sowie verpflichtende Maßnahme, Owner und Frist bei `CONDITIONAL GO`;
+- Findings, dominante nächste Aktion und historischer Scale-Readiness-Snapshot im bestehenden Lifecycle-Review;
 - geplanter Pilotzeitraum und dokumentierte Ausnahme für vorzeitige Produktivsetzung;
 - Betriebsreviews und Hinweis auf veraltete Nutzenmessungen;
 - Abschluss mit Beendigungsgrund, Daten-/Zugangsbehandlung und Lessons Learned;
 - entscheidungsrelevanter Workspace `Wirkung & Betrieb`.
 
-Der aktuelle Messstand reicht für Golden Path, Pilotbewertung und Go-live. Mehrere fachlich eigenständige Messstände sind noch keine eigene Messreihe.
+Der aktuelle Messstand reicht für Golden Path, Pilotbewertung und Go-live. Ein erfolgreicher Pilot kann nicht ohne Scale-Readiness-Prüfung in Betrieb überführt werden. Mehrere fachlich eigenständige Messstände sind noch keine eigene Messreihe.
+
+Zentraler Nachweis für das Go-live-/Scale-Gate: #333.
 
 ## 8. Business & Decision Control Room
 
@@ -184,22 +192,22 @@ Zentrale Nachweise: #279–#287, #295 und #310.
 
 # Now – aktueller Fokus
 
-## Delivery-Readiness analysieren und Folgearbeit priorisieren
+## KI-gestützte Bearbeitung fachlicher Lücken gezielt priorisieren
 
 Die neutrale Reiseveranstalter-Referenzstrecke aus #310 wurde am 23.08.2026 lokal im regulären Browser Ende-zu-Ende abgenommen. Der Durchlauf bestätigte die geschärfte Discovery-Semantik mit Verbesserungspotenzial, Evidenzbasis, Time-to-Value, SIPOC-Prozesskontext, technologieoffenem Vergleich und einem gültigen No-AI-Ausgang. Ein tatsächlich KI-haltiger Lösungsweg konnte bis zur strukturierten Bewertung und Governance-Vorbereitung geführt werden, ohne unbekannte numerische Baseline oder Zielwerte zu erfinden.
 
-Der nächste Ausführungsschritt ist #320: eine ausschließlich lesende Ende-zu-Ende-Analyse der Delivery-Readiness-Semantik. Erst wenn diese Analyse eine konkrete Lücke nachweist, folgt ein separates Implementierungs-Issue. Der größere KI-Rollout-Fokus #328 und das nachgelagerte Lifecycle-/Go-live-Hardening #333 bleiben davon getrennt.
+#320 ist als ausschließlich lesende Ende-zu-Ende-Analyse abgeschlossen; nach dem bereits umgesetzten Fix #321 wurde keine weitere Delivery-Readiness-Lücke gefunden. #333 ist ebenfalls abgeschlossen und hat Scale Readiness als explizites Gate zwischen Pilotwirkung und Betrieb ausgeliefert. Der verbleibende größere Produktfokus ist #328 mit der kontrollierten Priorisierung geeigneter KI-Unterstützung.
 
 Ein Render-Deployment beziehungsweise externer Smoke-Test bleibt ein separater Betriebsnachweis und ist weder Bestandteil noch rückwirkender Blocker der lokalen fachlichen #310-Abnahme.
 
-**Aktuell ist kein zusätzliches großes Produktinkrement verbindlich in Umsetzung.**
+**Aktuell ist kein zusätzliches großes Produktinkrement verbindlich in Umsetzung.** Die offenen Analysepfade #325–#327 bereiten eine mögliche erste Rollout-Welle unter #328 vor.
 
 ---
 
 # Next – priorisierte nächste Probleme
 
 **Next zuletzt geprüft:** 2026-08-23
-**Aktuelle Ausführung:** #320 als Read-only-Analyse; #328 bleibt der nächste größere KI-Rollout-Fokus. #333 ist ein nachgelagertes Lifecycle-/Go-live-Hardening.
+**Aktuelle Ausführung:** #320 und #333 sind abgeschlossen; #328 bleibt der nächste größere KI-Rollout-Fokus.
 
 ## 1. KI-gestützte Bearbeitung fachlicher Lücken gezielt ausrollen – #328
 
@@ -212,14 +220,6 @@ Vor einer ersten Rollout-Welle werden im Parent #328 drei Analysepfade konsolidi
 - #327 – technische, fachliche, Sicherheits- und Betriebsleitplanken festlegen.
 
 Erst danach wird eine kleine erste Umsetzungswelle priorisiert. Nutzerinitiierung, sichtbare Quellen, bewusste Übernahme und Human Review bleiben verbindlich; automatische Speicherung, Freigaben oder Statusänderungen durch KI bleiben ausgeschlossen.
-
-## 2. Scale Readiness vor produktivem Betrieb – #333
-
-Zwischen erfolgreicher Pilot-/Wirkungsvalidierung und regulärem Betrieb soll eine kompakte Scale-Readiness-Sicht vorhandene Nachweise bündelbar machen. Ziel ist nicht ein neues Framework, sondern die explizite Managementfrage:
-
-> Ist die validierte Lösung ausreichend belastbar, kontrollierbar und verantwortet, um in den produktiven Regelbetrieb überführt zu werden?
-
-#333 soll vorhandene Pilot-, Governance-, Delivery-, Go-live- und ML-Test-Score-Mechanismen reuse-first zusammenführen. Ein erfolgreicher Pilot allein darf nicht automatisch als Produktionsreife interpretiert werden.
 
 Die Reihenfolge in `Next` beschreibt die aktuelle Produktpriorität, nicht einen starren Implementierungsplan. Vor Umsetzung bleibt der Gap-Check gegen den dann aktuellen `main` verbindlich.
 
