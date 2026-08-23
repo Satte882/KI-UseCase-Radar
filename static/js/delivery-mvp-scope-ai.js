@@ -31,6 +31,10 @@
     const editRatioInput = document.getElementById('id_ai_assist_edit_ratio');
     const staticReady = root.dataset.staticReady === 'true';
 
+    status.tabIndex = -1;
+    helpfulButton.setAttribute('aria-pressed', 'false');
+    notHelpfulButton.setAttribute('aria-pressed', 'false');
+
     let running = false;
     let runId = '';
     let sourceHash = '';
@@ -47,6 +51,7 @@
     function setStatus(message, isError = false) {
       status.textContent = message;
       status.classList.toggle('text-danger', isError);
+      if (isError) status.focus({preventScroll: true});
     }
 
     function setRunning(value) {
