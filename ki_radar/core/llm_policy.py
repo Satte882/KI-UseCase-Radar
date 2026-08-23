@@ -123,9 +123,7 @@ def _optional_temperature(value: Any) -> float | None:
             "ACCELERATOR_CAPTURE_TEMPERATURE muss leer oder eine Zahl sein."
         ) from exc
     if not 0.0 <= parsed <= 2.0:
-        raise LLMConfigurationError(
-            "ACCELERATOR_CAPTURE_TEMPERATURE muss zwischen 0 und 2 liegen."
-        )
+        raise LLMConfigurationError("ACCELERATOR_CAPTURE_TEMPERATURE muss zwischen 0 und 2 liegen.")
     return parsed
 
 

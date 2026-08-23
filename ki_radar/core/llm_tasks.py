@@ -126,9 +126,7 @@ def _increment_quota(
         defaults={"calls": 0, **subject},
         **subject,
     )
-    updated = LLMTaskQuota.objects.filter(pk=quota.pk, calls__lt=limit).update(
-        calls=F("calls") + 1
-    )
+    updated = LLMTaskQuota.objects.filter(pk=quota.pk, calls__lt=limit).update(calls=F("calls") + 1)
     if updated:
         return
 

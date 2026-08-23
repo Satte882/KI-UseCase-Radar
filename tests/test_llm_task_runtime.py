@@ -296,7 +296,7 @@ def test_fourth_context_call_is_blocked_atomically(owner):
 @override_settings(
     **{
         **TASK_SETTINGS,
-        "LLM_TASK_MAX_CALLS_PER_CONTEXT_DAY": "10",
+        "LLM_TASK_MAX_CALLS_PER_CONTEXT_DAY": "2",
         "LLM_TASK_MAX_CALLS_PER_USER_DAY": "2",
     }
 )
@@ -319,8 +319,8 @@ def test_user_quota_is_shared_across_first_wave_tasks(owner):
 @override_settings(
     **{
         **TASK_SETTINGS,
-        "LLM_TASK_MAX_CALLS_PER_CONTEXT_DAY": "10",
-        "LLM_TASK_MAX_CALLS_PER_USER_DAY": "10",
+        "LLM_TASK_MAX_CALLS_PER_CONTEXT_DAY": "2",
+        "LLM_TASK_MAX_CALLS_PER_USER_DAY": "2",
         "LLM_TASK_MAX_CALLS_GLOBAL_DAY": "2",
     }
 )
