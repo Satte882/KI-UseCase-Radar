@@ -93,6 +93,30 @@ def prepare_failed_pilot(use_case, coordinator):
     return today
 
 
+def _scale_evidence():
+    return {
+        "scale_tailoring_level": "C",
+        "scale_pilot_validation_confirmed": True,
+        "scale_production_version": "release-2026.08.23",
+        "scale_rollback_tested": True,
+        "scale_technical_monitoring_ready": True,
+        "scale_ai_quality_monitoring_ready": True,
+        "scale_incident_process_ready": True,
+        "scale_extended_controls_completed": True,
+        "scale_evidence_url": "https://example.invalid/evidence/operations",
+        "ml_score_data": Decimal("6.0"),
+        "ml_score_model": Decimal("6.0"),
+        "ml_score_infrastructure": Decimal("6.0"),
+        "ml_score_monitoring": Decimal("6.0"),
+        "ml_score_minimum": Decimal("5.0"),
+        "ml_score_version": "mlts-2026-08-23",
+        "ml_score_date": timezone.localdate(),
+        "ml_score_evidence_url": "https://example.invalid/evidence/ml-test-score",
+        "ml_score_open_core_checks": "",
+        "ml_score_failed_mandatory_checks": "",
+    }
+
+
 @pytest.mark.django_db
 def test_only_coordinator_can_open_review_form(client, owner, coordinator, use_case):
     client.force_login(owner)
@@ -279,6 +303,7 @@ def test_confirmed_go_live_exception_is_persisted(coordinator, use_case):
             "action_owner": coordinator,
             "action_due_date": today,
             "next_review_date": today,
+            **_scale_evidence(),
         },
     )
 

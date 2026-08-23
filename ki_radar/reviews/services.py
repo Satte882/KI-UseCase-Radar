@@ -2,12 +2,18 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.utils import timezone
 
+from ki_radar.use_cases import services as use_case_services
 from ki_radar.use_cases.models import UseCase
 from ki_radar.use_cases.permissions import (
     can_confirm_early_go_live_exception,
     can_confirm_go_live_exception,
 )
-from ki_radar.use_cases.services import apply_status_transition
+from ki_radar.use_cases.scale_readiness import (
+    SCALE_READINESS_SCHEMA_VERSION,
+    build_scale_readiness_snapshot,
+    evaluate_scale_readiness,
+    extract_scale_evidence,
+)
 
 from .models import EarlyGoLiveException, Review
 
@@ -31,6 +37,12 @@ EARLY_EXCEPTION_FIELDS = (
     "early_go_live_unobserved_risks",
     "early_go_live_mitigation_measures",
 )
+SCALE_SNAPSHOT_DECISIONS = {
+    Review.Decision.GO_LIVE,
+    Review.Decision.CONTINUE,
+    Review.Decision.REWORK,
+    Review.Decision.END,
+}
 
 
 def _early_go_live_required(use_case: UseCase, decision: str | None) -> bool:
@@ -135,16 +147,61 @@ def _validate_review_transition(*, use_case: UseCase, actor, review_data: dict) 
             raise ValidationError("Für den Abschluss fehlen: " + ", ".join(missing))
 
 
+def _validate_scale_decision(
+    *,
+    use_case: UseCase,
+    review_data: dict,
+    scale_evidence: dict,
+):
+    decision = review_data.get("decision")
+    if use_case.status != UseCase.Status.PILOT or decision not in SCALE_SNAPSHOT_DECISIONS:
+        return None
+
+    result = evaluate_scale_readiness(use_case, scale_evidence)
+    if decision == Review.Decision.GO_LIVE:
+        if result.blockers:
+            raise ValidationError(
+                "Scale Readiness blockiert: "
+                + "; ".join(finding.message for finding in result.blockers)
+            )
+        if result.state == "conditional":
+            missing = [
+                label
+                for field_name, label in (
+                    ("open_actions", "Kompensationsmaßnahme"),
+                    ("action_owner", "Maßnahmenverantwortliche Person"),
+                    ("action_due_date", "Fälligkeitsdatum der Maßnahme"),
+                )
+                if not review_data.get(field_name)
+            ]
+            if missing:
+                raise ValidationError("Conditional Go benötigt: " + ", ".join(missing))
+    return result
+
+
 @transaction.atomic
 def create_review(*, use_case, actor, data) -> Review:
     use_case = UseCase.objects.select_for_update().get(pk=use_case.pk)
     previous_status = use_case.status
     review_data = data.copy()
     pilot_start = review_data.pop("pilot_start", None)
+    scale_evidence = extract_scale_evidence(review_data)
 
     _validate_review_transition(use_case=use_case, actor=actor, review_data=review_data)
-
+    use_case.next_review_date = review_data.get("next_review_date")
     early_exception_required = _early_go_live_required(use_case, review_data.get("decision"))
+    if review_data.get("decision") == Review.Decision.GO_LIVE:
+        use_case_services.validate_target_status(
+            use_case,
+            UseCase.Status.OPERATION,
+            allow_early_go_live_exception=early_exception_required,
+        )
+    scale_result = _validate_scale_decision(
+        use_case=use_case,
+        review_data=review_data,
+        scale_evidence=scale_evidence,
+    )
+
     early_exception_data = {
         field_name: review_data.pop(field_name, None) for field_name in EARLY_EXCEPTION_FIELDS
     }
@@ -160,25 +217,31 @@ def create_review(*, use_case, actor, data) -> Review:
         if value:
             setattr(use_case, field, value)
 
-    use_case.next_review_date = review_data.get("next_review_date")
     target_status = review_data["new_status"]
 
     if target_status != previous_status:
-        apply_status_transition(
+        use_case_services.apply_status_transition(
             use_case=use_case,
             target_status=target_status,
             actor=actor,
             pilot_start=pilot_start,
             allow_early_go_live_exception=early_exception_required,
+            scale_evidence=(scale_evidence if target_status == UseCase.Status.OPERATION else None),
         )
     else:
         use_case._history_user = actor
         use_case.save()
 
+    snapshot = {}
+    if scale_result is not None:
+        snapshot = build_scale_readiness_snapshot(use_case, scale_evidence, scale_result)
+
     review = Review(
         use_case=use_case,
         reviewer=actor,
         previous_status=previous_status,
+        scale_readiness_schema_version=SCALE_READINESS_SCHEMA_VERSION,
+        scale_readiness_snapshot=snapshot,
         **review_data,
     )
     review._history_user = actor

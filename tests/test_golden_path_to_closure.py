@@ -74,6 +74,30 @@ def _complete_pilot_period(use_case):
     use_case.save(update_fields=["planned_pilot_end", "updated_at"])
 
 
+def _scale_evidence():
+    return {
+        "scale_tailoring_level": "C",
+        "scale_pilot_validation_confirmed": True,
+        "scale_production_version": "release-2026.08.23",
+        "scale_rollback_tested": True,
+        "scale_technical_monitoring_ready": True,
+        "scale_ai_quality_monitoring_ready": True,
+        "scale_incident_process_ready": True,
+        "scale_extended_controls_completed": True,
+        "scale_evidence_url": "https://example.invalid/evidence/operations",
+        "ml_score_data": Decimal("6.0"),
+        "ml_score_model": Decimal("6.0"),
+        "ml_score_infrastructure": Decimal("6.0"),
+        "ml_score_monitoring": Decimal("6.0"),
+        "ml_score_minimum": Decimal("5.0"),
+        "ml_score_version": "mlts-2026-08-23",
+        "ml_score_date": timezone.localdate(),
+        "ml_score_evidence_url": "https://example.invalid/evidence/ml-test-score",
+        "ml_score_open_core_checks": "",
+        "ml_score_failed_mandatory_checks": "",
+    }
+
+
 def _go_live_data(use_case, *, exception=False, rationale="Pilotziel erreicht; produktiv setzen."):
     return {
         "review_date": timezone.localdate(),
@@ -81,10 +105,17 @@ def _go_live_data(use_case, *, exception=False, rationale="Pilotziel erreicht; p
         "new_status": UseCase.Status.OPERATION,
         "rationale": rationale,
         "go_live_exception_confirmed": exception,
-        "open_actions": "",
-        "action_owner": None,
-        "action_due_date": None,
+        "open_actions": (
+            "Pilotabweichung im Betrieb nachmessen und nach drei Monaten erneut bewerten."
+            if exception
+            else ""
+        ),
+        "action_owner": use_case.coordinator if exception else None,
+        "action_due_date": (
+            timezone.localdate() + timezone.timedelta(days=90) if exception else None
+        ),
         "next_review_date": timezone.localdate() + timezone.timedelta(days=90),
+        **_scale_evidence(),
     }
 
 
