@@ -188,13 +188,19 @@ def create_review(*, use_case, actor, data) -> Review:
     scale_evidence = extract_scale_evidence(review_data)
 
     _validate_review_transition(use_case=use_case, actor=actor, review_data=review_data)
+    early_exception_required = _early_go_live_required(use_case, review_data.get("decision"))
+    if review_data.get("decision") == Review.Decision.GO_LIVE:
+        use_case_services.validate_target_status(
+            use_case,
+            UseCase.Status.OPERATION,
+            allow_early_go_live_exception=early_exception_required,
+        )
     scale_result = _validate_scale_decision(
         use_case=use_case,
         review_data=review_data,
         scale_evidence=scale_evidence,
     )
 
-    early_exception_required = _early_go_live_required(use_case, review_data.get("decision"))
     early_exception_data = {
         field_name: review_data.pop(field_name, None) for field_name in EARLY_EXCEPTION_FIELDS
     }

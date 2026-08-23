@@ -91,6 +91,30 @@ def _early_go_live_candidate(owner, coordinator, business_unit):
     return use_case
 
 
+def _scale_evidence():
+    return {
+        "scale_tailoring_level": "C",
+        "scale_pilot_validation_confirmed": True,
+        "scale_production_version": "release-2026.08.23",
+        "scale_rollback_tested": True,
+        "scale_technical_monitoring_ready": True,
+        "scale_ai_quality_monitoring_ready": True,
+        "scale_incident_process_ready": True,
+        "scale_extended_controls_completed": True,
+        "scale_evidence_url": "https://example.com/evidence/operations",
+        "ml_score_data": Decimal("6.0"),
+        "ml_score_model": Decimal("6.0"),
+        "ml_score_infrastructure": Decimal("6.0"),
+        "ml_score_monitoring": Decimal("6.0"),
+        "ml_score_minimum": Decimal("5.0"),
+        "ml_score_version": "mlts-2026-08-23",
+        "ml_score_date": timezone.localdate(),
+        "ml_score_evidence_url": "https://example.com/evidence/ml-test-score",
+        "ml_score_open_core_checks": "",
+        "ml_score_failed_mandatory_checks": "",
+    }
+
+
 def _go_live_data(use_case, coordinator, **overrides):
     data = {
         "review_date": timezone.localdate(),
@@ -109,6 +133,7 @@ def _go_live_data(use_case, coordinator, **overrides):
         "action_owner": coordinator,
         "action_due_date": use_case.planned_pilot_end,
         "next_review_date": use_case.next_review_date,
+        **_scale_evidence(),
     }
     data.update(overrides)
     return data
@@ -138,6 +163,7 @@ def test_direct_transition_requires_authorized_early_exception(
             use_case=use_case,
             target_status=UseCase.Status.OPERATION,
             actor=coordinator,
+            scale_evidence=_scale_evidence(),
         )
     with pytest.raises(PermissionDenied, match="KI-Koordinator"):
         apply_status_transition(
@@ -145,6 +171,7 @@ def test_direct_transition_requires_authorized_early_exception(
             target_status=UseCase.Status.OPERATION,
             actor=owner,
             allow_early_go_live_exception=True,
+            scale_evidence=_scale_evidence(),
         )
 
 
