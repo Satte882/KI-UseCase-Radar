@@ -5,8 +5,11 @@ import hmac
 import json
 import logging
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Any, Mapping
+from typing import Any
+
+from django.core.exceptions import ValidationError
 
 from ki_radar.core.llm_tasks import (
     LLMTaskError,
@@ -345,7 +348,10 @@ def _normalize_number(token: str) -> str:
 
 
 def _quantitative_tokens(text: str) -> set[str]:
-    return {_normalize_number(match.group(0)) for match in _QUANTITATIVE_TOKEN_RE.finditer(text)}
+    return {
+        _normalize_number(match.group(0))
+        for match in _QUANTITATIVE_TOKEN_RE.finditer(text)
+    }
 
 
 def _require_exact_keys(payload: dict[str, Any], expected: set[str], *, code: str) -> None:
@@ -356,7 +362,12 @@ def _require_exact_keys(payload: dict[str, Any], expected: set[str], *, code: st
         )
 
 
-def _validate_string_list(value: object, *, field_name: str, max_items: int) -> tuple[str, ...]:
+def _validate_string_list(
+    value: object,
+    *,
+    field_name: str,
+    max_items: int,
+) -> tuple[str, ...]:
     if not isinstance(value, list) or len(value) > max_items:
         raise DeliveryDraftValidationError(
             f"{field_name} besitzt eine ungültige Struktur.",
@@ -459,7 +470,10 @@ def validate_mvp_scope_draft_payload(
         )
     reason = reason.strip()
 
-    source_values = "\n".join(source.value for source in context.sources)
+    cited_source_ids = set(source_ids)
+    source_values = "\n".join(
+        source.value for source in context.sources if source.source_id in cited_source_ids
+    )
     grounded_numbers = _quantitative_tokens(source_values)
     generated_text = "\n".join(
         [draft_text, *missing_facts, *assumptions, *conflicts, reason]
@@ -616,15 +630,18 @@ def delivery_draft_run_for_actor(
 ) -> LLMTaskRun | None:
     if not run_id or getattr(actor, "pk", None) is None:
         return None
-    return LLMTaskRun.objects.filter(
-        pk=run_id,
-        task_type=TASK_TYPE,
-        object_type="delivery_package",
-        object_id=str(package.pk),
-        field_key=TARGET_FIELD,
-        requested_by=actor,
-        status=LLMTaskRun.Status.SUCCESS,
-    ).first()
+    try:
+        return LLMTaskRun.objects.filter(
+            pk=run_id,
+            task_type=TASK_TYPE,
+            object_type="delivery_package",
+            object_id=str(package.pk),
+            field_key=TARGET_FIELD,
+            requested_by=actor,
+            status=LLMTaskRun.Status.SUCCESS,
+        ).first()
+    except (ValidationError, ValueError):
+        return None
 
 
 def source_hash_is_current(
@@ -659,7 +676,12 @@ def record_saved_assist(
     except (TypeError, ValueError):
         ratio = 0.0
     ratio = max(0.0, min(1.0, ratio))
-    edited = str(edited_before_save or "").strip().casefold() in {"1", "true", "yes", "on"}
+    edited = str(edited_before_save or "").strip().casefold() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
     log_ai_assist_event(
         "ai_target_saved_after_assist",
         package=package,
