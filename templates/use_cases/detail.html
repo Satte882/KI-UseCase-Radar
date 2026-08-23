@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static metric_tags %}
+{% load static metric_tags origin_consistency_tags %}
 {% block title %}{{ use_case.short_id }} – KI-Radar{% endblock %}
 {% block body_class %}page-use-case{% endblock %}
 {% block extra_css %}
@@ -127,6 +127,7 @@
         {% if origin_source_differences %}
         <div class="uc-source-drift"><strong>Quellenänderungen seit der Übernahme</strong><p>Die aktuelle Use-Case-Arbeitsfassung bleibt unverändert; die Abweichungen müssen bewusst geprüft werden.</p><ul>{% for item in origin_source_differences %}<li>{{ item.target_field }} aus {{ item.source_label }}: „{{ item.previous|default:"–" }}“ → „{{ item.current|default:"–" }}“</li>{% endfor %}</ul></div>
         {% endif %}
+        {% origin_consistency_panel use_case %}
       </div>
     </section>
     {% endif %}
