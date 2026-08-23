@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import re
+
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_POST
@@ -11,6 +14,7 @@ from .ai_draft import (
     EDITABLE_CONTEXT_FIELDS,
     DeliveryDraftContextError,
     DeliveryDraftValidationError,
+    build_mvp_scope_context,
     delivery_draft_run_for_actor,
     generate_mvp_scope_draft,
     log_ai_assist_event,
@@ -19,10 +23,19 @@ from .ai_draft import (
 from .models import DeliveryPackage
 from .permissions import allowed_edit_sections
 
-
 SAFE_PROVIDER_MESSAGE = (
     "Der KI-Entwurf konnte nicht sicher erstellt werden. Die vorhandenen Eingaben bleiben "
     "unverändert."
+)
+_PROMPT_INJECTION_RE = re.compile(
+    r"(?:"
+    r"\b(?:ignore|disregard)\b[^\n.;]{0,80}\b(?:instruction|instructions|prompt)\b"
+    r"|\b(?:ignoriere|missachte)\b[^\n.;]{0,80}\b(?:anweisung|anweisungen|prompt)\b"
+    r"|\bsystem\s*prompt\b"
+    r"|\bdeveloper\s*(?:message|nachricht)\b"
+    r"|(?:^|\n)\s*(?:system|assistant|developer)\s*:"
+    r")",
+    re.IGNORECASE,
 )
 
 
@@ -37,6 +50,11 @@ def _overrides(request) -> dict[str, str]:
     return {
         field_name: request.POST.get(field_name, "") for field_name in EDITABLE_CONTEXT_FIELDS
     }
+
+
+def _contains_prompt_injection(package: DeliveryPackage, overrides: dict[str, str]) -> bool:
+    context = build_mvp_scope_context(package, overrides=overrides)
+    return any(_PROMPT_INJECTION_RE.search(source.value) for source in context.sources)
 
 
 def _error_response(exc: Exception) -> JsonResponse:
@@ -78,6 +96,20 @@ def _error_response(exc: Exception) -> JsonResponse:
     )
 
 
+def _prompt_injection_response() -> JsonResponse:
+    return JsonResponse(
+        {
+            "ok": False,
+            "code": "prompt_injection_detected",
+            "message": (
+                "Der ausgewählte Kontext enthält instruktionsartige Inhalte und wird nicht "
+                "an den KI-Provider übertragen. Bitte den fachlichen Quelltext prüfen."
+            ),
+        },
+        status=400,
+    )
+
+
 @login_required
 @require_POST
 def generate_mvp_scope_draft_view(request, pk):
@@ -92,11 +124,21 @@ def generate_mvp_scope_draft_view(request, pk):
             status=403,
         )
 
+    overrides = _overrides(request)
+    if _contains_prompt_injection(package, overrides):
+        log_ai_assist_event(
+            "ai_assist_failed",
+            package=package,
+            actor=request.user,
+            error_code="prompt_injection_detected",
+        )
+        return _prompt_injection_response()
+
     try:
         result = generate_mvp_scope_draft(
             package=package,
             actor=request.user,
-            overrides=_overrides(request),
+            overrides=overrides,
             regenerated=request.POST.get("regenerate") == "1",
         )
     except (DeliveryDraftContextError, DeliveryDraftValidationError, LLMTaskError) as exc:
@@ -137,11 +179,14 @@ def mvp_scope_draft_event(request, pk):
             status=400,
         )
 
-    run = delivery_draft_run_for_actor(
-        package=package,
-        actor=request.user,
-        run_id=request.POST.get("run_id", ""),
-    )
+    try:
+        run = delivery_draft_run_for_actor(
+            package=package,
+            actor=request.user,
+            run_id=request.POST.get("run_id", ""),
+        )
+    except (ValidationError, ValueError):
+        run = None
     if run is None:
         return JsonResponse(
             {"ok": False, "code": "unknown_run", "message": "KI-Lauf nicht gefunden."},
@@ -149,11 +194,14 @@ def mvp_scope_draft_event(request, pk):
         )
 
     if action == "adopt":
+        overrides = _overrides(request)
+        if _contains_prompt_injection(package, overrides):
+            return _prompt_injection_response()
         posted_hash = request.POST.get("source_hash", "")
         if posted_hash != run.source_hash or not source_hash_is_current(
             package=package,
             expected_hash=run.source_hash,
-            overrides=_overrides(request),
+            overrides=overrides,
         ):
             return JsonResponse(
                 {
