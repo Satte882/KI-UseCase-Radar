@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from typing import Any
 
@@ -62,6 +63,21 @@ _TASK_SETTING_BOUNDS = {
     "LLM_DELIVERY_FIELD_DRAFT_MAX_OUTPUT_TOKENS": (1, 32_768),
     "LLM_ORIGIN_CONSISTENCY_REVIEW_MAX_INPUT_CHARS": (1, 100_000),
     "LLM_ORIGIN_CONSISTENCY_REVIEW_MAX_OUTPUT_TOKENS": (1, 32_768),
+}
+
+_TASK_DEFAULTS = {
+    "LLM_TASK_TIMEOUT_SECONDS": "60",
+    "LLM_TASK_MAX_CALLS_PER_CONTEXT_DAY": "3",
+    "LLM_TASK_MAX_CALLS_PER_USER_DAY": "20",
+    "LLM_TASK_MAX_CALLS_GLOBAL_DAY": "100",
+    "LLM_TASK_RUN_RETENTION_DAYS": "90",
+    "LLM_TASK_TEMPERATURE": "0.1",
+    "LLM_DELIVERY_FIELD_DRAFT_MAX_INPUT_CHARS": "12000",
+    "LLM_DELIVERY_FIELD_DRAFT_MAX_OUTPUT_TOKENS": "16384",
+    "LLM_DELIVERY_FIELD_DRAFT_REASONING_EFFORT": "low",
+    "LLM_ORIGIN_CONSISTENCY_REVIEW_MAX_INPUT_CHARS": "16000",
+    "LLM_ORIGIN_CONSISTENCY_REVIEW_MAX_OUTPUT_TOKENS": "4096",
+    "LLM_ORIGIN_CONSISTENCY_REVIEW_REASONING_EFFORT": "medium",
 }
 
 _TASK_SETTINGS = {
@@ -130,6 +146,11 @@ def _reasoning_effort(name: str, value: Any) -> str:
     return parsed
 
 
+def _task_setting(name: str) -> Any:
+    default = _TASK_DEFAULTS[name]
+    return getattr(settings, name, os.getenv(name, default))
+
+
 def get_accelerator_llm_policy() -> AcceleratorLLMPolicy:
     """Return the validated repository-wide Accelerator LLM limits.
 
@@ -182,7 +203,7 @@ def get_llm_task_policy(task_type: str) -> LLMTaskPolicy:
         raise LLMConfigurationError(f"Unbekannter LLM-Task: {task_type}.")
 
     values = {
-        name: _bounded_int(name, getattr(settings, name), _TASK_SETTING_BOUNDS)
+        name: _bounded_int(name, _task_setting(name), _TASK_SETTING_BOUNDS)
         for name in _TASK_SETTING_BOUNDS
     }
     context_limit = values["LLM_TASK_MAX_CALLS_PER_CONTEXT_DAY"]
@@ -206,9 +227,9 @@ def get_llm_task_policy(task_type: str) -> LLMTaskPolicy:
         max_output_tokens=values[task_settings["output"]],
         reasoning_effort=_reasoning_effort(
             reasoning_setting,
-            getattr(settings, reasoning_setting),
+            _task_setting(reasoning_setting),
         ),
-        temperature=_task_temperature(getattr(settings, "LLM_TASK_TEMPERATURE")),
+        temperature=_task_temperature(_task_setting("LLM_TASK_TEMPERATURE")),
         max_calls_per_context_day=context_limit,
         max_calls_per_user_day=user_limit,
         max_calls_global_day=global_limit,
