@@ -188,6 +188,7 @@ def create_review(*, use_case, actor, data) -> Review:
     scale_evidence = extract_scale_evidence(review_data)
 
     _validate_review_transition(use_case=use_case, actor=actor, review_data=review_data)
+    use_case.next_review_date = review_data.get("next_review_date")
     early_exception_required = _early_go_live_required(use_case, review_data.get("decision"))
     if review_data.get("decision") == Review.Decision.GO_LIVE:
         use_case_services.validate_target_status(
@@ -216,7 +217,6 @@ def create_review(*, use_case, actor, data) -> Review:
         if value:
             setattr(use_case, field, value)
 
-    use_case.next_review_date = review_data.get("next_review_date")
     target_status = review_data["new_status"]
 
     if target_status != previous_status:
