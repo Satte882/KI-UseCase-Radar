@@ -5,6 +5,7 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/ui-control-room-primitives.css' %}?v=ap7-lifecycle-unification">
 <link rel="stylesheet" href="{% static 'css/ui-control-room-value-stream.css' %}">
+<link rel="stylesheet" href="{% static 'css/ui-information-hierarchy.css' %}">
 {% endblock %}
 {% block content %}
 {% include "includes/lifecycle_rail.html" with lifecycle_variant="header" lifecycle_columns="7" lifecycle_kicker="Arbeitsmodell" lifecycle_title="Systematische Discovery" lifecycle_context="Value Stream · Auswahl und Freigabe" %}
@@ -25,12 +26,9 @@
   {% include "includes/next_action.html" %}
 </div>
 
-<div class="architecture-summary-grid mb-4">
-  <section class="app-card card-body"><div class="section-title">Auslöser</div><p class="mb-0">{{ value_stream.trigger }}</p></section>
-  <section class="app-card card-body"><div class="section-title">Ergebnis</div><p class="mb-0">{{ value_stream.outcome }}</p></section>
-  <section class="app-card card-body"><div class="section-title">Im Scope</div><p class="mb-0">{{ value_stream.scope_in }}</p></section>
-  <section class="app-card card-body"><div class="section-title">Nicht im Scope</div><p class="mb-0">{{ value_stream.scope_out|default:"Nicht ausdrücklich abgegrenzt" }}</p></section>
-  <section class="app-card card-body"><div class="section-title">Strategisches Ziel</div><p class="mb-0">{{ value_stream.strategic_objective|default:"Noch nicht dokumentiert" }}</p></section>
+<div class="vs-overview" aria-label="Value Stream auf einen Blick">
+  <section><div class="section-title">Auslöser</div><p>{{ value_stream.trigger }}</p></section>
+  <section><div class="section-title">Ergebnis</div><p>{{ value_stream.outcome }}</p></section>
 </div>
 
 <section class="app-card decision-panel mb-4">
@@ -62,18 +60,23 @@
   </div>
 </section>
 
-<div class="app-card mb-4">
-  <div class="card-header"><strong>Zielbild und Leitplanken</strong><div class="small text-muted mt-1">Stakeholder sowie verbindliche Einschränkungen für die weitere Analyse. Methodik: TOGAF-light, Architecture Vision (ADM Phase A).</div></div>
-  <div class="card-body">
-    <div class="row g-4">
-      <div class="col-md-6"><div class="section-title">Stakeholder</div><div class="text-preline">{{ value_stream.stakeholders|default:"Noch offen" }}</div></div>
-      <div class="col-md-6"><div class="section-title">Leitplanken und Einschränkungen</div><div class="text-preline">{{ value_stream.constraints|default:"Noch offen" }}</div></div>
+<details class="cr-disclosure">
+  <summary><strong>Rahmen, Scope &amp; Zielbild</strong><span>Abgrenzung, strategisches Ziel, Stakeholder und Leitplanken</span></summary>
+  <div class="cr-disclosure__body">
+    <div class="vs-frame-grid">
+      <div><div class="section-title">Im Scope</div><div class="text-preline">{{ value_stream.scope_in }}</div></div>
+      <div><div class="section-title">Nicht im Scope</div><div class="text-preline">{{ value_stream.scope_out|default:"Nicht ausdrücklich abgegrenzt" }}</div></div>
+      <div><div class="section-title">Strategisches Ziel</div><div class="text-preline">{{ value_stream.strategic_objective|default:"Noch nicht dokumentiert" }}</div></div>
+    </div>
+    <div class="vs-guardrails">
+      <div><div class="section-title">Zielbild und Leitplanken · Stakeholder</div><div class="text-preline">{{ value_stream.stakeholders|default:"Noch offen" }}</div></div>
+      <div><div class="section-title">Leitplanken und Einschränkungen</div><div class="text-preline">{{ value_stream.constraints|default:"Noch offen" }}</div></div>
     </div>
   </div>
-</div>
+</details>
 
 {% if value_stream.status == 'active' and value_stream.focus.is_selected and value_stream.stages.all %}
-<section class="app-card decision-panel mb-4" id="fokusphase" data-testid="stage-focus-decision">
+<section class="app-card decision-panel mb-4 mt-4" id="fokusphase" data-testid="stage-focus-decision">
   <div class="card-header d-flex flex-wrap justify-content-between align-items-start gap-3">
     <div>
       <strong>Fokusphase für die Prozessdetailanalyse</strong>
@@ -118,7 +121,7 @@
 </section>
 {% endif %}
 
-<div class="app-card" id="end-to-end-phasen">
+<div class="app-card mt-4" id="end-to-end-phasen">
   <div class="card-header d-flex justify-content-between align-items-start gap-3">
     <div><strong>End-to-End-Phasen</strong><div class="small text-muted mt-1">Wertschöpfung zuerst mit 5–10 groben Phasen strukturieren. Erst danach wird bewusst eine Fokusphase für die Prozessdetailanalyse gewählt.</div></div>
     {% if can_edit and journey.next_action.key != 'value_stream' %}
