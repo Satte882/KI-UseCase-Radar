@@ -93,11 +93,14 @@ Der Accelerator reduziert manuelle Erstbefüllung, ohne Entscheidungsrechte an e
 - generative, lösungsoffene Lösungsentwürfe;
 - deterministisches Evidence-to-Delivery-Mapping;
 - nachvollziehbare Rollen-Defaults;
-- kontrollierte Mess- und Regressionstrecke für Qualität, Laufzeit und Providerfehler.
+- kontrollierte Mess- und Regressionstrecke für Qualität, Laufzeit und Providerfehler;
+- gemeinsame task-spezifische LLM-Runtime mit Privacy-/Quota-/Fehlerleitplanken statt eines generischen KI-Layers;
+- nutzerinitiierter, source-gebundener KI-Entwurf für den Delivery-MVP-Scope mit bewusster fachlicher Übernahme;
+- nutzerinitiierte, read-only Discovery→Use-Case-Konsistenzprüfung mit maximal fünf source-gebundenen Findings und fail-closed Verhalten bei nicht belastbarer Herkunft.
 
-Der Accelerator erzeugt Entwürfe und Vorschläge, **keine Freigaben, Governance-Entscheidungen, bindenden Lösungspräferenzen oder Lifecycle-Entscheidungen**.
+Der Accelerator und die neuen task-spezifischen KI-Funktionen erzeugen Entwürfe und Hinweise, **keine Freigaben, Governance-Entscheidungen, bindenden Lösungspräferenzen, automatischen Domainänderungen oder Lifecycle-Entscheidungen**.
 
-Zentrale Nachweise: #116–#125 sowie die Completion-Dokumente unter `docs/accelerator/`.
+Zentrale Nachweise: #116–#125, #328 sowie #349–#351; ergänzend die Completion-Dokumente unter `docs/accelerator/`.
 
 ## 4. Architecture Advisor und Solution Quality Control
 
@@ -192,36 +195,36 @@ Zentrale Nachweise: #279–#287, #295 und #310.
 
 # Now – aktueller Fokus
 
-## KI-gestützte Bearbeitung fachlicher Lücken gezielt priorisieren
+## Kleine externe Read-only API als nächstes abgegrenztes Produkt-/Lerninkrement
 
-Die neutrale Reiseveranstalter-Referenzstrecke aus #310 wurde am 23.08.2026 lokal im regulären Browser Ende-zu-Ende abgenommen. Der Durchlauf bestätigte die geschärfte Discovery-Semantik mit Verbesserungspotenzial, Evidenzbasis, Time-to-Value, SIPOC-Prozesskontext, technologieoffenem Vergleich und einem gültigen No-AI-Ausgang. Ein tatsächlich KI-haltiger Lösungsweg konnte bis zur strukturierten Bewertung und Governance-Vorbereitung geführt werden, ohne unbekannte numerische Baseline oder Zielwerte zu erfinden.
+Die Discovery-, Delivery-, Governance-, Scale-Readiness- und First-Wave-KI-Verträge sind nach #320/#321, #333 und #328/#349–#351 ausreichend stabilisiert. Die erste KI-Welle ist abgeschlossen: gemeinsame Runtime, Delivery-MVP-Entwurf und Discovery→Use-Case-Konsistenzprüfung sind auf `main` vorhanden.
 
-#320 ist als ausschließlich lesende Ende-zu-Ende-Analyse abgeschlossen; nach dem bereits umgesetzten Fix #321 wurde keine weitere Delivery-Readiness-Lücke gefunden. #333 ist ebenfalls abgeschlossen und hat Scale Readiness als explizites Gate zwischen Pilotwirkung und Betrieb ausgeliefert. Der verbleibende größere Produktfokus ist #328 mit der kontrollierten Priorisierung geeigneter KI-Unterstützung.
+Der nächste aktive Scope ist #330: eine bewusst kleine **Read-only API V1** für Use Cases und Delivery Readiness. Sie soll vorhandene fachliche Fähigkeiten über einen expliziten externen Contract zugänglich machen, ohne Business-Logik zu duplizieren oder Schreib-/Freigabeaktionen zu öffnen.
 
 Ein Render-Deployment beziehungsweise externer Smoke-Test bleibt ein separater Betriebsnachweis und ist weder Bestandteil noch rückwirkender Blocker der lokalen fachlichen #310-Abnahme.
 
-**Aktuell ist kein zusätzliches großes Produktinkrement verbindlich in Umsetzung.** Die offenen Analysepfade #325–#327 bereiten eine mögliche erste Rollout-Welle unter #328 vor.
+**Aktuell ist #330 das einzige aktiv priorisierte offene Arbeitspaket.** #307 bleibt als größerer Decision-Governance-Subworkflow bewusst geparkt und wird nicht automatisch anschließend umgesetzt.
 
 ---
 
 # Next – priorisierte nächste Probleme
 
 **Next zuletzt geprüft:** 2026-08-23
-**Aktuelle Ausführung:** #320 und #333 sind abgeschlossen; #328 bleibt der nächste größere KI-Rollout-Fokus.
+**Aktuelle Ausführung:** #328 sowie #349–#351 sind abgeschlossen; #330 ist das nächste aktive Arbeitspaket.
 
-## 1. KI-gestützte Bearbeitung fachlicher Lücken gezielt ausrollen – #328
+## 1. Read-only API V1 für ausgewählte KI-Radar-Fähigkeiten – #330
 
-Der im Delivery-Bereich erprobte KI-Entwurf soll selektiv auf weitere geeignete Arbeitsaufgaben übertragen werden. Ziel ist nicht ein generischer „KI-Button an jedem Feld“, sondern konkrete Unterstützung dort, wo bereits ausreichend belastbarer Systemkontext vorhanden ist und ein editierbarer Entwurf echten Bearbeitungsaufwand reduziert.
+Die API soll einen kleinen, stabilen externen Vertrag über vorhandene Fähigkeiten bereitstellen:
 
-Vor einer ersten Rollout-Welle werden im Parent #328 drei Analysepfade konsolidiert:
+- Use Cases auflisten;
+- einen Use Case über einen expliziten Detail-Contract lesen;
+- Delivery Readiness eines Use Cases über die bestehende request-unabhängige Readiness-Logik ausgeben;
+- API-Key aus Environment/Settings verwenden;
+- OpenAPI/Swagger als dokumentierten Demo-/Lernzugang bereitstellen.
 
-- #325 – geeignete Einsatzbereiche entlang des Workflows bewerten und priorisieren;
-- #326 – gemeinsames UX-, Qualitäts- und Wirkungsmesskonzept definieren;
-- #327 – technische, fachliche, Sicherheits- und Betriebsleitplanken festlegen.
+Bewusst nicht Teil von V1 sind Schreiboperationen, Lifecycle-/Approval-Aktionen, generisches CRUD, vollständige Model-Spiegelung, OAuth/OIDC/JWT oder produktive Systemintegrationen. Vor Implementierung bleibt der Contract-/Reuse-Check gegen den aktuellen `main` verbindlich.
 
-Erst danach wird eine kleine erste Umsetzungswelle priorisiert. Nutzerinitiierung, sichtbare Quellen, bewusste Übernahme und Human Review bleiben verbindlich; automatische Speicherung, Freigaben oder Statusänderungen durch KI bleiben ausgeschlossen.
-
-Die Reihenfolge in `Next` beschreibt die aktuelle Produktpriorität, nicht einen starren Implementierungsplan. Vor Umsetzung bleibt der Gap-Check gegen den dann aktuellen `main` verbindlich.
+Die Reihenfolge in `Next` beschreibt die aktuelle Produktpriorität, nicht einen starren Implementierungsplan. Nach #330 ist eine neue Priorisierungsentscheidung erforderlich; #307 wird dadurch nicht automatisch aktiviert.
 
 ---
 
