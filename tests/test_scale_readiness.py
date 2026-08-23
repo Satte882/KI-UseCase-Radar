@@ -187,9 +187,7 @@ def test_conditional_go_requires_action_owner_and_due_date(scale_candidate):
     with pytest.raises(ValidationError, match="Conditional Go benötigt"):
         create_review(use_case=use_case, actor=coordinator, data=data)
 
-    data["open_actions"] = (
-        "Monitoring-Check automatisieren; bis dahin tägliche manuelle Kontrolle."
-    )
+    data["open_actions"] = "Monitoring-Check automatisieren; bis dahin tägliche manuelle Kontrolle."
     data["action_owner"] = coordinator
     data["action_due_date"] = timezone.localdate() + timezone.timedelta(days=30)
     review = create_review(use_case=use_case, actor=coordinator, data=data)

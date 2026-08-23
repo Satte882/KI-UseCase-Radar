@@ -325,10 +325,7 @@ def _evaluate_ml_score(
             "ML_SCORE_MINIMUM_INVALID",
             "quality",
             "blocker",
-            (
-                "Der projektspezifische ML-Test-Score-Mindestwert "
-                "muss zwischen 0 und 7 liegen."
-            ),
+            ("Der projektspezifische ML-Test-Score-Mindestwert muss zwischen 0 und 7 liegen."),
         )
     elif final_score is not None and final_score < minimum:
         _add(
@@ -448,10 +445,7 @@ def _evaluate_operations(
             "INCIDENT_PROCESS_MISSING",
             "monitoring",
             "blocker",
-            (
-                "Incident- und Eskalationsprozess ist für dieses Tailoring "
-                "nicht nachgewiesen."
-            ),
+            ("Incident- und Eskalationsprozess ist für dieses Tailoring nicht nachgewiesen."),
         )
 
 
@@ -603,16 +597,10 @@ def build_scale_readiness_snapshot(
         },
         "operations": {
             "rollback_tested": _bool(data.get("scale_rollback_tested")),
-            "technical_monitoring_ready": _bool(
-                data.get("scale_technical_monitoring_ready")
-            ),
-            "ai_quality_monitoring_ready": _bool(
-                data.get("scale_ai_quality_monitoring_ready")
-            ),
+            "technical_monitoring_ready": _bool(data.get("scale_technical_monitoring_ready")),
+            "ai_quality_monitoring_ready": _bool(data.get("scale_ai_quality_monitoring_ready")),
             "incident_process_ready": _bool(data.get("scale_incident_process_ready")),
-            "extended_controls_completed": _bool(
-                data.get("scale_extended_controls_completed")
-            ),
+            "extended_controls_completed": _bool(data.get("scale_extended_controls_completed")),
         },
         "governance_reviews": governance_reviews,
         "roles": {

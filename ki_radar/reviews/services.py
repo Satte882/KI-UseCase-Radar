@@ -220,9 +220,7 @@ def create_review(*, use_case, actor, data) -> Review:
             actor=actor,
             pilot_start=pilot_start,
             allow_early_go_live_exception=early_exception_required,
-            scale_evidence=(
-                scale_evidence if target_status == UseCase.Status.OPERATION else None
-            ),
+            scale_evidence=(scale_evidence if target_status == UseCase.Status.OPERATION else None),
         )
     else:
         use_case._history_user = actor

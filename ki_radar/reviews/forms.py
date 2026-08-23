@@ -147,9 +147,7 @@ class ReviewForm(forms.ModelForm):
     scale_evidence_url = forms.URLField(
         required=False,
         label="Betriebs-/Release-Nachweis",
-        help_text=(
-            "Referenz auf Runbook, Release-/Rollback-, Monitoring- und Betriebsnachweise."
-        ),
+        help_text=("Referenz auf Runbook, Release-/Rollback-, Monitoring- und Betriebsnachweise."),
     )
     ml_score_data = forms.ChoiceField(
         required=False,
