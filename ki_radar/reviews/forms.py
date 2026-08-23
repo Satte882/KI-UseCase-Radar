@@ -26,6 +26,7 @@ class DateInput(forms.DateInput):
 
 
 ML_SCORE_CHOICES = tuple((str(value / 2), f"{value / 2:g}") for value in range(15))
+ML_SCORE_CHOICES_WITH_BLANK = (("", "Bitte wählen"), *ML_SCORE_CHOICES)
 
 
 class ReviewForm(forms.ModelForm):
@@ -152,27 +153,27 @@ class ReviewForm(forms.ModelForm):
     )
     ml_score_data = forms.ChoiceField(
         required=False,
-        choices=(("", "Bitte wählen"),) + ML_SCORE_CHOICES,
+        choices=ML_SCORE_CHOICES_WITH_BLANK,
         label="ML Test Score · Data",
     )
     ml_score_model = forms.ChoiceField(
         required=False,
-        choices=(("", "Bitte wählen"),) + ML_SCORE_CHOICES,
+        choices=ML_SCORE_CHOICES_WITH_BLANK,
         label="ML Test Score · Model",
     )
     ml_score_infrastructure = forms.ChoiceField(
         required=False,
-        choices=(("", "Bitte wählen"),) + ML_SCORE_CHOICES,
+        choices=ML_SCORE_CHOICES_WITH_BLANK,
         label="ML Test Score · Infrastructure",
     )
     ml_score_monitoring = forms.ChoiceField(
         required=False,
-        choices=(("", "Bitte wählen"),) + ML_SCORE_CHOICES,
+        choices=ML_SCORE_CHOICES_WITH_BLANK,
         label="ML Test Score · Monitoring",
     )
     ml_score_minimum = forms.ChoiceField(
         required=False,
-        choices=(("", "Bitte wählen"),) + ML_SCORE_CHOICES,
+        choices=ML_SCORE_CHOICES_WITH_BLANK,
         label="Projektspezifischer ML-Test-Score-Mindestwert",
     )
     ml_score_version = forms.CharField(
