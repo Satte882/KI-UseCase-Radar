@@ -28,6 +28,7 @@
   --radius-sm: 7px;
   --radius-md: 11px;
   --radius-lg: 16px;
+  --touch-target-min: 42px;
   --shadow-1: 0 1px 0 rgba(255, 255, 255, .035);
   --shadow-2: 0 16px 40px rgba(0, 0, 0, .25);
   --shadow-3: 0 28px 80px rgba(0, 0, 0, .42);
@@ -73,6 +74,16 @@
 
 .ui-vnext a:hover {
   color: var(--ice-strong);
+}
+
+.ui-vnext details {
+  min-inline-size: 0;
+}
+
+.ui-vnext details > summary {
+  min-block-size: var(--touch-target-min);
+  cursor: pointer;
+  overflow-wrap: anywhere;
 }
 
 .ui-vnext :is(a, button, input, select, textarea, summary, [tabindex="0"]):focus-visible {

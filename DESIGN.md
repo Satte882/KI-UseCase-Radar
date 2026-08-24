@@ -63,6 +63,20 @@ Es beschreibt Produktqualität, nicht eine austauschbare Landingpage-Ästhetik.
 - Desktop-Lifecycle darf bei normalen Viewports keine horizontale Scrollfläche erzeugen. Tablet und Mobile verwenden eine kompakte, umbrechende Darstellung.
 - Phasen-, Reife- und Blockerzustände verwenden ausschließlich die bestehenden semantischen Tokens und Statusfarben.
 
+## Progressive Disclosure
+
+- Der verbindliche Progressive-Disclosure-Primitive ist natives `<details>` mit einem direkten `<summary>`. Für normales Ein-/Ausblenden wird kein JavaScript-, Bootstrap-Collapse- oder eigenes ARIA-State-System ergänzt.
+- Disclosure ist nur für sekundäre oder ergänzende Information zulässig, die ohne Verlust der aktuellen Arbeitsfähigkeit zunächst verborgen sein darf.
+- Aktuelle Entscheidung, Blocker, kanonische Next Action, Hard-Gate-Begründung, Fehler sowie unmittelbar erforderliche Eingaben oder Aktionen dürfen nicht hinter Disclosure verschwinden.
+- Tabs sind ausschließlich für echte gleichrangige Ansichten bzw. Peer-Sichten vorgesehen; sie sind kein generischer Ersatz für `<details>/<summary>`.
+- Der `<summary>`-Text benennt konkret, welche Information geöffnet wird. Zusätzliche Links, Buttons oder andere interaktive Controls gehören nicht in `<summary>`, sondern in den aufgeklappten Inhalt.
+- Kontextklassen wie `.architecture-disclosure`, `.artifact-disclosure`, `.source-disclosure` oder `.portfolio-secondary-view` dürfen Darstellung und Dichte variieren, bleiben aber visuelle Varianten desselben nativen Primitives und führen keine eigene Interaktionslogik ein.
+- Der gemeinsame Interaktionssockel liegt in `ui-vnext`: mindestens `--touch-target-min` als Klick-/Touch-Höhe, sichtbarer `:focus-visible`-Zustand und umbrechende Summary-Texte ohne unnötigen horizontalen Scroll.
+- Der Offen-/Geschlossen-Zustand muss semantisch bzw. zusätzlich zur Farbe erkennbar bleiben. Native Marker dürfen genutzt werden; ein visueller Variantenmarker darf sie ersetzen, wenn beide Zustände eindeutig unterscheidbar bleiben.
+- Disclosure entfernt auf Tablet oder Mobile keine Information. Inhalte bleiben vollständig erreichbar; echte Links bleiben echte Links und funktionieren unabhängig vom Toggle ohne skriptbasierte Navigation.
+- Für den Primitive ist keine Animation erforderlich. Ergänzt eine visuelle Variante Bewegung, gilt zwingend die globale `prefers-reduced-motion`-Regel.
+- #363, #364, #365 und zukünftige UI-Arbeiten verwenden diesen Primitive statt eines weiteren konkurrierenden Collapse-/Accordion-Systems.
+
 ## Datenlisten
 
 - Tabellen bleiben Tabellen, wenn zeilenweises Überfliegen die Hauptaufgabe ist.
