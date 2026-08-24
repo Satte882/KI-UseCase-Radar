@@ -12,6 +12,11 @@
         {% for detail in action.details %}<li>{{ detail }}</li>{% endfor %}
       </ul>
       {% endif %}
+      {% if action.key == 'pilot_start' %}
+      <p class="small text-muted mt-2 mb-0">Die Entscheidung wird im bestehenden Review dokumentiert; nach erfolgreichem Speichern öffnet sich der Pilot-Arbeitsraum.</p>
+      {% elif action.key == 'outcome_decision' %}
+      <p class="small text-muted mt-2 mb-0">Der Ergebnis-Arbeitsraum führt zur bestehenden Review-Entscheidung. Statusänderungen erfolgen weiterhin ausschließlich über das Review.</p>
+      {% endif %}
       {% if action.key == 'assessment' %}
       <div class="border rounded p-3 mt-3" data-testid="assessment-handover-status">
         <div class="row g-3">
@@ -61,7 +66,10 @@
   Abgekürzter Pfad ohne Prozessanalyse und Lösungsvergleich: Nach dokumentierter Auswahl der Fokusphase kann ein Use Case weiterhin direkt aus der Phase abgeleitet werden.
 </div>
 {% endif %}
+{% if request.resolver_match.namespace == 'use_cases' and request.resolver_match.url_name == 'detail' %}
+{% else %}
 {% include "includes/status_dimensions.html" %}
+{% endif %}
 {% if request.resolver_match.namespace == 'delivery' and request.resolver_match.url_name == 'package_detail' %}
 {% load block8_mapping %}
 {% block8_mapping_status package request.user as mapping_status %}

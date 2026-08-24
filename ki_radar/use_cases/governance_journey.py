@@ -65,7 +65,7 @@ def _governance_step(use_case: UseCase, user) -> JourneyStep:
             key="governance",
             label="Governance",
             state="complete",
-            url=f"{use_case.get_absolute_url()}#status-dimensions",
+            url=f"{use_case.get_absolute_url()}#governance-evidence",
             action_label="Governance öffnen",
             reason="Der Governance-Pfad wurde vor der finalen positiven Freigabe abgeschlossen.",
         )
@@ -139,7 +139,7 @@ def _governance_step(use_case: UseCase, user) -> JourneyStep:
         key="governance",
         label="Governance",
         state="complete",
-        url=f"{use_case.get_absolute_url()}#status-dimensions",
+        url=f"{use_case.get_absolute_url()}#governance-evidence",
         action_label="Governance öffnen",
         reason=reason,
     )

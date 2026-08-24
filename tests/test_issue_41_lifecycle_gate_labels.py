@@ -51,5 +51,7 @@ def test_pilot_detail_labels_open_go_live_requirements_as_lifecycle_gate(
     assert response.status_code == 200
     assert response.context["decision_check"].title == "Produktiv setzen"
     assert response.context["decision_check"].state == "blocked"
-    assert "Produktiv setzen · Blockiert" in content
+    assert '<h2 id="decision-readiness-title">Produktiv setzen</h2>' in content
+    assert '<span class="badge state-blocked">Blockiert</span>' in content
+    assert "Produktiv setzen · Blockiert" not in content
     assert "Freigabe blockiert" not in content

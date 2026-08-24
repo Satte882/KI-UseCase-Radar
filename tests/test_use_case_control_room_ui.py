@@ -32,16 +32,16 @@ def test_use_case_detail_composes_shared_work_object_patterns():
     assert ".ui-control-room.page-use-case" in CSS
 
 
-def test_decision_workspace_hierarchy_places_decisions_before_secondary_information():
+def test_decision_workspace_hierarchy_places_lifecycle_and_decisions_before_secondary_information():
     parent_order = (
+        "includes/lifecycle_rail.html",
         "use-case-overview",
         "includes/decision_state.html",
-        "includes/lifecycle_rail.html",
         'id="assessment"',
         "metric-title",
         "business-context-title",
-        "copilot-title",
-        "decision-history-title",
+        'id="review-copilot"',
+        'id="decision-history"',
     )
     positions = [TEMPLATE.index(marker) for marker in parent_order]
     assert positions == sorted(positions)
@@ -68,9 +68,13 @@ def test_all_existing_use_case_actions_remain_reachable_with_existing_permission
 
     assert "can_edit" in TEMPLATE
     assert "nav_is_coordinator" in TEMPLATE
+    assert "journey.next_action.key != 'use_case'" in TEMPLATE
+    assert "journey.next_action.key != 'pilot_start'" in TEMPLATE
     assert "journey.next_action.key != 'assessment'" in TEMPLATE
     assert "journey.next_action.key != 'approval'" in rendered_sources
     assert "journey.next_action.key != 'governance'" in TEMPLATE
+    assert "Lifecycle-Review" not in TEMPLATE
+    assert "Entscheidung dokumentieren" in TEMPLATE
 
 
 def test_next_action_is_owned_once_by_decision_state_on_migrated_work_object():
