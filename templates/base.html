@@ -28,8 +28,7 @@
 <div class="app-shell">
   <aside class="app-sidebar">
     <a class="brand" href="{% url 'reporting:dashboard' %}">
-      <img class="brand-mark" src="{% static 'favicon.svg' %}" alt="" aria-hidden="true">
-      <span><strong>KI-Ideenwerkstatt</strong><small>Idee → Use Case</small></span>
+      {% include "includes/product_brand.html" %}
     </a>
     <nav class="sidebar-nav">
       <div class="nav-caption">Steuerung</div>
