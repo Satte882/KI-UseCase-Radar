@@ -8,6 +8,10 @@ DECISION_STATE = ROOT.joinpath("templates", "includes", "decision_state.html").r
 )
 NEXT_ACTION = ROOT.joinpath("templates", "includes", "next_action.html").read_text(encoding="utf-8")
 FORM = ROOT.joinpath("templates", "use_cases", "form.html").read_text(encoding="utf-8")
+GOVERNANCE_JOURNEY = ROOT.joinpath("ki_radar", "use_cases", "governance_journey.py").read_text(
+    encoding="utf-8"
+)
+WORKFLOW = ROOT.joinpath("ki_radar", "use_cases", "workflow.py").read_text(encoding="utf-8")
 
 
 def test_use_case_has_one_primary_lifecycle_and_no_status_dimension_duplicate():
@@ -49,6 +53,15 @@ def test_secondary_information_uses_native_disclosure():
         assert summary in DETAIL
     assert DETAIL.count("<details") >= 5
     assert 'data-bs-toggle="collapse"' not in DETAIL
+
+
+def test_governance_is_open_and_lifecycle_links_target_reachable_sections():
+    assert '<details class="uc-side-panel" id="governance-evidence" open>' in DETAIL
+    assert "#status-dimensions" not in GOVERNANCE_JOURNEY
+    assert "#governance-evidence" in GOVERNANCE_JOURNEY
+    assert 'id="decision-history"' in DETAIL
+    assert "#approval" not in WORKFLOW
+    assert "#decision-history" in WORKFLOW
 
 
 def test_review_entry_is_secondary_and_canonical_review_action_wins():
