@@ -30,9 +30,10 @@ def test_portfolio_prioritizes_decision_work_before_secondary_analysis():
 
 
 def test_portfolio_header_does_not_repeat_status_strip_totals():
-    header = PORTFOLIO.split('<header class="cr-page-header">', 1)[1].split(
-        "</header>", 1
-    )[0]
+    header = (
+        PORTFOLIO.split('<header class="cr-page-header">', 1)[1]
+        .split("</header>", 1)[0]
+    )
 
     assert "visible_total" not in header
     assert "classified_total" not in header
