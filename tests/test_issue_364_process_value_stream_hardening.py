@@ -2,12 +2,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
-PROCESS_DETAIL = ROOT.joinpath("templates", "architecture", "process_analysis_detail.html").read_text(
-    encoding="utf-8"
-)
-VALUE_STREAM_DETAIL = ROOT.joinpath("templates", "architecture", "value_stream_detail.html").read_text(
-    encoding="utf-8"
-)
+PROCESS_DETAIL = ROOT.joinpath(
+    "templates", "architecture", "process_analysis_detail.html"
+).read_text(encoding="utf-8")
+VALUE_STREAM_DETAIL = ROOT.joinpath(
+    "templates", "architecture", "value_stream_detail.html"
+).read_text(encoding="utf-8")
 PROCESS_FINDINGS_TEMPLATE = ROOT.joinpath(
     "templates", "architecture", "includes", "process_findings_summary.html"
 ).read_text(encoding="utf-8")
@@ -35,9 +35,10 @@ def test_process_validation_keeps_current_readiness_visible_and_metadata_seconda
     assert PROCESS_DETAIL.count("{{ process_analysis.get_status_display }}") == 1
     assert 'data-testid="current-process-validation"' in PROCESS_DETAIL
     assert "Keine Validierung für Version v{{ process_analysis.version }}" in PROCESS_DETAIL
-    assert '<details class="architecture-disclosure" data-testid="process-validation-evidence">' in (
-        PROCESS_DETAIL
+    validation_disclosure = (
+        '<details class="architecture-disclosure" data-testid="process-validation-evidence">'
     )
+    assert validation_disclosure in PROCESS_DETAIL
     assert "Validierungsnachweis und Historie" in PROCESS_DETAIL
     assert "Geprüfte Version" in PROCESS_DETAIL
     assert "Validiert durch" in PROCESS_DETAIL
