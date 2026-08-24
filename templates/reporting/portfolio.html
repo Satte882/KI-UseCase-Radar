@@ -11,11 +11,7 @@
   <div class="cr-page-header__copy">
     <h1 class="cr-page-header__title">Portfolio</h1>
     <p class="cr-page-header__summary">
-      <strong>{{ visible_total }}</strong> Use Cases
-      <span aria-hidden="true">·</span>
-      <strong>{{ classified_total }}</strong> in der Matrix
-      <span aria-hidden="true">·</span>
-      <strong>{{ unclassified_total }}</strong> mit Klärungsbedarf
+      Use Cases in der Matrix priorisieren und Fälle mit Klärungsbedarf gezielt bearbeiten.
     </p>
   </div>
   <a class="btn btn-outline-secondary" href="{% url 'use_cases:list' %}">Alle Use Cases</a>
@@ -64,25 +60,6 @@
   </div>
 </dl>
 
-<section class="cr-section portfolio-domain-section" aria-labelledby="portfolio-domain-title">
-  <header class="cr-section-heading">
-    <div>
-      <h2 id="portfolio-domain-title">Fachdomänen</h2>
-      <p>Fachliche Zuordnung unabhängig von der organisatorischen Verantwortung.</p>
-    </div>
-  </header>
-  <div class="portfolio-domain-grid">
-    {% for group in business_domain_groups %}
-      <div class="portfolio-domain-item">
-        <strong>{{ group.label }}</strong>
-        <span class="portfolio-domain-count">{{ group.total }} Use Cases</span>
-      </div>
-    {% empty %}
-      <p class="cr-empty-state">Noch keine fachliche Zuordnung vorhanden.</p>
-    {% endfor %}
-  </div>
-</section>
-
 <section class="cr-section portfolio-decision-section" aria-labelledby="portfolio-matrix-title">
   <header class="cr-section-heading portfolio-matrix-heading">
     <div>
@@ -91,8 +68,8 @@
     </div>
     <div class="portfolio-legend" aria-label="Confidence-Legende">
       <span><i class="legend-line confidence-high"></i> Confidence hoch</span>
-      <span><i class="legend-line confidence-medium"></i> mittel</span>
-      <span><i class="legend-line confidence-low"></i> niedrig</span>
+      <span><i class="legend-line confidence-medium"></i> Confidence mittel</span>
+      <span><i class="legend-line confidence-low"></i> Confidence niedrig</span>
     </div>
   </header>
   <div class="portfolio-decision-surface">
@@ -109,7 +86,7 @@
             <div class="matrix-items">
             {% for item in cell.items %}
               <a class="portfolio-chip portfolio-status-{{ item.decision_status }} confidence-{{ item.portfolio_confidence }}{% if item.portfolio_is_not_pursued %} portfolio-chip-muted{% endif %}" href="{{ item.get_absolute_url }}" title="{{ item.short_id }} · {{ item.title }} · {{ item.classification.get_business_domain_display }} · {{ item.get_decision_status_display }} · Confidence {{ item.portfolio_confidence_label }}">
-                <span class="portfolio-chip-id">{% if item.portfolio_confidence == 'low' %}<span aria-hidden="true">⚠</span> {% endif %}{{ item.short_id }}</span><strong>{{ item.title|truncatechars:42 }}</strong><span>{{ item.classification.get_business_domain_display }}</span>
+                <span class="portfolio-chip-id">{% if item.portfolio_confidence == 'low' %}<span aria-hidden="true">⚠</span> {% endif %}{{ item.short_id }}</span><strong>{{ item.title|truncatechars:42 }}</strong><span>{{ item.classification.get_business_domain_display }} · {{ item.get_decision_status_display }} · Confidence {{ item.portfolio_confidence_label }}</span>
               </a>
             {% empty %}<span class="matrix-empty">Keine Use Cases</span>{% endfor %}
             </div>
@@ -118,7 +95,7 @@
         {% endfor %}
       </div>
     </div>
-    <div class="portfolio-status-legend">
+    <div class="portfolio-status-legend" aria-label="Entscheidungsstatus-Legende">
       {% for value, label in decision_status_choices %}<span class="portfolio-status-key portfolio-status-{{ value }}">{{ label }}</span>{% endfor %}
     </div>
   </div>
@@ -134,35 +111,51 @@
   </div>
 </details>
 
-<section class="cr-section portfolio-landscape-section" aria-labelledby="portfolio-landscape-title">
-  <header class="cr-section-heading portfolio-landscape-heading">
-    <div>
-      <h2 id="portfolio-landscape-title">Portfolio-Landkarte nach {{ landscape_group_label }}</h2>
-      <p>Verteilung von Entscheidungsstatus und Confidence ohne künstlichen Gesamtscore.</p>
-    </div>
-    <nav class="portfolio-group-tabs" aria-label="Gruppierung der Portfolio-Landkarte">{% for link in group_links %}<a class="btn btn-sm {% if link.key == landscape_group %}btn-primary{% else %}btn-outline-secondary{% endif %}" href="?{{ link.query }}">{{ link.label }}</a>{% endfor %}</nav>
-  </header>
-  <div class="portfolio-landscape portfolio-landscape-flat">
-    {% for group in landscape_groups %}
-    <section class="landscape-card">
-      <div class="portfolio-landscape-group-heading"><div><span>{{ landscape_group_label }}</span><h3>{{ group.label }}</h3></div><strong>{{ group.total }}</strong></div>
-      <div class="landscape-section"><strong>Entscheidungsstatus</strong><div class="landscape-badges">{% for status in group.status_counts %}<span class="portfolio-status-key portfolio-status-{{ status.key }}">{{ status.label }}: {{ status.count }}</span>{% empty %}<span class="text-muted">Keine Daten</span>{% endfor %}</div></div>
-      <div class="landscape-section"><strong>Confidence</strong><dl class="landscape-confidence">{% for confidence in group.confidence_counts %}<dt>{{ confidence.label }}</dt><dd>{{ confidence.count }}</dd>{% endfor %}</dl></div>
-      {% if group.unclassified_total %}<div class="small text-warning"><span aria-hidden="true">⚠</span> {{ group.unclassified_total }} nicht einordenbar</div>{% endif %}
-    </section>
-    {% empty %}<p class="cr-empty-state">Keine Gruppen im aktuellen Filter vorhanden.</p>{% endfor %}
-  </div>
-</section>
-
 <section class="cr-section portfolio-unclassified-section" aria-labelledby="portfolio-unclassified-title">
   <header class="cr-section-heading">
     <div>
-      <h2 id="portfolio-unclassified-title">Nicht einordenbar · {{ unclassified_total }}</h2>
-      <p>Use Cases mit konkretem fehlendem Baustein; sie bleiben sichtbar und handlungsfähig.</p>
+      <h2 id="portfolio-unclassified-title">Klärungsbedarf · {{ unclassified_total }}</h2>
+      <p>Nicht einordenbare Use Cases mit konkretem fehlendem Baustein; sie bleiben sichtbar und handlungsfähig.</p>
     </div>
   </header>
   <div class="portfolio-unclassified-list">
     {% for entry in unclassified_items %}<a class="portfolio-unclassified-row" href="{{ entry.item.get_absolute_url }}"><div><strong>{{ entry.item.short_id }} · {{ entry.item.title }}</strong><span>{{ entry.item.classification.get_business_domain_display }} · {{ entry.item.business_unit }} · {{ entry.item.get_decision_status_display }}</span></div><span class="badge state-review">{{ entry.reason }}</span></a>{% empty %}<div class="cr-empty-state">Alle sichtbaren Use Cases sind in der Matrix einordenbar.</div>{% endfor %}
   </div>
 </section>
+
+<details class="portfolio-secondary-view portfolio-secondary-analysis">
+  <summary><span>Fachdomänen und Verteilung</span><small>Fachliche Zuordnung unabhängig von der organisatorischen Verantwortung</small></summary>
+  <section class="portfolio-domain-section pt-2 pb-2" aria-label="Fachdomänen und Verteilung">
+    <div class="portfolio-domain-grid">
+      {% for group in business_domain_groups %}
+        <div class="portfolio-domain-item">
+          <strong>{{ group.label }}</strong>
+          <span class="portfolio-domain-count">{{ group.total }} Use Cases</span>
+        </div>
+      {% empty %}
+        <p class="cr-empty-state">Noch keine fachliche Zuordnung vorhanden.</p>
+      {% endfor %}
+    </div>
+  </section>
+</details>
+
+<details class="portfolio-secondary-view portfolio-secondary-analysis">
+  <summary><span>Portfolio-Landkarte nach {{ landscape_group_label }}</span><small>Verteilungsanalyse von Entscheidungsstatus und Confidence</small></summary>
+  <section class="portfolio-landscape-section pt-2 pb-2" aria-label="Portfolio-Landkarte nach {{ landscape_group_label }}">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+      <p class="small text-muted mb-0">Verteilung von Entscheidungsstatus und Confidence ohne künstlichen Gesamtscore.</p>
+      <nav class="portfolio-group-tabs" aria-label="Gruppierung der Portfolio-Landkarte">{% for link in group_links %}<a class="btn btn-sm {% if link.key == landscape_group %}btn-primary{% else %}btn-outline-secondary{% endif %}" href="?{{ link.query }}">{{ link.label }}</a>{% endfor %}</nav>
+    </div>
+    <div class="portfolio-landscape portfolio-landscape-flat">
+      {% for group in landscape_groups %}
+      <section class="landscape-card">
+        <div class="portfolio-landscape-group-heading"><div><span>{{ landscape_group_label }}</span><h3>{{ group.label }}</h3></div><strong>{{ group.total }}</strong></div>
+        <div class="landscape-section"><strong>Entscheidungsstatus</strong><div class="landscape-badges">{% for status in group.status_counts %}<span class="portfolio-status-key portfolio-status-{{ status.key }}">{{ status.label }}: {{ status.count }}</span>{% empty %}<span class="text-muted">Keine Daten</span>{% endfor %}</div></div>
+        <div class="landscape-section"><strong>Confidence</strong><dl class="landscape-confidence">{% for confidence in group.confidence_counts %}<dt>{{ confidence.label }}</dt><dd>{{ confidence.count }}</dd>{% endfor %}</dl></div>
+        {% if group.unclassified_total %}<div class="small text-warning"><span aria-hidden="true">⚠</span> {{ group.unclassified_total }} nicht einordenbar</div>{% endif %}
+      </section>
+      {% empty %}<p class="cr-empty-state">Keine Gruppen im aktuellen Filter vorhanden.</p>{% endfor %}
+    </div>
+  </section>
+</details>
 {% endblock %}
