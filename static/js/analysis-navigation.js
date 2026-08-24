@@ -80,6 +80,14 @@
     document.querySelectorAll(".value-stream-stage").forEach((stage) => {
       if (stage.dataset.layoutEnhanced === "true") return;
 
+      // Newer templates already render stage facts with the shared native
+      // disclosure. Keep process/use-case links and real actions outside that
+      // disclosure instead of wrapping them in a second generated one.
+      if (stage.querySelector(":scope > details[data-testid='stage-details']")) {
+        stage.dataset.layoutEnhanced = "true";
+        return;
+      }
+
       const detailSections = Array.from(
         stage.querySelectorAll(":scope > .stage-facts, :scope > .stage-use-cases"),
       );

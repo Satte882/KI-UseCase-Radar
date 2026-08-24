@@ -30,20 +30,134 @@
 <div class="alert alert-warning mb-4"><strong>Quellenänderungen seit der Übernahme</strong><div class="small mt-1">Die Prozessanalyse bleibt eine eigenständige Arbeitsfassung. Änderungen an der Value-Stream-Phase werden nicht automatisch überschrieben.</div><ul class="mb-0 mt-2">{% for item in source_differences %}<li>{{ item.source_label }} · {{ item.source_field }}: „{{ item.previous|default:"–" }}“ → „{{ item.current|default:"–" }}“</li>{% endfor %}</ul></div>
 {% endif %}
 
+<section class="cr-section" id="process-validation" data-testid="process-validation-summary">
+  <header class="cr-section-heading">
+    <div>
+      <h2>Validierung des Ist-Prozesses</h2>
+      <p>Aktuelle Validierungsreife bleibt sichtbar; Nachweis und Historie sind nachrangige Auditinformationen.</p>
+    </div>
+  </header>
+  <div class="mt-3">
+    {% if latest_validation and latest_validation.process_version == process_analysis.version %}
+    <div class="cr-inline-note mb-0" data-testid="current-process-validation">
+      <strong>Version v{{ process_analysis.version }} eigenständig validiert</strong>
+      <span>Der Validierungsnachweis für die aktuell angezeigte Prozessversion liegt vor.</span>
+    </div>
+    <details class="architecture-disclosure" data-testid="process-validation-evidence">
+      <summary>Validierungsnachweis und Historie</summary>
+      <div class="pt-3">
+        <dl class="row mb-0">
+          <dt class="col-sm-4 text-muted">Geprüfte Version</dt><dd class="col-sm-8">v{{ latest_validation.process_version }}</dd>
+          <dt class="col-sm-4 text-muted">Validiert durch</dt><dd class="col-sm-8">{{ latest_validation.validated_by.get_display_name|default:"Nicht mehr verfügbar" }}</dd>
+          <dt class="col-sm-4 text-muted">Rolle</dt><dd class="col-sm-8">{{ latest_validation.validator_role }}</dd>
+          <dt class="col-sm-4 text-muted">Zeitpunkt</dt><dd class="col-sm-8">{{ latest_validation.validated_at|date:"d.m.Y H:i" }}</dd>
+          <dt class="col-sm-4 text-muted">Notiz</dt><dd class="col-sm-8 text-preline">{{ latest_validation.note|default:"Keine zusätzliche Notiz" }}</dd>
+          <dt class="col-sm-4 text-muted">Nachweis</dt><dd class="col-sm-8">{% if latest_validation.evidence_url %}<a href="{{ latest_validation.evidence_url }}" target="_blank" rel="noopener noreferrer">Validierungsnachweis öffnen</a>{% else %}Kein separater Nachweis hinterlegt{% endif %}</dd>
+        </dl>
+        {% if process_analysis.validations.all %}
+        <hr>
+        <div class="section-title">Historische Validierungen</div>
+        <ul class="mb-0">{% for validation in process_analysis.validations.all %}<li>v{{ validation.process_version }} · {{ validation.validated_at|date:"d.m.Y H:i" }} · {{ validation.validator_role }} · {% if validation.validated_by %}{{ validation.validated_by.get_display_name }}{% else %}Person nicht mehr verfügbar{% endif %}</li>{% endfor %}</ul>
+        {% endif %}
+      </div>
+    </details>
+    {% else %}
+    <div class="alert alert-warning mb-0"><strong>Keine Validierung für Version v{{ process_analysis.version }}.</strong> Der angezeigte Prozessstatus ist noch nicht durch ein eigenständiges Validierungsartefakt belegt.</div>
+    {% if process_analysis.validations.all %}
+    <details class="architecture-disclosure" data-testid="process-validation-history">
+      <summary>Frühere Validierungen anzeigen</summary>
+      <div class="pt-3">
+        <ul class="mb-0">{% for validation in process_analysis.validations.all %}<li>v{{ validation.process_version }} · {{ validation.validated_at|date:"d.m.Y H:i" }} · {{ validation.validator_role }} · {% if validation.validated_by %}{{ validation.validated_by.get_display_name }}{% else %}Person nicht mehr verfügbar{% endif %}</li>{% endfor %}</ul>
+      </div>
+    </details>
+    {% endif %}
+    {% endif %}
+  </div>
+</section>
+
+<section class="cr-section" data-testid="process-frame">
+  <header class="cr-section-heading">
+    <div>
+      <h2>Prozessrahmen</h2>
+      <p>Auslöser und Ergebnis definieren den fachlichen Kern; Start und Ende grenzen den analysierten Ausschnitt ab.</p>
+    </div>
+  </header>
+  <div class="row g-4 mt-1">
+    <div class="col-md-6"><div class="section-title">Auslöser</div><div class="text-preline">{{ process_analysis.trigger }}</div></div>
+    <div class="col-md-6"><div class="section-title">Ergebnis</div><div class="text-preline">{{ process_analysis.outcome }}</div></div>
+    <div class="col-md-6"><div class="section-title">Prozessstart</div><div class="text-preline">{{ process_analysis.scope_start }}</div></div>
+    <div class="col-md-6"><div class="section-title">Prozessende</div><div class="text-preline">{{ process_analysis.scope_end }}</div></div>
+  </div>
+</section>
+
+<section class="cr-section" id="prozessanalyse" data-testid="process-core-diagnosis">
+  <header class="cr-section-heading">
+    <div>
+      <h2><strong>Ist-Prozess und Ursachen</strong></h2>
+      <p>Kerndiagnose vor Detailkontext. Methodik: Business Architecture (ADM Phase B).</p>
+    </div>
+  </header>
+  <div class="row g-4 mt-1">
+    <section class="col-md-6" id="analysis-current-flow"><div class="section-title">Ist-Ablauf</div><div class="text-preline">{{ process_analysis.current_flow }}</div></section>
+    <section class="col-md-6" id="analysis-bottlenecks"><div class="section-title">Bottlenecks und Ursachen</div><div class="text-preline">{{ process_analysis.bottlenecks }}</div></section>
+    <section class="col-md-6" id="analysis-baseline-metrics"><div class="section-title">Baseline und Kennzahlen</div><div class="text-preline">{{ process_analysis.baseline_metrics }}</div></section>
+    <section class="col-md-6" id="analysis-roles"><div class="section-title">Rollen und Verantwortung</div><div class="text-preline">{{ process_analysis.roles }}</div></section>
+  </div>
+</section>
+
+{% process_findings_summary process_analysis %}
+
+<section class="cr-section" id="prozessdetails" data-testid="process-secondary-details">
+  <header class="cr-section-heading">
+    <div>
+      <h2>Vertiefende Analyseinformationen</h2>
+      <p>Regeln, Schnittstellen und Ausnahmen bleiben nachrangig. Systeme, Daten und Integrationen bleiben vollständig erreichbar. Methodik: Information Systems &amp; Technology (ADM Phasen C/D).</p>
+    </div>
+  </header>
+  <div class="mt-3">
+    <details class="architecture-disclosure artifact-disclosure" id="analysis-business-rules">
+      <summary>Geschäftsregeln</summary>
+      <div class="text-preline pt-2">{{ process_analysis.business_rules|default:"Noch nicht dokumentiert" }}</div>
+    </details>
+    <details class="architecture-disclosure artifact-disclosure" id="analysis-handoffs">
+      <summary>Übergaben und Schnittstellen</summary>
+      <div class="text-preline pt-2">{{ process_analysis.handoffs|default:"Noch nicht dokumentiert" }}</div>
+    </details>
+    <details class="architecture-disclosure artifact-disclosure" id="analysis-exceptions">
+      <summary>Ausnahmen und Fehlerfälle</summary>
+      <div class="text-preline pt-2">{{ process_analysis.exceptions|default:"Noch nicht dokumentiert" }}</div>
+    </details>
+    <details class="architecture-disclosure artifact-disclosure" id="analysis-target-state-principles">
+      <summary>Soll-Prinzipien</summary>
+      <div class="text-preline pt-2">{{ process_analysis.target_state_principles|default:"Noch nicht dokumentiert" }}</div>
+    </details>
+    <div class="section-title mt-3 mb-2"><strong>Systeme, Daten und Integrationen</strong></div>
+    <details class="architecture-disclosure artifact-disclosure" id="analysis-systems">
+      <summary>Anwendungen und Arbeitsmittel</summary>
+      <div class="text-preline pt-2">{{ process_analysis.systems|default:"Noch nicht dokumentiert" }}</div>
+    </details>
+    <details class="architecture-disclosure artifact-disclosure" id="analysis-data-objects">
+      <summary>Datenobjekte und Dokumente</summary>
+      <div class="text-preline pt-2">{{ process_analysis.data_objects|default:"Noch nicht dokumentiert" }}</div>
+    </details>
+  </div>
+</section>
+
 {% if process_analysis.stage.value_stream.stage_focus_decision %}
 {% stage_focus_item process_analysis.stage.value_stream.stage_focus_decision process_analysis.stage as focus_item %}
-<section class="app-card decision-panel mb-4" data-testid="process-stage-focus-source">
-  <div class="card-header d-flex flex-wrap justify-content-between align-items-start gap-3">
-    <div><strong>Auswahlquelle der Prozessdetailanalyse</strong><div class="small text-muted mt-1">Gespeicherte Fokusphase und Kriterien aus dem vorgelagerten Phasenvergleich.</div></div>
-    <a class="btn btn-sm btn-outline-secondary" href="{{ process_analysis.stage.value_stream.get_absolute_url }}#fokusphase">Phasenentscheidung öffnen</a>
-  </div>
-  <div class="card-body">
+<details class="architecture-disclosure mb-4" data-testid="process-stage-focus-source">
+  <summary>Auswahlquelle und Fokusentscheidung</summary>
+  <div class="pt-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+      <div><strong>Gespeicherte Fokusphase und Kriterien aus dem vorgelagerten Phasenvergleich.</strong></div>
+      <a class="btn btn-sm btn-outline-secondary" href="{{ process_analysis.stage.value_stream.get_absolute_url }}#fokusphase">Phasenentscheidung öffnen</a>
+    </div>
     <div class="row g-3 mb-3">
       <div class="col-md-4"><div class="section-title">Fokusphase</div><strong>{{ process_analysis.stage.sequence }}. {{ process_analysis.stage.name }}</strong></div>
       <div class="col-md-4"><div class="section-title">Entscheidungsweg</div><strong>{% if process_analysis.stage.value_stream.stage_focus_decision.is_short_path %}Bewusster Kurzpfad{% else %}Vollständiger Phasenvergleich{% endif %}</strong></div>
       <div class="col-md-4"><div class="section-title">Begründung</div><div class="text-preline">{{ process_analysis.stage.value_stream.stage_focus_decision.rationale }}</div></div>
     </div>
-    <div class="kpi-strip" style="grid-template-columns: repeat(4, 1fr);">
+    <div class="kpi-strip kpi-strip-responsive">
       <div class="kpi-cell"><small>Impact</small><strong>{{ focus_item.impact|screening_label }}</strong></div>
       <div class="kpi-cell"><small>Problemintensität</small><strong>{{ focus_item.pain_intensity|screening_label }}</strong></div>
       <div class="kpi-cell"><small>Datenlage</small><strong>{{ focus_item.data_accessibility|screening_label }}</strong></div>
@@ -51,67 +165,8 @@
     </div>
     {% if process_analysis.stage.value_stream.stage_focus_decision.is_short_path %}<div class="small text-muted mt-3"><strong>Kurzpfad:</strong> {{ process_analysis.stage.value_stream.stage_focus_decision.short_path_reason }}</div>{% endif %}
   </div>
-</section>
+</details>
 {% endif %}
-
-<div class="app-card mb-4" id="process-validation">
-  <div class="card-header d-flex flex-wrap justify-content-between align-items-start gap-3">
-    <div><strong>Validierung des Ist-Prozesses</strong><div class="small text-muted mt-1">Eigenständiger Nachweis für die konkret geprüfte Prozessversion.</div></div>
-    <span class="badge {% if process_analysis.status == 'validated' %}state-ready{% elif process_analysis.status == 'review_required' %}state-blocked{% else %}state-review{% endif %}">{{ process_analysis.get_status_display }}</span>
-  </div>
-  <div class="card-body">
-    <div class="small text-muted mb-3">Aktuelle Prozessversion: <strong>v{{ process_analysis.version }}</strong></div>
-    {% if latest_validation and latest_validation.process_version == process_analysis.version %}
-    <dl class="row mb-0">
-      <dt class="col-sm-4 text-muted">Geprüfte Version</dt><dd class="col-sm-8">v{{ latest_validation.process_version }}</dd>
-      <dt class="col-sm-4 text-muted">Validiert durch</dt><dd class="col-sm-8">{{ latest_validation.validated_by.get_display_name|default:"Nicht mehr verfügbar" }}</dd>
-      <dt class="col-sm-4 text-muted">Rolle</dt><dd class="col-sm-8">{{ latest_validation.validator_role }}</dd>
-      <dt class="col-sm-4 text-muted">Zeitpunkt</dt><dd class="col-sm-8">{{ latest_validation.validated_at|date:"d.m.Y H:i" }}</dd>
-      <dt class="col-sm-4 text-muted">Notiz</dt><dd class="col-sm-8 text-preline">{{ latest_validation.note|default:"Keine zusätzliche Notiz" }}</dd>
-      <dt class="col-sm-4 text-muted">Nachweis</dt><dd class="col-sm-8">{% if latest_validation.evidence_url %}<a href="{{ latest_validation.evidence_url }}" target="_blank" rel="noopener noreferrer">Validierungsnachweis öffnen</a>{% else %}Kein separater Nachweis hinterlegt{% endif %}</dd>
-    </dl>
-    {% else %}
-    <div class="alert alert-warning mb-0"><strong>Keine Validierung für Version v{{ process_analysis.version }}.</strong> Der angezeigte Prozessstatus ist noch nicht durch ein eigenständiges Validierungsartefakt belegt.</div>
-    {% endif %}
-    {% if process_analysis.validations.all %}
-    <hr>
-    <div class="section-title">Historische Validierungen</div>
-    <ul class="mb-0">{% for validation in process_analysis.validations.all %}<li>v{{ validation.process_version }} · {{ validation.validated_at|date:"d.m.Y H:i" }} · {{ validation.validator_role }} · {% if validation.validated_by %}{{ validation.validated_by.get_display_name }}{% else %}Person nicht mehr verfügbar{% endif %}</li>{% endfor %}</ul>
-    {% endif %}
-  </div>
-</div>
-
-<div class="architecture-summary-grid mb-4">
-  <section class="app-card card-body"><div class="section-title">Prozessstart</div><div class="text-preline">{{ process_analysis.scope_start }}</div></section>
-  <section class="app-card card-body"><div class="section-title">Prozessende</div><div class="text-preline">{{ process_analysis.scope_end }}</div></section>
-  <section class="app-card card-body"><div class="section-title">Auslöser</div><div class="text-preline">{{ process_analysis.trigger }}</div></section>
-  <section class="app-card card-body"><div class="section-title">Ergebnis</div><div class="text-preline">{{ process_analysis.outcome }}</div></section>
-</div>
-
-<div id="prozessdetails"></div>
-<div class="app-card mb-4">
-  <div class="card-header"><strong>Ist-Prozess und Ursachen</strong><div class="small text-muted mt-1">Der Ist-Ablauf und seine Ursachen werden getrennt von der späteren Lösungswahl dokumentiert. Methodik: Business Architecture (ADM Phase B).</div></div>
-  <div class="card-body architecture-artifact-grid">
-    <section id="analysis-current-flow"><div class="section-title">Ist-Ablauf</div><div class="text-preline">{{ process_analysis.current_flow }}</div></section>
-    <section id="analysis-roles"><div class="section-title">Rollen und Verantwortung</div><div class="text-preline">{{ process_analysis.roles }}</div></section>
-    <section id="analysis-bottlenecks"><div class="section-title">Bottlenecks und Ursachen</div><div class="text-preline">{{ process_analysis.bottlenecks }}</div></section>
-    <section id="analysis-baseline-metrics"><div class="section-title">Baseline und Kennzahlen</div><div class="text-preline">{{ process_analysis.baseline_metrics }}</div></section>
-    <section id="analysis-business-rules"><div class="section-title">Geschäftsregeln</div><div class="text-preline">{{ process_analysis.business_rules|default:"Noch nicht dokumentiert" }}</div></section>
-    <section id="analysis-handoffs"><div class="section-title">Übergaben und Schnittstellen</div><div class="text-preline">{{ process_analysis.handoffs|default:"Noch nicht dokumentiert" }}</div></section>
-    <section id="analysis-exceptions"><div class="section-title">Ausnahmen und Fehlerfälle</div><div class="text-preline">{{ process_analysis.exceptions|default:"Noch nicht dokumentiert" }}</div></section>
-    <section id="analysis-target-state-principles"><div class="section-title">Soll-Prinzipien</div><div class="text-preline">{{ process_analysis.target_state_principles|default:"Noch nicht dokumentiert" }}</div></section>
-  </div>
-</div>
-
-<div class="app-card mb-4">
-  <div class="card-header"><strong>Systeme, Daten und Integrationen</strong><div class="small text-muted mt-1">Konkreter System-, Informations- und Integrationskontext, kein vollständiges Applikationsportfolio. Methodik: Information Systems &amp; Technology (ADM Phasen C/D).</div></div>
-  <div class="card-body architecture-artifact-grid">
-    <section id="analysis-systems"><div class="section-title">Anwendungen und Arbeitsmittel</div><div class="text-preline">{{ process_analysis.systems }}</div></section>
-    <section id="analysis-data-objects"><div class="section-title">Datenobjekte und Dokumente</div><div class="text-preline">{{ process_analysis.data_objects }}</div></section>
-  </div>
-</div>
-
-{% process_findings_summary process_analysis %}
 
 <div class="app-card mb-4" id="loesungsoptionen">
   {% if can_edit and process_analysis.stage.value_stream.focus.is_selected %}{% solution_generation_entry process_analysis as generation_entry %}{% endif %}
