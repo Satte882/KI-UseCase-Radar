@@ -30,10 +30,7 @@ def test_portfolio_prioritizes_decision_work_before_secondary_analysis():
 
 
 def test_portfolio_header_does_not_repeat_status_strip_totals():
-    header = (
-        PORTFOLIO.split('<header class="cr-page-header">', 1)[1]
-        .split("</header>", 1)[0]
-    )
+    header = PORTFOLIO.split('<header class="cr-page-header">', 1)[1].split("</header>", 1)[0]
 
     assert "visible_total" not in header
     assert "classified_total" not in header
@@ -51,9 +48,7 @@ def test_secondary_portfolio_analysis_uses_native_disclosures():
     assert 'data-bs-target="' not in PORTFOLIO
 
     domain_details = PORTFOLIO.index("Fachdomänen und Verteilung")
-    landscape_details = PORTFOLIO.index(
-        "Portfolio-Landkarte nach {{ landscape_group_label }}"
-    )
+    landscape_details = PORTFOLIO.index("Portfolio-Landkarte nach {{ landscape_group_label }}")
     clarification = PORTFOLIO.index("portfolio-unclassified-section")
 
     assert clarification < domain_details < landscape_details
