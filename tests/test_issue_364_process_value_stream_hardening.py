@@ -87,8 +87,9 @@ def test_process_finding_source_anchors_remain_reachable_after_disclosure_move()
         "process-validation",
     )
 
+    assert "field_name.replace('_', '-')" in PROCESS_FINDINGS
+    assert 'source_anchor="process-validation"' in PROCESS_FINDINGS
     for anchor in expected_anchors:
-        assert anchor in PROCESS_FINDINGS
         assert f'id="{anchor}"' in PROCESS_DETAIL
 
     assert 'href="#{{ item.source_anchor }}"' in PROCESS_FINDINGS_TEMPLATE

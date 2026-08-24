@@ -76,12 +76,18 @@
 
 <details class="architecture-disclosure mb-4" data-testid="value-stream-context">
   <summary>Rahmen, Scope und Leitplanken</summary>
-  <div class="row g-4 pt-3">
-    <div class="col-md-6"><div class="section-title">Im Scope</div><div class="text-preline">{{ value_stream.scope_in }}</div></div>
-    <div class="col-md-6"><div class="section-title">Nicht im Scope</div><div class="text-preline">{{ value_stream.scope_out|default:"Nicht ausdrücklich abgegrenzt" }}</div></div>
-    <div class="col-md-6"><div class="section-title">Strategisches Ziel</div><div class="text-preline">{{ value_stream.strategic_objective|default:"Noch nicht dokumentiert" }}</div></div>
-    <div class="col-md-6"><div class="section-title">Stakeholder</div><div class="text-preline">{{ value_stream.stakeholders|default:"Noch offen" }}</div></div>
-    <div class="col-12"><div class="section-title">Leitplanken und Einschränkungen</div><div class="text-preline">{{ value_stream.constraints|default:"Noch offen" }}</div></div>
+  <div class="pt-3">
+    <div class="mb-3">
+      <strong>Zielbild und Leitplanken</strong>
+      <div class="small text-muted mt-1">Methodik: TOGAF-light, Architecture Vision (ADM Phase A).</div>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-6"><div class="section-title">Im Scope</div><div class="text-preline">{{ value_stream.scope_in }}</div></div>
+      <div class="col-md-6"><div class="section-title">Nicht im Scope</div><div class="text-preline">{{ value_stream.scope_out|default:"Nicht ausdrücklich abgegrenzt" }}</div></div>
+      <div class="col-md-6"><div class="section-title">Strategisches Ziel</div><div class="text-preline">{{ value_stream.strategic_objective|default:"Noch nicht dokumentiert" }}</div></div>
+      <div class="col-md-6"><div class="section-title">Stakeholder</div><div class="text-preline">{{ value_stream.stakeholders|default:"Noch offen" }}</div></div>
+      <div class="col-12"><div class="section-title">Leitplanken und Einschränkungen</div><div class="text-preline">{{ value_stream.constraints|default:"Noch offen" }}</div></div>
+    </div>
   </div>
 </details>
 
