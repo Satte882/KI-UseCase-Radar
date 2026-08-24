@@ -14,6 +14,9 @@ PROCESS_FINDINGS_TEMPLATE = ROOT.joinpath(
 PROCESS_FINDINGS = ROOT.joinpath("ki_radar", "architecture", "process_findings.py").read_text(
     encoding="utf-8"
 )
+ANALYSIS_NAVIGATION_JS = ROOT.joinpath("static", "js", "analysis-navigation.js").read_text(
+    encoding="utf-8"
+)
 
 
 def test_process_analysis_prioritizes_validation_frame_diagnosis_and_findings():
@@ -128,6 +131,15 @@ def test_value_stream_secondary_context_and_screening_use_native_disclosure():
 
     assert VALUE_STREAM_DETAIL.count("<details") >= 4
     assert 'data-bs-toggle="collapse"' not in VALUE_STREAM_DETAIL
+
+
+def test_native_stage_disclosure_is_not_wrapped_by_legacy_runtime_enhancement():
+    assert 'data-testid="stage-details"' in VALUE_STREAM_DETAIL
+    assert "details[data-testid='stage-details']" in ANALYSIS_NAVIGATION_JS
+    guard = ANALYSIS_NAVIGATION_JS.index("details[data-testid='stage-details']")
+    legacy_wrapper = ANALYSIS_NAVIGATION_JS.index('document.createElement("details")', guard)
+
+    assert guard < legacy_wrapper
 
 
 def test_focus_phase_keeps_selection_and_rationale_visible_before_evidence():
