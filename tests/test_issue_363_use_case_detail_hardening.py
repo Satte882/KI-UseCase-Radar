@@ -6,9 +6,7 @@ DETAIL = ROOT.joinpath("templates", "use_cases", "detail.html").read_text(encodi
 DECISION_STATE = ROOT.joinpath("templates", "includes", "decision_state.html").read_text(
     encoding="utf-8"
 )
-NEXT_ACTION = ROOT.joinpath("templates", "includes", "next_action.html").read_text(
-    encoding="utf-8"
-)
+NEXT_ACTION = ROOT.joinpath("templates", "includes", "next_action.html").read_text(encoding="utf-8")
 FORM = ROOT.joinpath("templates", "use_cases", "form.html").read_text(encoding="utf-8")
 
 
