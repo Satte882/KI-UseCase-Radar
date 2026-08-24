@@ -1,59 +1,58 @@
-<section class="app-card mb-4" id="entscheidungsrelevante-befunde" data-testid="process-findings-summary">
-  <div class="card-header d-flex flex-wrap justify-content-between align-items-start gap-3">
+<section class="cr-section" id="entscheidungsrelevante-befunde" data-testid="process-findings-summary">
+  <header class="cr-section-heading">
     <div>
-      <strong>Entscheidungsrelevante Befunde</strong>
-      <div class="small text-muted mt-1">Deterministisch aus den dokumentierten Analysefeldern abgeleitet. Die Übersicht erzeugt keine neuen Tatsachen.</div>
+      <h2>Entscheidungsrelevante Befunde</h2>
+      <p>Deterministisch aus den dokumentierten Analysefeldern abgeleitet. Die Übersicht erzeugt keine neuen Tatsachen.</p>
     </div>
     <a class="btn btn-sm btn-outline-secondary" href="#prozessdetails">Detailanalyse prüfen</a>
-  </div>
-  <div class="card-body">
-    {% if process_analysis.diagnostic_observations or process_analysis.cause_hypotheses or process_analysis.confirmed_causes or process_analysis.constraints %}
-    <div class="mb-4" data-testid="structured-diagnosis-summary">
-      <div class="section-title">Geschärfte Diagnose</div>
-      <div class="architecture-artifact-grid">
-        <section id="analysis-diagnostic-observations">
-          <div class="d-flex align-items-center gap-2 mb-1"><strong>Beobachtung / Problem</strong></div>
-          <div class="text-preline">{{ process_analysis.diagnostic_observations|default:"Noch nicht dokumentiert" }}</div>
-        </section>
-        <section id="analysis-cause-hypotheses">
-          <div class="d-flex align-items-center gap-2 mb-1"><strong>Ursachenhypothese</strong>{% if process_analysis.cause_hypotheses %}<span class="badge state-review">Hypothese / nicht bestätigt</span>{% endif %}</div>
-          <div class="text-preline">{{ process_analysis.cause_hypotheses|default:"Keine offene Hypothese dokumentiert" }}</div>
-        </section>
-        <section id="analysis-confirmed-causes">
-          <div class="d-flex align-items-center gap-2 mb-1"><strong>Bestätigte Ursache</strong>{% if process_analysis.confirmed_causes %}<span class="badge state-ready">Bestätigt</span>{% endif %}</div>
-          <div class="text-preline">{{ process_analysis.confirmed_causes|default:"Noch nicht bestätigt" }}</div>
-        </section>
-        {% if process_analysis.constraints %}
-        <section id="analysis-constraints">
-          <div class="d-flex align-items-center gap-2 mb-1"><strong>Randbedingung / Constraint</strong><span class="badge badge-soft">Optional</span></div>
-          <div class="text-preline">{{ process_analysis.constraints }}</div>
-        </section>
-        {% endif %}
-      </div>
-      <div class="small text-muted mt-3">Der bestehende Freitext „Bottlenecks und Ursachen“ bleibt unverändert und wird nicht automatisch als Beobachtung, Hypothese, bestätigte Ursache oder Constraint umgedeutet.</div>
-    </div>
-    {% endif %}
+  </header>
 
-    {% if finding_groups %}
-    <div class="architecture-artifact-grid">
-      {% for group in finding_groups %}
-      <section>
-        <div class="section-title">{{ group.label }}</div>
-        <ol class="mb-0 ps-3">
-          {% for item in group.items %}
-          <li class="mb-2">
-            {% if item.context_label %}<span class="badge badge-soft me-1">{{ item.context_label }}</span>{% endif %}
-            {% if item.is_assumption %}<span class="badge state-review me-1">Annahme / Prüfbedarf</span>{% endif %}
-            <span>{{ item.text }}</span>
-            <div class="small text-muted mt-1">Quelle: <a href="#{{ item.source_anchor }}">{{ item.source_label }}</a></div>
-          </li>
-          {% endfor %}
-        </ol>
+  {% if process_analysis.diagnostic_observations or process_analysis.cause_hypotheses or process_analysis.confirmed_causes or process_analysis.constraints %}
+  <div class="mt-3" data-testid="structured-diagnosis-summary">
+    <div class="section-title mb-3">Geschärfte Diagnose</div>
+    <div class="row g-4">
+      <section class="col-md-6" id="analysis-diagnostic-observations">
+        <div class="d-flex align-items-center gap-2 mb-1"><strong>Beobachtung / Problem</strong></div>
+        <div class="text-preline">{{ process_analysis.diagnostic_observations|default:"Noch nicht dokumentiert" }}</div>
       </section>
-      {% endfor %}
+      <section class="col-md-6" id="analysis-cause-hypotheses">
+        <div class="d-flex align-items-center gap-2 mb-1"><strong>Ursachenhypothese</strong>{% if process_analysis.cause_hypotheses %}<span class="badge state-review">Hypothese / nicht bestätigt</span>{% endif %}</div>
+        <div class="text-preline">{{ process_analysis.cause_hypotheses|default:"Keine offene Hypothese dokumentiert" }}</div>
+      </section>
+      <section class="col-md-6" id="analysis-confirmed-causes">
+        <div class="d-flex align-items-center gap-2 mb-1"><strong>Bestätigte Ursache</strong>{% if process_analysis.confirmed_causes %}<span class="badge state-ready">Bestätigt</span>{% endif %}</div>
+        <div class="text-preline">{{ process_analysis.confirmed_causes|default:"Noch nicht bestätigt" }}</div>
+      </section>
+      {% if process_analysis.constraints %}
+      <section class="col-md-6" id="analysis-constraints">
+        <div class="d-flex align-items-center gap-2 mb-1"><strong>Randbedingung / Constraint</strong><span class="badge badge-soft">Optional</span></div>
+        <div class="text-preline">{{ process_analysis.constraints }}</div>
+      </section>
+      {% endif %}
     </div>
-    {% else %}
-    <p class="text-muted mb-0">Noch keine Analysefelder vorhanden, aus denen entscheidungsrelevante Befunde verdichtet werden können.</p>
-    {% endif %}
+    <div class="small text-muted mt-3">Der bestehende Freitext „Bottlenecks und Ursachen“ bleibt unverändert und wird nicht automatisch als Beobachtung, Hypothese, bestätigte Ursache oder Constraint umgedeutet.</div>
   </div>
+  {% endif %}
+
+  {% if finding_groups %}
+  <div class="row g-4 mt-1">
+    {% for group in finding_groups %}
+    <section class="col-md-6">
+      <div class="section-title">{{ group.label }}</div>
+      <ol class="mb-0 ps-3">
+        {% for item in group.items %}
+        <li class="mb-2">
+          {% if item.context_label %}<span class="badge badge-soft me-1">{{ item.context_label }}</span>{% endif %}
+          {% if item.is_assumption %}<span class="badge state-review me-1">Annahme / Prüfbedarf</span>{% endif %}
+          <span>{{ item.text }}</span>
+          <div class="small text-muted mt-1">Quelle: <a href="#{{ item.source_anchor }}">{{ item.source_label }}</a></div>
+        </li>
+        {% endfor %}
+      </ol>
+    </section>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-muted mt-3 mb-0">Noch keine Analysefelder vorhanden, aus denen entscheidungsrelevante Befunde verdichtet werden können.</p>
+  {% endif %}
 </section>
