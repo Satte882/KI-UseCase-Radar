@@ -1,19 +1,19 @@
 {% extends "base.html" %}
-{% block title %}Anmelden – KI-Radar{% endblock %}
+{% block title %}Anmelden – KI-Ideenwerkstatt{% endblock %}
 {% block body_class %}page-login{% endblock %}
 {% block content %}
 <section class="login-panel" aria-labelledby="login-title">
   <div class="login-context">
-    <div class="brand" aria-label="KI-Radar">
-      <span class="brand-mark">KR</span>
-      <span><strong>KI-Radar</strong><small>Business Architecture</small></span>
+    <div class="brand" aria-label="KI-Ideenwerkstatt">
+      <span class="brand-mark">KI</span>
+      <span><strong>KI-Ideenwerkstatt</strong><small>Business Architecture</small></span>
     </div>
-    <p class="login-context-copy">Von der ersten Analyse bis zur belastbaren Ergebnisentscheidung: ein gemeinsamer Arbeitsraum für steuerbare KI-Initiativen.</p>
+    <p class="login-context-copy">Vom ersten Impuls zum umsetzungsreifen KI-Projekt. Ein gemeinsamer Arbeitsraum, um Geschäftsprobleme strukturiert zu analysieren, Lösungsoptionen zu prüfen und belastbare KI-Vorhaben bis zur Umsetzung zu führen.</p>
   </div>
   <div class="login-form">
     <div class="eyebrow mb-2">Geschützter Arbeitsraum</div>
     <h1 id="login-title">Willkommen zurück</h1>
-    <p class="text-muted mb-4">Melde dich mit deinem KI-Radar-Konto an.</p>
+    <p class="text-muted mb-4">Melde dich mit deinem KI-Ideenwerkstatt-Konto an.</p>
     <form method="post">
       {% csrf_token %}
       {{ form.non_field_errors }}
