@@ -227,6 +227,24 @@ def test_portfolio_view_ignores_invalid_filters_and_falls_back_to_default_group(
 
 
 @pytest.mark.django_db
+def test_portfolio_landscape_is_closed_initially_and_open_after_group_change(
+    client,
+    owner,
+    business_unit,
+):
+    make_use_case(owner, business_unit)
+    client.force_login(owner)
+    portfolio_url = reverse("reporting:portfolio")
+
+    initial = client.get(portfolio_url).content.decode()
+    grouped = client.get(portfolio_url, {"group": "solution_type"}).content.decode()
+
+    disclosure = '<details class="portfolio-secondary-view portfolio-secondary-analysis"'
+    assert f"{disclosure}>" in initial
+    assert f"{disclosure} open>" in grouped
+
+
+@pytest.mark.django_db
 def test_matrix_and_landscape_queries_are_bounded(owner, coordinator, business_unit):
     for index in range(5):
         use_case = make_use_case(owner, business_unit, title=f"Use Case {index}")

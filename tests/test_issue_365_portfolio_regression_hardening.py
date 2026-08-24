@@ -40,18 +40,34 @@ def test_portfolio_header_does_not_repeat_status_strip_totals():
 
 
 def test_secondary_portfolio_analysis_uses_native_disclosures():
-    assert PORTFOLIO.count('<details class="portfolio-secondary-view') == 3
+    assert PORTFOLIO.count('<details class="portfolio-secondary-view') == 2
     assert "Tabellarische Matrix-Alternative" in PORTFOLIO
-    assert "Fachdomänen und Verteilung" in PORTFOLIO
     assert "Portfolio-Landkarte nach {{ landscape_group_label }}" in PORTFOLIO
     assert 'data-bs-toggle="collapse"' not in PORTFOLIO
     assert 'data-bs-target="' not in PORTFOLIO
 
-    domain_details = PORTFOLIO.index("Fachdomänen und Verteilung")
+    domain_section = PORTFOLIO.index("portfolio-domain-section")
     landscape_details = PORTFOLIO.index("Portfolio-Landkarte nach {{ landscape_group_label }}")
     clarification = PORTFOLIO.index("portfolio-unclassified-section")
 
-    assert clarification < domain_details < landscape_details
+    assert clarification < domain_section < landscape_details
+
+
+def test_compact_domain_orientation_remains_visible_and_explains_its_scope():
+    assert '<section class="cr-section portfolio-domain-section"' in PORTFOLIO
+    assert "Fachdomänen im Gesamtbestand" in PORTFOLIO
+    assert "unabhängig von den Portfoliofiltern" in PORTFOLIO
+    domain_section = PORTFOLIO.split('<section class="cr-section portfolio-domain-section"', 1)[
+        1
+    ].split("</section>", 1)[0]
+    assert "<details" not in domain_section
+
+
+def test_landscape_reopens_after_grouping_navigation():
+    assert (
+        '<details class="portfolio-secondary-view portfolio-secondary-analysis"'
+        "{% if landscape_expanded %} open{% endif %}>"
+    ) in PORTFOLIO
 
 
 def test_matrix_status_and_confidence_are_not_communicated_by_color_alone():

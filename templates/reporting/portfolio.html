@@ -123,23 +123,26 @@
   </div>
 </section>
 
-<details class="portfolio-secondary-view portfolio-secondary-analysis">
-  <summary><span>Fachdomänen und Verteilung</span><small>Fachliche Zuordnung unabhängig von der organisatorischen Verantwortung</small></summary>
-  <section class="portfolio-domain-section pt-2 pb-2" aria-label="Fachdomänen und Verteilung">
-    <div class="portfolio-domain-grid">
-      {% for group in business_domain_groups %}
-        <div class="portfolio-domain-item">
-          <strong>{{ group.label }}</strong>
-          <span class="portfolio-domain-count">{{ group.total }} Use Cases</span>
-        </div>
-      {% empty %}
-        <p class="cr-empty-state">Noch keine fachliche Zuordnung vorhanden.</p>
-      {% endfor %}
+<section class="cr-section portfolio-domain-section" aria-labelledby="portfolio-domain-title">
+  <header class="cr-section-heading">
+    <div>
+      <h2 id="portfolio-domain-title">Fachdomänen im Gesamtbestand</h2>
+      <p>Fachliche Zuordnung aller aktiven Use Cases unabhängig von den Portfoliofiltern.</p>
     </div>
-  </section>
-</details>
+  </header>
+  <div class="portfolio-domain-grid">
+    {% for group in business_domain_groups %}
+      <div class="portfolio-domain-item">
+        <strong>{{ group.label }}</strong>
+        <span class="portfolio-domain-count">{{ group.total }} Use Cases</span>
+      </div>
+    {% empty %}
+      <p class="cr-empty-state">Noch keine fachliche Zuordnung vorhanden.</p>
+    {% endfor %}
+  </div>
+</section>
 
-<details class="portfolio-secondary-view portfolio-secondary-analysis">
+<details class="portfolio-secondary-view portfolio-secondary-analysis"{% if landscape_expanded %} open{% endif %}>
   <summary><span>Portfolio-Landkarte nach {{ landscape_group_label }}</span><small>Verteilungsanalyse von Entscheidungsstatus und Confidence</small></summary>
   <section class="portfolio-landscape-section pt-2 pb-2" aria-label="Portfolio-Landkarte nach {{ landscape_group_label }}">
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">

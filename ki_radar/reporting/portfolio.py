@@ -318,5 +318,6 @@ def build_portfolio_context(params: Mapping[str, str]) -> dict:
         "landscape_groups": _landscape_context(queryset, group),
         "landscape_group": group,
         "landscape_group_label": GROUP_CONFIG[group][1],
+        "landscape_expanded": bool(params.get("group")),
         "group_links": _group_links(params),
     }
