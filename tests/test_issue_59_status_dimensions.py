@@ -92,17 +92,18 @@ def test_final_approval_remains_separate_from_lifecycle_and_measurement(coordina
 
 
 @pytest.mark.django_db
-def test_detail_page_explains_all_status_dimensions(client, coordinator, use_case):
+def test_detail_page_consolidates_status_dimensions_into_authoritative_sections(
+    client, coordinator, use_case
+):
     client.force_login(coordinator)
 
     response = client.get(reverse("use_cases:detail", kwargs={"pk": use_case.pk}))
     content = response.content.decode()
 
     assert response.status_code == 200
-    assert "Aktueller Arbeitszustand" in content
-    assert "Arbeitsphase" in content
-    assert "Assessment" in content
-    assert "Freigabe" in content
-    assert "Messung" in content
-    assert "Lifecycle" in content
-    assert "Nächste Lifecycle-Entscheidung" in content
+    assert "Aktueller Arbeitszustand" not in content
+    assert 'id="status-dimensions"' not in content
+    assert content.count("Nächste Lifecycle-Entscheidung") == 1
+    assert 'aria-label="Lifecycle-Orientierung"' in content
+    assert "Belastbare Freigabeentscheidung" in content
+    assert "Primäre Erfolgsmetrik" in content

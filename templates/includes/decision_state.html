@@ -3,14 +3,12 @@
     <div class="cr-decision-state__kicker uc-decision-state__kicker">Entscheidungsstand</div>
     <div class="cr-decision-state__headline uc-decision-state__headline">
       <h2 id="decision-state-title">{{ use_case.get_decision_status_display }}</h2>
-      <span class="badge {% if use_case.decision_status == 'approved' or use_case.decision_status == 'approved_with_conditions' %}state-ready{% elif use_case.decision_status == 'deferred' or use_case.decision_status == 'not_pursued' %}state-blocked{% else %}state-review{% endif %}">{{ use_case.get_decision_status_display }}</span>
     </div>
-    <p>{{ decision_check.title }} · {{ decision_check.state_label }}</p>
   </div>
   <dl class="cr-decision-state__facts uc-decision-state__facts">
-    <div><dt>Lifecycle</dt><dd>{{ use_case.get_status_display }}</dd></div>
     <div><dt>Priorität</dt><dd>{{ use_case.get_priority_display }}</dd></div>
-    <div><dt>Erfolgsmetrik</dt><dd>{{ use_case.metric_result_label }}</dd></div>
+    <div><dt>Einmalkosten</dt><dd>{{ one_time_cost.display }}</dd></div>
+    <div><dt>Laufende Kosten</dt><dd>{{ recurring_cost.display }}</dd></div>
   </dl>
 </section>
 
@@ -57,7 +55,24 @@
         <ul class="decision-list">{% for warning in decision_check.warnings %}<li>{{ warning }}</li>{% endfor %}</ul>
       </div>
     {% endif %}
-    {% if not blocker_details and not decision_check.warnings %}<p class="cr-decision-ready uc-ready-copy">Alle strukturierten Voraussetzungen für diese Lifecycle-Entscheidung sind erfüllt.</p>{% endif %}
+    {% if gate_blocker_details %}
+      <details class="mt-3">
+        <summary>Nächstes Gate vorbereiten · {{ gate_blocker_details|length }} Voraussetzungen offen</summary>
+        <div class="blocker-actions uc-blocker-actions mt-3">
+          {% for blocker in gate_blocker_details %}
+          <div class="blocker-action blocker-{{ blocker.category }}">
+            <div>
+              <span class="blocker-icon" aria-hidden="true">{% if blocker.category == 'time' %}◷{% else %}⚠{% endif %}</span>
+              <strong>{{ blocker.label }}</strong>
+              <div class="small text-muted">{% if blocker.category == 'data' %}Angabe ergänzen{% elif blocker.category == 'time' %}Zeitliche Voraussetzung; dokumentierte Ausnahme möglich{% else %}Prozessschritt abschließen{% endif %}</div>
+            </div>
+            <a class="btn btn-outline-secondary btn-sm" href="{{ blocker.target_href }}">{{ blocker.action_label }}</a>
+          </div>
+          {% endfor %}
+        </div>
+      </details>
+    {% endif %}
+    {% if not blocker_details and not decision_check.warnings and not gate_blocker_details %}<p class="cr-decision-ready uc-ready-copy">Alle strukturierten Voraussetzungen für diese Lifecycle-Entscheidung sind erfüllt.</p>{% endif %}
   </div>
 </section>
 
