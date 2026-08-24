@@ -43,6 +43,27 @@ Die Einordnung ist bewusst **zustandsabhängig**: Ein Governance-Status ist z. B
 
 ---
 
+### Verbindlicher UI-Vertrag für zustandsabhängige Einordnung
+
+„Zustandsabhängig“ beschreibt in diesem Dokument **keinen Ermessensspielraum**. Die Folge-Issues dürfen die unten stehenden Regeln anwenden, aber weder eigene Sichtbarkeitskriterien noch abweichende Klassifizierungen erfinden. Trifft mehr als eine Regel zu, gewinnt die Regel mit der höheren Prominenz (A vor B vor C); eine D-Regel entfernt oder konsolidiert ausschließlich die zusätzliche Darstellung, nie die Daten oder Historie.
+
+| Information | Wenn | Dann | Klasse / verbindliche Darstellung |
+| --- | --- | --- | --- |
+| Governance-Prüfung | sie blockiert das aktuelle Gate oder die kanonische Next Action | muss zusammen mit Gate/Blocker im primären Arbeitsbereich erscheinen | **A** |
+| Governance-Prüfung | sie ist abgeschlossen und beeinflusst keine aktuelle Entscheidung | erscheint nur als kompakter Status oder in der Vertiefung | **B/C** |
+| Erfolgsmetrik (Ziel/Ist) | Pilotstart, Pilotbewertung oder Ergebnis-/Scale-Entscheidung ansteht | Ziel und Ist stehen im primären Entscheidungsbereich; die Messgrundlage bleibt erreichbar | **A** |
+| Erfolgsmetrik | eine frühe Bewertung ohne Ergebnisentscheidung vorliegt | Ziel/Ist bleibt als unterstützender Kontext sichtbar, nicht vor Gate/Next Action | **B** |
+| Review-Historie | kein konkreter Historieneintrag die aktuelle Entscheidung begründet | wird ausschließlich nachrangig in Disclosure/History gezeigt | **C** |
+| Lifecycle | Orientierung über den aktuellen Fortschritt benötigt wird | genau **eine** primäre Lifecycle-Rail zeigt den Status | **A, einmalig** |
+| Lifecycle-Status in Statusbox/Dimension/Fact | dieselbe Lifecycle-Aussage bereits durch die primäre Rail dargestellt wird | zusätzliche Wiederholung wird entfernt oder auf einen Link zur Rail reduziert | **D** |
+| Owner | diese Person für den aktuellen Blocker, die kanonische Next Action oder die fällige Entscheidung zuständig ist | Name und Rolle stehen beim jeweiligen Arbeitskontext | **A/B** |
+| Owner | die Angabe nur Stammdaten/Traceability ist | erscheint nachrangig in den Stammdaten | **B** |
+| Nächste Lifecycle-Entscheidung | sie ist fällig oder die kanonische Next Action | konkrete Entscheidung benennen und als primäre Aktion zeigen | **A** |
+| Nächste Lifecycle-Entscheidung | sie ist nicht fällig | nur als Steuerungsinformation zeigen | **B** |
+| Entscheidungs-, Mess- oder Statusinformation | dieselbe fachliche Aussage bereits in der führenden Quelle vollständig sichtbar ist | weitere identische Kurzfassung entfernen oder in einen Link/Verweis überführen | **D** |
+
+**Umsetzungsregel:** #363–#365 dürfen aus diesen Regeln nur Darstellung und Gruppierung ableiten. Status-, Review-, Gate- und Permission-Logik bleiben in ihren bestehenden fachlichen Quellen; das Template erfindet keine neue Zustandslogik.
+
 # 1. Screenshot → Route → Template → Aktion
 
 Die Screenshots sind keine technische Quelle. Bei Abweichungen ist `main` maßgeblich.
@@ -418,7 +439,7 @@ Muss mindestens adressieren:
 ## Noch bewusst offen für #362–#365
 
 - exakte gemeinsame CSS-Klasse / Include-Struktur des Disclosure-Primitives;
-- welche B-Informationen standardmäßig offen oder geschlossen sind;
+- welche B-Informationen standardmäßig offen oder geschlossen sind (nur soweit der obige UI-Vertrag keine Sichtbarkeitsregel festlegt);
 - exakte neue visuelle Gruppierung je Seite;
 - exakte zustandsbezogene Bezeichnung des Review-Einstiegs je Journey-Zustand;
 - ob einzelne D-Kandidaten mit zusätzlichem Kontext doch einen B-Wert erhalten – dies ist bei Umsetzung gegen den realen Zustand zu verifizieren.
@@ -430,6 +451,7 @@ Muss mindestens adressieren:
 - [x] Screenshots den aktuellen Seiten, Routes und Templates zugeordnet
 - [x] Screenshot-vs.-`main`-Abweichungen dokumentiert
 - [x] wesentliche sichtbare Informationen A/B/C/D klassifiziert
+- [x] zustandsabhängige A/B/C/D-Einstufungen als verbindliche Wenn–Dann-Regeln festgelegt
 - [x] relevante Edit-/Permission-Grenzen dokumentiert
 - [x] tatsächlich deaktivierte Formular-Controls im geprüften Scope getrennt erfasst
 - [x] rein visuelle Read-only-Probleme getrennt erfasst
