@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Start – KI-Ideenwerkstatt{% endblock %}
+{% block body_class %}page-demo-portal{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/demo-portal.css' %}">{% endblock %}
+
+{% block content %}
+<section class="demo-portal" aria-labelledby="demo-portal-title">
+  <header class="demo-portal-header">
+    <span class="eyebrow">KI-Ideenwerkstatt</span>
+    <h1 class="page-title" id="demo-portal-title">Start</h1>
+    <p class="page-subtitle">Projektbeispiele und Anwendung direkt aus einer geschützten Übersicht öffnen.</p>
+  </header>
+
+  <nav class="demo-portal-entries" aria-label="Bereiche der KI-Ideenwerkstatt">
+    <a class="demo-portal-entry" href="{% url 'case-procurement' %}">
+      <span class="demo-portal-index" aria-hidden="true">01</span>
+      <span class="demo-portal-copy">
+        <span class="demo-portal-type">Projektbeispiel</span>
+        <strong>Projektbeispiel: Angebotsvergleich im Einkauf</strong>
+        <span>HTML-Präsentation zum Projektbeispiel aus dem Einkauf.</span>
+      </span>
+      <span class="demo-portal-arrow" aria-hidden="true">→</span>
+    </a>
+
+    <a class="demo-portal-entry" href="{% url 'case-sales-conversation' %}">
+      <span class="demo-portal-index" aria-hidden="true">02</span>
+      <span class="demo-portal-copy">
+        <span class="demo-portal-type">Use Case</span>
+        <strong>Use Case: Sales Conversation Intelligence</strong>
+        <span>HTML-Präsentation des Sales-Conversation-Intelligence-Konzepts.</span>
+      </span>
+      <span class="demo-portal-arrow" aria-hidden="true">→</span>
+    </a>
+
+    <a class="demo-portal-entry demo-portal-entry-app" href="{% url 'reporting:dashboard' %}">
+      <span class="demo-portal-index" aria-hidden="true">03</span>
+      <span class="demo-portal-copy">
+        <span class="demo-portal-type">Anwendung</span>
+        <strong>Anwendung: KI-Use-Case-Radar</strong>
+        <span>Die eigentliche Anwendung mit Arbeitsvorrat, Portfolio und Use-Case-Journey öffnen.</span>
+      </span>
+      <span class="demo-portal-arrow" aria-hidden="true">→</span>
+    </a>
+  </nav>
+</section>
+{% endblock %}
