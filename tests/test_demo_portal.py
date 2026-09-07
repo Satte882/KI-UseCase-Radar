@@ -61,10 +61,13 @@ def test_sales_conversation_case_is_four_slide_web_presentation(client, reader):
     for slide_number in range(1, 5):
         assert f'id="sci-slide-{slide_number}"' in body
 
-    assert "Welche Merkmale eines Beratungsgesprächs stehen mit einer Buchung in Zusammenhang?" in body
-    assert "wird – oder nicht?" not in body
+    assert (
+        "Welche Merkmale eines Beratungsgesprächs stehen mit einer Buchung in Zusammenhang?" in body
+    )
+    assert "wird \u2013 oder nicht?" not in body
     assert "Der Case steht und fällt mit der Datenbasis." in body
     assert "Schlanker Pilot statt KI-Plattform." in body
+    assert "Datenpipeline, nicht das Gesamtsystem." in body
     assert "Investieren erst nach drei Belegen." in body
     assert "Gesprächsmuster &amp; Vertriebswirkung" in body
     assert "Sales Conversation Intelligence" not in body

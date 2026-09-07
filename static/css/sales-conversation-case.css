@@ -193,7 +193,7 @@
   color: #fff;
   background: #6f879b;
 }
-.sci-icon-circle.join svg { width: 3.0cqw; height: 3.0cqw; }
+.sci-icon-circle.join svg { width: 3.65cqw; height: 3.65cqw; }
 .sci-icon-circle.blue {
   border: 0;
   color: #fff;
@@ -208,7 +208,7 @@
 /* Slide 2 */
 .sci-data-graph {
   display: grid;
-  grid-template-columns: 44cqw 19cqw 1fr;
+  grid-template-columns: 47cqw 19cqw 1fr;
   align-items: center;
   margin-top: 2.65cqw;
   padding-bottom: 2.0cqw;
@@ -254,7 +254,7 @@
   display: grid;
   justify-items: center;
   gap: .4cqw;
-  transform: translateY(2.25cqw);
+  transform: translate(5cqw, 2.25cqw);
 }
 .sci-data-graph .sci-icon-circle.join,
 .sci-data-graph .sci-outcome .sci-icon-circle.amber {
@@ -283,6 +283,7 @@
   align-items: center;
   gap: 1.5cqw;
   padding-left: 1.5cqw;
+  transform: translateX(5cqw);
 }
 .sci-outcome small {
   display: block;
