@@ -1,133 +1,362 @@
-.ui-vnext.page-demo-portal .app-content {
-  max-width: 1220px;
+/*
+ * Präsentationsoberfläche für Interview-/Demo-Inhalte.
+ * Bewusste, vom App-Design getrennte Gestaltung; vom Nutzer am 07.09.2026 freigegeben.
+ */
+
+:root {
+  --presentation-bg: #f3f6f8;
+  --presentation-surface: #ffffff;
+  --presentation-ink: #152637;
+  --presentation-muted: #647381;
+  --presentation-line: #d9e1e7;
+  --presentation-blue: #07578d;
+  --presentation-blue-soft: #eaf3f8;
+  --presentation-orange: #f5aa00;
+  --presentation-green: #008d67;
+  --presentation-shadow: 0 18px 48px rgba(21, 38, 55, .09);
 }
 
-.ui-vnext .demo-portal,
-.ui-vnext .case-placeholder {
-  max-width: 980px;
+* {
+  box-sizing: border-box;
 }
 
-.ui-vnext .demo-portal-header,
-.ui-vnext .case-placeholder-header {
-  margin-bottom: 26px;
-  padding: 4px 0 22px;
-  border-bottom: 1px solid var(--line-soft);
+html {
+  min-height: 100%;
+  background: var(--presentation-bg);
 }
 
-.ui-vnext .demo-portal-entries {
+body.presentation-page {
+  min-height: 100vh;
+  margin: 0;
+  color: var(--presentation-ink);
+  background:
+    linear-gradient(180deg, var(--presentation-surface) 0 136px, transparent 136px),
+    var(--presentation-bg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.presentation-page a {
+  color: inherit;
+}
+
+.presentation-page a:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--presentation-blue) 35%, transparent);
+  outline-offset: 4px;
+}
+
+.presentation-topbar {
   display: flex;
-  flex-direction: column;
-  border-top: 1px solid var(--line);
-}
-
-.ui-vnext .demo-portal-entry {
-  display: grid;
-  grid-template-columns: 54px minmax(0, 1fr) auto;
-  gap: 20px;
   align-items: center;
-  min-height: 118px;
-  padding: 20px 18px;
-  border-bottom: 1px solid var(--line);
-  color: var(--ink-soft);
+  justify-content: space-between;
+  gap: 32px;
+  width: min(1400px, calc(100% - 72px));
+  min-height: 136px;
+  margin: 0 auto;
+  border-bottom: 1px solid var(--presentation-line);
+}
+
+.presentation-rsd-brand {
+  display: flex;
+  align-items: center;
+  gap: 24px;
   text-decoration: none;
-  transition:
-    background-color 160ms ease,
-    border-color 160ms ease,
-    transform 160ms ease;
 }
 
-.ui-vnext .demo-portal-entry:hover {
-  color: var(--ink);
-  border-bottom-color: var(--line-strong);
-  background: color-mix(in srgb, var(--silver) 5%, transparent);
-  transform: translateX(3px);
+.presentation-rsd-brand img {
+  display: block;
+  width: 170px;
+  height: 85px;
+  object-fit: contain;
 }
 
-.ui-vnext .demo-portal-entry-app {
-  background: color-mix(in srgb, var(--ice) 5%, transparent);
-}
-
-.ui-vnext .demo-portal-index {
-  color: var(--muted);
-  font-size: .72rem;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: .12em;
-}
-
-.ui-vnext .demo-portal-copy {
+.presentation-rsd-brand span {
   display: flex;
   flex-direction: column;
-  min-width: 0;
+  gap: 3px;
+  padding-left: 24px;
+  border-left: 1px solid var(--presentation-line);
 }
 
-.ui-vnext .demo-portal-type {
-  margin-bottom: 5px;
-  color: var(--muted);
-  font-size: .65rem;
+.presentation-rsd-brand small {
+  color: var(--presentation-muted);
+  font-size: .78rem;
+  font-weight: 650;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.presentation-rsd-brand strong {
+  color: var(--presentation-ink);
+  font-size: 1.12rem;
+  font-weight: 720;
+  letter-spacing: -.015em;
+}
+
+.presentation-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.presentation-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 17px;
+  border: 1px solid var(--presentation-line);
+  border-radius: 9px;
+  color: var(--presentation-blue);
+  background: var(--presentation-surface);
+  font-size: .88rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.presentation-nav a:hover {
+  border-color: color-mix(in srgb, var(--presentation-blue) 35%, var(--presentation-line));
+  background: var(--presentation-blue-soft);
+}
+
+.presentation-main {
+  width: min(1400px, calc(100% - 72px));
+  margin: 0 auto;
+  padding: 64px 0 84px;
+}
+
+.presentation-hero,
+.presentation-case-shell {
+  max-width: 1020px;
+}
+
+.presentation-kicker {
+  margin: 0 0 16px;
+  color: var(--presentation-blue);
+  font-size: .78rem;
   font-weight: 760;
   letter-spacing: .13em;
   text-transform: uppercase;
 }
 
-.ui-vnext .demo-portal-copy strong {
-  color: var(--ink);
-  font-size: 1.05rem;
-  font-weight: 680;
-  letter-spacing: -.012em;
+.presentation-hero h1,
+.presentation-case-shell h1 {
+  max-width: 1000px;
+  margin: 0;
+  color: var(--presentation-ink);
+  font-size: clamp(2.65rem, 5vw, 4.7rem);
+  font-weight: 730;
+  letter-spacing: -.055em;
+  line-height: .98;
 }
 
-.ui-vnext .demo-portal-copy > span:last-child {
-  margin-top: 5px;
-  color: var(--muted-strong);
-  font-size: .84rem;
-  line-height: 1.45;
+.presentation-lead {
+  max-width: 850px;
+  margin: 24px 0 0;
+  color: var(--presentation-muted);
+  font-size: clamp(1.08rem, 1.7vw, 1.35rem);
+  line-height: 1.55;
 }
 
-.ui-vnext .demo-portal-arrow {
-  color: var(--ice);
-  font-size: 1.2rem;
+.presentation-hero::after {
+  display: block;
+  width: 92px;
+  height: 5px;
+  margin-top: 34px;
+  border-radius: 5px;
+  content: "";
+  background: linear-gradient(90deg, var(--presentation-orange) 0 58%, var(--presentation-blue) 58% 100%);
 }
 
-.ui-vnext .case-placeholder-back {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--touch-target-min);
-  margin-bottom: 12px;
-  color: var(--muted-strong);
-  text-decoration: none;
+.presentation-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  margin-top: 52px;
 }
 
-.ui-vnext .case-placeholder-back:hover {
-  color: var(--ice-strong);
-}
-
-.ui-vnext .case-placeholder-note {
+.presentation-card {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  padding: 18px 0;
-  border-top: 1px solid var(--line-soft);
-  border-bottom: 1px solid var(--line-soft);
+  min-height: 365px;
+  padding: 31px 30px 28px;
+  overflow: hidden;
+  border: 1px solid var(--presentation-line);
+  border-radius: 16px;
+  color: var(--presentation-ink);
+  background: var(--presentation-surface);
+  box-shadow: 0 1px 0 rgba(21, 38, 55, .03);
+  text-decoration: none;
+  transition: transform 170ms ease, box-shadow 170ms ease, border-color 170ms ease;
 }
 
-.ui-vnext .case-placeholder-note strong {
-  color: var(--warning);
-  font-weight: 680;
+.presentation-card::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  content: "";
+  background: linear-gradient(90deg, var(--presentation-blue), var(--presentation-orange));
 }
 
-.ui-vnext .case-placeholder-note span {
-  color: var(--muted-strong);
+.presentation-card:hover {
+  border-color: color-mix(in srgb, var(--presentation-blue) 25%, var(--presentation-line));
+  box-shadow: var(--presentation-shadow);
+  transform: translateY(-4px);
 }
 
-@media (max-width: 720px) {
-  .ui-vnext .demo-portal-entry {
-    grid-template-columns: 36px minmax(0, 1fr) auto;
-    gap: 12px;
-    min-height: var(--touch-target-min);
-    padding: 18px 8px;
+.presentation-card-number {
+  color: var(--presentation-blue);
+  font-size: .84rem;
+  font-weight: 730;
+  font-variant-numeric: tabular-nums;
+}
+
+.presentation-card-type {
+  margin-top: 31px;
+  color: var(--presentation-muted);
+  font-size: .72rem;
+  font-weight: 760;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.presentation-card h2 {
+  margin: 12px 0 0;
+  color: var(--presentation-ink);
+  font-size: clamp(1.35rem, 1.7vw, 1.65rem);
+  font-weight: 710;
+  letter-spacing: -.025em;
+  line-height: 1.18;
+}
+
+.presentation-card p {
+  margin: 18px 0 0;
+  color: var(--presentation-muted);
+  font-size: .97rem;
+  line-height: 1.6;
+}
+
+.presentation-card-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: auto;
+  padding-top: 28px;
+  color: var(--presentation-blue);
+  font-size: .9rem;
+  font-weight: 700;
+}
+
+.presentation-card-action span {
+  font-size: 1.25rem;
+}
+
+.presentation-case-shell {
+  padding-top: 14px;
+}
+
+.presentation-case-shell h1 {
+  font-size: clamp(2.45rem, 4.5vw, 4.25rem);
+}
+
+.presentation-placeholder {
+  margin-top: 52px;
+  padding: 34px 36px;
+  border: 1px solid var(--presentation-line);
+  border-left: 5px solid var(--presentation-orange);
+  border-radius: 12px;
+  background: var(--presentation-surface);
+  box-shadow: 0 10px 32px rgba(21, 38, 55, .05);
+}
+
+.presentation-placeholder-label {
+  color: var(--presentation-blue);
+  font-size: .78rem;
+  font-weight: 760;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.presentation-placeholder p {
+  max-width: 800px;
+  margin: 11px 0 0;
+  color: var(--presentation-muted);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.presentation-message {
+  margin-bottom: 24px;
+  padding: 14px 18px;
+  border: 1px solid var(--presentation-line);
+  border-radius: 10px;
+  background: var(--presentation-surface);
+}
+
+@media (max-width: 1050px) {
+  .presentation-topbar,
+  .presentation-main {
+    width: min(100% - 40px, 900px);
   }
 
-  .ui-vnext .demo-portal-copy strong {
-    font-size: .98rem;
+  .presentation-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .presentation-card {
+    min-height: 280px;
+  }
+}
+
+@media (max-width: 680px) {
+  .presentation-topbar {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px 0 20px;
+  }
+
+  .presentation-rsd-brand {
+    gap: 14px;
+  }
+
+  .presentation-rsd-brand img {
+    width: 120px;
+    height: 60px;
+  }
+
+  .presentation-rsd-brand span {
+    padding-left: 14px;
+  }
+
+  .presentation-nav {
+    width: 100%;
+  }
+
+  .presentation-nav a {
+    justify-content: center;
+    flex: 1;
+  }
+
+  .presentation-main {
+    padding: 44px 0 60px;
+  }
+
+  .presentation-card-grid {
+    margin-top: 38px;
+  }
+
+  .presentation-card {
+    min-height: 310px;
+    padding: 27px 24px 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .presentation-page *,
+  .presentation-page *::before,
+  .presentation-page *::after {
+    transition-duration: .01ms !important;
   }
 }
