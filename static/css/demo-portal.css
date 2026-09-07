@@ -1,0 +1,133 @@
+.ui-vnext.page-demo-portal .app-content {
+  max-width: 1220px;
+}
+
+.ui-vnext .demo-portal,
+.ui-vnext .case-placeholder {
+  max-width: 980px;
+}
+
+.ui-vnext .demo-portal-header,
+.ui-vnext .case-placeholder-header {
+  margin-bottom: 26px;
+  padding: 4px 0 22px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.ui-vnext .demo-portal-entries {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--line);
+}
+
+.ui-vnext .demo-portal-entry {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) auto;
+  gap: 20px;
+  align-items: center;
+  min-height: 118px;
+  padding: 20px 18px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-soft);
+  text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.ui-vnext .demo-portal-entry:hover {
+  color: var(--ink);
+  border-bottom-color: var(--line-strong);
+  background: color-mix(in srgb, var(--silver) 5%, transparent);
+  transform: translateX(3px);
+}
+
+.ui-vnext .demo-portal-entry-app {
+  background: color-mix(in srgb, var(--ice) 5%, transparent);
+}
+
+.ui-vnext .demo-portal-index {
+  color: var(--muted);
+  font-size: .72rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .12em;
+}
+
+.ui-vnext .demo-portal-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ui-vnext .demo-portal-type {
+  margin-bottom: 5px;
+  color: var(--muted);
+  font-size: .65rem;
+  font-weight: 760;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.ui-vnext .demo-portal-copy strong {
+  color: var(--ink);
+  font-size: 1.05rem;
+  font-weight: 680;
+  letter-spacing: -.012em;
+}
+
+.ui-vnext .demo-portal-copy > span:last-child {
+  margin-top: 5px;
+  color: var(--muted-strong);
+  font-size: .84rem;
+  line-height: 1.45;
+}
+
+.ui-vnext .demo-portal-arrow {
+  color: var(--ice);
+  font-size: 1.2rem;
+}
+
+.ui-vnext .case-placeholder-back {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target-min);
+  margin-bottom: 12px;
+  color: var(--muted-strong);
+  text-decoration: none;
+}
+
+.ui-vnext .case-placeholder-back:hover {
+  color: var(--ice-strong);
+}
+
+.ui-vnext .case-placeholder-note {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 18px 0;
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.ui-vnext .case-placeholder-note strong {
+  color: var(--warning);
+  font-weight: 680;
+}
+
+.ui-vnext .case-placeholder-note span {
+  color: var(--muted-strong);
+}
+
+@media (max-width: 720px) {
+  .ui-vnext .demo-portal-entry {
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    gap: 12px;
+    min-height: var(--touch-target-min);
+    padding: 18px 8px;
+  }
+
+  .ui-vnext .demo-portal-copy strong {
+    font-size: .98rem;
+  }
+}
