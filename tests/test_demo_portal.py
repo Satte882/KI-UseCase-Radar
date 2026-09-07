@@ -60,15 +60,27 @@ def test_sales_conversation_case_is_four_slide_web_presentation(client, reader):
     for slide_number in range(1, 5):
         assert f'id="sci-slide-{slide_number}"' in body
 
-    assert "Warum wird aus einem Beratungsgespräch eine Buchung" in body
-    assert "oder nicht?" in body
+    assert "Welche Merkmale eines Beratungsgesprächs erklären" in body
     assert "Der Case steht und fällt mit der Datenbasis." in body
-    assert "Für den Pilot reicht eine schlanke Datenpipeline." in body
+    assert "Schlanker Pilot statt KI-Plattform." in body
     assert "Investieren erst nach drei Belegen." in body
     assert "Gate 1 negativ?" in body
-    assert "2-wöchiger Data-&-Legal-Feasibility-Check" in body
+    assert "2-wöchiger Data-&amp;-Legal-Feasibility-Check" in body
     assert "6%" not in body
     assert "14%" not in body
+
+
+def test_sales_conversation_case_uses_information_visualizations_not_card_grids(client, reader):
+    client.force_login(reader)
+
+    body = client.get(reverse("case-sales-conversation")).content.decode()
+
+    assert 'class="sci-process-line"' in body
+    assert 'class="sci-data-map"' in body
+    assert 'class="sci-pipeline"' in body
+    assert 'class="sci-gate-line"' in body
+    assert "sci-flow-node" not in body
+    assert "sci-panel" not in body
 
 
 def test_authenticated_shell_exposes_small_home_control(client, reader):
