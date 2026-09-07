@@ -65,7 +65,7 @@ def test_sales_conversation_case_is_four_slide_web_presentation(client, reader):
     assert "Schlanker Pilot statt KI-Plattform." in body
     assert "Investieren erst nach drei Belegen." in body
     assert "Gate 1 negativ?" in body
-    assert "2-wöchiger Data-&amp;-Legal-Feasibility-Check" in body
+    assert "2-wöchiger Data-&-Legal-Feasibility-Check" in body
     assert "6%" not in body
     assert "14%" not in body
 
