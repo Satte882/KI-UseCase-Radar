@@ -30,8 +30,8 @@
     <a class="brand" href="{% url 'reporting:dashboard' %}">
       {% include "includes/product_brand.html" %}
     </a>
-    <a class="sidebar-link align-self-start {% if request.resolver_match.url_name == 'demo-portal' %}active{% endif %}" href="{% url 'demo-portal' %}" aria-label="Zur Startseite" title="Startseite"{% if request.resolver_match.url_name == 'demo-portal' %} aria-current="page"{% endif %}>
-      <span class="nav-icon" aria-hidden="true">⌂</span><span class="visually-hidden">Startseite</span>
+    <a class="sidebar-link align-self-start {% if request.resolver_match.url_name == 'demo-portal' %}active{% endif %}" href="{% url 'demo-portal' %}" aria-label="RSD Demo-Portal öffnen" title="RSD Demo-Portal"{% if request.resolver_match.url_name == 'demo-portal' %} aria-current="page"{% endif %}>
+      <span class="nav-icon" aria-hidden="true">RSD</span> <strong>Demo-Portal</strong>
     </a>
     <nav class="sidebar-nav">
       <div class="nav-caption">Steuerung</div>
