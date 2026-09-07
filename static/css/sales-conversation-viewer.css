@@ -82,7 +82,7 @@
 .sci-nav-title {
   margin: 0 .55rem 1.55rem;
   color: #18354d;
-  font-size: .9rem;
+  font-size: .82rem;
   font-weight: 700;
   line-height: 1.28;
 }
@@ -257,6 +257,10 @@
   text-align: center;
 }
 
+#sci-slide-1 .sci-flow {
+  margin-top: 8.2cqw;
+}
+
 /* Data model: all reference-style merge lines are rendered as SVG paths. */
 .sci-source::after {
   display: none;
@@ -293,15 +297,22 @@
 
 /* Slide 4: reference-aligned stage-gate geometry. The SVG layer draws
    the horizontal Ja-paths, vertical Stop-paths and the final investment arrow. */
+#sci-slide-4 .sci-title {
+  font-size: 5.5cqw;
+}
+
 .sci-gates {
-  grid-template-columns: 22.5cqw 7.4cqw 22.5cqw 7.4cqw 22.5cqw 7.1cqw;
+  grid-template-columns:
+    minmax(0, 1fr) 10.5cqw
+    minmax(0, 1fr) 10.5cqw
+    minmax(0, 1fr) 10.5cqw;
   align-items: start;
-  margin-top: 3.05cqw;
+  margin-top: 7.2cqw;
 }
 
 .sci-gate-stage {
   display: grid;
-  grid-template-columns: 4.2cqw minmax(0, 1fr);
+  grid-template-columns: 4.8cqw minmax(0, 1fr);
   grid-template-rows: auto auto auto;
   column-gap: 1.35cqw;
   align-items: start;
@@ -316,7 +327,10 @@
   grid-column: 1;
   grid-row: 1 / span 2;
   align-self: start;
-  margin-top: 1.3cqw;
+  width: 4.8cqw;
+  height: 4.8cqw;
+  margin-top: 1.15cqw;
+  font-size: 1.75cqw;
 }
 
 .sci-gate-stage .sci-kicker {
@@ -324,21 +338,23 @@
   grid-row: 1;
   align-self: end;
   min-height: 1.15cqw;
+  font-size: 1.02cqw;
 }
 
 .sci-gate-q {
   grid-column: 2;
   grid-row: 2;
+  min-height: 7.02cqw;
   margin: .78cqw 0 0;
-  font-size: 1.22cqw;
+  font-size: 1.35cqw;
   line-height: 1.3;
 }
 
 .sci-gate-note {
   grid-column: 2;
   grid-row: 3;
-  margin: 1.5cqw 0 0;
-  font-size: .92cqw;
+  margin: 4.5cqw 0 0;
+  font-size: 1.02cqw;
   line-height: 1.35;
 }
 
@@ -346,7 +362,7 @@
   position: relative;
   display: block;
   align-self: start;
-  min-height: 14.8cqw;
+  min-height: 17.2cqw;
   padding-top: 1.325cqw;
 }
 
@@ -354,6 +370,7 @@
   position: relative;
   z-index: 7;
   margin-inline: auto;
+  font-size: 1.3cqw;
 }
 
 .sci-go {
@@ -365,7 +382,7 @@
   padding: .06cqw .25cqw;
   color: #647d91;
   background: var(--sci-bg);
-  font-size: .9cqw;
+  font-size: 1.02cqw;
   white-space: nowrap;
 }
 
@@ -375,10 +392,22 @@
   content: none !important;
 }
 
+.sci-no {
+  position: absolute;
+  z-index: 7;
+  top: 8.15cqw;
+  left: calc(50% + .65cqw);
+  padding: .04cqw .18cqw;
+  color: #647d91;
+  background: var(--sci-bg);
+  font-size: 1.02cqw;
+  white-space: nowrap;
+}
+
 .sci-stop {
   position: absolute;
   z-index: 7;
-  top: 8.85cqw;
+  top: 12cqw;
   left: 50%;
   color: transparent;
   background: var(--sci-bg);
@@ -390,7 +419,7 @@
 .sci-stop::after {
   color: #647d91;
   content: "Stop";
-  font-size: 1.0cqw;
+  font-size: 1.08cqw;
 }
 
 .sci-final {
@@ -398,10 +427,45 @@
   padding-top: .8cqw;
 }
 
+.sci-final .sci-icon-circle {
+  width: 5.85cqw;
+  height: 5.85cqw;
+}
+
+.sci-final strong {
+  font-size: 1.12cqw;
+}
+
+#sci-slide-4 .sci-start-band {
+  margin-top: 3.5cqw;
+}
+
+#sci-slide-4 .sci-start-main .sci-kicker {
+  font-size: 1.02cqw;
+}
+
+#sci-slide-4 .sci-start-main strong {
+  font-size: 2cqw;
+}
+
+#sci-slide-4 .sci-start-mid,
+#sci-slide-4 .sci-start-end {
+  font-size: 1.05cqw;
+}
+
 @media (max-width: 1180px) {
   .sci-deck { --sci-nav-width: 7.4rem; }
   .sci-slide-nav { padding-inline: .55rem; }
-  .sci-nav-title { font-size: .78rem; }
+  .sci-nav-eyebrow {
+    margin-inline: 0;
+    font-size: .6rem;
+    letter-spacing: .06em;
+    white-space: nowrap;
+  }
+  .sci-nav-title {
+    margin-inline: 0;
+    font-size: .68rem;
+  }
   .sci-nav-button { grid-template-columns: 1.65rem 1fr; padding-inline: .4rem; }
   .sci-nav-label { font-size: .7rem; }
 }

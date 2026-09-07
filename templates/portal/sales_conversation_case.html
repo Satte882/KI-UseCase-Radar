@@ -1,7 +1,7 @@
 {% extends "portal/presentation_base.html" %}
 {% load static %}
 
-{% block title %}Sales Conversation Intelligence – RSD Demo{% endblock %}
+{% block title %}Gesprächsmuster &amp; Vertriebswirkung – RSD Demo{% endblock %}
 {% block body_class %}presentation-case presentation-case-sales{% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/sales-conversation-case.css' %}">
@@ -11,12 +11,12 @@
 
 {% block content %}
 <a class="sci-back-link" href="{% url 'demo-portal' %}">Zur Übersicht</a>
-<section class="sci-deck" aria-label="Sales Conversation Intelligence für RSD">
+<section class="sci-deck" aria-label="Gesprächsmuster und Vertriebswirkung für RSD">
 
   <div class="sci-slide-shell">
     <article class="sci-slide" id="sci-slide-1" aria-labelledby="sci-slide-1-title">
-      <header class="sci-header"><span>01 / 04 · Business-Frage</span><span>Sales Conversation Intelligence · RSD</span></header>
-      <h1 class="sci-title long" id="sci-slide-1-title">Welche Merkmale eines Beratungsgesprächs erklären, warum aus einer Anfrage eine Buchung wird – oder nicht?</h1>
+      <header class="sci-header"><span>01 / 04 · Business-Frage</span><span>Gesprächsmuster &amp; Vertriebswirkung · RSD</span></header>
+      <h1 class="sci-title" id="sci-slide-1-title">Welche Merkmale eines Beratungsgesprächs stehen mit einer Buchung in Zusammenhang?</h1>
       <p class="sci-subtitle">Nicht Sentiment messen, sondern beeinflussbare Conversion-Treiber finden.</p>
 
       <div class="sci-flow" aria-label="Vom Gespräch zum kontrollierten Test">
@@ -35,9 +35,9 @@
 
   <div class="sci-slide-shell">
     <article class="sci-slide" id="sci-slide-2" aria-labelledby="sci-slide-2-title">
-      <header class="sci-header"><span>02 / 04 · Datenbasis</span><span>Sales Conversation Intelligence · RSD</span></header>
+      <header class="sci-header"><span>02 / 04 · Datenbasis</span><span>Gesprächsmuster &amp; Vertriebswirkung · RSD</span></header>
       <h2 class="sci-title" id="sci-slide-2-title">Der Case steht und fällt mit der Datenbasis.</h2>
-      <p class="sci-subtitle">Ohne diese Verknüpfung entstehen interessante KI-Auswertungen, aber keine echte Conversation Intelligence.</p>
+      <p class="sci-subtitle">Ohne diese Verknüpfung entstehen interessante KI-Auswertungen, aber keine belastbare Analyse von Gesprächsmustern und Vertriebswirkung.</p>
 
       <div class="sci-data-graph" aria-label="Datenquellen werden mit dem wirtschaftlichen Ergebnis verknüpft">
         <div class="sci-source-grid">
@@ -82,7 +82,7 @@
 
   <div class="sci-slide-shell">
     <article class="sci-slide" id="sci-slide-3" aria-labelledby="sci-slide-3-title">
-      <header class="sci-header"><span>03 / 04 · Pilot-Architektur</span><span>Sales Conversation Intelligence · RSD</span></header>
+      <header class="sci-header"><span>03 / 04 · Pilot-Architektur</span><span>Gesprächsmuster &amp; Vertriebswirkung · RSD</span></header>
       <h2 class="sci-title" id="sci-slide-3-title">Schlanker Pilot statt KI-Plattform.</h2>
       <p class="sci-subtitle">Das LLM ist eine Komponente der Datenpipeline – nicht das Gesamtsystem.</p>
 
@@ -112,20 +112,20 @@ next_action: katalog_versenden</pre></div>
 
   <div class="sci-slide-shell">
     <article class="sci-slide" id="sci-slide-4" aria-labelledby="sci-slide-4-title">
-      <header class="sci-header"><span>04 / 04 · Investitionsentscheidung</span><span>Sales Conversation Intelligence · RSD</span></header>
+      <header class="sci-header"><span>04 / 04 · Investitionsentscheidung</span><span>Gesprächsmuster &amp; Vertriebswirkung · RSD</span></header>
       <h2 class="sci-title" id="sci-slide-4-title">Investieren erst nach drei Belegen.</h2>
       <p class="sci-subtitle">Der Analyse-Pilot beweist noch keinen Conversion-Uplift. Er klärt, ob sich ein kontrolliertes Sales-Experiment lohnt.</p>
 
       <div class="sci-gates" aria-label="Stage-Gate-Entscheidungsmodell">
         <section class="sci-gate-stage"><div class="sci-gate-stage-head"><span class="sci-gate-num">1</span><span class="sci-kicker">Datenfähigkeit</span></div><p class="sci-gate-q">Können Call, Kunde und Buchung zuverlässig verbunden werden?</p><p class="sci-gate-note">Wir prüfen, ob die relevanten Datenquellen technisch und datenschutzkonform verknüpft werden können.</p></section>
-        <div class="sci-decision"><div class="sci-diamond"><span>Go?</span></div><div class="sci-go">Ja</div><div class="sci-stop">↓ Stop</div></div>
+        <div class="sci-decision"><div class="sci-diamond"><span>Go?</span></div><div class="sci-go">Ja</div><div class="sci-no">Nein</div><div class="sci-stop">↓ Stop</div></div>
         <section class="sci-gate-stage"><div class="sci-gate-stage-head"><span class="sci-gate-num">2</span><span class="sci-kicker">Erkenntnisfähigkeit</span></div><p class="sci-gate-q">Finden wir statistisch relevante und beeinflussbare Gesprächsmuster?</p><p class="sci-gate-note">Wir analysieren Gespräche und identifizieren Muster, die einen messbaren Einfluss auf die Conversion haben können.</p></section>
-        <div class="sci-decision"><div class="sci-diamond"><span>Go?</span></div><div class="sci-go">Ja</div><div class="sci-stop">↓ Stop</div></div>
+        <div class="sci-decision"><div class="sci-diamond"><span>Go?</span></div><div class="sci-go">Ja</div><div class="sci-no">Nein</div><div class="sci-stop">↓ Stop</div></div>
         <section class="sci-gate-stage"><div class="sci-gate-stage-head"><span class="sci-gate-num">3</span><span class="sci-kicker">Business Value</span></div><p class="sci-gate-q">Verbessert eine gezielte Intervention im kontrollierten Test tatsächlich die Conversion?</p><p class="sci-gate-note">Wir messen den kausalen Effekt der Maßnahme und prüfen die wirtschaftliche Relevanz.</p></section>
         <div class="sci-final"><span class="sci-icon-circle amber" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 20V11M12 20V6M19 20V3"/></svg></span><strong>Investitions-<br>entscheidung</strong></div>
       </div>
 
-      <div class="sci-start-band"><div class="sci-start-main"><span class="sci-kicker">Vorschlag für den Start</span><strong>2-wöchiger Data-&amp;-Legal-Feasibility-Check</strong></div><div class="sci-start-mid">IT / Telefonie · Datenschutz / Legal · Sales</div><div class="sci-start-end">Gate 1: ja → Analyse-Pilot<br>Gate 1: nein → Opt-in-Pilotkanal</div></div>
+      <div class="sci-start-band"><div class="sci-start-main"><span class="sci-kicker">Vorschlag für den Start</span><strong>2-wöchiger Data-&amp;-Legal-Feasibility-Check</strong></div><div class="sci-start-mid">IT / Telefonie · Datenschutz / Legal · Sales</div><div class="sci-start-end">Gate 1: ja → Analyse-Pilot<br>Gate 1: nein → Pilotkanal mit ausdrücklicher Einwilligung</div></div>
       <footer class="sci-footer"><span>Von Gesprächen zu Wirkung.</span><span>Daten. Erkenntnisse. Bessere Entscheidungen.</span></footer>
     </article>
   </div>

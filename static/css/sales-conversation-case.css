@@ -208,7 +208,7 @@
 /* Slide 2 */
 .sci-data-graph {
   display: grid;
-  grid-template-columns: 47cqw 13cqw 1fr;
+  grid-template-columns: 44cqw 19cqw 1fr;
   align-items: center;
   margin-top: 2.65cqw;
   padding-bottom: 2.0cqw;
@@ -217,14 +217,18 @@
 .sci-source-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 2.35cqw 4.5cqw;
+  gap: 3.8cqw 4.5cqw;
 }
 .sci-source {
   position: relative;
   display: grid;
-  grid-template-columns: 5.4cqw 1fr;
+  grid-template-columns: 5.7cqw 1fr;
   align-items: center;
   gap: 1.2cqw;
+}
+.sci-data-graph .sci-source .sci-icon-circle {
+  width: 5.7cqw;
+  height: 5.7cqw;
 }
 .sci-source strong {
   display: block;
@@ -250,6 +254,12 @@
   display: grid;
   justify-items: center;
   gap: .4cqw;
+  transform: translateY(2.25cqw);
+}
+.sci-data-graph .sci-icon-circle.join,
+.sci-data-graph .sci-outcome .sci-icon-circle.amber {
+  width: 8.7cqw;
+  height: 8.7cqw;
 }
 .sci-join-wrap::before {
   position: absolute;
@@ -269,7 +279,7 @@
 }
 .sci-outcome {
   display: grid;
-  grid-template-columns: 7.8cqw 1fr;
+  grid-template-columns: 8.7cqw 1fr;
   align-items: center;
   gap: 1.5cqw;
   padding-left: 1.5cqw;

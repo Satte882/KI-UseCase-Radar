@@ -30,8 +30,8 @@
     .join("");
 
   nav.innerHTML = `
-    <div class="sci-nav-eyebrow">Case Study</div>
-    <div class="sci-nav-title">Sales Conversation Intelligence</div>
+    <div class="sci-nav-eyebrow">Anwendungsfall</div>
+    <div class="sci-nav-title">Gesprächsmuster &amp; Vertriebswirkung</div>
     <div class="sci-nav-list">${navButtons}</div>
     <div class="sci-nav-meta">
       <a class="sci-nav-home" href="${backLink ? backLink.href : "/demo/"}">← Zur Übersicht</a>
@@ -91,9 +91,8 @@
     };
   }
 
-  function appendArrowHead(svg, ex, ey, ux, uy, color, width) {
-    const arrowLength = 10;
-    const arrowHalf = 5;
+  function appendArrowHead(svg, ex, ey, ux, uy, color, width, arrowLength = 10) {
+    const arrowHalf = arrowLength / 2;
     const baseX = ex - arrowLength * ux;
     const baseY = ey - arrowLength * uy;
     const px = -uy;
@@ -118,7 +117,7 @@
     return { baseX, baseY };
   }
 
-  function drawLineArrowPoints(svg, sx, sy, ex, ey, color = "#8ea4b5", width = 2.1) {
+  function drawLineArrowPoints(svg, sx, sy, ex, ey, color = "#8ea4b5", width = 2.1, arrowLength = 10) {
     const dx = ex - sx;
     const dy = ey - sy;
     const length = Math.hypot(dx, dy);
@@ -126,7 +125,7 @@
 
     const ux = dx / length;
     const uy = dy / length;
-    const { baseX, baseY } = appendArrowHead(svg, ex, ey, ux, uy, color, width);
+    const { baseX, baseY } = appendArrowHead(svg, ex, ey, ux, uy, color, width, arrowLength);
 
     svg.prepend(
       svgElement("line", {
@@ -156,7 +155,7 @@
     );
   }
 
-  function drawCubicArrow(svg, points, color = "#8ea4b5", width = 2.1) {
+  function drawCubicArrow(svg, points, color = "#8ea4b5", width = 2.1, arrowLength = 10) {
     const dx = points.ex - points.c2x;
     const dy = points.ey - points.c2y;
     const length = Math.hypot(dx, dy);
@@ -164,7 +163,7 @@
 
     const ux = dx / length;
     const uy = dy / length;
-    const { baseX, baseY } = appendArrowHead(svg, points.ex, points.ey, ux, uy, color, width);
+    const { baseX, baseY } = appendArrowHead(svg, points.ex, points.ey, ux, uy, color, width, arrowLength);
 
     svg.prepend(
       svgElement("path", {
@@ -225,20 +224,24 @@
     const joinRect = relativeRect(join, layer.rect);
     const outcomeRect = relativeRect(outcome, layer.rect);
     const color = "#7891a4";
-    const width = 2.15;
+    const width = 1.65;
+    const arrowLength = 7.5;
 
     // Reference topology: Call + Kunde merge into one middle route.
-    const mergeX = call.right + Math.max(34, (campaign.left - call.right) * 0.48);
+    const mergeX = call.right + Math.max(34, (campaign.left - call.right) * 0.65);
     const mergeY = joinRect.cy;
+
+    const callStartX = call.right + 6;
+    const callSpan = mergeX - callStartX;
 
     drawCubicLine(
       layer.svg,
       {
-        sx: call.right + 6,
+        sx: callStartX,
         sy: call.cy,
-        c1x: call.right + 34,
+        c1x: callStartX + callSpan * 0.45,
         c1y: call.cy,
-        c2x: mergeX - 34,
+        c2x: mergeX - callSpan * 0.45,
         c2y: mergeY,
         ex: mergeX,
         ey: mergeY,
@@ -247,14 +250,17 @@
       width,
     );
 
+    const customerStartX = customer.right + 6;
+    const customerSpan = mergeX - customerStartX;
+
     drawCubicLine(
       layer.svg,
       {
-        sx: customer.right + 6,
+        sx: customerStartX,
         sy: customer.cy,
-        c1x: customer.right + 34,
+        c1x: customerStartX + customerSpan * 0.45,
         c1y: customer.cy,
-        c2x: mergeX - 34,
+        c2x: mergeX - customerSpan * 0.45,
         c2y: mergeY,
         ex: mergeX,
         ey: mergeY,
@@ -271,42 +277,50 @@
       joinRect.cy,
       color,
       width,
+      arrowLength,
     );
 
     // Kampagne and Reise remain independent curved inputs into the join node.
     const upperTargetY = joinRect.cy - joinRect.height * 0.18;
     const lowerTargetY = joinRect.cy + joinRect.height * 0.18;
+    const campaignStartX = campaign.right + 6;
+    const tripStartX = trip.right + 6;
+    const sourceTargetX = joinRect.left - 10;
+    const campaignControl = Math.max(8, (sourceTargetX - campaignStartX) * 0.42);
+    const tripControl = Math.max(8, (sourceTargetX - tripStartX) * 0.42);
 
     drawCubicArrow(
       layer.svg,
       {
-        sx: campaign.right + 6,
+        sx: campaignStartX,
         sy: campaign.cy,
-        c1x: campaign.right + 34,
+        c1x: campaignStartX + campaignControl,
         c1y: campaign.cy,
-        c2x: joinRect.left - 46,
+        c2x: sourceTargetX - campaignControl,
         c2y: upperTargetY,
-        ex: joinRect.left - 10,
+        ex: sourceTargetX,
         ey: upperTargetY,
       },
       color,
       width,
+      arrowLength,
     );
 
     drawCubicArrow(
       layer.svg,
       {
-        sx: trip.right + 6,
+        sx: tripStartX,
         sy: trip.cy,
-        c1x: trip.right + 34,
+        c1x: tripStartX + tripControl,
         c1y: trip.cy,
-        c2x: joinRect.left - 46,
+        c2x: sourceTargetX - tripControl,
         c2y: lowerTargetY,
-        ex: joinRect.left - 10,
+        ex: sourceTargetX,
         ey: lowerTargetY,
       },
       color,
       width,
+      arrowLength,
     );
 
     drawLineArrowPoints(
@@ -316,7 +330,8 @@
       outcomeRect.left - 12,
       outcomeRect.cy,
       "#5d7f98",
-      2.25,
+      1.7,
+      arrowLength,
     );
   }
 
@@ -345,12 +360,13 @@
 
       drawLineArrowPoints(
         layer.svg,
-        diamondRect.right + 7,
+        diamondRect.right + 3,
         diamondRect.cy,
-        nextRect.left - 9,
+        nextRect.left - 3,
         nextRect.cy,
         "#0b6ea6",
-        2.2,
+        1.65,
+        7.5,
       );
 
       drawLineArrowPoints(
@@ -360,7 +376,8 @@
         diamondRect.cx,
         stopRect.top - 7,
         "#6b8598",
-        2.0,
+        1.55,
+        7.5,
       );
     });
 
@@ -368,12 +385,13 @@
     const finalRect = relativeRect(finalIcon, layer.rect);
     drawLineArrowPoints(
       layer.svg,
-      stageThreeRect.right + 8,
+      stageThreeRect.right + 3,
       finalRect.cy,
-      finalRect.left - 10,
+      finalRect.left - 3,
       finalRect.cy,
       "#0b6ea6",
-      2.2,
+      1.65,
+      7.5,
     );
   }
 

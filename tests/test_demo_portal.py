@@ -22,7 +22,8 @@ def test_authenticated_user_sees_three_demo_entries(client, reader):
 
     assert response.status_code == 200
     assert "Projektbeispiel: Angebotsvergleich im Einkauf" in body
-    assert "Use Case: Sales Conversation Intelligence" in body
+    assert "Use Case: Gesprächsmuster &amp; Vertriebswirkung" in body
+    assert "ohne individuelle Personenbewertung" in body
     assert "Anwendung: KI-Use-Case-Radar" in body
     assert f'href="{reverse("case-procurement")}"' in body
     assert f'href="{reverse("case-sales-conversation")}"' in body
@@ -60,10 +61,16 @@ def test_sales_conversation_case_is_four_slide_web_presentation(client, reader):
     for slide_number in range(1, 5):
         assert f'id="sci-slide-{slide_number}"' in body
 
-    assert "Welche Merkmale eines Beratungsgesprächs erklären" in body
+    assert "Welche Merkmale eines Beratungsgesprächs stehen mit einer Buchung in Zusammenhang?" in body
+    assert "wird – oder nicht?" not in body
     assert "Der Case steht und fällt mit der Datenbasis." in body
     assert "Schlanker Pilot statt KI-Plattform." in body
     assert "Investieren erst nach drei Belegen." in body
+    assert "Gesprächsmuster &amp; Vertriebswirkung" in body
+    assert "Sales Conversation Intelligence" not in body
+    assert body.count('class="sci-no">Nein</div>') == 2
+    assert "Pilotkanal mit ausdrücklicher Einwilligung" in body
+    assert "Opt-in-Pilotkanal" not in body
     assert "Gate 1 negativ?" in body
     assert "2-wöchiger Data-&amp;-Legal-Feasibility-Check" in body
     assert "6%" not in body
