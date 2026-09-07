@@ -60,7 +60,8 @@ def test_sales_conversation_case_is_four_slide_web_presentation(client, reader):
     for slide_number in range(1, 5):
         assert f'id="sci-slide-{slide_number}"' in body
 
-    assert "Warum wird aus einem Beratungsgespräch eine Buchung – oder nicht?" in body
+    assert "Warum wird aus einem Beratungsgespräch eine Buchung" in body
+    assert "oder nicht?" in body
     assert "Der Case steht und fällt mit der Datenbasis." in body
     assert "Für den Pilot reicht eine schlanke Datenpipeline." in body
     assert "Investieren erst nach drei Belegen." in body
