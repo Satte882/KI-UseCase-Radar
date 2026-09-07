@@ -7,6 +7,7 @@ class RadarLoginView(LoginView):
     template_name = "accounts/login.html"
     authentication_form = RadarAuthenticationForm
     redirect_authenticated_user = True
+    next_page = "demo-portal"
 
 
 class RadarLogoutView(LogoutView):
