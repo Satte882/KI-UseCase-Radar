@@ -91,17 +91,18 @@
   outline-offset: 3px;
 }
 
-/* Deutlich sichtbarer Rückweg aus der App zur separat gestalteten RSD-Präsentation. */
-.ui-vnext .app-sidebar > a[aria-label="Zur Startseite"] {
+/* Sichtbarer Rückweg aus der App zur separat gestalteten RSD-Präsentation. */
+.ui-vnext .app-sidebar > a[aria-label="RSD Demo-Portal öffnen"] {
   width: 100%;
   min-height: 68px;
   margin: 0 0 17px;
   padding: 8px 10px;
   border-color: var(--line);
   background: var(--surface-2);
+  font-size: 1rem;
 }
 
-.ui-vnext .app-sidebar > a[aria-label="Zur Startseite"] .nav-icon {
+.ui-vnext .app-sidebar > a[aria-label="RSD Demo-Portal öffnen"] .nav-icon {
   display: block;
   flex: 0 0 64px;
   width: 64px;
@@ -111,33 +112,32 @@
   background: var(--ink) url("../img/rsd-logo.svg") center / contain no-repeat;
 }
 
-.ui-vnext .app-sidebar > a[aria-label="Zur Startseite"]::after {
-  content: "RSD Demo";
+.ui-vnext .app-sidebar > a[aria-label="RSD Demo-Portal öffnen"] strong {
   color: var(--ink);
-  font-size: .96rem;
+  font-size: .98rem;
   font-weight: 720;
   letter-spacing: -.01em;
 }
 
-.ui-vnext .app-sidebar > a[aria-label="Zur Startseite"]:hover {
+.ui-vnext .app-sidebar > a[aria-label="RSD Demo-Portal öffnen"]:hover {
   border-color: var(--line-strong);
   background: var(--surface-3);
 }
 
 @media (max-width: 1100px) {
-  .ui-vnext .app-sidebar > a[aria-label="Zur Startseite"] {
+  .ui-vnext .app-sidebar > a[aria-label="RSD Demo-Portal öffnen"] {
     justify-content: center;
     min-height: 58px;
     padding-inline: 4px;
   }
 
-  .ui-vnext .app-sidebar > a[aria-label="Zur Startseite"] .nav-icon {
+  .ui-vnext .app-sidebar > a[aria-label="RSD Demo-Portal öffnen"] .nav-icon {
     flex-basis: 52px;
     width: 52px;
     height: 28px;
   }
 
-  .ui-vnext .app-sidebar > a[aria-label="Zur Startseite"]::after {
+  .ui-vnext .app-sidebar > a[aria-label="RSD Demo-Portal öffnen"] strong {
     display: none;
   }
 }
