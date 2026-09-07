@@ -14,120 +14,145 @@
     <a href="#sci-slide-4"><span>04</span> Entscheidung</a>
   </nav>
 
-  <article class="sci-slide sci-slide-question" id="sci-slide-1" aria-labelledby="sci-slide-1-title">
-    <div class="sci-slide-meta"><span>01</span><span>Business-Frage</span></div>
-    <p class="presentation-kicker">Use Case für RSD · Sales Conversation Intelligence</p>
-    <h1 id="sci-slide-1-title">Warum wird aus einem Beratungsgespräch eine Buchung – oder nicht?</h1>
-    <p class="sci-slide-lead">Nicht Sentiment messen, sondern beeinflussbare Conversion-Treiber finden.</p>
+  <article class="sci-slide" id="sci-slide-1" aria-labelledby="sci-slide-1-title">
+    <header class="sci-slide-header">
+      <span>01 / 04 · Business-Frage</span>
+      <span>Sales Conversation Intelligence · RSD</span>
+    </header>
 
-    <div class="sci-flow" aria-label="Vom Gespräch zum getesteten Business-Effekt">
-      <div class="sci-flow-node"><strong>Gespräch</strong></div>
-      <span class="sci-flow-arrow" aria-hidden="true">→</span>
-      <div class="sci-flow-node"><strong>Transkript</strong></div>
-      <span class="sci-flow-arrow" aria-hidden="true">→</span>
-      <div class="sci-flow-node"><strong>Gesprächsmerkmale</strong></div>
-      <span class="sci-flow-arrow" aria-hidden="true">→</span>
-      <div class="sci-flow-node sci-flow-node-emphasis"><strong>Buchung / Nichtbuchung</strong></div>
-      <span class="sci-flow-arrow" aria-hidden="true">→</span>
-      <div class="sci-flow-node"><strong>Muster</strong></div>
-      <span class="sci-flow-arrow" aria-hidden="true">→</span>
-      <div class="sci-flow-node"><strong>gezielte Änderung</strong></div>
-      <span class="sci-flow-arrow" aria-hidden="true">→</span>
-      <div class="sci-flow-node sci-flow-node-accent"><strong>kontrollierter Test</strong></div>
+    <div class="sci-slide-intro">
+      <h1 id="sci-slide-1-title">Welche Merkmale eines Beratungsgesprächs erklären, warum aus einer Anfrage eine Buchung wird – oder nicht?</h1>
+      <p>Nicht Sentiment messen, sondern beeinflussbare Conversion-Treiber finden.</p>
     </div>
+
+    <ol class="sci-process-line" aria-label="Vom Gespräch zum kontrollierten Test">
+      <li><span class="sci-process-marker"></span><strong>Gespräch</strong></li>
+      <li><span class="sci-process-marker"></span><strong>Transkript</strong></li>
+      <li><span class="sci-process-marker"></span><strong>Gesprächsmerkmale</strong></li>
+      <li class="sci-process-emphasis"><span class="sci-process-marker"></span><strong>Buchung / Nichtbuchung</strong></li>
+      <li><span class="sci-process-marker"></span><strong>Muster</strong></li>
+      <li><span class="sci-process-marker"></span><strong>gezielte Änderung</strong></li>
+      <li class="sci-process-accent"><span class="sci-process-marker"></span><strong>kontrollierter Test</strong></li>
+    </ol>
   </article>
 
   <article class="sci-slide" id="sci-slide-2" aria-labelledby="sci-slide-2-title">
-    <div class="sci-slide-meta"><span>02</span><span>Datenbasis & Leitplanken</span></div>
-    <h2 id="sci-slide-2-title">Der Case steht und fällt mit der Datenbasis.</h2>
-    <p class="sci-slide-lead">Ohne belastbare Verknüpfung bleibt es Gesprächsanalyse – aber keine Conversation Intelligence.</p>
+    <header class="sci-slide-header">
+      <span>02 / 04 · Datenbasis</span>
+      <span>Sales Conversation Intelligence · RSD</span>
+    </header>
 
-    <div class="sci-link-chain" aria-label="Erforderliche Datenverknüpfung">
-      <span>Call</span><b aria-hidden="true">↔</b><span>Kunde</span><b aria-hidden="true">↔</b><span>Kampagne</span><b aria-hidden="true">↔</b><span>Reise</span><b aria-hidden="true">↔</b><span class="sci-link-chain-outcome">Buchung</span>
+    <div class="sci-slide-intro sci-slide-intro-compact">
+      <h2 id="sci-slide-2-title">Der Case steht und fällt mit der Datenbasis.</h2>
+      <p>Ohne diese Verknüpfung entstehen interessante KI-Auswertungen, aber keine echte Conversation Intelligence.</p>
     </div>
 
-    <div class="sci-two-column">
-      <section class="sci-panel" aria-labelledby="sci-data-heading">
-        <span class="sci-panel-label">Gate 1 · Datenfähigkeit</span>
+    <div class="sci-data-map" aria-label="Erforderliche Datenverknüpfung">
+      <div class="sci-data-sources">
+        <span>Call</span>
+        <span>Kunde</span>
+        <span>Kampagne</span>
+        <span>Reise</span>
+      </div>
+      <div class="sci-data-join" aria-hidden="true"><span>verknüpfen</span></div>
+      <div class="sci-data-outcome"><small>Outcome</small><strong>Buchung / Nichtbuchung</strong></div>
+    </div>
+
+    <div class="sci-brief-columns">
+      <section aria-labelledby="sci-data-heading">
+        <span class="sci-eyebrow">Gate 1 · Datenfähigkeit</span>
         <h3 id="sci-data-heading">Zwei Fragen vor jedem KI-Pilot</h3>
         <ul>
-          <li>Können einzelne Calls zuverlässig einer späteren Buchung oder Nichtbuchung zugeordnet werden?</li>
-          <li>Gibt es rechtmäßig nutzbare Gesprächsdaten – historisch oder über einen Pilotkanal?</li>
+          <li>Können Calls eindeutig mit einer späteren Buchung oder Nichtbuchung verknüpft werden?</li>
+          <li>Existieren ausreichend rechtmäßig nutzbare Gesprächsdaten – historisch oder über einen Pilotkanal?</li>
         </ul>
       </section>
 
-      <section class="sci-panel" aria-labelledby="sci-guardrails-heading">
-        <span class="sci-panel-label">Leitplanken Phase 1</span>
+      <section aria-labelledby="sci-guardrails-heading">
+        <span class="sci-eyebrow">Leitplanken Phase 1</span>
         <h3 id="sci-guardrails-heading">Inhalte und Muster statt Personenbewertung</h3>
         <ul>
-          <li>keine Voice-Emotion-Erkennung</li>
-          <li>kein individuelles Mitarbeiter-Scoring</li>
           <li>Aufzeichnung und Analysezweck vorab rechtlich klären</li>
+          <li>keine Voice-Emotion-Erkennung</li>
+          <li>kein individuelles Mitarbeiter-Scoring im Pilot</li>
         </ul>
-        <p class="sci-legal-note">u. a. § 201 StGB · AI Act Art. 5 Abs. 1(f) · BetrVG § 87 Abs. 1 Nr. 6 / § 90</p>
+        <p class="sci-legal-note">§ 201 StGB · AI Act Art. 5 Abs. 1(f) · BetrVG § 87 Abs. 1 Nr. 6 / § 90</p>
       </section>
     </div>
 
-    <div class="sci-decision-note"><strong>Gate 1 negativ?</strong> Dann kein Analyse-Pilot: zuerst einen rechtlich und technisch sauberen Pilotkanal schaffen.</div>
+    <p class="sci-fallback"><strong>Gate 1 negativ?</strong> Dann kein Analyse-Pilot: zuerst einen rechtlich und technisch sauberen Pilotkanal schaffen.</p>
   </article>
 
   <article class="sci-slide" id="sci-slide-3" aria-labelledby="sci-slide-3-title">
-    <div class="sci-slide-meta"><span>03</span><span>Pilot-Architektur</span></div>
-    <h2 id="sci-slide-3-title">Für den Pilot reicht eine schlanke Datenpipeline.</h2>
-    <p class="sci-slide-lead">Das LLM ist eine Komponente in der Pipeline – nicht das Gesamtsystem.</p>
+    <header class="sci-slide-header">
+      <span>03 / 04 · Pilot-Architektur</span>
+      <span>Sales Conversation Intelligence · RSD</span>
+    </header>
 
-    <div class="sci-architecture" aria-label="Technischer Datenfluss des Piloten">
-      <div class="sci-architecture-node"><span>01</span><strong>Call Recording</strong></div>
-      <span class="sci-architecture-arrow" aria-hidden="true">→</span>
-      <div class="sci-architecture-node"><span>02</span><strong>Speech-to-Text</strong></div>
-      <span class="sci-architecture-arrow" aria-hidden="true">→</span>
-      <div class="sci-architecture-node"><span>03</span><strong>Redaction</strong><small>Pseudonymisierung</small></div>
-      <span class="sci-architecture-arrow" aria-hidden="true">→</span>
-      <div class="sci-architecture-node sci-architecture-node-ai"><span>04</span><strong>LLM Extraction</strong><small>strukturierte Merkmale</small></div>
-      <span class="sci-architecture-arrow" aria-hidden="true">→</span>
-      <div class="sci-architecture-node"><span>05</span><strong>DWH / Buchungssystem</strong></div>
-      <span class="sci-architecture-arrow" aria-hidden="true">→</span>
-      <div class="sci-architecture-node"><span>06</span><strong>Analytics / BI</strong></div>
+    <div class="sci-slide-intro sci-slide-intro-compact">
+      <h2 id="sci-slide-3-title">Schlanker Pilot statt KI-Plattform.</h2>
+      <p>Das LLM ist eine Komponente der Datenpipeline – nicht das Gesamtsystem.</p>
     </div>
 
-    <div class="sci-pilot-choices">
-      <div><span>Startpunkt</span><strong>Baseline-Modell · strukturierter Prompt · Gold Dataset</strong></div>
-      <div><span>Bewusst später</span><strong>Fine-Tuning · Agentenplattform · komplexes MLOps</strong></div>
+    <ol class="sci-pipeline" aria-label="Technischer Datenfluss des Piloten">
+      <li><span>01</span><strong>Call Recording</strong></li>
+      <li><span>02</span><strong>Speech-to-Text</strong></li>
+      <li><span>03</span><strong>Pseudonymisierung / Redaction</strong></li>
+      <li class="sci-pipeline-ai"><span>04</span><strong>LLM Extraction</strong></li>
+      <li><span>05</span><strong>DWH / Buchungssystem</strong></li>
+      <li><span>06</span><strong>Analytics / BI</strong></li>
+    </ol>
+
+    <div class="sci-extraction-row">
+      <div></div>
+      <pre aria-label="Beispiel einer strukturierten Extraktion"><code>destination: ägypten
+objection: preis
+next_action: katalog_versenden</code></pre>
+      <p>Strukturierte Merkmale statt freier Zusammenfassungen.</p>
+    </div>
+
+    <div class="sci-architecture-notes">
+      <p><span class="sci-eyebrow">Startpunkt</span><strong>Baseline-Modell · strukturierter Prompt · Gold Dataset</strong></p>
+      <p><span class="sci-eyebrow">Bewusst später</span><strong>Fine-Tuning · Agentenplattform · komplexes MLOps</strong></p>
     </div>
   </article>
 
-  <article class="sci-slide sci-slide-decision" id="sci-slide-4" aria-labelledby="sci-slide-4-title">
-    <div class="sci-slide-meta"><span>04</span><span>Investitionsentscheidung</span></div>
-    <h2 id="sci-slide-4-title">Investieren erst nach drei Belegen.</h2>
-    <p class="sci-slide-lead">Der Analyse-Pilot soll noch keinen Conversion-Uplift versprechen – sondern zeigen, ob sich ein kontrolliertes Sales-Experiment lohnt.</p>
+  <article class="sci-slide" id="sci-slide-4" aria-labelledby="sci-slide-4-title">
+    <header class="sci-slide-header">
+      <span>04 / 04 · Investitionsentscheidung</span>
+      <span>Sales Conversation Intelligence · RSD</span>
+    </header>
 
-    <div class="sci-gates" aria-label="Dreistufiger Stage-Gate-Prozess">
-      <section>
-        <span class="sci-gate-number">1</span>
-        <small>Datenfähigkeit</small>
-        <h3>Können Call, Kunde und Buchung zuverlässig verbunden werden?</h3>
-      </section>
-      <div class="sci-gate-connector" aria-hidden="true">→</div>
-      <section>
-        <span class="sci-gate-number">2</span>
-        <small>Erkenntnisfähigkeit</small>
-        <h3>Finden wir relevante und beeinflussbare Gesprächsmuster?</h3>
-      </section>
-      <div class="sci-gate-connector" aria-hidden="true">→</div>
-      <section>
-        <span class="sci-gate-number">3</span>
-        <small>Business Value</small>
-        <h3>Verbessert die Intervention im kontrollierten Test tatsächlich die Conversion?</h3>
-      </section>
+    <div class="sci-slide-intro sci-slide-intro-compact">
+      <h2 id="sci-slide-4-title">Investieren erst nach drei Belegen.</h2>
+      <p>Der Analyse-Pilot beweist noch keinen Conversion-Uplift. Er klärt, ob sich ein kontrolliertes Sales-Experiment lohnt.</p>
     </div>
 
-    <div class="sci-start-proposal">
+    <ol class="sci-gate-line" aria-label="Dreistufiger Stage-Gate-Prozess">
+      <li>
+        <span class="sci-gate-marker">1</span>
+        <small>Datenfähigkeit</small>
+        <strong>Können Call, Kunde und Buchung zuverlässig verbunden werden?</strong>
+      </li>
+      <li>
+        <span class="sci-gate-marker">2</span>
+        <small>Erkenntnisfähigkeit</small>
+        <strong>Finden wir statistisch relevante und beeinflussbare Gesprächsmuster?</strong>
+      </li>
+      <li>
+        <span class="sci-gate-marker">3</span>
+        <small>Business Value</small>
+        <strong>Verbessert eine gezielte Intervention im kontrollierten Test tatsächlich die Conversion?</strong>
+      </li>
+    </ol>
+
+    <div class="sci-start-strip">
       <div>
-        <span class="sci-panel-label">Vorschlag für den Start</span>
+        <span class="sci-eyebrow">Vorschlag für den Start</span>
         <strong>2-wöchiger Data-&-Legal-Feasibility-Check</strong>
       </div>
       <p>IT / Telefonie · Datenschutz / Legal · Sales</p>
-      <div class="sci-start-path"><span>Gate 1: ja → Analyse-Pilot</span><span>Gate 1: nein → Opt-in-Pilotkanal</span></div>
+      <p class="sci-start-path"><span>Gate 1: ja → Analyse-Pilot</span><span>Gate 1: nein → Opt-in-Pilotkanal</span></p>
     </div>
   </article>
 </section>
