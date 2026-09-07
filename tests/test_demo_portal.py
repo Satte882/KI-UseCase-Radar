@@ -80,6 +80,8 @@ def test_sales_conversation_case_matches_management_reference_structure(client, 
     assert 'class="sci-data-graph"' in body
     assert 'class="sci-architecture"' in body
     assert 'class="sci-gates"' in body
+    assert "sales-conversation-viewer.css" in body
+    assert "sales-conversation-viewer.js" in body
     assert "sci-deck-nav" not in body
     assert "sci-process-line" not in body
     assert "sci-pipeline" not in body
