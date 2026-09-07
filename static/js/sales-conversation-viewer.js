@@ -145,16 +145,18 @@
     });
   }
 
-  function drawDataConnector() {
+  function drawDataConnectors() {
     const container = document.querySelector("#sci-slide-2 .sci-data-graph");
     if (!container || container.closest(".sci-slide-shell")?.hidden) return;
 
+    const sources = container.querySelector(".sci-source-grid");
     const join = container.querySelector(".sci-icon-circle.join");
     const outcome = container.querySelector(".sci-outcome .sci-icon-circle.amber");
-    if (!join || !outcome) return;
+    if (!sources || !join || !outcome) return;
 
     const layer = createConnectorLayer(container, "sci-data-connectors");
     if (!layer) return;
+    drawArrow(layer.svg, layer.rect, sources, join, "#8ea4b5", 2.15);
     drawArrow(layer.svg, layer.rect, join, outcome, "#7790a3", 2.2);
   }
 
@@ -177,7 +179,7 @@
       },
     );
 
-    drawDataConnector();
+    drawDataConnectors();
   }
 
   function scheduleConnectorDraw() {
