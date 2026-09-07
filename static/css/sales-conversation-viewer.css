@@ -215,7 +215,8 @@
 /* Connector layers: actual vectors are drawn from live DOM geometry in JS. */
 .sci-flow,
 .sci-data-graph,
-.sci-architecture {
+.sci-architecture,
+.sci-gates {
   position: relative;
 }
 
@@ -232,7 +233,10 @@
 .sci-flow-step,
 .sci-arch-step,
 .sci-join-wrap,
-.sci-outcome {
+.sci-outcome,
+.sci-gate-stage,
+.sci-decision,
+.sci-final {
   position: relative;
   z-index: 5;
 }
@@ -253,8 +257,7 @@
   text-align: center;
 }
 
-/* Data model: remove ambiguous source-to-source rules. The relevant
-   join-to-outcome direction is rendered as a real vector connector. */
+/* Data model: all reference-style merge lines are rendered as SVG paths. */
 .sci-source::after {
   display: none;
 }
@@ -288,35 +291,111 @@
   background: var(--sci-amber);
 }
 
-/* Slide 4: render a deliberate right-going continuation instead of a glyph arrow. */
-.sci-go {
+/* Slide 4: reference-aligned stage-gate geometry. The SVG layer draws
+   the horizontal Ja-paths, vertical Stop-paths and the final investment arrow. */
+.sci-gates {
+  grid-template-columns: 22.5cqw 7.4cqw 22.5cqw 7.4cqw 22.5cqw 7.1cqw;
+  align-items: start;
+  margin-top: 3.05cqw;
+}
+
+.sci-gate-stage {
+  display: grid;
+  grid-template-columns: 4.2cqw minmax(0, 1fr);
+  grid-template-rows: auto auto auto;
+  column-gap: 1.35cqw;
+  align-items: start;
+  min-width: 0;
+}
+
+.sci-gate-stage-head {
+  display: contents;
+}
+
+.sci-gate-stage .sci-gate-num {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  align-self: start;
+  margin-top: 1.3cqw;
+}
+
+.sci-gate-stage .sci-kicker {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: end;
+  min-height: 1.15cqw;
+}
+
+.sci-gate-q {
+  grid-column: 2;
+  grid-row: 2;
+  margin: .78cqw 0 0;
+  font-size: 1.22cqw;
+  line-height: 1.3;
+}
+
+.sci-gate-note {
+  grid-column: 2;
+  grid-row: 3;
+  margin: 1.5cqw 0 0;
+  font-size: .92cqw;
+  line-height: 1.35;
+}
+
+.sci-decision {
   position: relative;
-  width: 4.6cqw;
-  padding-right: 2.5cqw;
+  display: block;
+  align-self: start;
+  min-height: 14.8cqw;
+  padding-top: 1.325cqw;
+}
+
+.sci-diamond {
+  position: relative;
+  z-index: 7;
+  margin-inline: auto;
+}
+
+.sci-go {
+  position: absolute;
+  z-index: 7;
+  top: 1.02cqw;
+  left: calc(50% + 2.65cqw);
+  width: auto;
+  padding: .06cqw .25cqw;
+  color: #647d91;
+  background: var(--sci-bg);
+  font-size: .9cqw;
   white-space: nowrap;
 }
 
-.sci-go::before {
-  position: absolute;
-  top: 50%;
-  right: .55cqw;
-  width: 1.55cqw;
-  height: .1cqw;
-  content: "";
-  background: var(--sci-blue);
-  transform: translateY(-50%);
+.sci-go::before,
+.sci-go::after {
+  display: none !important;
+  content: none !important;
 }
 
-.sci-go::after {
+.sci-stop {
   position: absolute;
-  top: 50%;
-  right: .48cqw;
-  width: .42cqw;
-  height: .42cqw;
-  border-top: .11cqw solid var(--sci-blue);
-  border-right: .11cqw solid var(--sci-blue);
-  content: "";
-  transform: translateY(-50%) rotate(45deg);
+  z-index: 7;
+  top: 8.85cqw;
+  left: 50%;
+  color: transparent;
+  background: var(--sci-bg);
+  font-size: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.sci-stop::after {
+  color: #647d91;
+  content: "Stop";
+  font-size: 1.0cqw;
+}
+
+.sci-final {
+  align-self: start;
+  padding-top: .8cqw;
 }
 
 @media (max-width: 1180px) {
