@@ -21,11 +21,4 @@ def procurement_case(request):
 
 @login_required
 def sales_conversation_case(request):
-    return render(
-        request,
-        "portal/case_placeholder.html",
-        {
-            "case_kind": "Use Case",
-            "case_title": "Use Case: Sales Conversation Intelligence",
-        },
-    )
+    return render(request, "portal/sales_conversation_case.html")
