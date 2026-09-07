@@ -1,48 +1,38 @@
-{% extends "base.html" %}
-{% load static %}
+{% extends "portal/presentation_base.html" %}
 
-{% block title %}Start – KI-Ideenwerkstatt{% endblock %}
-{% block body_class %}page-demo-portal{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/demo-portal.css' %}">{% endblock %}
+{% block title %}RSD Demo – KI-Ideenwerkstatt{% endblock %}
+{% block body_class %}presentation-home{% endblock %}
 
 {% block content %}
-<section class="demo-portal" aria-labelledby="demo-portal-title">
-  <header class="demo-portal-header">
-    <span class="eyebrow">KI-Ideenwerkstatt</span>
-    <h1 class="page-title" id="demo-portal-title">Start</h1>
-    <p class="page-subtitle">Projektbeispiele und Anwendung direkt aus einer geschützten Übersicht öffnen.</p>
-  </header>
-
-  <nav class="demo-portal-entries" aria-label="Bereiche der KI-Ideenwerkstatt">
-    <a class="demo-portal-entry" href="{% url 'case-procurement' %}">
-      <span class="demo-portal-index" aria-hidden="true">01</span>
-      <span class="demo-portal-copy">
-        <span class="demo-portal-type">Projektbeispiel</span>
-        <strong>Projektbeispiel: Angebotsvergleich im Einkauf</strong>
-        <span>HTML-Präsentation zum Projektbeispiel aus dem Einkauf.</span>
-      </span>
-      <span class="demo-portal-arrow" aria-hidden="true">→</span>
-    </a>
-
-    <a class="demo-portal-entry" href="{% url 'case-sales-conversation' %}">
-      <span class="demo-portal-index" aria-hidden="true">02</span>
-      <span class="demo-portal-copy">
-        <span class="demo-portal-type">Use Case</span>
-        <strong>Use Case: Sales Conversation Intelligence</strong>
-        <span>HTML-Präsentation des Sales-Conversation-Intelligence-Konzepts.</span>
-      </span>
-      <span class="demo-portal-arrow" aria-hidden="true">→</span>
-    </a>
-
-    <a class="demo-portal-entry demo-portal-entry-app" href="{% url 'reporting:dashboard' %}">
-      <span class="demo-portal-index" aria-hidden="true">03</span>
-      <span class="demo-portal-copy">
-        <span class="demo-portal-type">Anwendung</span>
-        <strong>Anwendung: KI-Use-Case-Radar</strong>
-        <span>Die eigentliche Anwendung mit Arbeitsvorrat, Portfolio und Use-Case-Journey öffnen.</span>
-      </span>
-      <span class="demo-portal-arrow" aria-hidden="true">→</span>
-    </a>
-  </nav>
+<section class="presentation-hero" aria-labelledby="presentation-title">
+  <p class="presentation-kicker">Interview-Demo · RSD Reise Service Deutschland</p>
+  <h1 id="presentation-title">KI-Projektbeispiele &amp; Anwendung</h1>
+  <p class="presentation-lead">Drei Einstiege auf gleicher Ebene: zwei kompakte HTML-Präsentationen und die eigentliche KI-Ideenwerkstatt.</p>
 </section>
+
+<nav class="presentation-card-grid" aria-label="Bereiche der RSD Demo">
+  <a class="presentation-card" href="{% url 'case-procurement' %}">
+    <span class="presentation-card-number" aria-hidden="true">01</span>
+    <span class="presentation-card-type">Projektbeispiel</span>
+    <h2>Projektbeispiel: Angebotsvergleich im Einkauf</h2>
+    <p>HTML-Präsentation eines konkreten KI-/Automatisierungsprojekts aus dem Einkauf.</p>
+    <span class="presentation-card-action">Präsentation öffnen <span aria-hidden="true">→</span></span>
+  </a>
+
+  <a class="presentation-card" href="{% url 'case-sales-conversation' %}">
+    <span class="presentation-card-number" aria-hidden="true">02</span>
+    <span class="presentation-card-type">Use Case für RSD</span>
+    <h2>Use Case: Sales Conversation Intelligence</h2>
+    <p>Konzept für die KI-gestützte Auswertung von Verkaufsgesprächen und systematische Voice-of-Customer-Erkenntnisse.</p>
+    <span class="presentation-card-action">Präsentation öffnen <span aria-hidden="true">→</span></span>
+  </a>
+
+  <a class="presentation-card" href="{% url 'reporting:dashboard' %}">
+    <span class="presentation-card-number" aria-hidden="true">03</span>
+    <span class="presentation-card-type">Anwendung</span>
+    <h2>Anwendung: KI-Use-Case-Radar</h2>
+    <p>Die eigentliche KI-Ideenwerkstatt mit Arbeitsvorrat, Portfolio und durchgängiger Use-Case-Journey.</p>
+    <span class="presentation-card-action">Anwendung öffnen <span aria-hidden="true">→</span></span>
+  </a>
+</nav>
 {% endblock %}
