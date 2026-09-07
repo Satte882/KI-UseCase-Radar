@@ -8,6 +8,7 @@
   <title>{% block title %}RSD Demo – KI-Ideenwerkstatt{% endblock %}</title>
   <link rel="icon" href="{% static 'favicon.svg' %}" type="image/svg+xml">
   <link rel="stylesheet" href="{% static 'css/demo-portal.css' %}">
+  {% block extra_head %}{% endblock %}
 </head>
 <body class="presentation-page {% block body_class %}{% endblock %}">
   <header class="presentation-topbar">
