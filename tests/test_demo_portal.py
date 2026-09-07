@@ -36,17 +36,39 @@ def test_existing_dashboard_url_is_preserved(client, reader):
     assert client.get(reverse("reporting:dashboard")).status_code == 200
 
 
-def test_case_routes_are_protected_and_ready_for_follow_up_content(client, reader):
+def test_case_routes_are_protected_and_procurement_remains_placeholder(client, reader):
     for route_name in ("case-procurement", "case-sales-conversation"):
         anonymous_response = client.get(reverse(route_name))
         assert anonymous_response.status_code == 302
         assert anonymous_response.url.startswith(reverse("accounts:login"))
 
     client.force_login(reader)
-    for route_name in ("case-procurement", "case-sales-conversation"):
-        response = client.get(reverse(route_name))
-        assert response.status_code == 200
-        assert "In Vorbereitung" in response.content.decode()
+    response = client.get(reverse("case-procurement"))
+
+    assert response.status_code == 200
+    assert "In Vorbereitung" in response.content.decode()
+
+
+def test_sales_conversation_case_is_four_slide_web_presentation(client, reader):
+    client.force_login(reader)
+
+    response = client.get(reverse("case-sales-conversation"))
+    body = response.content.decode()
+
+    assert response.status_code == 200
+    assert "In Vorbereitung" not in body
+    for slide_number in range(1, 5):
+        assert f'id="sci-slide-{slide_number}"' in body
+
+    assert "Warum wird aus einem Beratungsgespräch eine Buchung" in body
+    assert "oder nicht?" in body
+    assert "Der Case steht und fällt mit der Datenbasis." in body
+    assert "Für den Pilot reicht eine schlanke Datenpipeline." in body
+    assert "Investieren erst nach drei Belegen." in body
+    assert "Gate 1 negativ?" in body
+    assert "2-wöchiger Data-&-Legal-Feasibility-Check" in body
+    assert "6%" not in body
+    assert "14%" not in body
 
 
 def test_authenticated_shell_exposes_small_home_control(client, reader):
