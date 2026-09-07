@@ -65,22 +65,25 @@ def test_sales_conversation_case_is_four_slide_web_presentation(client, reader):
     assert "Schlanker Pilot statt KI-Plattform." in body
     assert "Investieren erst nach drei Belegen." in body
     assert "Gate 1 negativ?" in body
-    assert "2-wöchiger Data-&-Legal-Feasibility-Check" in body
+    assert "2-wöchiger Data-&amp;-Legal-Feasibility-Check" in body
     assert "6%" not in body
     assert "14%" not in body
 
 
-def test_sales_conversation_case_uses_information_visualizations_not_card_grids(client, reader):
+def test_sales_conversation_case_matches_management_reference_structure(client, reader):
     client.force_login(reader)
 
     body = client.get(reverse("case-sales-conversation")).content.decode()
 
-    assert 'class="sci-process-line"' in body
-    assert 'class="sci-data-map"' in body
-    assert 'class="sci-pipeline"' in body
-    assert 'class="sci-gate-line"' in body
-    assert "sci-flow-node" not in body
-    assert "sci-panel" not in body
+    assert body.count('class="sci-slide-shell"') == 4
+    assert 'class="sci-flow"' in body
+    assert 'class="sci-data-graph"' in body
+    assert 'class="sci-architecture"' in body
+    assert 'class="sci-gates"' in body
+    assert "sci-deck-nav" not in body
+    assert "sci-process-line" not in body
+    assert "sci-pipeline" not in body
+    assert "sci-gate-line" not in body
 
 
 def test_authenticated_shell_exposes_small_home_control(client, reader):
