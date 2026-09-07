@@ -3,7 +3,11 @@
 
 {% block title %}Sales Conversation Intelligence – RSD Demo{% endblock %}
 {% block body_class %}presentation-case presentation-case-sales{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'css/sales-conversation-case.css' %}">{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/sales-conversation-case.css' %}">
+<link rel="stylesheet" href="{% static 'css/sales-conversation-viewer.css' %}">
+<script defer src="{% static 'js/sales-conversation-viewer.js' %}"></script>
+{% endblock %}
 
 {% block content %}
 <a class="sci-back-link" href="{% url 'demo-portal' %}">Zur Übersicht</a>
