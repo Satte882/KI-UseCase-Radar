@@ -1,0 +1,364 @@
+/* Presentation viewer for the Sales Conversation Intelligence case.
+   Keeps the approved 16:9 slide design intact while removing free page scrolling. */
+
+.presentation-page.presentation-case-sales {
+  width: 100vw;
+  height: 100svh;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+.presentation-case-sales .presentation-main {
+  width: 100vw;
+  height: 100svh;
+  overflow: hidden;
+}
+
+.sci-deck {
+  --sci-nav-width: 9.75rem;
+  display: grid;
+  grid-template-columns: var(--sci-nav-width) minmax(0, 1fr);
+  width: 100vw;
+  height: 100svh;
+  overflow: hidden;
+  background: var(--sci-page);
+}
+
+.sci-stage {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  height: 100svh;
+  place-items: center;
+  overflow: hidden;
+}
+
+.sci-slide-shell {
+  display: none;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  place-items: center;
+  padding: 0;
+}
+
+.sci-slide-shell.is-active {
+  display: grid;
+}
+
+.sci-slide {
+  width: min(calc(100vw - var(--sci-nav-width)), calc(100svh * 16 / 9));
+  max-width: 100%;
+  max-height: 100svh;
+}
+
+.sci-back-link {
+  display: none !important;
+}
+
+/* Left presentation rail */
+.sci-slide-nav {
+  position: relative;
+  z-index: 30;
+  display: flex;
+  height: 100svh;
+  flex-direction: column;
+  padding: 1.4rem .8rem 1rem;
+  border-right: 1px solid #cad5dc;
+  background: #f2f5f6;
+  color: var(--sci-navy);
+  font-family: "Segoe UI", Aptos, Arial, sans-serif;
+}
+
+.sci-nav-eyebrow {
+  margin: 0 .55rem .35rem;
+  color: #728696;
+  font-size: .68rem;
+  font-weight: 750;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.sci-nav-title {
+  margin: 0 .55rem 1.55rem;
+  color: #18354d;
+  font-size: .9rem;
+  font-weight: 700;
+  line-height: 1.28;
+}
+
+.sci-nav-list {
+  display: grid;
+  gap: .28rem;
+}
+
+.sci-nav-button {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2rem 1fr;
+  align-items: center;
+  width: 100%;
+  min-height: 3.35rem;
+  padding: .55rem .5rem .55rem .65rem;
+  border: 0;
+  color: #617586;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sci-nav-button::before {
+  position: absolute;
+  top: .45rem;
+  bottom: .45rem;
+  left: -.8rem;
+  width: 3px;
+  content: "";
+  background: transparent;
+}
+
+.sci-nav-number {
+  color: #708595;
+  font-size: .74rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+}
+
+.sci-nav-label {
+  font-size: .78rem;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.sci-nav-button:hover,
+.sci-nav-button:focus-visible {
+  color: var(--sci-navy);
+  background: #e8eef1;
+  outline: none;
+}
+
+.sci-nav-button.is-active {
+  color: var(--sci-navy);
+  background: #e4edf2;
+}
+
+.sci-nav-button.is-active::before {
+  background: var(--sci-blue);
+}
+
+.sci-nav-button.is-active .sci-nav-number {
+  color: var(--sci-blue);
+}
+
+.sci-nav-meta {
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid #d1dbe1;
+}
+
+.sci-nav-home {
+  display: block;
+  padding: .55rem .6rem;
+  color: #516b7d;
+  font-size: .75rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.sci-nav-home:hover,
+.sci-nav-home:focus-visible {
+  color: var(--sci-blue-dark);
+  outline: none;
+}
+
+.sci-nav-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .4rem;
+  margin-top: .5rem;
+}
+
+.sci-nav-control {
+  display: grid;
+  height: 2.15rem;
+  place-items: center;
+  border: 1px solid #c5d1d9;
+  color: #365269;
+  background: #f8fafb;
+  font-size: 1.15rem;
+  cursor: pointer;
+}
+
+.sci-nav-control:hover,
+.sci-nav-control:focus-visible {
+  border-color: #8fa7b8;
+  color: var(--sci-blue-dark);
+  background: #fff;
+  outline: none;
+}
+
+.sci-nav-control:disabled {
+  opacity: .32;
+  cursor: default;
+}
+
+.sci-nav-progress {
+  margin-top: .65rem;
+  color: #7c8f9d;
+  font-size: .67rem;
+  letter-spacing: .08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+/* Connector layers: actual vectors are drawn from live DOM geometry in JS. */
+.sci-flow,
+.sci-data-graph,
+.sci-architecture {
+  position: relative;
+}
+
+.sci-connector-layer {
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.sci-flow-step,
+.sci-arch-step,
+.sci-join-wrap,
+.sci-outcome {
+  position: relative;
+  z-index: 5;
+}
+
+/* Replace the old CSS chevrons on the business-effect chain. */
+.sci-flow-step:not(:last-child)::before,
+.sci-flow-step:not(:last-child)::after {
+  display: none;
+}
+
+.sci-flow-node {
+  position: relative;
+  z-index: 6;
+  margin-inline: auto;
+}
+
+.sci-flow-label {
+  text-align: center;
+}
+
+/* Data model: remove ambiguous source-to-source rules. The relevant
+   join-to-outcome direction is rendered as a real vector connector. */
+.sci-source::after {
+  display: none;
+}
+
+/* Replace text-like arrows inside the architecture with vector flow. */
+.sci-arch-step + .sci-arch-step::before,
+.sci-arch-step + .sci-arch-step::after {
+  display: none;
+}
+
+.sci-architecture {
+  gap: 1.45cqw;
+}
+
+.sci-zone {
+  position: relative;
+  z-index: 2;
+}
+
+.sci-arch-step .sci-icon-circle {
+  position: relative;
+  z-index: 6;
+  background: #f0f3f4;
+}
+
+.sci-arch-step .sci-icon-circle.blue {
+  background: var(--sci-blue);
+}
+
+.sci-arch-step .sci-icon-circle.amber {
+  background: var(--sci-amber);
+}
+
+/* Slide 4: render a deliberate right-going continuation instead of a glyph arrow. */
+.sci-go {
+  position: relative;
+  width: 4.6cqw;
+  padding-right: 2.5cqw;
+  white-space: nowrap;
+}
+
+.sci-go::before {
+  position: absolute;
+  top: 50%;
+  right: .55cqw;
+  width: 1.55cqw;
+  height: .1cqw;
+  content: "";
+  background: var(--sci-blue);
+  transform: translateY(-50%);
+}
+
+.sci-go::after {
+  position: absolute;
+  top: 50%;
+  right: .48cqw;
+  width: .42cqw;
+  height: .42cqw;
+  border-top: .11cqw solid var(--sci-blue);
+  border-right: .11cqw solid var(--sci-blue);
+  content: "";
+  transform: translateY(-50%) rotate(45deg);
+}
+
+@media (max-width: 1180px) {
+  .sci-deck { --sci-nav-width: 7.4rem; }
+  .sci-slide-nav { padding-inline: .55rem; }
+  .sci-nav-title { font-size: .78rem; }
+  .sci-nav-button { grid-template-columns: 1.65rem 1fr; padding-inline: .4rem; }
+  .sci-nav-label { font-size: .7rem; }
+}
+
+@media (max-width: 820px) {
+  .sci-deck { --sci-nav-width: 4rem; }
+  .sci-slide-nav { padding-inline: .35rem; }
+  .sci-nav-eyebrow,
+  .sci-nav-title,
+  .sci-nav-label,
+  .sci-nav-home { display: none; }
+  .sci-nav-button {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    padding: .45rem;
+  }
+  .sci-nav-button::before { left: -.35rem; }
+  .sci-nav-controls { grid-template-columns: 1fr; }
+}
+
+@media print {
+  .presentation-page.presentation-case-sales,
+  .presentation-case-sales .presentation-main,
+  .sci-deck,
+  .sci-stage {
+    width: auto;
+    height: auto;
+    overflow: visible;
+  }
+  .sci-deck { display: block; }
+  .sci-slide-nav { display: none; }
+  .sci-slide-shell,
+  .sci-slide-shell.is-active {
+    display: grid;
+    height: auto;
+    break-after: page;
+  }
+  .sci-slide { width: 100%; }
+}
