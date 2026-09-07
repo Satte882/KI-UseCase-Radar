@@ -18,12 +18,12 @@
         <strong>KI-Ideenwerkstatt</strong>
       </span>
     </a>
+    {% if request.resolver_match.url_name != 'demo-portal' %}
     <nav class="presentation-nav" aria-label="Präsentationsnavigation">
-      {% if request.resolver_match.url_name != 'demo-portal' %}
       <a href="{% url 'demo-portal' %}">Übersicht</a>
-      {% endif %}
       <a href="{% url 'reporting:dashboard' %}">KI-Use-Case-Radar</a>
     </nav>
+    {% endif %}
   </header>
 
   <main class="presentation-main">
