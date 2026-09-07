@@ -71,7 +71,8 @@ def test_authenticated_app_shell_exposes_large_rsd_demo_return_control(client, r
     body = response.content.decode()
 
     assert f'href="{reverse("demo-portal")}"' in body
-    assert 'aria-label="Zur Startseite"' in body
-    assert "RSD Demo" in TOKENS
+    assert 'aria-label="RSD Demo-Portal öffnen"' in body
+    assert "Demo-Portal" in body
+    assert 'aria-label="RSD Demo-Portal öffnen"' in TOKENS
     assert '../img/rsd-logo.svg' in TOKENS
     assert "min-height: 68px" in TOKENS
