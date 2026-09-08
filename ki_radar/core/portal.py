@@ -9,14 +9,7 @@ def demo_portal(request):
 
 @login_required
 def procurement_case(request):
-    return render(
-        request,
-        "portal/case_placeholder.html",
-        {
-            "case_kind": "Projektbeispiel",
-            "case_title": "Projektbeispiel: Angebotsvergleich im Einkauf",
-        },
-    )
+    return render(request, "portal/case_procurement.html")
 
 
 @login_required

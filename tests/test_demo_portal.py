@@ -37,7 +37,7 @@ def test_existing_dashboard_url_is_preserved(client, reader):
     assert client.get(reverse("reporting:dashboard")).status_code == 200
 
 
-def test_case_routes_are_protected_and_procurement_remains_placeholder(client, reader):
+def test_case_routes_are_protected_and_procurement_is_two_scene_presentation(client, reader):
     for route_name in ("case-procurement", "case-sales-conversation"):
         anonymous_response = client.get(reverse(route_name))
         assert anonymous_response.status_code == 302
@@ -45,9 +45,22 @@ def test_case_routes_are_protected_and_procurement_remains_placeholder(client, r
 
     client.force_login(reader)
     response = client.get(reverse("case-procurement"))
+    body = response.content.decode()
 
     assert response.status_code == 200
-    assert "In Vorbereitung" in response.content.decode()
+    assert "In Vorbereitung" not in body
+    assert body.count('class="procurement-slide"') == 2
+    assert 'id="procurement-slide-1"' in body
+    assert 'id="procurement-slide-2"' in body
+    assert "case-procurement.css" in body
+    assert "case-procurement.js" in body
+    assert "erst standardisieren, dann KI einsetzen" in body
+    assert "KI gezielt einsetzen" in body
+    assert "AI gezielt einsetzen" not in body
+    assert "5,0 → 2,8 Tage" in body
+    assert "\u201344 %" in body
+    assert "\u201370 %" in body
+    assert "KI bereitet vor, der Einkauf entscheidet." in body
 
 
 def test_sales_conversation_case_is_four_slide_web_presentation(client, reader):
