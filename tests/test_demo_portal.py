@@ -60,7 +60,7 @@ def test_case_routes_are_protected_and_procurement_is_two_scene_presentation(cli
     assert "5,0 → 2,8 Tage" in body
     assert "\u201344 %" in body
     assert "\u201370 %" in body
-    assert "KI bereitet vor \u2013 der Einkauf entscheidet." in body
+    assert "KI bereitet vor, der Einkauf entscheidet." in body
 
 
 def test_sales_conversation_case_is_four_slide_web_presentation(client, reader):
