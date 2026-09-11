@@ -4,8 +4,8 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
-from .models import DeliveryPackage
-from .readiness import evaluate_delivery_readiness
+from ki_radar.delivery.models import DeliveryPackage
+from ki_radar.delivery.readiness import evaluate_delivery_readiness
 
 
 ENFORCEMENT_FINDING_CODES = {"SECTION_BLOCKED"}
