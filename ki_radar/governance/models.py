@@ -46,7 +46,7 @@ class GovernanceAssessment(TimeStampedModel):
     legal_review_required = models.BooleanField(default=False)
     legal_review_rationale = models.TextField(blank=True)
     result = models.CharField(max_length=30, choices=Result.choices)
-    rationale = models.TextField()
+    rationale = models.TextField(blank=True)
     evidence_url = models.URLField(blank=True)
     next_assessment_date = models.DateField(null=True, blank=True)
     history = HistoricalRecords(inherit=True)
@@ -110,7 +110,7 @@ class GovernanceReview(TimeStampedModel):
         blank=True,
         default="",
     )
-    rationale = models.TextField()
+    rationale = models.TextField(blank=True)
     risks = models.TextField(blank=True)
     measures = models.TextField(blank=True)
     conditions = models.TextField(blank=True)
@@ -123,15 +123,10 @@ class GovernanceReview(TimeStampedModel):
     def clean(self):
         super().clean()
         errors = {}
-        rationale = self.rationale.strip()
         result = self.result.strip()
-        evidence_url = self.evidence_url.strip()
 
         if self.screening_id and self.screening.use_case_id != self.use_case_id:
             errors["screening"] = "Screening und Prüfartefakt müssen zum selben Use Case gehören."
-
-        if not rationale:
-            errors["rationale"] = "Eine Begründung ist für jeden Prüfstatus erforderlich."
 
         if self.status == self.Status.OPEN:
             if result:
@@ -149,17 +144,8 @@ class GovernanceReview(TimeStampedModel):
         elif self.status == self.Status.COMPLETED:
             if not result:
                 errors["result"] = "Für eine abgeschlossene Prüfung ist ein Ergebnis erforderlich."
-            if not evidence_url:
-                errors["evidence_url"] = (
-                    "Für eine abgeschlossene formale Prüfung ist ein Nachweis erforderlich."
-                )
             if result == self.Result.PASSED_WITH_CONDITIONS and not self.conditions.strip():
                 errors["conditions"] = "Auflagen müssen strukturiert dokumentiert werden."
-            if result == self.Result.FAILED:
-                if not self.risks.strip():
-                    errors["risks"] = "Bei 'Nicht bestanden' sind Risiken erforderlich."
-                if not self.measures.strip():
-                    errors["measures"] = "Bei 'Nicht bestanden' sind Maßnahmen erforderlich."
 
         if errors:
             raise ValidationError(errors)
