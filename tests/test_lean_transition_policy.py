@@ -118,7 +118,7 @@ def _empty_delivery_package(use_case, coordinator, decision):
 def test_direct_status_write_is_fenced(owner, coordinator, business_unit):
     use_case = _use_case(owner, business_unit)
 
-    with pytest.raises(ValidationError, match="reviews.services.create_review"):
+    with pytest.raises(ValidationError, match=r"reviews\.services\.create_review"):
         apply_status_transition(
             use_case=use_case,
             target_status=UseCase.Status.PILOT,
