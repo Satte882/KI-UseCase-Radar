@@ -4,12 +4,12 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.forms.models import construct_instance
 
-from .decision_forms import (
+from ki_radar.use_cases.decision_forms import (
     ApprovalDecisionForm as LegacyApprovalDecisionForm,
     DecisionAssessmentForm as LegacyDecisionAssessmentForm,
     SecondApprovalReviewForm as LegacySecondApprovalReviewForm,
 )
-from .models import UseCase
+from ki_radar.use_cases.models import UseCase
 
 
 class DecisionAssessmentForm(LegacyDecisionAssessmentForm):
