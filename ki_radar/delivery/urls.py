@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import ai_views, residual_views, views
+from . import ai_views, lean_views, residual_views, views
 
 app_name = "delivery"
 urlpatterns = [
@@ -35,7 +35,7 @@ urlpatterns = [
         views.package_resolve_technical_owner_source,
         name="package_resolve_technical_owner_source",
     ),
-    path("<uuid:pk>/ready/", views.package_mark_ready, name="package_mark_ready"),
-    path("<uuid:pk>/handover/", views.package_handover, name="package_handover"),
+    path("<uuid:pk>/ready/", lean_views.package_mark_ready, name="package_mark_ready"),
+    path("<uuid:pk>/handover/", lean_views.package_handover, name="package_handover"),
     path("<uuid:pk>/export.md", views.package_export_markdown, name="package_export_markdown"),
 ]
