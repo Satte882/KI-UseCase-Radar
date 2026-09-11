@@ -20,7 +20,11 @@ JourneyStep = workflow.JourneyStep
 _original_build_use_case = None
 
 
-def _state(journey: JourneyState, steps: list[JourneyStep], completion_message: str | None = None):
+def _state(
+    journey: JourneyState,
+    steps: list[JourneyStep],
+    completion_message: str | None = None,
+):
     return JourneyState(
         path_label=journey.path_label,
         steps=tuple(steps),
@@ -65,7 +69,8 @@ def _normalize_delivery(use_case: UseCase, user, journey: JourneyState) -> Journ
                     action_method="get",
                     reason=(
                         f"Delivery Package v{package.version} wurde verbindlich übergeben. "
-                        "Offene Readiness-Hinweise bleiben sichtbar, blockieren den Meilenstein aber nicht."
+                        "Offene Readiness-Hinweise bleiben sichtbar und blockieren "
+                        "den Meilenstein nicht."
                     ),
                     details=(),
                 )
@@ -81,7 +86,10 @@ def _normalize_delivery(use_case: UseCase, user, journey: JourneyState) -> Journ
                     url=package.get_absolute_url(),
                     action_label="Fachlichen Blocker öffnen",
                     action_method="get",
-                    reason="Mindestens eine Delivery-Sektion wurde ausdrücklich fachlich blockiert.",
+                    reason=(
+                        "Mindestens eine Delivery-Sektion wurde ausdrücklich "
+                        "fachlich blockiert."
+                    ),
                     details=tuple(finding.message for finding in enforcement),
                 )
             )
@@ -102,8 +110,9 @@ def _normalize_delivery(use_case: UseCase, user, journey: JourneyState) -> Journ
                     action_label="An Delivery übergeben" if allowed else "Delivery Package öffnen",
                     action_method="post" if allowed else "get",
                     reason=(
-                        "Das Package ist als bereit markiert. Offene Readiness-Hinweise verhindern "
-                        "die verbindliche Übergabe nicht; ein aktiver Technical Owner bleibt erforderlich."
+                        "Das Package ist als bereit markiert. Offene Readiness-Hinweise "
+                        "verhindern die verbindliche Übergabe nicht; ein aktiver "
+                        "Technical Owner bleibt erforderlich."
                     ),
                     details=(),
                 )
@@ -121,8 +130,8 @@ def _normalize_delivery(use_case: UseCase, user, journey: JourneyState) -> Journ
                     action_label="Als bereit markieren" if allowed else "Delivery Package öffnen",
                     action_method="post" if allowed else "get",
                     reason=(
-                        "Readiness-Hinweise sind offen. Sie bleiben sichtbar, blockieren die weitere "
-                        "Bearbeitung aber nicht."
+                        "Readiness-Hinweise sind offen. Sie bleiben sichtbar und blockieren "
+                        "die weitere Bearbeitung nicht."
                     ),
                     details=(),
                 )
@@ -169,7 +178,8 @@ def _normalize_deferred(use_case: UseCase, journey: JourneyState) -> JourneyStat
         journey,
         list(journey.steps),
         completion_message=(
-            "Zurückgestellt: Der Use Case bleibt geparkt und kann durch eine neue Bewertung reaktiviert werden."
+            "Zurückgestellt: Der Use Case bleibt geparkt und kann durch eine neue "
+            "Bewertung reaktiviert werden."
         ),
     )
 
