@@ -185,7 +185,10 @@ def _missing_fields(use_case: UseCase, field_names: list[str]) -> list[str]:
         value = getattr(use_case, field_name)
         if value in (None, ""):
             missing.append(
-                FIELD_LABELS.get(field_name, str(use_case._meta.get_field(field_name).verbose_name))
+                FIELD_LABELS.get(
+                    field_name,
+                    str(use_case._meta.get_field(field_name).verbose_name),
+                )
             )
     return missing
 
@@ -241,7 +244,7 @@ def check_go_live(
     *,
     allow_early_go_live_exception: bool = False,
 ) -> DecisionCheck:
-    del allow_early_go_live_exception  # planned end is readiness, not lifecycle enforcement
+    del allow_early_go_live_exception
     blockers: list[str] = []
     warnings: list[str] = []
     if use_case.status != UseCase.Status.PILOT:
@@ -276,7 +279,9 @@ def check_go_live(
             "Das Pilotziel wurde nicht erreicht. Ein Go-live benötigt eine ausdrückliche Ausnahme."
         )
     if use_case.planned_pilot_end and use_case.planned_pilot_end > timezone.localdate():
-        warnings.append("Das geplante Pilotende ist noch nicht erreicht; Evidenzlage bewusst prüfen.")
+        warnings.append(
+            "Das geplante Pilotende ist noch nicht erreicht; Evidenzlage bewusst prüfen."
+        )
     state = "blocked" if blockers else ("review" if warnings else "ready")
     return DecisionCheck(
         target_status=UseCase.Status.OPERATION,
@@ -398,7 +403,8 @@ def validate_pilot_start_date(*, use_case: UseCase, pilot_start: date | None) ->
     package = current_handed_over_package(use_case)
     if package is None:
         raise ValidationError(
-            "Der Pilot kann erst nach der verbindlichen Übergabe des aktuellen Delivery Packages gestartet werden."
+            "Der Pilot kann erst nach der verbindlichen Übergabe des aktuellen "
+            "Delivery Packages gestartet werden."
         )
     if pilot_start < timezone.localdate(package.handed_over_at):
         raise ValidationError(
@@ -425,7 +431,8 @@ def apply_status_transition(
 
     del use_case, target_status, actor, pilot_start, allow_early_go_live_exception
     raise ValidationError(
-        "Lifecycle-Statusänderungen sind ausschließlich über reviews.services.create_review zulässig."
+        "Lifecycle-Statusänderungen sind ausschließlich über "
+        "reviews.services.create_review zulässig."
     )
 
 
@@ -444,7 +451,7 @@ def approval_check(
     actor=None,
     governance_confirmed: bool = False,
 ) -> ApprovalCheck:
-    del governance_confirmed  # actual GovernanceAssessment is the source of truth
+    del governance_confirmed
     blockers: list[str] = []
     warnings: list[str] = []
 
@@ -453,8 +460,6 @@ def approval_check(
 
     assessment = use_case.decision_assessments.first()
     if assessment is None:
-        # The current data model links every ApprovalDecision to an assessment. Keep this as a
-        # structural prerequisite; negative decisions intentionally carry no further governance.
         blockers.append("Aktuelle strukturierte Bewertung")
         return ApprovalCheck(blockers=blockers)
 
@@ -463,7 +468,9 @@ def approval_check(
         if actor and assessment.assessed_by_id == actor.id:
             blockers.append("Bewertende und entscheidende Person müssen verschieden sein")
         if actor and use_case.business_owner_id == actor.id:
-            blockers.append("Fachlich verantwortliche und freigebende Person müssen verschieden sein")
+            blockers.append(
+                "Fachlich verantwortliche und freigebende Person müssen verschieden sein"
+            )
         if not use_case.governance_assessments.exists():
             blockers.append("Governance-Screening")
         blockers.extend(failed_required_governance_reviews(use_case))
@@ -477,13 +484,13 @@ def approval_check(
             warnings.append("Readiness offen: Datenreife ist niedrig")
         if assessment.risk_complexity == UseCase.Level.HIGH:
             warnings.append("Readiness offen: Risiko und Komplexität sind hoch")
-    else:
-        if actor and assessment.assessed_by_id == actor.id:
-            warnings.append("Hinweis: Bewertende und entscheidende Person sind identisch")
+    elif actor and assessment.assessed_by_id == actor.id:
+        warnings.append("Hinweis: Bewertende und entscheidende Person sind identisch")
 
     if assessment.recommendation != target_status:
         warnings.append(
-            "Die Entscheidung weicht von der Empfehlung der bewertenden Person ab und sollte begründet werden."
+            "Die Entscheidung weicht von der Empfehlung der bewertenden Person ab "
+            "und sollte begründet werden."
         )
 
     return ApprovalCheck(blockers=blockers, warnings=warnings)
@@ -494,7 +501,9 @@ def create_decision_assessment(*, use_case: UseCase, actor, data) -> DecisionAss
     if not is_coordinator(actor):
         raise PermissionDenied
     if use_case.status != UseCase.Status.REVIEW:
-        raise ValidationError("Eine strukturierte Bewertung ist ausschließlich im Status Review möglich.")
+        raise ValidationError(
+            "Eine strukturierte Bewertung ist ausschließlich im Status Review möglich."
+        )
     if use_case.decision_status == UseCase.DecisionStatus.NOT_PURSUED:
         raise ValidationError(
             "Nicht weiterverfolgt ist terminal. Ein neuer Anlauf wird als neuer Use Case erfasst."
@@ -508,7 +517,6 @@ def create_decision_assessment(*, use_case: UseCase, actor, data) -> DecisionAss
         version=version,
         **data,
     )
-    # Evidence links are advisory in the lean policy; field-level model types still protect data.
     assessment.save()
     use_case.business_value = assessment.business_value
     use_case.technical_feasibility = assessment.technical_feasibility
@@ -589,7 +597,8 @@ def submit_approval_decision(*, use_case: UseCase, actor, data) -> ApprovalDecis
         eligible = eligible_second_approvers(use_case=use_case, first_decider=actor)
         if assignee is None or not eligible.filter(pk=assignee.pk).exists():
             raise ValidationError(
-                "Für die Freigabe mit Auflagen muss eine unabhängige berechtigte Person zur Zweitprüfung benannt werden."
+                "Für die Freigabe mit Auflagen muss eine unabhängige berechtigte Person "
+                "zur Zweitprüfung benannt werden."
             )
         return _save_approval_decision(
             use_case=use_case,
