@@ -59,7 +59,10 @@ def approval_decision_create(request, pk):
     if use_case.status != UseCase.Status.REVIEW:
         messages.warning(
             request,
-            "Eine Portfolioentscheidung ohne Bewertung ist ausschließlich im Status Review möglich.",
+            (
+                "Eine Portfolioentscheidung ohne Bewertung ist ausschließlich "
+                "im Status Review möglich."
+            ),
         )
         return redirect(use_case)
 
@@ -97,7 +100,10 @@ def approval_decision_create(request, pk):
             except ValidationError as exc:
                 form.add_error(None, exc)
             else:
-                messages.success(request, "Die Portfolioentscheidung wurde verbindlich gespeichert.")
+                messages.success(
+                    request,
+                    "Die Portfolioentscheidung wurde verbindlich gespeichert.",
+                )
                 return redirect(return_to)
 
     check = approval_check(
