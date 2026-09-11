@@ -83,6 +83,12 @@ def _validate_review_transition(*, use_case: UseCase, actor, review_data: dict) 
     if decision == Review.Decision.GO_LIVE and use_case.status != UseCase.Status.PILOT:
         raise ValidationError("Ein Go-live ist ausschließlich aus dem Status Pilot möglich.")
 
+    if decision == Review.Decision.END and use_case.status not in {
+        UseCase.Status.PILOT,
+        UseCase.Status.OPERATION,
+    }:
+        raise ValidationError("Eine Beendigung ist ausschließlich aus Pilot oder Betrieb möglich.")
+
     exception_required = (
         decision == Review.Decision.GO_LIVE
         and use_case.metric_result == UseCase.MetricResult.NOT_ACHIEVED
