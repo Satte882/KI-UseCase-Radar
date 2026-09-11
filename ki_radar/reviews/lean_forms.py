@@ -67,12 +67,14 @@ class ReviewForm(LegacyReviewForm):
                 "Lifecycle-Rückstufungen sind nicht mehr vorgesehen; bitte Rework verwenden.",
             )
 
-        if decision in {Review.Decision.PAUSE, Review.Decision.REWORK, Review.Decision.CONTINUE}:
-            if new_status != self.use_case.status:
-                self.add_error(
-                    "new_status",
-                    "Fortführen, Pausieren und Überarbeiten ändern den Lifecycle-Status nicht.",
-                )
+        if (
+            decision in {Review.Decision.PAUSE, Review.Decision.REWORK, Review.Decision.CONTINUE}
+            and new_status != self.use_case.status
+        ):
+            self.add_error(
+                "new_status",
+                "Fortführen, Pausieren und Überarbeiten ändern den Lifecycle-Status nicht.",
+            )
 
         if decision == Review.Decision.START_PILOT:
             pilot_start = cleaned.get("pilot_start")
