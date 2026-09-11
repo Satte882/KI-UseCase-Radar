@@ -13,7 +13,7 @@ from ki_radar.accounts.models import BusinessUnit
 from ki_radar.accounts.permissions import is_business_owner
 from ki_radar.core.taxonomy import BusinessDomain
 
-from .intake import WIZARD_STEPS
+from .lean_intake import WIZARD_STEPS
 from .models import UseCase
 from .permissions import can_create_use_case
 from .services import intake_blockers
@@ -126,38 +126,39 @@ def _wizard_step_states(
 
 
 def _build_use_case(*, stored: dict, user, business_owner) -> UseCase:
+    affected_process = stored.get("affected_process", "")
     candidate = UseCase(
         title=stored["title"],
-        summary=stored["summary"],
-        problem_statement=stored["problem_statement"],
+        summary=stored.get("summary", ""),
+        problem_statement=stored.get("problem_statement", ""),
         business_unit=get_object_or_404(BusinessUnit, pk=stored["business_unit"]),
-        affected_process=stored["affected_process"],
-        target_users=stored["target_users"],
+        affected_process=affected_process,
+        target_users=stored.get("target_users", ""),
         submitter=user,
         business_owner=business_owner,
         source_systems=stored.get("source_systems", ""),
-        data_sources=stored["data_sources"],
-        intended_users=stored["intended_users"],
-        intended_purpose=stored["intended_purpose"],
-        expected_benefit=stored["expected_benefit"],
-        metric_name=stored["metric_name"],
-        metric_type=stored["metric_type"],
-        metric_direction=stored["metric_direction"],
-        metric_unit=stored["metric_unit"],
+        data_sources=stored.get("data_sources", ""),
+        intended_users=stored.get("intended_users", ""),
+        intended_purpose=stored.get("intended_purpose", ""),
+        expected_benefit=stored.get("expected_benefit", ""),
+        metric_name=stored.get("metric_name", ""),
+        metric_type=stored.get("metric_type", ""),
+        metric_direction=stored.get("metric_direction", ""),
+        metric_unit=stored.get("metric_unit", ""),
         metric_baseline=_optional_decimal(stored.get("metric_baseline")),
         metric_target=_optional_decimal(stored.get("metric_target")),
-        metric_measurement_method=stored["metric_measurement_method"],
+        metric_measurement_method=stored.get("metric_measurement_method", ""),
         privacy_review_required=stored.get("privacy_review_required", False),
         security_review_required=stored.get("security_review_required", False),
         legal_review_required=stored.get("legal_review_required", False),
-        solution_type=stored["solution_type"],
-        hosting_type=stored["hosting_type"],
+        solution_type=stored.get("solution_type", ""),
+        hosting_type=stored.get("hosting_type", ""),
         decision_status=UseCase.DecisionStatus.READY,
     )
     candidate._classification_payload = {
-        "business_domain": stored.get("business_domain", BusinessDomain.OTHER),
+        "business_domain": stored.get("business_domain") or BusinessDomain.OTHER,
         "capability": stored.get("business_capability", ""),
-        "process_area": stored["affected_process"],
+        "process_area": affected_process,
     }
     return candidate
 
