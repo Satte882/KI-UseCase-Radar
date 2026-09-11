@@ -173,7 +173,10 @@ def approval_decision_create(request, pk):
             if hard_check.blockers:
                 form.add_error(
                     None,
-                    "Die Entscheidung ist nicht ausführbar, solange harte Voraussetzungen offen sind.",
+                    (
+                        "Die Entscheidung ist nicht ausführbar, solange harte "
+                        "Voraussetzungen offen sind."
+                    ),
                 )
             else:
                 try:
@@ -189,7 +192,8 @@ def approval_decision_create(request, pk):
                         messages.info(
                             request,
                             "Die Freigabe mit Auflagen wurde zur unabhängigen Zweitprüfung "
-                            f"an {decision.second_approval_assignee.get_display_name()} zugewiesen.",
+                            f"an {decision.second_approval_assignee.get_display_name()} "
+                            "zugewiesen.",
                         )
                     else:
                         messages.success(request, "Die Entscheidung wurde verbindlich gespeichert.")
@@ -273,7 +277,10 @@ def second_approval_review(request, decision_id):
                         actor=request.user,
                         reason=form.cleaned_data.get("return_reason", ""),
                     )
-                    messages.info(request, "Die Entscheidung wurde zur Überarbeitung zurückgegeben.")
+                    messages.info(
+                        request,
+                        "Die Entscheidung wurde zur Überarbeitung zurückgegeben.",
+                    )
             except (PermissionDenied, ValidationError) as exc:
                 form.add_error(None, exc)
             else:
