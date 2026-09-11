@@ -3,7 +3,6 @@ from __future__ import annotations
 from django import forms
 from django.core.exceptions import ValidationError
 from django.forms.models import construct_instance
-
 from ki_radar.use_cases.decision_forms import (
     ApprovalDecisionForm as LegacyApprovalDecisionForm,
     DecisionAssessmentForm as LegacyDecisionAssessmentForm,
