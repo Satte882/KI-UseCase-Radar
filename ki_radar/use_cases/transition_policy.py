@@ -23,15 +23,9 @@ class TransitionRule:
 
 
 COMMAND_RULES: dict[str, TransitionRule] = {
-    "start_review": TransitionRule(
-        frozenset({UseCase.Status.IDEA}), UseCase.Status.REVIEW, True
-    ),
-    "start_pilot": TransitionRule(
-        frozenset({UseCase.Status.REVIEW}), UseCase.Status.PILOT, True
-    ),
-    "go_live": TransitionRule(
-        frozenset({UseCase.Status.PILOT}), UseCase.Status.OPERATION, True
-    ),
+    "start_review": TransitionRule(frozenset({UseCase.Status.IDEA}), UseCase.Status.REVIEW, True),
+    "start_pilot": TransitionRule(frozenset({UseCase.Status.REVIEW}), UseCase.Status.PILOT, True),
+    "go_live": TransitionRule(frozenset({UseCase.Status.PILOT}), UseCase.Status.OPERATION, True),
     "end": TransitionRule(
         frozenset({UseCase.Status.PILOT, UseCase.Status.OPERATION}),
         UseCase.Status.ENDED,
