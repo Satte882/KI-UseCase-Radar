@@ -103,6 +103,12 @@ def assessment_create(request, pk):
         raise PermissionDenied
     use_case = get_object_or_404(_decision_use_case_queryset(), pk=pk)
     return_to = requested_return_to(request, use_case.get_absolute_url())
+    if use_case.status != UseCase.Status.REVIEW:
+        messages.warning(
+            request,
+            "Eine strukturierte Bewertung ist ausschließlich im Status Review möglich.",
+        )
+        return redirect(use_case.get_absolute_url())
     if request.method == "POST":
         form = DecisionAssessmentForm(request.POST)
         if form.is_valid():
