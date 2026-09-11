@@ -35,7 +35,10 @@ def _state(
     return JourneyState(
         path_label=journey.path_label,
         steps=tuple(steps),
-        next_action=next((step for step in steps if step.state in {"current", "blocked"}), None),
+        next_action=next(
+            (step for step in steps if step.state in {"current", "blocked"}),
+            None,
+        ),
         completion_message=(
             journey.completion_message if completion_message is None else completion_message
         ),
