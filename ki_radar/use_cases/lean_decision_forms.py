@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from django import forms
 from django.core.exceptions import ValidationError
 from django.forms.models import construct_instance
@@ -18,13 +20,13 @@ class DecisionAssessmentForm(LegacyDecisionAssessmentForm):
         self.fields["evidence_url"].required = False
         self.fields["evidence_url"].widget.attrs["aria-required"] = "false"
         self.fields["evidence_url"].help_text = (
-            "Nachweislink empfohlen. Eine Bewertung kann auch ohne Link gespeichert und später ergänzt werden."
+            "Nachweislink empfohlen. Eine Bewertung kann auch ohne Link gespeichert "
+            "und später ergänzt werden."
         )
 
     def _post_clean(self):
         # Form fields already validate their data types. Skip DecisionAssessment.clean(), whose
         # former evidence-link hard gate is intentionally Advisory in #403.
-        exclude = self._get_validation_exclusions()
         try:
             self.instance = construct_instance(
                 self,
