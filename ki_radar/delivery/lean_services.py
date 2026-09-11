@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
@@ -20,7 +22,7 @@ def delivery_enforcement_findings(package: DeliveryPackage):
 
 
 def delivery_readiness_findings(package: DeliveryPackage):
-    """Keep the complete evaluator as decision support without turning it into a hard gate."""
+    """Keep the complete evaluator as decision support without making it a hard gate."""
 
     return evaluate_delivery_readiness(package)
 
@@ -42,11 +44,15 @@ def mark_package_ready(package: DeliveryPackage) -> None:
 
 @transaction.atomic
 def hand_over_package(package: DeliveryPackage, actor) -> None:
-    package = DeliveryPackage.objects.select_for_update().select_related("technical_owner").get(
-        pk=package.pk
+    package = (
+        DeliveryPackage.objects.select_for_update()
+        .select_related("technical_owner")
+        .get(pk=package.pk)
     )
     if package.status != DeliveryPackage.Status.READY:
-        raise ValidationError("Nur ein als bereit markiertes Delivery Package kann übergeben werden.")
+        raise ValidationError(
+            "Nur ein als bereit markiertes Delivery Package kann übergeben werden."
+        )
     if package.technical_owner_id is None or not package.technical_owner.is_active:
         raise ValidationError(
             "Vor der verbindlichen Übergabe muss ein aktiver Technical Owner benannt sein."
