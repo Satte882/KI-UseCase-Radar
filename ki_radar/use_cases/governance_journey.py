@@ -70,8 +70,7 @@ def _governance_step(use_case: UseCase, user) -> JourneyStep:
             label="Governance",
             state="upcoming",
             reason=(
-                "Governance kann nach der strukturierten Bewertung "
-                "risikobasiert ergänzt werden."
+                "Governance kann nach der strukturierten Bewertung risikobasiert ergänzt werden."
             ),
         )
 
