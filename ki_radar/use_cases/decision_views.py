@@ -10,12 +10,12 @@ from ki_radar.accounts.permissions import is_coordinator
 from ki_radar.core.navigation import requested_return_to, with_return_to
 
 from .blockers import build_blocker_details
-from .decision_forms import (
+from .governance_status import build_governance_statuses
+from .lean_decision_forms import (
     ApprovalDecisionForm,
     DecisionAssessmentForm,
     SecondApprovalReviewForm,
 )
-from .governance_status import build_governance_statuses
 from .models import ApprovalDecision, UseCase
 from .services import (
     approval_check,
@@ -112,17 +112,21 @@ def assessment_create(request, pk):
     if request.method == "POST":
         form = DecisionAssessmentForm(request.POST)
         if form.is_valid():
-            assessment = create_decision_assessment(
-                use_case=use_case,
-                actor=request.user,
-                data=form.cleaned_data,
-            )
-            messages.success(
-                request,
-                f"Bewertung v{assessment.version} wurde gespeichert. Confidence: "
-                f"{assessment.confidence_label}.",
-            )
-            return redirect(return_to)
+            try:
+                assessment = create_decision_assessment(
+                    use_case=use_case,
+                    actor=request.user,
+                    data=form.cleaned_data,
+                )
+            except ValidationError as exc:
+                form.add_error(None, exc)
+            else:
+                messages.success(
+                    request,
+                    f"Bewertung v{assessment.version} wurde gespeichert. Confidence: "
+                    f"{assessment.confidence_label}.",
+                )
+                return redirect(return_to)
     else:
         form = DecisionAssessmentForm()
     journey = build_use_case_journey(use_case, request.user)
@@ -169,8 +173,7 @@ def approval_decision_create(request, pk):
             if hard_check.blockers:
                 form.add_error(
                     None,
-                    "Die Entscheidung ist nicht ausführbar, solange harte "
-                    "Voraussetzungen offen sind.",
+                    "Die Entscheidung ist nicht ausführbar, solange harte Voraussetzungen offen sind.",
                 )
             else:
                 try:
@@ -186,14 +189,10 @@ def approval_decision_create(request, pk):
                         messages.info(
                             request,
                             "Die Freigabe mit Auflagen wurde zur unabhängigen Zweitprüfung "
-                            f"an {decision.second_approval_assignee.get_display_name()} "
-                            "zugewiesen.",
+                            f"an {decision.second_approval_assignee.get_display_name()} zugewiesen.",
                         )
                     else:
-                        messages.success(
-                            request,
-                            "Die Entscheidung wurde verbindlich gespeichert.",
-                        )
+                        messages.success(request, "Die Entscheidung wurde verbindlich gespeichert.")
                     return redirect(return_to)
     else:
         form = ApprovalDecisionForm(
@@ -272,9 +271,9 @@ def second_approval_review(request, decision_id):
                     return_conditional_decision(
                         decision=decision,
                         actor=request.user,
-                        reason=form.cleaned_data["return_reason"],
+                        reason=form.cleaned_data.get("return_reason", ""),
                     )
-                    messages.info(request, "Die Entscheidung wurde begründet zurückgegeben.")
+                    messages.info(request, "Die Entscheidung wurde zur Überarbeitung zurückgegeben.")
             except (PermissionDenied, ValidationError) as exc:
                 form.add_error(None, exc)
             else:
