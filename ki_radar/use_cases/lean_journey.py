@@ -126,8 +126,7 @@ def _normalize_delivery(use_case: UseCase, user, journey: JourneyState) -> Journ
                     action_label="Fachlichen Blocker öffnen",
                     action_method="get",
                     reason=(
-                        "Mindestens eine Delivery-Sektion wurde ausdrücklich "
-                        "fachlich blockiert."
+                        "Mindestens eine Delivery-Sektion wurde ausdrücklich fachlich blockiert."
                     ),
                     details=tuple(finding.message for finding in enforcement),
                 )
