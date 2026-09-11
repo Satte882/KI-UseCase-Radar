@@ -9,6 +9,7 @@ class UseCasesConfig(AppConfig):
         from . import classification  # noqa: F401
         from .governance_journey import install as install_governance_journey
         from .lean_journey import install as install_lean_journey
+        from .lean_outcome import install as install_lean_outcome
         from .primary_actions import install as install_primary_actions
         from .value_stream_journey import install as install_value_stream_journey
         from .workflow import install
@@ -18,3 +19,4 @@ class UseCasesConfig(AppConfig):
         install_governance_journey()
         install_primary_actions()
         install_lean_journey()
+        install_lean_outcome()
