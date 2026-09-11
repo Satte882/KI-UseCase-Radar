@@ -13,11 +13,12 @@ from ki_radar.use_cases.outcome_workspace import (
     build_outcome_workspace_journey,
     outcome_workspace_url,
 )
-from ki_radar.use_cases.permissions import can_start_pilot
+from ki_radar.use_cases.permissions import can_end_use_case, can_start_pilot
 from ki_radar.use_cases.scale_readiness import evaluate_scale_readiness
 from ki_radar.use_cases.services import current_decision_check
 
-from .forms import ReviewForm
+from .lean_forms import ReviewForm
+from .models import Review
 from .services import create_review
 
 
@@ -26,17 +27,27 @@ def review_create(request, use_case_id):
     use_case = get_object_or_404(
         UseCase.objects.select_related("business_owner", "technical_owner").prefetch_related(
             "governance_assessments",
+            "governance_reviews",
             "delivery_packages",
         ),
         pk=use_case_id,
     )
     requested_action = request.GET.get("action")
+    posted_decision = request.POST.get("decision") if request.method == "POST" else ""
     coordinator_access = is_coordinator(request.user)
+
     pilot_start_only = requested_action == "pilot_start" or (
-        request.method == "POST" and not coordinator_access
+        posted_decision == Review.Decision.START_PILOT and not coordinator_access
     )
+    end_only = requested_action == "closure" or (
+        posted_decision == Review.Decision.END and not coordinator_access
+    )
+
     if pilot_start_only:
         if not can_start_pilot(request.user, use_case):
+            raise PermissionDenied
+    elif end_only:
+        if not can_end_use_case(request.user, use_case):
             raise PermissionDenied
     elif not coordinator_access:
         raise PermissionDenied
@@ -52,12 +63,15 @@ def review_create(request, use_case_id):
         if form.is_valid():
             try:
                 create_review(use_case=use_case, actor=request.user, data=form.cleaned_data)
-            except ValidationError as exc:
+            except (ValidationError, PermissionDenied) as exc:
                 form.add_error(None, exc)
             else:
                 if pilot_start_only:
                     messages.success(request, "Der Pilot wurde verbindlich gestartet.")
                     return redirect(outcome_workspace_url("pilot", use_case=use_case))
+                if form.cleaned_data.get("decision") == Review.Decision.END:
+                    messages.success(request, "Der Use Case wurde fachlich beendet.")
+                    return redirect(outcome_workspace_url("closure", use_case=use_case))
                 messages.success(request, "Review und Entscheidung wurden gespeichert.")
                 if form.scale_readiness_result is not None:
                     return redirect(outcome_workspace_url("decision", use_case=use_case))
