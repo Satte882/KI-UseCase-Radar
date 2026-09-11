@@ -373,6 +373,11 @@ def validate_target_status(
     *,
     allow_early_go_live_exception: bool = False,
 ) -> None:
+    if target_status == UseCase.Status.ENDED and use_case.status not in {
+        UseCase.Status.PILOT,
+        UseCase.Status.OPERATION,
+    }:
+        raise ValidationError("Der Status Beendet ist ausschließlich aus Pilot oder Betrieb möglich.")
     check = decision_check_for_status(
         use_case,
         target_status,
@@ -509,6 +514,10 @@ def approval_check(
 def create_decision_assessment(*, use_case: UseCase, actor, data) -> DecisionAssessment:
     if not is_coordinator(actor):
         raise PermissionDenied
+    if use_case.status != UseCase.Status.REVIEW:
+        raise ValidationError(
+            "Eine strukturierte Bewertung ist ausschließlich im Status Review möglich."
+        )
     version = (
         use_case.decision_assessments.aggregate(max_version=Max("version"))["max_version"] or 0
     ) + 1
