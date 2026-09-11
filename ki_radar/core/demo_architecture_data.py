@@ -243,7 +243,8 @@ def _seed_invoice_golden_path() -> tuple[ValueStream, ProcessAnalysis, int, int]
         finalized=True,
     )
     use_case.decision_status = UseCase.DecisionStatus.APPROVED
-    use_case.save(update_fields=["decision_status", "updated_at"])
+    use_case.technical_owner = coordinator
+    use_case.save(update_fields=["decision_status", "technical_owner", "updated_at"])
 
     initial = build_initial_delivery_data(use_case, decision)
     package = DeliveryPackage.objects.filter(use_case=use_case, version=1).first()
@@ -254,12 +255,14 @@ def _seed_invoice_golden_path() -> tuple[ValueStream, ProcessAnalysis, int, int]
             status=DeliveryPackage.Status.READY,
             generated_from_decision=decision,
             created_by=coordinator,
+            technical_owner=coordinator,
             **initial,
         )
     elif package.status != DeliveryPackage.Status.HANDED_OVER:
         package.status = DeliveryPackage.Status.READY
         package.generated_from_decision = decision
         package.created_by = coordinator
+        package.technical_owner = coordinator
         for field_name, value in initial.items():
             setattr(package, field_name, value)
         package.save()
@@ -522,7 +525,8 @@ def _seed_handed_over_document_package() -> int:
         finalized=True,
     )
     use_case.decision_status = UseCase.DecisionStatus.APPROVED
-    use_case.save(update_fields=["decision_status", "updated_at"])
+    use_case.technical_owner = coordinator
+    use_case.save(update_fields=["decision_status", "technical_owner", "updated_at"])
 
     initial = build_initial_delivery_data(use_case, decision)
     initial["external_delivery_url"] = "https://example.invalid/delivery/document-routing"
@@ -538,6 +542,7 @@ def _seed_handed_over_document_package() -> int:
             status=DeliveryPackage.Status.READY,
             generated_from_decision=decision,
             created_by=coordinator,
+            technical_owner=coordinator,
             **initial,
         )
         hand_over_package(package, coordinator)
@@ -545,6 +550,7 @@ def _seed_handed_over_document_package() -> int:
         package.status = DeliveryPackage.Status.READY
         package.generated_from_decision = decision
         package.created_by = coordinator
+        package.technical_owner = coordinator
         for field_name, value in initial.items():
             setattr(package, field_name, value)
         package.save()

@@ -10,6 +10,7 @@ from django.utils import timezone
 from ki_radar.accounts.models import User
 from ki_radar.accounts.permissions import GROUP_COORDINATOR
 from ki_radar.core.management.commands.seed_demo_data import Command
+from ki_radar.governance.models import GovernanceAssessment
 from ki_radar.use_cases.decision_forms import ApprovalDecisionForm
 from ki_radar.use_cases.models import DecisionAssessment, UseCase
 from ki_radar.use_cases.services import (
@@ -79,6 +80,13 @@ def make_case(owner, first_decider, assessor, business_unit):
         rationale="Repräsentative Messung und technische Vorprüfung liegen vor.",
         governance_precheck_completed=True,
         recommendation=UseCase.DecisionStatus.APPROVED_WITH_CONDITIONS,
+    )
+    GovernanceAssessment.objects.create(
+        use_case=use_case,
+        assessment_date=timezone.localdate(),
+        reviewer=first_decider,
+        basis_version="test-screening-v1",
+        result=GovernanceAssessment.Result.NO_FLAGS,
     )
     return use_case, assessment
 

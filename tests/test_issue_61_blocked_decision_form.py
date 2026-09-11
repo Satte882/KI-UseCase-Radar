@@ -79,7 +79,7 @@ def test_role_blocker_is_visible_before_form_and_routes_to_assignment(
 
 
 @pytest.mark.django_db
-def test_open_governance_review_hides_form_but_offers_negative_alternatives(
+def test_open_governance_review_is_visible_readiness_for_positive_approval(
     client, prepared_use_case, independent_coordinator
 ):
     prepared_use_case.privacy_review_required = True
@@ -92,11 +92,9 @@ def test_open_governance_review_hides_form_but_offers_negative_alternatives(
 
     assert response.status_code == 200
     assert "Datenschutzprüfung" in content
-    assert "Datenschutzprüfung durchführen" in content
-    assert 'id="decision-form"' not in content
-    assert "Zulässige alternative Entscheidungen" in content
-    assert "Zurückgestellt prüfen" in content
-    assert "Nicht weiterverfolgt prüfen" in content
+    assert "Readiness offen: Datenschutzprüfung" in content
+    assert 'id="decision-form"' in content
+    assert 'id="decision-blockers"' not in content
 
 
 @pytest.mark.django_db

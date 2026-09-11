@@ -2,7 +2,7 @@ from datetime import timedelta
 from decimal import Decimal
 
 import pytest
-from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.exceptions import ValidationError
 from django.urls import reverse
 from django.utils import timezone
 
@@ -12,7 +12,6 @@ from ki_radar.reviews.models import EarlyGoLiveException, Review
 from ki_radar.reviews.services import create_review
 from ki_radar.use_cases.models import ApprovalDecision, DecisionAssessment, UseCase
 from ki_radar.use_cases.services import (
-    EARLY_GO_LIVE_BLOCKER,
     apply_status_transition,
     check_go_live,
 )
@@ -140,59 +139,50 @@ def _go_live_data(use_case, coordinator, **overrides):
 
 
 @pytest.mark.django_db
-def test_future_pilot_end_is_a_go_live_blocker(owner, coordinator, business_unit):
+def test_future_pilot_end_is_go_live_readiness(owner, coordinator, business_unit):
     use_case = _early_go_live_candidate(owner, coordinator, business_unit)
 
     check = check_go_live(use_case)
 
-    assert check.state == "blocked"
-    assert EARLY_GO_LIVE_BLOCKER in check.blockers
-    assert EARLY_GO_LIVE_BLOCKER not in check.warnings
+    assert check.state == "review"
+    assert check.blockers == []
+    assert any("Pilotende" in warning for warning in check.warnings)
 
 
 @pytest.mark.django_db
-def test_direct_transition_requires_authorized_early_exception(
+def test_direct_transition_is_fenced_by_canonical_review_command(
     owner,
     coordinator,
     business_unit,
 ):
     use_case = _early_go_live_candidate(owner, coordinator, business_unit)
 
-    with pytest.raises(ValidationError, match="Pilotzeitraum"):
+    with pytest.raises(ValidationError, match=r"reviews\.services\.create_review"):
         apply_status_transition(
             use_case=use_case,
             target_status=UseCase.Status.OPERATION,
             actor=coordinator,
-            scale_evidence=_scale_evidence(),
-        )
-    with pytest.raises(PermissionDenied, match="KI-Koordinator"):
-        apply_status_transition(
-            use_case=use_case,
-            target_status=UseCase.Status.OPERATION,
-            actor=owner,
-            allow_early_go_live_exception=True,
             scale_evidence=_scale_evidence(),
         )
 
 
 @pytest.mark.django_db
-def test_early_go_live_requires_explicit_exception(owner, coordinator, business_unit):
+def test_early_go_live_needs_no_separate_exception(owner, coordinator, business_unit):
     use_case = _early_go_live_candidate(owner, coordinator, business_unit)
 
-    with pytest.raises(ValidationError, match="ausdrücklich bestätigte Ausnahme"):
-        create_review(
-            use_case=use_case,
-            actor=coordinator,
-            data=_go_live_data(
-                use_case,
-                coordinator,
-                early_go_live_exception_confirmed=False,
-            ),
-        )
+    review = create_review(
+        use_case=use_case,
+        actor=coordinator,
+        data=_go_live_data(
+            use_case,
+            coordinator,
+            early_go_live_exception_confirmed=False,
+        ),
+    )
 
     use_case.refresh_from_db()
-    assert use_case.status == UseCase.Status.PILOT
-    assert Review.objects.count() == 0
+    assert use_case.status == UseCase.Status.OPERATION
+    assert review.decision == Review.Decision.GO_LIVE
     assert EarlyGoLiveException.objects.count() == 0
 
 

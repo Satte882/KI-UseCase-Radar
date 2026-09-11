@@ -2,7 +2,7 @@ from datetime import timedelta
 from decimal import Decimal
 
 import pytest
-from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from django.urls import reverse
 from django.utils import timezone
@@ -22,7 +22,6 @@ from ki_radar.reviews.services import create_review
 from ki_radar.use_cases.models import ApprovalDecision, DecisionAssessment, UseCase
 from ki_radar.use_cases.outcome_workspace import build_outcome_workspace_journey
 from ki_radar.use_cases.permissions import can_start_pilot
-from ki_radar.use_cases.services import apply_status_transition
 from ki_radar.use_cases.workflow import build_use_case_journey
 
 
@@ -301,12 +300,11 @@ def test_golden_path_uses_one_use_case_from_value_stream_to_pilot(settings):
 def test_pilot_start_requires_a_delivery_package(owner, coordinator, business_unit):
     use_case = _make_pilot_candidate(owner, coordinator, business_unit)
 
-    with pytest.raises(ValidationError, match="Aktuelles Delivery Package"):
-        apply_status_transition(
+    with pytest.raises(ValidationError, match="verbindliche Übergabe"):
+        create_review(
             use_case=use_case,
-            target_status=UseCase.Status.PILOT,
             actor=coordinator,
-            pilot_start=timezone.localdate(),
+            data=_review_data(use_case, timezone.localdate()),
         )
 
 
@@ -315,12 +313,11 @@ def test_pilot_start_requires_handed_over_package(owner, coordinator, business_u
     use_case = _make_pilot_candidate(owner, coordinator, business_unit)
     _create_package(use_case, coordinator, handover=False)
 
-    with pytest.raises(ValidationError, match="Verbindliche Übergabe"):
-        apply_status_transition(
+    with pytest.raises(ValidationError, match="verbindliche Übergabe"):
+        create_review(
             use_case=use_case,
-            target_status=UseCase.Status.PILOT,
             actor=coordinator,
-            pilot_start=timezone.localdate(),
+            data=_review_data(use_case, timezone.localdate()),
         )
 
 
@@ -332,12 +329,11 @@ def test_current_package_must_be_handed_over(owner, coordinator, business_unit):
 
     assert first.status == DeliveryPackage.Status.HANDED_OVER
     assert second.version == 2
-    with pytest.raises(ValidationError, match="Verbindliche Übergabe"):
-        apply_status_transition(
+    with pytest.raises(ValidationError, match="verbindliche Übergabe"):
+        create_review(
             use_case=use_case,
-            target_status=UseCase.Status.PILOT,
             actor=coordinator,
-            pilot_start=timezone.localdate(),
+            data=_review_data(use_case, timezone.localdate()),
         )
 
 
@@ -347,12 +343,11 @@ def test_pilot_start_requires_review_status(handed_over_candidate, coordinator):
     use_case.status = UseCase.Status.IDEA
     use_case.save(update_fields=["status", "updated_at"])
 
-    with pytest.raises(ValidationError, match="Lifecycle-Status Prüfung"):
-        apply_status_transition(
+    with pytest.raises(ValidationError, match="ist aus dem Status Idee nicht zulässig"):
+        create_review(
             use_case=use_case,
-            target_status=UseCase.Status.PILOT,
             actor=coordinator,
-            pilot_start=timezone.localdate(),
+            data=_review_data(use_case, timezone.localdate()),
         )
 
 
@@ -404,18 +399,21 @@ def test_pilot_start_date_cannot_precede_handover(handed_over_candidate, coordin
 
 
 @pytest.mark.django_db
-def test_planned_pilot_end_cannot_precede_actual_start(handed_over_candidate, coordinator):
+def test_planned_pilot_end_is_readiness_for_actual_start(handed_over_candidate, coordinator):
     use_case, package = handed_over_candidate
     pilot_start = timezone.localdate(package.handed_over_at)
     use_case.planned_pilot_end = pilot_start - timedelta(days=1)
     use_case.save(update_fields=["planned_pilot_end", "updated_at"])
 
-    with pytest.raises(ValidationError, match="Pilotende darf nicht vor"):
-        create_review(
-            use_case=use_case,
-            actor=coordinator,
-            data=_review_data(use_case, pilot_start),
-        )
+    review = create_review(
+        use_case=use_case,
+        actor=coordinator,
+        data=_review_data(use_case, pilot_start),
+    )
+
+    use_case.refresh_from_db()
+    assert use_case.status == UseCase.Status.PILOT
+    assert review.decision == Review.Decision.START_PILOT
 
 
 @pytest.mark.django_db
@@ -427,25 +425,17 @@ def test_only_coordinator_or_assigned_business_owner_can_start(
     technical_admin,
     reader,
 ):
-    use_case, package = handed_over_candidate
+    use_case, _package = handed_over_candidate
     use_case.technical_owner = reader
     use_case.save(update_fields=["technical_owner", "updated_at"])
-    pilot_start = timezone.localdate(package.handed_over_at)
-
     assert can_start_pilot(coordinator, use_case) is True
     assert can_start_pilot(owner, use_case) is True
     assert can_start_pilot(other_owner, use_case) is False
     assert can_start_pilot(reader, use_case) is False
-    assert can_start_pilot(technical_admin, use_case) is False
+    assert can_start_pilot(technical_admin, use_case) is True
 
-    for actor in [other_owner, reader, technical_admin]:
-        with pytest.raises(PermissionDenied):
-            apply_status_transition(
-                use_case=use_case,
-                target_status=UseCase.Status.PILOT,
-                actor=actor,
-                pilot_start=pilot_start,
-            )
+    for actor in [other_owner, reader]:
+        assert can_start_pilot(actor, use_case) is False
 
 
 @pytest.mark.django_db
@@ -457,7 +447,7 @@ def test_manipulated_owner_post_is_forced_to_pilot_start(
     use_case, package = handed_over_candidate
     client.force_login(owner)
     response = client.post(
-        reverse("reviews:create", kwargs={"use_case_id": use_case.pk}),
+        _pilot_start_url(use_case),
         {
             "review_date": timezone.localdate().isoformat(),
             "pilot_start": timezone.localdate(package.handed_over_at).isoformat(),
@@ -613,9 +603,11 @@ def test_pilot_start_post_rejects_unauthorized_roles(
         "next_review_date": use_case.next_review_date.isoformat(),
     }
 
-    for actor in [other_owner, technical_admin]:
-        client.force_login(actor)
-        assert client.post(url, payload).status_code == 403
+    client.force_login(other_owner)
+    assert client.post(url, payload).status_code == 403
+
+    client.force_login(technical_admin)
+    assert client.post(url, payload).status_code == 302
 
 
 @pytest.mark.django_db

@@ -81,7 +81,7 @@ def test_end_review_rejects_review_source_status(owner, coordinator, business_un
         status=UseCase.Status.REVIEW,
     )
 
-    with pytest.raises(ValidationError, match="ausschließlich aus Pilot oder Betrieb"):
+    with pytest.raises(ValidationError, match="ist aus dem Status Prüfung nicht zulässig"):
         create_review(
             use_case=use_case,
             actor=coordinator,
@@ -120,7 +120,7 @@ def test_direct_ended_transition_rejects_review_source_status(
     use_case.data_and_access_handling = "Testzugänge schließen."
     use_case.save(update_fields=["ending_reason", "data_and_access_handling", "updated_at"])
 
-    with pytest.raises(ValidationError, match="ausschließlich aus Pilot oder Betrieb"):
+    with pytest.raises(ValidationError, match=r"reviews\.services\.create_review"):
         apply_status_transition(
             use_case=use_case,
             target_status=UseCase.Status.ENDED,

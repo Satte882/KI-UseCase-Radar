@@ -72,7 +72,7 @@ def _load_json(path: Path) -> dict[str, object]:
 
 
 def test_architecture_real_demo_fixture_checksum_and_contract_versions():
-    raw = FIXTURE_PATH.read_bytes()
+    raw = FIXTURE_PATH.read_bytes().replace(b"\r\n", b"\n")
     payload = json.loads(raw)
     checksum_line = CHECKSUM_PATH.read_text(encoding="utf-8").strip()
 

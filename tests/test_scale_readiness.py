@@ -166,7 +166,7 @@ def test_missing_rollback_is_non_overridable_scale_blocker(scale_candidate):
 def test_failed_mandatory_ml_check_blocks_even_with_high_scores(scale_candidate):
     use_case, _package, coordinator = scale_candidate
 
-    with pytest.raises(ValidationError, match="zwingende ML-Test-Score"):
+    with pytest.raises(ValidationError, match="zwingende ML-Prüfung"):
         create_review(
             use_case=use_case,
             actor=coordinator,
@@ -185,34 +185,28 @@ def test_failed_mandatory_ml_check_blocks_even_with_high_scores(scale_candidate)
 
 
 @pytest.mark.django_db
-def test_conditional_go_requires_action_owner_and_due_date(scale_candidate):
+def test_conditional_go_action_owner_and_due_date_are_readiness(scale_candidate):
     use_case, _package, coordinator = scale_candidate
     data = _go_live_data(
         coordinator,
         ml_score_open_core_checks="Automatisierung eines nichtkritischen Monitoring-Checks offen.",
     )
 
-    with pytest.raises(ValidationError, match="Conditional Go benötigt"):
-        create_review(use_case=use_case, actor=coordinator, data=data)
-
-    data["open_actions"] = "Monitoring-Check automatisieren; bis dahin tägliche manuelle Kontrolle."
-    data["action_owner"] = coordinator
-    data["action_due_date"] = timezone.localdate() + timezone.timedelta(days=30)
     review = create_review(use_case=use_case, actor=coordinator, data=data)
     use_case.refresh_from_db()
 
     assert use_case.status == UseCase.Status.OPERATION
     assert review.scale_readiness_snapshot["state"] == "conditional"
-    assert review.open_actions
-    assert review.action_owner == coordinator
-    assert review.action_due_date is not None
+    assert review.open_actions == ""
+    assert review.action_owner is None
+    assert review.action_due_date is None
 
 
 @pytest.mark.django_db
 def test_direct_operation_transition_cannot_bypass_scale_gate(scale_candidate):
     use_case, _package, coordinator = scale_candidate
 
-    with pytest.raises(ValidationError, match="Scale Readiness"):
+    with pytest.raises(ValidationError, match=r"reviews\.services\.create_review"):
         use_case_services.apply_status_transition(
             use_case=use_case,
             target_status=UseCase.Status.OPERATION,

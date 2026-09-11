@@ -220,13 +220,11 @@ def test_supplier_demo_runs_from_value_stream_to_closure(supplier_golden_path):
 @pytest.mark.parametrize(
     ("field_name", "missing_value", "label"),
     [
-        ("metric_actual", None, "Gemessener Ist-Wert"),
-        ("metric_measurement_period", "", "Messzeitraum"),
+        ("metric_actual", None, "Ist-Wert"),
         ("metric_measured_at", None, "Messdatum"),
-        ("metric_evidence_url", "", "Messnachweis"),
     ],
 )
-def test_go_live_requires_complete_measurement(
+def test_go_live_requires_enforcement_measurement(
     supplier_golden_path,
     field_name,
     missing_value,
@@ -248,7 +246,24 @@ def test_go_live_requires_complete_measurement(
 
 
 @pytest.mark.django_db
-def test_failed_target_exception_requires_exact_coordinator_role(
+@pytest.mark.parametrize("field_name", ["metric_measurement_period", "metric_evidence_url"])
+def test_go_live_measurement_documentation_is_readiness(supplier_golden_path, field_name):
+    use_case, package, coordinator, _owner = supplier_golden_path
+    _start_pilot(use_case, package, coordinator)
+    _record_measurement(use_case)
+    _complete_pilot_period(use_case)
+    setattr(use_case, field_name, "")
+    use_case.save(update_fields=[field_name, "updated_at"])
+
+    review = create_review(use_case=use_case, actor=coordinator, data=_go_live_data(use_case))
+
+    use_case.refresh_from_db()
+    assert use_case.status == UseCase.Status.OPERATION
+    assert review.decision == Review.Decision.GO_LIVE
+
+
+@pytest.mark.django_db
+def test_failed_target_exception_uses_semantic_coordinator_role(
     supplier_golden_path,
     technical_admin,
 ):
@@ -262,15 +277,14 @@ def test_failed_target_exception_requires_exact_coordinator_role(
         rationale="Trotz Abweichung ist ein begrenzter Betrieb wirtschaftlich vertretbar.",
     )
 
-    for actor in [owner, technical_admin]:
-        with pytest.raises(PermissionDenied, match="KI-Koordinator"):
-            create_review(use_case=use_case, actor=actor, data=data)
+    with pytest.raises(PermissionDenied, match="Koordinator-Berechtigung"):
+        create_review(use_case=use_case, actor=owner, data=data)
 
-    review = create_review(use_case=use_case, actor=coordinator, data=data)
+    review = create_review(use_case=use_case, actor=technical_admin, data=data)
     use_case.refresh_from_db()
     assert use_case.status == UseCase.Status.OPERATION
     assert review.go_live_exception_confirmed is True
-    assert review.reviewer == coordinator
+    assert review.reviewer == technical_admin
     assert review.rationale
 
 
@@ -281,7 +295,7 @@ def test_failed_target_exception_requires_concrete_rationale(supplier_golden_pat
     _record_measurement(use_case, actual=Decimal("4"))
     _complete_pilot_period(use_case)
 
-    with pytest.raises(ValidationError, match="konkrete Entscheidungsbegründung"):
+    with pytest.raises(ValidationError, match="kurze Entscheidungsbegründung"):
         create_review(
             use_case=use_case,
             actor=coordinator,
@@ -301,7 +315,7 @@ def test_service_rejects_manipulated_go_live_status_pair(supplier_golden_path):
     data = _go_live_data(use_case)
     data["new_status"] = UseCase.Status.PILOT
 
-    with pytest.raises(ValidationError, match="erfordert den Status Betrieb"):
+    with pytest.raises(ValidationError, match="erfordert den Zielstatus Betrieb"):
         create_review(use_case=use_case, actor=coordinator, data=data)
 
     use_case.refresh_from_db()
@@ -311,16 +325,15 @@ def test_service_rejects_manipulated_go_live_status_pair(supplier_golden_path):
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    ("field_name", "label"),
+    "field_name",
     [
-        ("ending_reason", "Beendigungsgrund"),
-        ("data_and_access_handling", "Umgang mit Daten und Zugängen"),
+        "ending_reason",
+        "data_and_access_handling",
     ],
 )
-def test_closure_requires_mandatory_information(
+def test_closure_documentation_is_readiness(
     supplier_golden_path,
     field_name,
-    label,
 ):
     use_case, package, coordinator, _owner = supplier_golden_path
     _start_pilot(use_case, package, coordinator)
@@ -329,16 +342,16 @@ def test_closure_requires_mandatory_information(
     create_review(use_case=use_case, actor=coordinator, data=_go_live_data(use_case))
     use_case.refresh_from_db()
 
-    with pytest.raises(ValidationError, match=label):
-        create_review(
-            use_case=use_case,
-            actor=coordinator,
-            data=_end_data(**{field_name: ""}),
-        )
+    review = create_review(
+        use_case=use_case,
+        actor=coordinator,
+        data=_end_data(**{field_name: ""}),
+    )
 
     use_case.refresh_from_db()
-    assert use_case.status == UseCase.Status.OPERATION
-    assert use_case.reviews.filter(decision=Review.Decision.END).exists() is False
+    assert use_case.status == UseCase.Status.ENDED
+    assert getattr(use_case, field_name) == ""
+    assert review.decision == Review.Decision.END
 
 
 @pytest.mark.django_db
@@ -351,7 +364,7 @@ def test_service_rejects_manipulated_end_status_pair(supplier_golden_path):
     use_case.refresh_from_db()
     data = _end_data(new_status=UseCase.Status.OPERATION)
 
-    with pytest.raises(ValidationError, match="erfordert den Status Beendet"):
+    with pytest.raises(ValidationError, match="erfordert den Zielstatus Beendet"):
         create_review(use_case=use_case, actor=coordinator, data=data)
 
     use_case.refresh_from_db()
@@ -359,7 +372,7 @@ def test_service_rejects_manipulated_end_status_pair(supplier_golden_path):
 
 
 @pytest.mark.django_db
-def test_manipulated_exception_post_is_rejected_for_technical_admin(
+def test_exception_post_accepts_semantic_technical_admin_coordinator(
     client,
     supplier_golden_path,
     technical_admin,
@@ -382,13 +395,13 @@ def test_manipulated_exception_post_is_rejected_for_technical_admin(
             "action_owner": "",
             "action_due_date": "",
             "next_review_date": timezone.localdate().isoformat(),
+            **_scale_evidence(),
         },
     )
 
     use_case.refresh_from_db()
-    assert response.status_code == 200
-    assert use_case.status == UseCase.Status.PILOT
-    assert "Nur ein KI-Koordinator" in response.content.decode()
+    assert response.status_code == 302
+    assert use_case.status == UseCase.Status.OPERATION
 
 
 @pytest.mark.django_db
@@ -402,7 +415,7 @@ def test_existing_operation_case_is_not_retroactively_invalidated(settings):
 
 
 @pytest.mark.django_db
-def test_final_approval_requires_metric_definition(supplier_golden_path):
+def test_final_approval_shows_metric_definition_as_readiness(supplier_golden_path):
     use_case, _package, coordinator, _owner = supplier_golden_path
     use_case.metric_baseline = None
     use_case.save(update_fields=["metric_baseline", "updated_at"])
@@ -414,7 +427,8 @@ def test_final_approval_requires_metric_definition(supplier_golden_path):
         governance_confirmed=True,
     )
 
-    assert "Baseline-Wert" in check.blockers
+    assert "Baseline-Wert" not in check.blockers
+    assert "Readiness offen: Baseline-Wert" in check.warnings
 
 
 @pytest.mark.django_db

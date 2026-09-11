@@ -7,6 +7,8 @@ from django.utils import timezone
 from ki_radar.delivery.models import DeliveryPackage
 from ki_radar.delivery.services import hand_over_package
 from ki_radar.governance.models import GovernanceAssessment
+from ki_radar.reviews.models import Review
+from ki_radar.reviews.services import create_review
 from ki_radar.use_cases.models import ApprovalDecision, DecisionAssessment, UseCase
 from ki_radar.use_cases.services import apply_status_transition
 
@@ -98,11 +100,20 @@ def test_transition_to_pilot_succeeds(use_case, coordinator):
         created_by=coordinator,
     )
     hand_over_package(package, coordinator)
-    apply_status_transition(
+    create_review(
         use_case=use_case,
-        target_status=UseCase.Status.PILOT,
         actor=coordinator,
-        pilot_start=today,
+        data={
+            "review_date": today,
+            "pilot_start": today,
+            "decision": Review.Decision.START_PILOT,
+            "new_status": UseCase.Status.PILOT,
+            "rationale": "Pilot ist fachlich vorbereitet.",
+            "open_actions": "",
+            "action_owner": None,
+            "action_due_date": None,
+            "next_review_date": today,
+        },
     )
     use_case.refresh_from_db()
     assert use_case.status == UseCase.Status.PILOT

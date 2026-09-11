@@ -24,7 +24,7 @@ def test_post_approval_lifecycle_checks_use_distinct_gate_titles(lifecycle_case)
         UseCase.Status.REVIEW: "Pilot starten",
         UseCase.Status.PILOT: "Produktiv setzen",
         UseCase.Status.OPERATION: "Betrieb fortführen",
-        UseCase.Status.ENDED: "Abgeschlossen",
+        UseCase.Status.ENDED: "Beendet",
     }
 
     for status, expected_title in expected_titles.items():

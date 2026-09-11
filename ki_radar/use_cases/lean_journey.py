@@ -136,6 +136,24 @@ def _normalize_delivery(use_case: UseCase, user, journey: JourneyState) -> Journ
 
         allowed = _can_transition_delivery(user, use_case)
         if package.status == DeliveryPackage.Status.READY:
+            technical_owner = package.technical_owner
+            if technical_owner is None or not technical_owner.is_active:
+                steps.append(
+                    replace(
+                        step,
+                        state="blocked",
+                        url=package.get_absolute_url(),
+                        action_label="Technical Owner prüfen",
+                        action_method="get",
+                        reason=(
+                            "Vor der verbindlichen Übergabe muss ein aktiver "
+                            "Technical Owner benannt sein."
+                        ),
+                        details=("Aktiver Technical Owner",),
+                    )
+                )
+                changed = True
+                continue
             steps.append(
                 replace(
                     step,

@@ -46,7 +46,7 @@ def mark_package_ready(package: DeliveryPackage) -> None:
 @transaction.atomic
 def hand_over_package(package: DeliveryPackage, actor) -> None:
     package = (
-        DeliveryPackage.objects.select_for_update()
+        DeliveryPackage.objects.select_for_update(of=("self",))
         .select_related("technical_owner")
         .get(pk=package.pk)
     )

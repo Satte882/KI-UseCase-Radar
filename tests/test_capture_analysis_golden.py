@@ -92,7 +92,8 @@ def _provider_result(payload: object) -> OpenRouterResult:
 
 def test_real_demo_fixture_checksum_prevents_silent_drift():
     expected = CHECKSUM_PATH.read_text(encoding="utf-8").split()[0]
-    actual = hashlib.sha256(FIXTURE_PATH.read_bytes()).hexdigest()
+    normalized = FIXTURE_PATH.read_bytes().replace(b"\r\n", b"\n")
+    actual = hashlib.sha256(normalized).hexdigest()
 
     assert actual == expected
     assert _dataset()["fixture_id"] == "[Real-DEMO]-einkaufsanforderung-v1"
