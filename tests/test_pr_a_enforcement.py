@@ -52,6 +52,7 @@ def make_ready_use_case(owner, business_unit):
         metric_target=Decimal("3"),
         metric_measurement_method="Messung über zehn abgeschlossene Auswahlvorgänge",
         data_sources="Angebotsdokumente und freigegebene Bewertungskriterien",
+        status=UseCase.Status.REVIEW,
         decision_status=UseCase.DecisionStatus.READY,
     )
 
