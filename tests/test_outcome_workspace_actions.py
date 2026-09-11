@@ -254,7 +254,7 @@ def test_go_live_action_uses_existing_review_form(client, coordinator, owner, bu
 
 
 @pytest.mark.django_db
-def test_invalid_current_handover_blocks_go_live_action_and_service(
+def test_invalid_current_handover_is_not_rechecked_by_go_live_service(
     client,
     coordinator,
     owner,
@@ -278,8 +278,8 @@ def test_invalid_current_handover_blocks_go_live_action_and_service(
     action = response.context["active_stage_action"]
     assert action["action_label"] == "Übergabe prüfen"
     assert "Go-live entscheiden" not in response.content.decode()
-    assert PILOT_HANDOVER_BLOCKER in check_go_live(use_case).blockers
-    with pytest.raises(ValidationError, match=PILOT_HANDOVER_BLOCKER):
+    assert PILOT_HANDOVER_BLOCKER not in check_go_live(use_case).blockers
+    with pytest.raises(ValidationError, match="Tatsächlicher Pilotbeginn"):
         validate_target_status(use_case, UseCase.Status.OPERATION)
 
 

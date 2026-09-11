@@ -63,10 +63,10 @@ def test_running_pilot_is_primary_and_next_gate_is_visible(client, running_pilot
     assert response.context["decision_check"].title == "Nächstes Gate: Produktiv setzen"
     assert response.context["decision_check"].state_label == "Pilot läuft"
     assert response.context["blocker_details"] == []
-    assert "missing_one_time_cost" in gate_codes
+    assert "missing_one_time_cost" not in gate_codes
     assert "Nächstes Gate" in content
     assert "Produktiv setzen" in content
-    assert "Einmalige Kosten" in content
+    assert "Readiness offen: Einmalige Kosten" in content
     assert "Produktiv setzen: Blockiert" not in content
 
 

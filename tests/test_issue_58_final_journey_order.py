@@ -80,11 +80,11 @@ def test_assessment_is_followed_by_governance_screening(assessed_use_case, indep
     assert journey.next_action == steps["governance"]
     assert steps["governance"].state == "current"
     assert steps["governance"].action_label == "Governance-Screening durchführen"
-    assert steps["approval"].state == "upcoming"
+    assert steps["approval"].state == "current"
 
 
 @pytest.mark.django_db
-def test_required_governance_review_blocks_approval(
+def test_required_governance_review_is_readiness_for_approval(
     assessed_use_case, coordinator, independent_coordinator
 ):
     _screening(assessed_use_case, coordinator, privacy_required=True)
@@ -93,10 +93,10 @@ def test_required_governance_review_blocks_approval(
     steps = {step.key: step for step in journey.steps}
 
     assert journey.next_action == steps["governance"]
-    assert steps["governance"].state == "blocked"
+    assert steps["governance"].state == "current"
     assert steps["governance"].action_label == "Datenschutzprüfung durchführen"
     assert steps["governance"].details == ("Datenschutzprüfung",)
-    assert steps["approval"].state == "upcoming"
+    assert steps["approval"].state == "current"
 
 
 @pytest.mark.django_db
@@ -148,4 +148,4 @@ def test_governance_workspace_keeps_value_stream_and_local_journey_context(
     assert "Governance" in content
     assert 'aria-label="Lokale Initiative"' in content
     assert 'aria-label="Phasen des Arbeitsmodells"' in content
-    assert "sidebar-local-blocked" in content
+    assert "sidebar-local-current" in content

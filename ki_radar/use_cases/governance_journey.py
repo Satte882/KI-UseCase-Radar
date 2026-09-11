@@ -35,39 +35,32 @@ def _state(
     return JourneyState(
         path_label=journey.path_label,
         steps=tuple(steps),
-        next_action=next(
-            (step for step in steps if step.state in {"current", "blocked"}),
-            None,
-        ),
+        next_action=next((step for step in steps if step.state in {"current", "blocked"}), None),
         completion_message=(
             journey.completion_message if completion_message is None else completion_message
         ),
     )
 
 
+def _incomplete_required_reviews(use_case: UseCase, screening) -> list[tuple[str, str]]:
+    return [
+        (review_type, label)
+        for review_type, label, required_field, completed_field in REVIEW_ORDER
+        if getattr(screening, required_field) and not getattr(use_case, completed_field)
+    ]
+
+
 def _governance_step(use_case: UseCase, user) -> JourneyStep:
     final_decision = use_case.approval_decisions.filter(finalized_at__isnull=False).first()
-    if final_decision is not None:
-        if final_decision.decision_status in {
-            UseCase.DecisionStatus.DEFERRED,
-            UseCase.DecisionStatus.NOT_PURSUED,
-        }:
-            return JourneyStep(
-                key="governance",
-                label="Governance",
-                state="optional",
-                reason=(
-                    "Für die finale negative Entscheidung ist keine positive "
-                    "Freigabeprüfung erforderlich."
-                ),
-            )
+    if final_decision is not None and final_decision.decision_status in {
+        UseCase.DecisionStatus.DEFERRED,
+        UseCase.DecisionStatus.NOT_PURSUED,
+    }:
         return JourneyStep(
             key="governance",
             label="Governance",
-            state="complete",
-            url=f"{use_case.get_absolute_url()}#governance-evidence",
-            action_label="Governance öffnen",
-            reason="Der Governance-Pfad wurde vor der finalen positiven Freigabe abgeschlossen.",
+            state="optional",
+            reason="Negative Entscheidungen benötigen bewusst kein Governance-Gate.",
         )
 
     assessment = use_case.decision_assessments.first()
@@ -76,7 +69,9 @@ def _governance_step(use_case: UseCase, user) -> JourneyStep:
             key="governance",
             label="Governance",
             state="upcoming",
-            reason="Das Governance-Screening folgt nach der strukturierten Bewertung.",
+            reason=(
+                "Governance kann nach der strukturierten Bewertung risikobasiert ergänzt werden."
+            ),
         )
 
     screening = use_case.governance_assessments.first()
@@ -93,23 +88,19 @@ def _governance_step(use_case: UseCase, user) -> JourneyStep:
             ),
             action_label="Governance-Screening durchführen" if allowed else "",
             reason=(
-                "Die Bewertung liegt vor; nun müssen die erforderlichen Governance-Prüfungen "
-                "aus einem Screening abgeleitet werden."
+                "Das Screening fehlt. Es ist für eine positive Freigabe erforderlich; "
+                "eine negative Portfolioentscheidung bleibt trotzdem möglich."
             ),
         )
 
-    incomplete_reviews = [
-        (review_type, label)
-        for review_type, label, required_field, completed_field in REVIEW_ORDER
-        if getattr(screening, required_field) and not getattr(use_case, completed_field)
-    ]
+    incomplete_reviews = _incomplete_required_reviews(use_case, screening)
     if incomplete_reviews:
         review_type, label = incomplete_reviews[0]
         allowed = is_coordinator(user)
         return JourneyStep(
             key="governance",
             label="Governance",
-            state="blocked",
+            state="current",
             url=(
                 reverse(
                     "governance:review",
@@ -120,7 +111,8 @@ def _governance_step(use_case: UseCase, user) -> JourneyStep:
             ),
             action_label=f"{label} durchführen" if allowed else "",
             reason=(
-                "Das Governance-Screening ist vorhanden; erforderliche Fachprüfungen sind offen."
+                "Erforderliche Fachprüfungen sind noch offen. Delivery-Vorbereitung kann "
+                "parallel laufen; vor dem tatsächlichen Pilotstart müssen sie abgeschlossen sein."
             ),
             details=tuple(item_label for _item_type, item_label in incomplete_reviews),
         )
@@ -146,11 +138,11 @@ def _governance_step(use_case: UseCase, user) -> JourneyStep:
 
 
 def _completion_message(use_case: UseCase, journey: JourneyState) -> str:
+    if use_case.status == UseCase.Status.ENDED:
+        return "Journey abgeschlossen: Das Vorhaben wurde fachlich beendet."
     package = use_case.delivery_packages.first()
     if package is None or package.status != DeliveryPackage.Status.HANDED_OVER:
         return journey.completion_message
-    if use_case.status == UseCase.Status.ENDED:
-        return "Journey abgeschlossen: Das Vorhaben wurde fachlich beendet."
     return ""
 
 
@@ -162,31 +154,16 @@ def _insert_governance(
     governance_step = _governance_step(use_case, user)
     steps: list[JourneyStep] = []
     inserted = False
-
     for step in journey.steps:
         if step.key == "approval" and not inserted:
             steps.append(governance_step)
             inserted = True
-
-        if (
-            step.key == "approval"
-            and step.state == "current"
-            and governance_step.state in {"current", "blocked"}
-        ):
-            steps.append(
-                JourneyStep(
-                    key="approval",
-                    label=step.label,
-                    state="upcoming",
-                    reason="Die Freigabe folgt nach dem abgeschlossenen Governance-Pfad.",
-                )
-            )
-        else:
-            steps.append(step)
-
+        # Governance is now an independent readiness/risk projection. Positive Approval itself
+        # enforces the screening; negative decisions deliberately do not. Do not rewrite the
+        # Approval step to upcoming here.
+        steps.append(step)
     if not inserted:
         steps.append(governance_step)
-
     return _state(
         journey,
         steps,

@@ -10,6 +10,7 @@ from ki_radar.core.navigation import safe_internal_url, with_return_to
 from ki_radar.delivery.actions import primary_delivery_action
 from ki_radar.delivery.forms import DeliveryPackageForm
 from ki_radar.delivery.services import create_delivery_package
+from ki_radar.governance.models import GovernanceAssessment
 from ki_radar.reporting.templatetags.worklist_tags import worklist_rows
 from ki_radar.use_cases.models import ApprovalDecision, DecisionAssessment, UseCase
 from ki_radar.use_cases.workflow import build_use_case_journey
@@ -80,6 +81,14 @@ def approve_use_case(use_case, coordinator):
     )
     use_case.decision_status = UseCase.DecisionStatus.APPROVED
     use_case.save(update_fields=["decision_status", "updated_at"])
+    GovernanceAssessment.objects.create(
+        use_case=use_case,
+        assessment_date=timezone.localdate(),
+        reviewer=coordinator,
+        basis_version="Governance-Leitlinie 1.0",
+        result=GovernanceAssessment.Result.NO_FLAGS,
+        rationale="Keine vertiefte Governance-Prüfung erforderlich.",
+    )
     return decision
 
 

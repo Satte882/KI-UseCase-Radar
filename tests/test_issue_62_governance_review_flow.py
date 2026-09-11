@@ -180,7 +180,7 @@ def test_completed_review_creates_artifact_and_opens_next_required_review(
 
 
 @pytest.mark.django_db
-def test_completed_review_requires_evidence_server_side(client, coordinator, use_case):
+def test_completed_review_allows_evidence_to_follow_as_readiness(client, coordinator, use_case):
     screening = _screening(use_case, coordinator, privacy_review_required=True)
     client.force_login(coordinator)
 
@@ -201,18 +201,19 @@ def test_completed_review_requires_evidence_server_side(client, coordinator, use
         },
     )
 
-    assert response.status_code == 200
-    assert "Für eine abgeschlossene formale Prüfung ist ein Nachweis erforderlich" in (
-        response.content.decode()
-    )
-    assert not GovernanceReview.objects.filter(
+    assert response.status_code == 302
+    assert GovernanceReview.objects.filter(
         screening=screening,
         status=GovernanceReview.Status.COMPLETED,
+        result=GovernanceReview.Result.PASSED,
+        evidence_url="",
     ).exists()
 
 
 @pytest.mark.django_db
-def test_conditional_and_failed_results_require_structured_details(client, coordinator, use_case):
+def test_conditional_requires_conditions_but_failed_details_are_readiness(
+    client, coordinator, use_case
+):
     screening = _screening(use_case, coordinator, security_review_required=True)
     client.force_login(coordinator)
     url = reverse(
@@ -249,13 +250,13 @@ def test_conditional_and_failed_results_require_structured_details(client, coord
             "evidence_url": "https://example.invalid/security-failed",
         },
     )
-    content = failed.content.decode()
-    assert failed.status_code == 200
-    assert "Bei &#x27;Nicht bestanden&#x27; sind Risiken erforderlich" in content
-    assert "Bei &#x27;Nicht bestanden&#x27; sind Maßnahmen erforderlich" in content
-    assert not GovernanceReview.objects.filter(
+    assert failed.status_code == 302
+    assert GovernanceReview.objects.filter(
         screening=screening,
         status=GovernanceReview.Status.COMPLETED,
+        result=GovernanceReview.Result.FAILED,
+        risks="",
+        measures="",
     ).exists()
 
 

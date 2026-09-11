@@ -16,7 +16,7 @@ from ki_radar.accounts.permissions import (
     GROUP_READER,
     ensure_groups,
 )
-from ki_radar.governance.models import GovernanceAssessment
+from ki_radar.governance.models import GovernanceAssessment, GovernanceReview
 from ki_radar.reviews.models import Review
 from ki_radar.use_cases.models import UseCase
 
@@ -847,7 +847,7 @@ def seed_demo_data(*, demo_user_password: str) -> dict[str, int]:
 
         if template.governance:
             governance = template.governance
-            GovernanceAssessment.objects.update_or_create(
+            assessment, _ = GovernanceAssessment.objects.update_or_create(
                 use_case=use_case,
                 basis_version="DEMO-2026-01",
                 defaults={
@@ -871,6 +871,50 @@ def seed_demo_data(*, demo_user_password: str) -> dict[str, int]:
                     ),
                 },
             )
+            review_states = (
+                (
+                    GovernanceReview.ReviewType.PRIVACY,
+                    governance.privacy_review_required,
+                    template.privacy_review_completed,
+                    "Datenschutz",
+                ),
+                (
+                    GovernanceReview.ReviewType.SECURITY,
+                    governance.security_review_required,
+                    template.security_review_completed,
+                    "Informationssicherheit",
+                ),
+                (
+                    GovernanceReview.ReviewType.LEGAL,
+                    governance.legal_review_required,
+                    template.legal_review_completed,
+                    "Recht / Compliance",
+                ),
+            )
+            for review_type, required, completed, responsible_role in review_states:
+                status = (
+                    GovernanceReview.Status.COMPLETED
+                    if completed
+                    else (
+                        GovernanceReview.Status.OPEN
+                        if required
+                        else GovernanceReview.Status.NOT_RELEVANT
+                    )
+                )
+                GovernanceReview.objects.update_or_create(
+                    use_case=use_case,
+                    screening=assessment,
+                    review_type=review_type,
+                    defaults={
+                        "status": status,
+                        "reviewed_at": assessment.assessment_date,
+                        "reviewer": coordinator,
+                        "responsible_role": responsible_role,
+                        "result": GovernanceReview.Result.PASSED if completed else "",
+                        "rationale": f"{DEMO_MARKER}: {governance.rationale}",
+                        "evidence_url": governance.evidence_url if completed else "",
+                    },
+                )
 
         for review_template in template.reviews:
             review_date = _date_from_offset(today, review_template.offset)

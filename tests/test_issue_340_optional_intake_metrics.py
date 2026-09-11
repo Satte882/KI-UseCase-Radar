@@ -191,7 +191,7 @@ def test_guided_intake_persists_unknown_metrics_as_null(client, owner, business_
 
 
 @pytest.mark.django_db
-def test_positive_approval_still_requires_baseline_and_target(owner, business_unit):
+def test_positive_approval_shows_baseline_and_target_as_readiness(owner, business_unit):
     use_case = UseCase.objects.create(
         title="Früher Use Case",
         problem_statement="Ein relevantes Problem ist beschrieben.",
@@ -218,13 +218,13 @@ def test_positive_approval_still_requires_baseline_and_target(owner, business_un
         target_status=UseCase.DecisionStatus.DEFERRED,
     )
 
-    assert "Baseline-Wert" in positive.blockers
-    assert "Zielwert" in positive.blockers
+    assert "Readiness offen: Baseline-Wert" in positive.warnings
+    assert "Readiness offen: Zielwert" in positive.warnings
     assert negative.blockers == []
 
 
 @pytest.mark.django_db
-def test_pilot_gate_keeps_metric_requirements(owner, business_unit):
+def test_pilot_gate_keeps_metric_requirements_as_readiness(owner, business_unit):
     use_case = UseCase.objects.create(
         title="Pilot noch nicht messbereit",
         problem_statement="Ein relevantes Problem ist beschrieben.",
@@ -243,5 +243,5 @@ def test_pilot_gate_keeps_metric_requirements(owner, business_unit):
 
     check = check_pilot_start(use_case)
 
-    assert "Baseline-Wert" in check.blockers
-    assert "Zielwert" in check.blockers
+    assert "Readiness offen: Baseline-Wert" in check.warnings
+    assert "Readiness offen: Zielwert" in check.warnings

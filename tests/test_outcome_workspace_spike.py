@@ -70,6 +70,7 @@ def test_outcome_journey_extends_existing_journey_state(owner, business_unit):
     assert journey.next_action is not None
     assert journey.next_action.key in {
         "use_case",
+        "assessment",
         "delivery",
         "handover",
         "pilot",

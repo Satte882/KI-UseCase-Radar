@@ -2,7 +2,6 @@ from datetime import timedelta
 from decimal import Decimal
 
 import pytest
-from django.core.exceptions import ValidationError
 from django.urls import reverse
 from django.utils import timezone
 
@@ -68,6 +67,13 @@ def decision_use_case(owner, coordinator, business_unit):
         handed_over_by=coordinator,
         handed_over_at=timezone.now(),
     )
+    GovernanceAssessment.objects.create(
+        use_case=use_case,
+        assessment_date=timezone.localdate(),
+        reviewer=coordinator,
+        basis_version="test-screening-v1",
+        result=GovernanceAssessment.Result.NO_FLAGS,
+    )
     return use_case
 
 
@@ -83,26 +89,20 @@ def test_idea_is_checked_for_review_before_pilot(decision_use_case):
 
 
 @pytest.mark.django_db
-def test_pilot_start_is_blocked_without_structured_metric(decision_use_case, coordinator):
-    GovernanceAssessment.objects.create(
-        use_case=decision_use_case,
-        assessment_date=timezone.localdate(),
-        reviewer=coordinator,
-        basis_version="2026-01",
-        result=GovernanceAssessment.Result.NO_FLAGS,
-        rationale="Keine Hinweise",
-    )
+def test_pilot_start_shows_structured_metric_as_readiness(decision_use_case):
+    decision_use_case.status = UseCase.Status.REVIEW
+    decision_use_case.save(update_fields=["status", "updated_at"])
 
     check = check_pilot_start(decision_use_case)
 
-    assert check.state == "blocked"
-    assert "Primäre Erfolgsmetrik" in check.blockers
-    with pytest.raises(ValidationError):
-        validate_target_status(decision_use_case, UseCase.Status.PILOT)
+    assert check.state == "review"
+    assert "Readiness offen: Primäre Erfolgsmetrik" in check.warnings
+    validate_target_status(decision_use_case, UseCase.Status.PILOT)
 
 
 @pytest.mark.django_db
 def test_decision_blockers_use_user_facing_labels(decision_use_case):
+    decision_use_case.status = UseCase.Status.REVIEW
     decision_use_case.planned_pilot_end = None
     decision_use_case.next_review_date = None
     decision_use_case.data_sources = ""
@@ -110,15 +110,16 @@ def test_decision_blockers_use_user_facing_labels(decision_use_case):
 
     check = check_pilot_start(decision_use_case)
 
-    assert "Geplantes Pilotende" in check.blockers
-    assert "Nächster Entscheidungstermin" in check.blockers
-    assert "Datenquellen" in check.blockers
-    assert "planned pilot end" not in check.blockers
+    assert "Readiness offen: Geplantes Pilotende" in check.warnings
+    assert "Readiness offen: Nächster Entscheidungstermin" in check.warnings
+    assert "Readiness offen: Datenquellen" in check.warnings
+    assert "planned pilot end" not in check.warnings
 
 
 @pytest.mark.django_db
 def test_go_live_compares_target_and_actual(decision_use_case, coordinator):
     decision_use_case.status = UseCase.Status.PILOT
+    decision_use_case.pilot_start = timezone.localdate()
     decision_use_case.technical_owner = coordinator
     decision_use_case.one_time_cost = Decimal("5000")
     decision_use_case.recurring_cost = Decimal("300")

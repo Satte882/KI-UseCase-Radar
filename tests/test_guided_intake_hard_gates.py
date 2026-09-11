@@ -11,6 +11,7 @@ from django.utils import timezone
 from ki_radar.accounts.models import User
 from ki_radar.accounts.permissions import GROUP_COORDINATOR
 from ki_radar.core.taxonomy import BusinessDomain
+from ki_radar.governance.models import GovernanceAssessment
 from ki_radar.use_cases.models import DecisionAssessment, UseCase
 from ki_radar.use_cases.services import (
     confirm_conditional_decision,
@@ -87,7 +88,7 @@ def second_approver(db, business_unit):
 
 @pytest.fixture
 def decision_ready_use_case(owner, business_unit):
-    return UseCase.objects.create(
+    use_case = UseCase.objects.create(
         title="Rechnungsprüfung unterstützen",
         summary="Eingehende Rechnungen werden heute manuell geprüft.",
         problem_statement="Die manuelle Prüfung bindet Kapazität und verlängert die Durchlaufzeit.",
@@ -110,6 +111,13 @@ def decision_ready_use_case(owner, business_unit):
         status=UseCase.Status.REVIEW,
         decision_status=UseCase.DecisionStatus.READY,
     )
+    GovernanceAssessment.objects.create(
+        use_case=use_case,
+        assessment_date=timezone.localdate(),
+        basis_version="test-screening-v1",
+        result=GovernanceAssessment.Result.NO_FLAGS,
+    )
+    return use_case
 
 
 def assessment_data(**overrides):
@@ -179,7 +187,7 @@ def test_assessor_cannot_approve_own_assessment(coordinator, decision_ready_use_
 
 
 @pytest.mark.django_db
-def test_low_confidence_blocks_approval(
+def test_low_confidence_is_readiness_for_approval(
     coordinator,
     approver,
     decision_ready_use_case,
@@ -193,16 +201,17 @@ def test_low_confidence_blocks_approval(
         ),
     )
 
-    with pytest.raises(ValidationError, match="Confidence"):
-        submit_approval_decision(
-            use_case=decision_ready_use_case,
-            actor=approver,
-            data=approval_data(),
-        )
+    decision = submit_approval_decision(
+        use_case=decision_ready_use_case,
+        actor=approver,
+        data=approval_data(),
+    )
+
+    assert decision.is_final
 
 
 @pytest.mark.django_db
-def test_required_governance_review_blocks_approval(
+def test_open_required_governance_review_is_readiness_for_approval(
     coordinator,
     approver,
     decision_ready_use_case,
@@ -216,12 +225,13 @@ def test_required_governance_review_blocks_approval(
         data=assessment_data(),
     )
 
-    with pytest.raises(ValidationError, match="Datenschutzprüfung"):
-        submit_approval_decision(
-            use_case=decision_ready_use_case,
-            actor=approver,
-            data=approval_data(),
-        )
+    decision = submit_approval_decision(
+        use_case=decision_ready_use_case,
+        actor=approver,
+        data=approval_data(),
+    )
+
+    assert decision.is_final
 
 
 @pytest.mark.django_db

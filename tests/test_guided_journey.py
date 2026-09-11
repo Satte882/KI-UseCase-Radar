@@ -112,10 +112,9 @@ def test_direct_intake_with_missing_data_source_is_actionable(seeded_demo):
     assert steps["value_stream"].state == "optional"
     assert steps["focus"].state == "optional"
     assert journey.next_action is not None
-    assert journey.next_action.key == "use_case"
-    assert journey.next_action.state == "blocked"
-    assert "Datenquellen" in journey.next_action.details
-    assert "highlight=data_sources" in journey.next_action.url
+    assert journey.next_action.key == "assessment"
+    assert journey.next_action.state == "current"
+    assert steps["use_case"].state == "complete"
 
 
 @pytest.mark.django_db
@@ -140,7 +139,7 @@ def test_stopped_demo_ends_without_delivery_action(seeded_demo):
 
     assert use_case.decision_status == UseCase.DecisionStatus.NOT_PURSUED
     assert journey.next_action is None
-    assert "Nicht weiterverfolgt" in journey.completion_message
+    assert "fachlich beendet" in journey.completion_message
     assert steps["delivery"].state == "optional"
 
 

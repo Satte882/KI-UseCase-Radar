@@ -189,7 +189,7 @@ def test_generic_prefill_and_open_reviews_are_readiness_blockers(
 
 
 @pytest.mark.django_db
-def test_handed_over_status_is_not_reported_as_successful_with_current_blockers(
+def test_handed_over_status_remains_complete_with_current_readiness_findings(
     client,
     owner,
     other_owner,
@@ -227,12 +227,14 @@ def test_handed_over_status_is_not_reported_as_successful_with_current_blockers(
     assert "Übergabe blockiert (inkonsistenter Bestand)" in response.content.decode()
     assert "Übergabe blockiert (inkonsistenter Bestand)" in list_response.content.decode()
     assert current_handed_over_package(use_case) is None
-    assert delivery_step.state == "blocked"
+    assert delivery_step.state == "complete"
     assert journey.completion_message == ""
-    assert all(step.key != "pilot_start" for step in journey.steps)
-    assert handover_step.state == "blocked"
-    assert PILOT_HANDOVER_BLOCKER in check_pilot_start(use_case).blockers
-    with pytest.raises(ValidationError, match=PILOT_HANDOVER_BLOCKER):
+    pilot_start_step = next(step for step in journey.steps if step.key == "pilot_start")
+    assert pilot_start_step.state == "blocked"
+    assert handover_step.state == "complete"
+    assert PILOT_HANDOVER_BLOCKER not in check_pilot_start(use_case).blockers
+    assert "Governance-Screening" in check_pilot_start(use_case).blockers
+    with pytest.raises(ValidationError, match=r"reviews\.services\.create_review"):
         apply_status_transition(
             use_case=use_case,
             target_status=UseCase.Status.PILOT,

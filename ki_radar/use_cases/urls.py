@@ -1,6 +1,12 @@
 from django.urls import path
 
-from . import decision_views, intake_views, origin_consistency_views, views
+from . import (
+    decision_views,
+    intake_views,
+    lean_decision_views,
+    origin_consistency_views,
+    views,
+)
 
 app_name = "use_cases"
 urlpatterns = [
@@ -13,7 +19,7 @@ urlpatterns = [
     path("<uuid:pk>/assessment/new/", decision_views.assessment_create, name="assessment_create"),
     path(
         "<uuid:pk>/decision/new/",
-        decision_views.approval_decision_create,
+        lean_decision_views.approval_decision_create,
         name="approval_decision_create",
     ),
     path(

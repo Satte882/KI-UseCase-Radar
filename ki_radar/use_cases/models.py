@@ -427,6 +427,8 @@ class ApprovalDecision(TimeStampedModel):
     )
     assessment = models.ForeignKey(
         DecisionAssessment,
+        null=True,
+        blank=True,
         on_delete=models.PROTECT,
         related_name="approval_decisions",
     )

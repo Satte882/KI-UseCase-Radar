@@ -13,6 +13,12 @@ from ki_radar.architecture.models import (
     ValueStreamStage,
 )
 from ki_radar.delivery.actions import build_actionable_findings
+from ki_radar.delivery.lean_services import (
+    hand_over_package as lean_hand_over_package,
+)
+from ki_radar.delivery.lean_services import (
+    mark_package_ready as lean_mark_package_ready,
+)
 from ki_radar.delivery.models import DeliveryPackage
 from ki_radar.delivery.permissions import can_edit_package
 from ki_radar.delivery.readiness import delivery_status_snapshot, evaluate_delivery_readiness
@@ -24,6 +30,7 @@ from ki_radar.delivery.services import (
     render_delivery_markdown,
     review_delivery_section,
 )
+from ki_radar.governance.models import GovernanceAssessment
 from ki_radar.use_cases.models import ApprovalDecision, DecisionAssessment, UseCase
 from ki_radar.use_cases.outcome_workspace import build_outcome_workspace_journey
 from ki_radar.use_cases.workflow import build_use_case_journey
@@ -93,6 +100,14 @@ def approve_use_case(use_case, coordinator):
     )
     use_case.decision_status = UseCase.DecisionStatus.APPROVED
     use_case.save(update_fields=["decision_status", "updated_at"])
+    GovernanceAssessment.objects.create(
+        use_case=use_case,
+        assessment_date=timezone.localdate(),
+        reviewer=coordinator,
+        basis_version="Governance-Leitlinie 1.0",
+        result=GovernanceAssessment.Result.NO_FLAGS,
+        rationale="Keine vertiefte Governance-Prüfung erforderlich.",
+    )
     return decision
 
 
@@ -200,8 +215,9 @@ def test_inactive_technical_owner_is_one_canonical_server_blocker(
 
     assert finding_codes.count("TECHNICAL_OWNER_INACTIVE") == 1
     assert action_codes.count("TECHNICAL_OWNER_INACTIVE") == 1
-    with pytest.raises(ValidationError, match="Technical Owner"):
-        mark_package_ready(package)
+    lean_mark_package_ready(package)
+    package.refresh_from_db()
+    assert package.status == DeliveryPackage.Status.READY
 
     DeliveryPackage.objects.filter(pk=package.pk).update(status=DeliveryPackage.Status.READY)
     package.refresh_from_db()
@@ -229,7 +245,7 @@ def test_inactive_technical_owner_is_one_canonical_server_blocker(
     assert "An Delivery übergeben" not in detail_response.content.decode()
     assert workspace_response.context["active_stage_action"]["action_label"] == "Readiness prüfen"
     with pytest.raises(ValidationError, match="Technical Owner"):
-        hand_over_package(package, coordinator)
+        lean_hand_over_package(package, coordinator)
 
     DeliveryPackage.objects.filter(pk=package.pk).update(
         status=DeliveryPackage.Status.HANDED_OVER,

@@ -60,6 +60,7 @@ def create_final_approval(use_case, coordinator):
 def prepare_failed_pilot(use_case, coordinator):
     today = timezone.localdate()
     use_case.status = UseCase.Status.PILOT
+    use_case.pilot_start = today
     use_case.decision_status = UseCase.DecisionStatus.APPROVED
     use_case.data_sources = "ERP und Dokumentenablage"
     use_case.planned_pilot_end = today
@@ -185,13 +186,15 @@ def test_bound_review_form_keeps_submitted_decision(use_case):
 
 @pytest.mark.django_db
 def test_continue_review_keeps_status(client, coordinator, use_case):
+    use_case.status = UseCase.Status.REVIEW
+    use_case.save(update_fields=["status", "updated_at"])
     client.force_login(coordinator)
     response = client.post(
         reverse("reviews:create", args=[use_case.pk]),
         {
             "review_date": timezone.localdate(),
             "decision": Review.Decision.CONTINUE,
-            "new_status": UseCase.Status.IDEA,
+            "new_status": UseCase.Status.REVIEW,
             "rationale": "Weiter prüfen",
             "open_actions": "",
             "action_owner": "",
@@ -278,6 +281,7 @@ def test_failed_pilot_cannot_go_live_without_confirmed_exception(coordinator, us
                 "action_owner": None,
                 "action_due_date": None,
                 "next_review_date": today,
+                **_scale_evidence(),
             },
         )
 

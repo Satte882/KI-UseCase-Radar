@@ -43,7 +43,8 @@ def test_blocker_details_are_derived_from_canonical_strings(owner, business_unit
     details = build_blocker_details(use_case, check.blockers)
 
     assert [detail.label for detail in details] == check.blockers
-    measurement = next(detail for detail in details if detail.label == "Messmethode")
+    assert "Readiness offen: Messmethode" in check.warnings
+    measurement = build_blocker_details(use_case, ["Messmethode"])[0]
     assert measurement.category == "data"
     assert measurement.field_name == "metric_measurement_method"
     assert "highlight=metric_measurement_method" in measurement.target_href
@@ -125,6 +126,6 @@ def test_dashboard_and_detail_show_actionable_blocker_summary(
     detail = client.get(reverse("use_cases:detail", kwargs={"pk": use_case.pk}))
     assert detail.status_code == 200
     detail_content = detail.content.decode()
-    assert "Voraussetzungen offen" in detail_content
+    assert "Bewertungsbereit" in detail_content
+    assert "Bewertung anlegen" in detail_content
     assert "Zum ersten offenen Punkt" not in detail_content
-    assert "Messmethode ergänzen" in detail_content

@@ -53,7 +53,7 @@ def test_complete_intake_without_assessment_is_only_assessment_ready(coordinator
 
 
 @pytest.mark.django_db
-def test_assessment_with_open_governance_is_approval_blocked(coordinator, use_case):
+def test_assessment_with_open_governance_keeps_approval_actionable(coordinator, use_case):
     use_case.delivery_packages.all().delete()
     use_case.approval_decisions.all().delete()
     use_case.status = UseCase.Status.IDEA
@@ -73,9 +73,9 @@ def test_assessment_with_open_governance_is_approval_blocked(coordinator, use_ca
     dimensions = build_use_case_status_dimensions(use_case, journey)
 
     assert dimensions.assessment.label == "Bewertung v1 vorhanden"
-    assert check.state_label == "Freigabe blockiert"
-    assert "Datenschutzprüfung" in check.blockers
-    assert dimensions.approval.label == "Freigabe blockiert"
+    assert check.state_label == "Entscheidung möglich"
+    assert any("Readiness offen: Datenschutzprüfung" in item for item in check.warnings)
+    assert dimensions.approval.label == "Entscheidung möglich"
     assert dimensions.measurement.label != dimensions.lifecycle.label
 
 

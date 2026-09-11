@@ -8,6 +8,7 @@ from django.utils import timezone
 
 from ki_radar.accounts.models import User
 from ki_radar.accounts.permissions import GROUP_COORDINATOR
+from ki_radar.governance.models import GovernanceAssessment
 from ki_radar.use_cases.models import DecisionAssessment, UseCase
 from ki_radar.use_cases.services import (
     apply_status_transition,
@@ -29,7 +30,7 @@ def make_coordinator(username, business_unit):
 
 
 def make_ready_use_case(owner, business_unit):
-    return UseCase.objects.create(
+    use_case = UseCase.objects.create(
         title="Angebote strukturiert vergleichen",
         summary="Lieferantenangebote werden heute manuell vereinheitlicht.",
         problem_statement=(
@@ -55,6 +56,13 @@ def make_ready_use_case(owner, business_unit):
         status=UseCase.Status.REVIEW,
         decision_status=UseCase.DecisionStatus.READY,
     )
+    GovernanceAssessment.objects.create(
+        use_case=use_case,
+        assessment_date=timezone.localdate(),
+        basis_version="test-screening-v1",
+        result=GovernanceAssessment.Result.NO_FLAGS,
+    )
+    return use_case
 
 
 def assessment_data(**overrides):
@@ -115,7 +123,7 @@ def test_business_owner_cannot_approve_own_use_case(owner, coordinator, business
 
 
 @pytest.mark.django_db
-def test_high_risk_is_a_hard_positive_gate(owner, coordinator, business_unit):
+def test_high_risk_is_readiness_for_positive_approval(owner, coordinator, business_unit):
     use_case = make_ready_use_case(owner, business_unit)
     approver = make_coordinator("risk-approver", business_unit)
     create_decision_assessment(
@@ -124,16 +132,19 @@ def test_high_risk_is_a_hard_positive_gate(owner, coordinator, business_unit):
         data=assessment_data(risk_complexity=UseCase.Level.HIGH),
     )
 
-    with pytest.raises(ValidationError, match="Risiko und Komplexität"):
-        submit_approval_decision(
-            use_case=use_case,
-            actor=approver,
-            data=approval_data(),
-        )
+    decision = submit_approval_decision(
+        use_case=use_case,
+        actor=approver,
+        data=approval_data(),
+    )
+
+    assert decision.is_final
 
 
 @pytest.mark.django_db
-def test_governance_fallback_requires_separate_confirmation(owner, coordinator, business_unit):
+def test_positive_approval_uses_screening_without_duplicate_confirmation(
+    owner, coordinator, business_unit
+):
     use_case = make_ready_use_case(owner, business_unit)
     approver = make_coordinator("governance-approver", business_unit)
     create_decision_assessment(
@@ -142,12 +153,13 @@ def test_governance_fallback_requires_separate_confirmation(owner, coordinator, 
         data=assessment_data(),
     )
 
-    with pytest.raises(ValidationError, match="Separate Governance-Bestätigung"):
-        submit_approval_decision(
-            use_case=use_case,
-            actor=approver,
-            data=approval_data(governance_confirmed=False),
-        )
+    decision = submit_approval_decision(
+        use_case=use_case,
+        actor=approver,
+        data=approval_data(governance_confirmed=False),
+    )
+
+    assert decision.is_final
 
 
 @pytest.mark.django_db
@@ -157,7 +169,7 @@ def test_pilot_transition_requires_positive_approval(owner, coordinator, busines
     use_case.planned_pilot_end = timezone.localdate() + timedelta(days=30)
     use_case.save()
 
-    with pytest.raises(ValidationError, match="Positive Freigabeentscheidung"):
+    with pytest.raises(ValidationError, match=r"reviews\.services\.create_review"):
         apply_status_transition(
             use_case=use_case,
             target_status=UseCase.Status.PILOT,
