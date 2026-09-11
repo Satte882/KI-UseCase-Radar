@@ -49,6 +49,45 @@ def _can_transition_delivery(user, use_case: UseCase) -> bool:
     )
 
 
+def _expose_early_negative_decision(
+    use_case: UseCase,
+    user,
+    journey: JourneyState,
+) -> JourneyState:
+    if (
+        use_case.status != UseCase.Status.REVIEW
+        or use_case.decision_assessments.exists()
+        or use_case.decision_status
+        in {UseCase.DecisionStatus.DEFERRED, UseCase.DecisionStatus.NOT_PURSUED}
+        or not is_coordinator(user)
+    ):
+        return journey
+
+    steps: list[JourneyStep] = []
+    changed = False
+    for step in journey.steps:
+        if step.key == "approval" and step.state == "upcoming":
+            steps.append(
+                replace(
+                    step,
+                    state="current",
+                    url=reverse(
+                        "use_cases:approval_decision_create",
+                        kwargs={"pk": use_case.pk},
+                    ),
+                    action_label="Zurückstellen / nicht weiterverfolgen",
+                    reason=(
+                        "Eine strukturierte Bewertung ist für positive Freigaben erforderlich. "
+                        "Eine negative Portfolioentscheidung darf bereits jetzt getroffen werden."
+                    ),
+                )
+            )
+            changed = True
+        else:
+            steps.append(step)
+    return _state(journey, steps) if changed else journey
+
+
 def _normalize_delivery(use_case: UseCase, user, journey: JourneyState) -> JourneyState:
     package = use_case.delivery_packages.first()
     if package is None:
@@ -191,6 +230,7 @@ def build_use_case_journey(use_case: UseCase, user) -> JourneyState:
     if _original_build_use_case is None:
         raise RuntimeError("Lean journey projection is not installed.")
     journey = _original_build_use_case(use_case, user)
+    journey = _expose_early_negative_decision(use_case, user, journey)
     journey = _normalize_delivery(use_case, user, journey)
     journey = _ensure_pilot_start(use_case, user, journey)
     return _normalize_deferred(use_case, journey)
