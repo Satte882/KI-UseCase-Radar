@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import date
-from typing import Mapping
 
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.utils import timezone
@@ -145,7 +145,8 @@ def failed_required_governance_reviews(use_case: UseCase) -> list[str]:
 def validate_transition_shape(*, use_case: UseCase, decision: str, target_status: str) -> None:
     if decision == "return":
         raise ValidationError(
-            "Lifecycle-Rückstufungen sind nicht mehr vorgesehen. Rework bleibt in der erreichten Phase."
+            "Lifecycle-Rückstufungen sind nicht mehr vorgesehen. "
+            "Rework bleibt in der erreichten Phase."
         )
     rule = COMMAND_RULES.get(decision)
     if rule is None:
@@ -167,7 +168,9 @@ def validate_transition_shape(*, use_case: UseCase, decision: str, target_status
 def validate_actor(*, use_case: UseCase, decision: str, actor) -> None:
     if decision in {"start_review", "go_live", "continue", "pause", "rework"}:
         if not is_coordinator(actor):
-            raise PermissionDenied("Für diese Entscheidung ist die Koordinator-Berechtigung erforderlich.")
+            raise PermissionDenied(
+                "Für diese Entscheidung ist die Koordinator-Berechtigung erforderlich."
+            )
         return
     if decision == "start_pilot":
         if not can_start_pilot(actor, use_case):
@@ -250,7 +253,8 @@ def validate_go_live(
     if use_case.metric_result == UseCase.MetricResult.NOT_ACHIEVED:
         if not go_live_exception_confirmed:
             raise ValidationError(
-                "Ein Go-live bei verfehltem Pilotziel benötigt eine ausdrücklich bestätigte Ausnahme."
+                "Ein Go-live bei verfehltem Pilotziel benötigt eine ausdrücklich "
+                "bestätigte Ausnahme."
             )
         if not _text(rationale):
             raise ValidationError(
