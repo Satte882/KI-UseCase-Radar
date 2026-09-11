@@ -107,6 +107,7 @@ def decision_ready_use_case(owner, business_unit):
         metric_target=Decimal("15"),
         metric_measurement_method="Vierwöchige Stichprobe über alle Eingangsrechnungen",
         data_sources="Rechnungs-PDF und Bestelldaten",
+        status=UseCase.Status.REVIEW,
         decision_status=UseCase.DecisionStatus.READY,
     )
 
