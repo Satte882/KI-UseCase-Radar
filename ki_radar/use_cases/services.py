@@ -377,7 +377,9 @@ def validate_target_status(
         UseCase.Status.PILOT,
         UseCase.Status.OPERATION,
     }:
-        raise ValidationError("Der Status Beendet ist ausschließlich aus Pilot oder Betrieb möglich.")
+        raise ValidationError(
+            "Der Status Beendet ist ausschließlich aus Pilot oder Betrieb möglich."
+        )
     check = decision_check_for_status(
         use_case,
         target_status,
