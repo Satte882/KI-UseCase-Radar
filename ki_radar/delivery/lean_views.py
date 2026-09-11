@@ -47,7 +47,10 @@ def package_mark_ready(request, pk):
     else:
         messages.success(
             request,
-            "Delivery Package wurde als bereit markiert. Offene Readiness-Hinweise bleiben sichtbar.",
+            (
+                "Delivery Package wurde als bereit markiert. "
+                "Offene Readiness-Hinweise bleiben sichtbar."
+            ),
         )
     return redirect(package)
 
@@ -65,6 +68,9 @@ def package_handover(request, pk):
     else:
         messages.success(
             request,
-            "Delivery Package wurde verbindlich übergeben. Offene Readiness-Hinweise bleiben nachvollziehbar.",
+            (
+                "Delivery Package wurde verbindlich übergeben. "
+                "Offene Readiness-Hinweise bleiben nachvollziehbar."
+            ),
         )
     return redirect(package)
