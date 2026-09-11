@@ -459,13 +459,11 @@ def approval_check(
         return ApprovalCheck(blockers=["Unzulässiger Entscheidungsstatus"])
 
     assessment = use_case.decision_assessments.first()
-    if assessment is None:
-        blockers.append("Aktuelle strukturierte Bewertung")
-        return ApprovalCheck(blockers=blockers)
-
     if target_status in APPROVAL_STATUSES:
+        if assessment is None:
+            blockers.append("Aktuelle strukturierte Bewertung")
         blockers.extend(_missing_fields(use_case, POSITIVE_APPROVAL_CORE_REQUIREMENTS))
-        if actor and assessment.assessed_by_id == actor.id:
+        if assessment is not None and actor and assessment.assessed_by_id == actor.id:
             blockers.append("Bewertende und entscheidende Person müssen verschieden sein")
         if actor and use_case.business_owner_id == actor.id:
             blockers.append(
@@ -476,18 +474,22 @@ def approval_check(
         blockers.extend(failed_required_governance_reviews(use_case))
         warnings.extend(_open_required_governance_warnings(use_case))
         warnings.extend(_readiness_warnings(use_case, APPROVAL_METRIC_REQUIREMENTS))
-        if assessment.confidence_level == UseCase.Level.LOW:
-            warnings.append("Readiness offen: Confidence ist niedrig")
-        if assessment.technical_feasibility == UseCase.Level.LOW:
-            warnings.append("Readiness offen: Technische Machbarkeit ist niedrig")
-        if assessment.data_readiness == UseCase.Level.LOW:
-            warnings.append("Readiness offen: Datenreife ist niedrig")
-        if assessment.risk_complexity == UseCase.Level.HIGH:
-            warnings.append("Readiness offen: Risiko und Komplexität sind hoch")
-    elif actor and assessment.assessed_by_id == actor.id:
-        warnings.append("Hinweis: Bewertende und entscheidende Person sind identisch")
+        if assessment is not None:
+            if assessment.confidence_level == UseCase.Level.LOW:
+                warnings.append("Readiness offen: Confidence ist niedrig")
+            if assessment.technical_feasibility == UseCase.Level.LOW:
+                warnings.append("Readiness offen: Technische Machbarkeit ist niedrig")
+            if assessment.data_readiness == UseCase.Level.LOW:
+                warnings.append("Readiness offen: Datenreife ist niedrig")
+            if assessment.risk_complexity == UseCase.Level.HIGH:
+                warnings.append("Readiness offen: Risiko und Komplexität sind hoch")
+    else:
+        if assessment is None:
+            warnings.append("Readiness offen: Keine strukturierte Bewertung vorhanden")
+        elif actor and assessment.assessed_by_id == actor.id:
+            warnings.append("Hinweis: Bewertende und entscheidende Person sind identisch")
 
-    if assessment.recommendation != target_status:
+    if assessment is not None and assessment.recommendation != target_status:
         warnings.append(
             "Die Entscheidung weicht von der Empfehlung der bewertenden Person ab "
             "und sollte begründet werden."
@@ -627,7 +629,12 @@ def confirm_conditional_decision(*, decision: ApprovalDecision, actor) -> Approv
         raise PermissionDenied(
             "Für diese unabhängige Zweitprüfung fehlt die Berechtigung oder Personentrennung."
         )
-    if decision.assessment_id != decision.use_case.decision_assessments.first().id:
+    current_assessment = decision.use_case.decision_assessments.first()
+    if (
+        decision.assessment_id is None
+        or current_assessment is None
+        or decision.assessment_id != current_assessment.id
+    ):
         raise ValidationError("Seit dem Vorschlag wurde eine neue Bewertung erstellt.")
 
     check = approval_check(
