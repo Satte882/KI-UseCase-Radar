@@ -1,7 +1,4 @@
 from ki_radar.accounts.permissions import (
-    GROUP_BUSINESS_OWNER,
-    GROUP_COORDINATOR,
-    in_group,
     is_business_owner,
     is_coordinator,
 )
@@ -21,23 +18,33 @@ def can_view_use_case(user, use_case) -> bool:
     return user.is_authenticated and not use_case.is_archived
 
 
-def can_start_pilot(user, use_case) -> bool:
-    """Allow the explicit Pilot start only to the accountable business roles."""
-
-    if not user.is_authenticated:
+def _can_accountable_transition(user, use_case) -> bool:
+    if not user or not user.is_authenticated:
         return False
-    if in_group(user, GROUP_COORDINATOR):
+    if is_coordinator(user):
         return True
-    return in_group(user, GROUP_BUSINESS_OWNER) and use_case.business_owner_id == user.id
+    return is_business_owner(user) and use_case.business_owner_id == user.id
+
+
+def can_start_pilot(user, use_case) -> bool:
+    """Allow Pilot start to a semantic coordinator or the assigned Business Owner."""
+
+    return _can_accountable_transition(user, use_case)
+
+
+def can_end_use_case(user, use_case) -> bool:
+    """Allow END to a semantic coordinator or the assigned Business Owner."""
+
+    return _can_accountable_transition(user, use_case)
 
 
 def can_confirm_go_live_exception(user) -> bool:
-    """Allow a failed-pilot go-live exception only to the explicit coordinator group."""
+    """Use the same semantic coordinator capability as the Go-live decision itself."""
 
-    return bool(user and user.is_authenticated and in_group(user, GROUP_COORDINATOR))
+    return bool(user and user.is_authenticated and is_coordinator(user))
 
 
 def can_confirm_early_go_live_exception(user) -> bool:
-    """Allow an early go-live exception only to the explicit coordinator group."""
+    """Legacy early-Go-live capability follows semantic coordinator permissions."""
 
-    return bool(user and user.is_authenticated and in_group(user, GROUP_COORDINATOR))
+    return bool(user and user.is_authenticated and is_coordinator(user))
