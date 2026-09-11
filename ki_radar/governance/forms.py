@@ -12,12 +12,6 @@ class DateInput(forms.DateInput):
 
 
 class GovernanceAssessmentForm(forms.ModelForm):
-    REVIEW_REQUIREMENTS = (
-        ("privacy_review_required", "privacy_review_rationale", "Datenschutz"),
-        ("security_review_required", "security_review_rationale", "Informationssicherheit"),
-        ("legal_review_required", "legal_review_rationale", "Recht"),
-    )
-
     class Meta:
         model = GovernanceAssessment
         fields = [
@@ -79,18 +73,10 @@ class GovernanceAssessmentForm(forms.ModelForm):
             "next_assessment_date": "Nächstes Screening",
         }
         help_texts = {
-            "privacy_review_rationale": (
-                "Begründet entweder den Prüfbedarf oder ausdrücklich, warum die Prüfung "
-                "nicht relevant ist. Ohne separaten Text gilt die übergreifende Begründung."
-            ),
-            "security_review_rationale": (
-                "Begründet entweder den Prüfbedarf oder ausdrücklich, warum die Prüfung "
-                "nicht relevant ist. Ohne separaten Text gilt die übergreifende Begründung."
-            ),
-            "legal_review_rationale": (
-                "Begründet entweder den Prüfbedarf oder ausdrücklich, warum die Prüfung "
-                "nicht relevant ist. Ohne separaten Text gilt die übergreifende Begründung."
-            ),
+            "privacy_review_rationale": "Optionaler Hinweis zum Datenschutz-Prüfbedarf.",
+            "security_review_rationale": "Optionaler Hinweis zum Security-Prüfbedarf.",
+            "legal_review_rationale": "Optionaler Hinweis zum Rechts-Prüfbedarf.",
+            "rationale": "Empfohlen für Nachvollziehbarkeit; blockiert das Screening nicht.",
         }
 
     def __init__(self, *args, **kwargs):
@@ -103,19 +89,6 @@ class GovernanceAssessmentForm(forms.ModelForm):
                 if isinstance(field.widget, forms.CheckboxInput)
                 else "form-control",
             )
-
-    def clean(self):
-        cleaned_data = super().clean()
-        overall_rationale = (cleaned_data.get("rationale") or "").strip()
-        for required_field, rationale_field, label in self.REVIEW_REQUIREMENTS:
-            required = bool(cleaned_data.get(required_field))
-            specific_rationale = (cleaned_data.get(rationale_field) or "").strip()
-            if not required and not specific_rationale and not overall_rationale:
-                self.add_error(
-                    rationale_field,
-                    f"Für '{label}: nicht relevant' ist eine Begründung erforderlich.",
-                )
-        return cleaned_data
 
 
 class GovernanceReviewForm(forms.ModelForm):
@@ -149,10 +122,11 @@ class GovernanceReviewForm(forms.ModelForm):
             "evidence_url": "Nachweislink",
         }
         help_texts = {
-            "evidence_url": "Für jede abgeschlossene formale Prüfung serverseitig erforderlich.",
+            "evidence_url": "Empfohlen als Nachweisreferenz; blockiert den Abschluss nicht.",
+            "rationale": "Empfohlen für Nachvollziehbarkeit; blockiert den Abschluss nicht.",
             "conditions": "Bei 'Bestanden mit Auflagen' verpflichtend.",
-            "risks": "Bei 'Nicht bestanden' verpflichtend.",
-            "measures": "Bei 'Nicht bestanden' verpflichtend.",
+            "risks": "Bei 'Nicht bestanden' als Readiness-Hinweis nachziehbar.",
+            "measures": "Bei 'Nicht bestanden' als Readiness-Hinweis nachziehbar.",
         }
 
     def __init__(self, *args, responsible_role="", **kwargs):
