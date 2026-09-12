@@ -65,10 +65,10 @@ def test_issue_417_uses_shared_tokens_and_keeps_active_location_visible():
 
 
 def test_issue_417_places_local_navigation_directly_after_global_lifecycle():
-    assert 'includes/local_work_status.html' not in NEXT_ACTION
+    assert "includes/local_work_status.html" not in NEXT_ACTION
     for workspace in WORKSPACE_TEMPLATES:
-        lifecycle = workspace.index('includes/lifecycle_rail.html')
-        local_status = workspace.index('includes/local_work_status.html')
+        lifecycle = workspace.index("includes/lifecycle_rail.html")
+        local_status = workspace.index("includes/local_work_status.html")
         assert lifecycle < local_status
 
 
