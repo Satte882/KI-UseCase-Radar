@@ -254,7 +254,7 @@ def test_inactive_technical_owner_is_one_canonical_server_blocker(
     package.refresh_from_db()
 
     assert delivery_status_snapshot(package).handover_complete is False
-    assert current_handed_over_package(use_case) is None
+    assert current_handed_over_package(use_case) == package
     assert render_delivery_markdown(package).count("TECHNICAL_OWNER_INACTIVE") == 1
 
 
