@@ -3,11 +3,14 @@ from types import SimpleNamespace
 import pytest
 from django.utils import timezone
 
-from ki_radar.delivery import handover as delivery_handover
+from ki_radar.delivery.handover import current_handed_over_package
 from ki_radar.delivery.models import DeliveryPackage
-from ki_radar.governance import services as governance_services
 from ki_radar.governance.models import GovernanceAssessment
-from ki_radar.use_cases import transition_policy
+from ki_radar.governance.services import (
+    create_screening_review_artifacts,
+    current_governance_status,
+    required_governance_blockers,
+)
 from ki_radar.use_cases.governance_status import build_governance_statuses
 from ki_radar.use_cases.models import UseCase
 
@@ -57,16 +60,9 @@ def test_delivery_owned_handover_contract_is_persisted_milestone(
 ):
     package = SimpleNamespace(status=status, handed_over_at=handed_over_at)
 
-    result = delivery_handover.current_handed_over_package(_handover_use_case(package))
+    result = current_handed_over_package(_handover_use_case(package))
 
     assert (result is package) is expected
-
-
-def test_transition_policy_reuses_delivery_owned_handover_contract():
-    assert (
-        transition_policy.current_handed_over_package
-        is delivery_handover.current_handed_over_package
-    )
 
 
 @pytest.mark.django_db
@@ -89,18 +85,15 @@ def test_governance_screening_wins_over_mirrored_use_case_flags(
         privacy_review_required=False,
         result=GovernanceAssessment.Result.NO_FLAGS,
     )
-    governance_services.create_screening_review_artifacts(
-        assessment=screening,
-        actor=coordinator,
-    )
+    create_screening_review_artifacts(assessment=screening, actor=coordinator)
 
-    state = governance_services.current_governance_status(use_case)
+    state = current_governance_status(use_case)
     privacy = next(item for item in state.reviews if item.definition.key == "privacy")
 
     assert state.screening == screening
     assert privacy.required is False
     assert privacy.completed is True
-    assert governance_services.required_governance_blockers(use_case) == []
+    assert required_governance_blockers(use_case) == []
 
 
 @pytest.mark.django_db
@@ -118,12 +111,9 @@ def test_governance_consumers_use_screening_and_artifact_instead_of_mirror_flags
         privacy_review_required=True,
         result=GovernanceAssessment.Result.PRIVACY,
     )
-    governance_services.create_screening_review_artifacts(
-        assessment=screening,
-        actor=coordinator,
-    )
+    create_screening_review_artifacts(assessment=screening, actor=coordinator)
 
-    state = governance_services.current_governance_status(use_case)
+    state = current_governance_status(use_case)
     privacy = next(item for item in state.reviews if item.definition.key == "privacy")
     projected = next(
         item for item in build_governance_statuses(use_case) if item.kind.key == "privacy"
@@ -132,9 +122,7 @@ def test_governance_consumers_use_screening_and_artifact_instead_of_mirror_flags
     assert use_case.privacy_review_required is False
     assert privacy.required is True
     assert privacy.completed is False
-    assert governance_services.required_governance_blockers(use_case) == [
-        "Datenschutzprüfung ist noch offen"
-    ]
+    assert required_governance_blockers(use_case) == ["Datenschutzprüfung ist noch offen"]
     assert projected.state == "open"
 
 
@@ -158,7 +146,7 @@ def test_governance_legacy_flags_are_fallback_only_without_review_artifacts(
         result=GovernanceAssessment.Result.NO_FLAGS,
     )
 
-    state = governance_services.current_governance_status(use_case)
+    state = current_governance_status(use_case)
     privacy = next(item for item in state.reviews if item.definition.key == "privacy")
 
     assert privacy.required is True
