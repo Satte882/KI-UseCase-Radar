@@ -15,8 +15,6 @@ from ki_radar.use_cases.governance_status import build_governance_statuses
 from ki_radar.use_cases.models import UseCase
 from ki_radar.use_cases.transition_policy import (
     current_handed_over_package as transition_handover,
-)
-from ki_radar.use_cases.transition_policy import (
     required_governance_blockers as transition_governance_blockers,
 )
 
