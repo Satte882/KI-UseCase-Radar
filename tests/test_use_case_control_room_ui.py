@@ -11,6 +11,10 @@ TEMPLATE = read_repo_text("templates", "use_cases", "detail.html")
 DECISION_STATE = read_repo_text("templates", "includes", "decision_state.html")
 LIFECYCLE_RAIL = read_repo_text("templates", "includes", "lifecycle_rail.html")
 CONTEXT_TOPBAR = read_repo_text("templates", "includes", "context_topbar.html")
+LOCAL_STATUS = read_repo_text("templates", "includes", "local_work_status.html")
+NEXT_ACTION = read_repo_text("templates", "includes", "next_action.html")
+OUTCOME = read_repo_text("templates", "reporting", "outcome_workspace.html")
+DISCLOSURE_JS = read_repo_text("static", "js", "disclosure-navigation.js")
 CSS = read_repo_text("static", "css", "ui-control-room-use-case.css")
 PRIMITIVES = read_repo_text("static", "css", "ui-control-room-primitives.css")
 TOPBAR_CSS = read_repo_text("static", "css", "context-topbar.css")
@@ -198,3 +202,31 @@ def test_issue_410_keeps_active_work_visible_and_secondary_detail_collapsible():
     assert 'id="governance-evidence-details"' in TEMPLATE
     assert 'id="assessment-evidence"' in TEMPLATE
     assert 'id="metric-evidence"' in TEMPLATE
+
+
+def test_issue_411_projects_local_work_status_without_second_progress_engine():
+    assert 'data-testid="local-work-status"' in LOCAL_STATUS
+    assert "step.state == 'complete'" in LOCAL_STATUS
+    assert "row.state == 'confirmed'" in LOCAL_STATUS
+    assert "latest_validation.process_version == process_analysis.version" in LOCAL_STATUS
+    assert "selected_use_case.metric_actual is not None" in LOCAL_STATUS
+    assert "selected_use_case.latest_delivery.status == 'handed_over'" in LOCAL_STATUS
+    assert "Erledigt" in LOCAL_STATUS
+    assert "Offen" in LOCAL_STATUS
+    assert "Blockiert" in LOCAL_STATUS
+    assert "Optional" in LOCAL_STATUS
+    assert "Fortschritt" not in LOCAL_STATUS
+    assert "value_stream_detail" not in LOCAL_STATUS
+
+    assert NEXT_ACTION.index('data-testid="primary-next-action"') < NEXT_ACTION.index(
+        'includes/local_work_status.html'
+    )
+    assert OUTCOME.index('data-testid="outcome-primary-action"') < OUTCOME.index(
+        'includes/local_work_status.html'
+    )
+    assert 'id="outcome-measurement"' in OUTCOME
+    assert 'id="outcome-delivery-context"' in OUTCOME
+    assert 'id="outcome-scale-review"' in OUTCOME
+    assert 'setAttribute("aria-current", "location")' in DISCLOSURE_JS
+    assert 'addEventListener("scroll"' in DISCLOSURE_JS
+    assert "data-work-state" not in DISCLOSURE_JS
