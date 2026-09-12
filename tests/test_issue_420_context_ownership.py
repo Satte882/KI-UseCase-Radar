@@ -3,7 +3,7 @@ from types import SimpleNamespace
 import pytest
 from django.utils import timezone
 
-from ki_radar.delivery.handover import current_handed_over_package as delivery_handover
+from ki_radar.delivery import handover as delivery_handover
 from ki_radar.delivery.models import DeliveryPackage
 from ki_radar.governance.models import GovernanceAssessment
 from ki_radar.governance.services import (
@@ -11,9 +11,9 @@ from ki_radar.governance.services import (
     current_governance_status,
     required_governance_blockers as governance_blockers,
 )
+from ki_radar.use_cases import transition_policy
 from ki_radar.use_cases.governance_status import build_governance_statuses
 from ki_radar.use_cases.models import UseCase
-from ki_radar.use_cases.transition_policy import current_handed_over_package as transition_handover
 
 
 class _Packages:
@@ -61,13 +61,16 @@ def test_delivery_owned_handover_contract_is_persisted_milestone(
 ):
     package = SimpleNamespace(status=status, handed_over_at=handed_over_at)
 
-    result = delivery_handover(_handover_use_case(package))
+    result = delivery_handover.current_handed_over_package(_handover_use_case(package))
 
     assert (result is package) is expected
 
 
 def test_transition_policy_reuses_delivery_owned_handover_contract():
-    assert transition_handover is delivery_handover
+    assert (
+        transition_policy.current_handed_over_package
+        is delivery_handover.current_handed_over_package
+    )
 
 
 @pytest.mark.django_db
