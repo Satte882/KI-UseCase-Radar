@@ -20,16 +20,14 @@
     <h1 class="cr-page-header__title">{{ use_case.title }}</h1>
     <p class="uc-page-summary">{{ use_case.summary|default:use_case.problem_statement|truncatechars:180 }}</p>
   </div>
+  {% if nav_is_coordinator and journey.next_action.key != 'pilot_start' %}
   <div class="dropdown">
     <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Weitere Aktionen</button>
     <ul class="dropdown-menu dropdown-menu-end">
-      {% if can_edit and journey.next_action.key != 'use_case' %}<li><a class="dropdown-item" href="{% url 'use_cases:edit' use_case.pk %}">Stammdaten bearbeiten</a></li>{% endif %}
-      {% if nav_is_coordinator and journey.next_action.key != 'pilot_start' %}<li><a class="dropdown-item" href="{% url 'reviews:create' use_case.pk %}">Entscheidung dokumentieren</a></li>{% endif %}
-      {% if nav_is_coordinator and journey.next_action.key != 'assessment' %}<li><a class="dropdown-item" href="{% url 'use_cases:assessment_create' use_case.pk %}">{% if latest_assessment %}Neue Bewertungsversion{% else %}Bewertung anlegen{% endif %}</a></li>{% endif %}
-      {% if nav_is_coordinator and latest_assessment and journey.next_action.key != 'approval' %}<li><a class="dropdown-item" href="{% url 'use_cases:approval_decision_create' use_case.pk %}">Freigabeentscheidung</a></li>{% endif %}
-      {% if not can_edit and not nav_is_coordinator %}<li><span class="dropdown-item-text text-muted">Keine zusätzlichen Aktionen für deine Rolle.</span></li>{% endif %}
+      <li><a class="dropdown-item" href="{% url 'reviews:create' use_case.pk %}">Entscheidung dokumentieren</a></li>
     </ul>
   </div>
+  {% endif %}
 </header>
 
 {% include "includes/decision_state.html" %}
@@ -40,6 +38,20 @@
       <h2 id="assessment-title">Belastbare Freigabeentscheidung</h2>
       <p>Empfehlung und Confidence stehen im Vordergrund; Begründung, Evidenz und Bewertungsmetadaten bleiben nachvollziehbar.</p>
     </div>
+    {% if nav_is_coordinator %}
+    <div class="d-flex flex-wrap justify-content-end gap-2">
+      {% if use_case.status == 'review' and journey.next_action.key != 'assessment' %}
+      <a class="btn btn-sm btn-outline-secondary" data-testid="assessment-edit-action" href="{% url 'use_cases:assessment_create' use_case.pk %}">{% if latest_assessment %}Neue Bewertungsversion{% else %}Bewertung anlegen{% endif %}</a>
+      {% endif %}
+      {% if journey.next_action.key != 'approval' %}
+        {% if latest_assessment %}
+        <a class="btn btn-sm btn-outline-secondary" data-testid="approval-decision-action" href="{% url 'use_cases:approval_decision_create' use_case.pk %}">Freigabeentscheidung</a>
+        {% elif use_case.status == 'review' %}
+        <a class="btn btn-sm btn-outline-secondary" data-testid="assessment-negative-decision-action" href="{% url 'use_cases:approval_decision_create' use_case.pk %}">Zurückstellen / nicht weiterverfolgen</a>
+        {% endif %}
+      {% endif %}
+    </div>
+    {% endif %}
   </header>
   <div class="uc-assessment__body">
     {% if latest_assessment %}
@@ -71,7 +83,7 @@
       </div>
     </div>
     {% else %}
-    <p class="cr-empty-state">Der Use Case ist aufgenommen, aber noch nicht strukturiert bewertet. Ohne Bewertung kann keine Freigabeentscheidung erfolgen.</p>
+    <p class="cr-empty-state">Der Use Case ist aufgenommen, aber noch nicht strukturiert bewertet. Ohne Bewertung kann keine positive Freigabeentscheidung erfolgen; Zurückstellen oder Nicht-Weiterverfolgen bleibt möglich.</p>
     {% endif %}
   </div>
 </section>
@@ -81,7 +93,10 @@
     <section class="cr-section uc-business-section" aria-labelledby="metric-title">
       <header class="cr-section-heading">
         <div><h2 id="metric-title">Primäre Erfolgsmetrik</h2><p>Ziel und Ist sind die führende Ergebnisbetrachtung; Baseline und Messgrundlage bleiben als Kontext erhalten.</p></div>
-        {% if use_case.metric_name %}<span class="badge {% if use_case.metric_result == 'achieved' %}state-ready{% elif use_case.metric_result == 'not_achieved' %}state-blocked{% else %}state-review{% endif %}">{{ use_case.metric_result_label }}</span>{% endif %}
+        <div class="d-flex flex-wrap align-items-center justify-content-end gap-2">
+          {% if use_case.metric_name %}<span class="badge {% if use_case.metric_result == 'achieved' %}state-ready{% elif use_case.metric_result == 'not_achieved' %}state-blocked{% else %}state-review{% endif %}">{{ use_case.metric_result_label }}</span>{% endif %}
+          {% if can_edit %}<a class="btn btn-sm btn-outline-secondary" data-testid="metric-edit-action" href="{% url 'use_cases:edit' use_case.pk %}#field-metric_name">Metrik bearbeiten</a>{% endif %}
+        </div>
       </header>
       <div class="uc-section-body">
         {% if use_case.metric_name %}
@@ -105,7 +120,10 @@
     </section>
 
     <section class="cr-section uc-business-section" aria-labelledby="business-context-title">
-      <header class="cr-section-heading"><div><h2 id="business-context-title">Fachlicher Kontext</h2><p>Problem und erwarteter Nutzen bleiben als fachliche Begründung direkt sichtbar.</p></div></header>
+      <header class="cr-section-heading">
+        <div><h2 id="business-context-title">Fachlicher Kontext</h2><p>Problem und erwarteter Nutzen bleiben als fachliche Begründung direkt sichtbar.</p></div>
+        {% if can_edit %}<a class="btn btn-sm btn-outline-secondary" data-testid="business-context-edit-action" href="{% url 'use_cases:edit' use_case.pk %}#field-problem_statement">Use Case bearbeiten</a>{% endif %}
+      </header>
       <div class="uc-context-grid uc-section-body">
         <div><div class="uc-data-label">Problem</div><p>{{ use_case.problem_statement }}</p></div>
         <div><div class="uc-data-label">Erwarteter Nutzen</div><p>{{ use_case.expected_benefit }}</p></div>
