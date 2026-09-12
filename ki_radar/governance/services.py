@@ -47,6 +47,15 @@ class GovernanceReviewState:
         )
 
     @property
+    def conditionally_passed(self) -> bool:
+        return bool(
+            self.required
+            and self.review is not None
+            and self.review.status == GovernanceReview.Status.COMPLETED
+            and self.review.result == GovernanceReview.Result.PASSED_WITH_CONDITIONS
+        )
+
+    @property
     def blocker(self) -> str:
         if not self.required or self.completed:
             return ""
@@ -130,6 +139,16 @@ def latest_review_for_screening(
 def review_history(*, use_case: UseCase, review_type: str):
     return use_case.governance_reviews.filter(review_type=review_type).select_related(
         "reviewer", "screening"
+    )
+
+
+def governance_review_evidence(use_case: UseCase) -> tuple[GovernanceReview, ...]:
+    """Return Governance-owned formal-review evidence in stable snapshot order."""
+
+    return tuple(
+        use_case.governance_reviews.select_related("screening", "reviewer").order_by(
+            "review_type", "-created_at"
+        )
     )
 
 
