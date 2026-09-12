@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from dataclasses import replace
 
+from ki_radar.delivery.handover import current_handed_over_package
+
 from . import outcome_workspace
 from .models import UseCase
-from .transition_policy import current_handed_over_package
 
 _original_build_outcome = None
 
@@ -59,7 +60,7 @@ def install() -> None:
     global _original_build_outcome
     if outcome_workspace.build_outcome_workspace_journey is build_outcome_workspace_journey:
         return
-    # Handover truth is now the persisted handover milestone; readiness findings remain visible
+    # Handover truth is a Delivery-owned persisted milestone. Readiness findings remain visible
     # but must not retroactively invalidate a completed handover.
     outcome_workspace.current_handed_over_package = current_handed_over_package
     _original_build_outcome = outcome_workspace.build_outcome_workspace_journey
