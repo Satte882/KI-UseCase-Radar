@@ -10,8 +10,9 @@ from django.utils import timezone
 from ki_radar.accounts.permissions import is_coordinator
 from ki_radar.delivery.handover import current_handed_over_package
 from ki_radar.governance.services import (
-    failed_required_governance_reviews,
-    required_governance_blockers,
+    current_governance_status,
+    failed_required_governance_reviews as failed_required_governance_reviews,
+    required_governance_blockers as required_governance_blockers,
 )
 
 from .models import UseCase
@@ -120,7 +121,8 @@ def validate_pilot_start(
     package = current_handed_over_package(use_case)
     if package is None:
         blockers.append("verbindliche Übergabe des aktuellen Delivery Packages")
-    if not use_case.governance_assessments.exists():
+    governance = current_governance_status(use_case)
+    if not governance.has_screening:
         blockers.append("Governance-Screening")
     blockers.extend(required_governance_blockers(use_case))
     if blockers:
