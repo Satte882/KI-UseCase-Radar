@@ -61,6 +61,9 @@
 {% endwith %}
 {% endif %}
 {% endif %}
+{% if request.resolver_match.namespace == 'use_cases' and request.resolver_match.url_name == 'detail' or request.resolver_match.namespace == 'architecture' and request.resolver_match.url_name == 'process_analysis_detail' or request.resolver_match.namespace == 'delivery' and request.resolver_match.url_name == 'package_detail' %}
+{% include "includes/local_work_status.html" %}
+{% endif %}
 {% if request.resolver_match.namespace == 'architecture' and request.resolver_match.url_name == 'value_stream_detail' and value_stream.status == 'active' and value_stream.focus.is_selected and not value_stream.stage_focus_decision %}
 <div class="small text-muted mb-4">
   Abgekürzter Pfad ohne Prozessanalyse und Lösungsvergleich: Nach dokumentierter Auswahl der Fokusphase kann ein Use Case weiterhin direkt aus der Phase abgeleitet werden.
