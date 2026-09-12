@@ -3,18 +3,16 @@ from pathlib import Path
 from django.template.loader import get_template
 
 ROOT = Path(__file__).resolve().parents[1]
-LOCAL_STATUS = ROOT.joinpath("templates", "includes", "local_work_status.html").read_text(
-    encoding="utf-8"
-)
-NEXT_ACTION = ROOT.joinpath("templates", "includes", "next_action.html").read_text(
-    encoding="utf-8"
-)
-OUTCOME = ROOT.joinpath("templates", "reporting", "outcome_workspace.html").read_text(
-    encoding="utf-8"
-)
-DISCLOSURE_JS = ROOT.joinpath("static", "js", "disclosure-navigation.js").read_text(
-    encoding="utf-8"
-)
+
+
+def read_repo_text(*parts):
+    return ROOT.joinpath(*parts).read_text(encoding="utf-8")
+
+
+LOCAL_STATUS = read_repo_text("templates", "includes", "local_work_status.html")
+NEXT_ACTION = read_repo_text("templates", "includes", "next_action.html")
+OUTCOME = read_repo_text("templates", "reporting", "outcome_workspace.html")
+DISCLOSURE_JS = read_repo_text("static", "js", "disclosure-navigation.js")
 
 
 def test_local_work_status_templates_compile():
@@ -55,7 +53,7 @@ def test_status_strip_projects_existing_domain_states_without_new_progress_engin
 
 
 def test_local_status_entries_link_to_real_work_areas_and_are_not_color_only():
-    for target in (
+    targets = (
         "assessment",
         "governance-evidence",
         "decision-history",
@@ -65,9 +63,12 @@ def test_local_status_entries_link_to_real_work_areas_and_are_not_color_only():
         "loesungsoptionen",
         "outcome-measurement",
         "outcome-delivery-context",
-    ):
+    )
+    for target in targets:
         assert target in LOCAL_STATUS
-    for marker in ("✓", "○", "!", "\u2013", "·"):
+
+    markers = ("✓", "○", "!", "\u2013", "·")
+    for marker in markers:
         assert marker in LOCAL_STATUS
     assert 'aria-label="Arbeitsbereiche' in LOCAL_STATUS
 
