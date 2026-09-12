@@ -7,6 +7,7 @@ from django.urls import reverse
 
 from ki_radar.governance.models import GovernanceReview
 from ki_radar.governance.services import (
+    REVIEW_DEFINITIONS,
     GovernanceReviewState,
     ReviewDefinition,
     current_governance_status,
@@ -16,8 +17,25 @@ from .models import UseCase
 
 
 @dataclass(frozen=True)
+class ReviewKind:
+    """Presentation metadata sourced from the Governance-owned definition."""
+
+    key: str
+    label: str
+    completed_field: str
+
+
+def _kind(definition: ReviewDefinition) -> ReviewKind:
+    return ReviewKind(
+        key=definition.review_type,
+        label=definition.short_label,
+        completed_field=definition.completed_field,
+    )
+
+
+@dataclass(frozen=True)
 class GovernanceReviewStatus:
-    kind: ReviewDefinition
+    kind: ReviewKind
     state: str
     label: str
     badge_class: str
@@ -62,10 +80,11 @@ def _artifact_status(
     if artifact is None:
         return None
 
-    kind = state.definition
+    definition = state.definition
+    kind = _kind(definition)
     target_url = reverse(
         "governance:review",
-        kwargs={"use_case_id": use_case.pk, "review_type": kind.review_type},
+        kwargs={"use_case_id": use_case.pk, "review_type": definition.review_type},
     )
     common = {
         "kind": kind,
@@ -112,8 +131,6 @@ def build_governance_statuses(use_case: UseCase) -> tuple[GovernanceReviewStatus
     states = governance.reviews if governance is not None else ()
 
     if not states:
-        from ki_radar.governance.services import REVIEW_DEFINITIONS
-
         states = tuple(
             GovernanceReviewState(definition=definition, required=False, review=None)
             for definition in REVIEW_DEFINITIONS.values()
@@ -121,11 +138,15 @@ def build_governance_statuses(use_case: UseCase) -> tuple[GovernanceReviewStatus
 
     statuses = []
     for state in states:
-        kind = state.definition
+        definition = state.definition
+        kind = _kind(definition)
         review_url = (
             reverse(
                 "governance:review",
-                kwargs={"use_case_id": use_case.pk, "review_type": kind.review_type},
+                kwargs={
+                    "use_case_id": use_case.pk,
+                    "review_type": definition.review_type,
+                },
             )
             if use_case.pk
             else ""
@@ -166,13 +187,13 @@ def build_governance_statuses(use_case: UseCase) -> tuple[GovernanceReviewStatus
                     changed_at=assessment.assessment_date,
                     changed_at_has_time=False,
                     attribution_note="Maßgebliches Governance-Screening",
-                    rationale=assessment.review_rationale(kind.review_type),
+                    rationale=assessment.review_rationale(definition.review_type),
                     target_url=review_url,
                 )
             )
             continue
 
-        completion_change = _latest_completion_change(use_case, kind.completed_field)
+        completion_change = _latest_completion_change(use_case, definition.completed_field)
         if state.completed:
             statuses.append(
                 GovernanceReviewStatus(
@@ -206,7 +227,7 @@ def build_governance_statuses(use_case: UseCase) -> tuple[GovernanceReviewStatus
                 changed_at=assessment.assessment_date,
                 changed_at_has_time=False,
                 attribution_note="Als erforderlich bewertet",
-                rationale=assessment.review_rationale(kind.review_type),
+                rationale=assessment.review_rationale(definition.review_type),
                 target_url=review_url,
             )
         )
