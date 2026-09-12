@@ -3,7 +3,7 @@
 {% block title %}{{ use_case.short_id }} – KI-Radar{% endblock %}
 {% block body_class %}page-use-case{% endblock %}
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/ui-control-room-primitives.css' %}">
+<link rel="stylesheet" href="{% static 'css/ui-control-room-primitives.css' %}?v=issue-417-local-work-status">
 <link rel="stylesheet" href="{% static 'css/ui-control-room-use-case.css' %}">
 {% endblock %}
 {% block content %}
@@ -13,6 +13,7 @@
 {% metric_value use_case.recurring_cost 'currency' '€' as recurring_cost %}
 
 {% include "includes/lifecycle_rail.html" %}
+{% include "includes/local_work_status.html" %}
 
 <header class="cr-page-header uc-page-header" id="use-case-overview">
   <div class="cr-page-header__copy">

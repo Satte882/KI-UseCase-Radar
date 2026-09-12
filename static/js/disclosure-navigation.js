@@ -54,6 +54,14 @@
       .filter(Boolean);
     if (!targets.length) return;
 
+    // The local navigation order is task-oriented and can differ from the
+    // document order (for example, the metric precedes governance on a use
+    // case page). Scroll tracking must follow the actual page position.
+    targets.sort((left, right) => {
+      if (left === right) return 0;
+      return left.compareDocumentPosition(right) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
+    });
+
     const referenceLine = Math.min(180, window.innerHeight * 0.25);
     let candidate = targets[0];
     for (const target of targets) {
@@ -61,9 +69,6 @@
       if (rect.top <= referenceLine) {
         candidate = target;
         continue;
-      }
-      if (candidate === targets[0] && targets[0].getBoundingClientRect().top > referenceLine) {
-        candidate = target;
       }
       break;
     }
