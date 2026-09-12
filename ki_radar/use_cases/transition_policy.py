@@ -9,11 +9,7 @@ from django.utils import timezone
 
 from ki_radar.accounts.permissions import is_coordinator
 from ki_radar.delivery.handover import current_handed_over_package
-from ki_radar.governance.services import (
-    current_governance_status,
-    failed_required_governance_reviews as failed_required_governance_reviews,
-    required_governance_blockers as required_governance_blockers,
-)
+from ki_radar.governance.services import current_governance_status, required_governance_blockers
 
 from .models import UseCase
 from .permissions import can_end_use_case, can_start_pilot
