@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from .models import DeliveryPackage
-from .services import current_handed_over_package
+from .services import current_handed_over_package as current_handed_over_package
 
 
 def recorded_handover_package(use_case) -> DeliveryPackage | None:
