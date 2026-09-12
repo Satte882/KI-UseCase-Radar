@@ -7,10 +7,12 @@ from django.db import transaction
 from django.db.models import Max
 from django.utils import timezone
 
+from ki_radar.governance.services import current_governance_status
 from ki_radar.use_cases.metric_presentation import build_metric_set_presentation
 from ki_radar.use_cases.models import ApprovalDecision, UseCase
 
 from .exports import render_delivery_markdown
+from .handover import current_handed_over_package
 from .mapping_integration import (
     apply_refresh_plan,
     block8_mapper_enabled,
@@ -29,7 +31,7 @@ from .permissions import (
     confirmation_role_label,
     reviewer_roles,
 )
-from .readiness import blocking_findings, delivery_status_snapshot, missing_ready_fields
+from .readiness import blocking_findings, missing_ready_fields
 
 APPROVED_STATUSES = {
     UseCase.DecisionStatus.APPROVED,
@@ -69,15 +71,6 @@ def current_delivery_package(use_case: UseCase) -> DeliveryPackage | None:
     """Return the latest Delivery Package version for the Use Case."""
 
     return DeliveryPackage.objects.filter(use_case_id=use_case.pk).first()
-
-
-def current_handed_over_package(use_case: UseCase) -> DeliveryPackage | None:
-    """Return the current package only when its handover is complete and timestamped."""
-
-    package = current_delivery_package(use_case)
-    if package is not None and delivery_status_snapshot(package).handover_complete:
-        return package
-    return None
 
 
 def delivery_eligibility(use_case: UseCase) -> tuple[bool, str, ApprovalDecision | None]:
@@ -386,13 +379,8 @@ def build_initial_delivery_data(
         if use_case.metric_name
         else "Erfolgsmessung im Delivery Package konkretisieren."
     )
-    checks = []
-    if use_case.privacy_review_required:
-        checks.append("Datenschutzprüfung erforderlich")
-    if use_case.security_review_required:
-        checks.append("Informationssicherheitsprüfung erforderlich")
-    if use_case.legal_review_required:
-        checks.append("Rechtsprüfung erforderlich")
+    governance = current_governance_status(use_case)
+    checks = [f"{state.definition.label} erforderlich" for state in governance.required_reviews]
 
     condition_lines = [
         f"Freigabe: {decision.get_decision_status_display()}",
