@@ -8,8 +8,11 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.utils import timezone
 
 from ki_radar.accounts.permissions import is_coordinator
-from ki_radar.delivery.models import DeliveryPackage
-from ki_radar.governance.models import GovernanceReview
+from ki_radar.delivery.handover import current_handed_over_package
+from ki_radar.governance.services import (
+    failed_required_governance_reviews,
+    required_governance_blockers,
+)
 
 from .models import UseCase
 from .permissions import can_end_use_case, can_start_pilot
@@ -53,24 +56,6 @@ APPROVED_DECISION_STATUSES = {
     UseCase.DecisionStatus.APPROVED_WITH_CONDITIONS,
 }
 
-REVIEW_RULES = (
-    (
-        GovernanceReview.ReviewType.PRIVACY,
-        "privacy_review_required",
-        "Datenschutzprüfung",
-    ),
-    (
-        GovernanceReview.ReviewType.SECURITY,
-        "security_review_required",
-        "Informationssicherheitsprüfung",
-    ),
-    (
-        GovernanceReview.ReviewType.LEGAL,
-        "legal_review_required",
-        "Rechtsprüfung",
-    ),
-)
-
 
 def _text(value) -> str:
     return str(value or "").strip()
@@ -80,60 +65,6 @@ def _bool(value) -> bool:
     if isinstance(value, bool):
         return value
     return _text(value).casefold() in {"1", "true", "yes", "on"}
-
-
-def current_handed_over_package(use_case: UseCase) -> DeliveryPackage | None:
-    package = use_case.delivery_packages.order_by("-version", "-created_at").first()
-    if (
-        package is not None
-        and package.status == DeliveryPackage.Status.HANDED_OVER
-        and package.handed_over_at is not None
-    ):
-        return package
-    return None
-
-
-def _latest_governance_reviews(use_case: UseCase) -> dict[str, GovernanceReview]:
-    latest: dict[str, GovernanceReview] = {}
-    for review in use_case.governance_reviews.order_by("-created_at", "-reviewed_at"):
-        latest.setdefault(review.review_type, review)
-    return latest
-
-
-def required_governance_blockers(use_case: UseCase) -> list[str]:
-    latest = _latest_governance_reviews(use_case)
-    blockers: list[str] = []
-    for review_type, required_field, label in REVIEW_RULES:
-        if not getattr(use_case, required_field):
-            continue
-        review = latest.get(review_type)
-        if review is None or review.status != GovernanceReview.Status.COMPLETED:
-            blockers.append(f"{label} ist noch offen")
-            continue
-        if review.result == GovernanceReview.Result.FAILED:
-            blockers.append(f"{label} wurde nicht bestanden")
-        elif review.result not in {
-            GovernanceReview.Result.PASSED,
-            GovernanceReview.Result.PASSED_WITH_CONDITIONS,
-        }:
-            blockers.append(f"{label} besitzt kein erfolgreiches Ergebnis")
-    return blockers
-
-
-def failed_required_governance_reviews(use_case: UseCase) -> list[str]:
-    latest = _latest_governance_reviews(use_case)
-    blockers: list[str] = []
-    for review_type, required_field, label in REVIEW_RULES:
-        if not getattr(use_case, required_field):
-            continue
-        review = latest.get(review_type)
-        if (
-            review is not None
-            and review.status == GovernanceReview.Status.COMPLETED
-            and review.result == GovernanceReview.Result.FAILED
-        ):
-            blockers.append(f"{label} wurde nicht bestanden")
-    return blockers
 
 
 def validate_transition_shape(*, use_case: UseCase, decision: str, target_status: str) -> None:
