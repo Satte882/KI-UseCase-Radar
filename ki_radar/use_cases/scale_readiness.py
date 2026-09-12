@@ -7,8 +7,11 @@ from decimal import Decimal, InvalidOperation
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
-from ki_radar.delivery.services import current_handed_over_package
-from ki_radar.governance.models import GovernanceReview
+from ki_radar.delivery.handover import current_handed_over_package
+from ki_radar.governance.services import (
+    current_governance_status,
+    governance_review_evidence,
+)
 
 from .models import UseCase
 
@@ -148,7 +151,7 @@ def _add(
 
 
 def _minimum_tailoring(use_case: UseCase) -> str:
-    assessment = use_case.governance_assessments.first()
+    assessment = current_governance_status(use_case).screening
     if assessment and any(
         getattr(assessment, field_name)
         for field_name in (
@@ -170,53 +173,29 @@ def _add_governance_findings(
     use_case: UseCase,
     findings: list[ScaleReadinessFinding],
 ) -> None:
-    latest_by_type: dict[str, GovernanceReview] = {}
-    for review in use_case.governance_reviews.order_by("-created_at", "-reviewed_at"):
-        latest_by_type.setdefault(review.review_type, review)
-
-    review_rules = (
-        (
-            GovernanceReview.ReviewType.PRIVACY,
-            use_case.privacy_review_required,
-            use_case.privacy_review_completed,
-            "Datenschutz",
-        ),
-        (
-            GovernanceReview.ReviewType.SECURITY,
-            use_case.security_review_required,
-            use_case.security_review_completed,
-            "Informationssicherheit",
-        ),
-        (
-            GovernanceReview.ReviewType.LEGAL,
-            use_case.legal_review_required,
-            use_case.legal_review_completed,
-            "Recht",
-        ),
-    )
-    for review_type, required, completed, label in review_rules:
-        prefix = f"GOVERNANCE_{review_type.upper()}"
-        if required and not completed:
-            _add(
-                findings,
-                f"{prefix}_OPEN",
-                "responsibility",
-                "blocker",
-                f"{label} ist als erforderliche formale Prüfung noch offen.",
-            )
+    governance = current_governance_status(use_case)
+    for state in governance.required_reviews:
+        prefix = f"GOVERNANCE_{state.definition.review_type.upper()}"
+        label = state.definition.short_label
+        if not state.completed:
+            if state.failed:
+                _add(
+                    findings,
+                    f"{prefix}_FAILED",
+                    "responsibility",
+                    "blocker",
+                    f"{label} wurde nicht bestanden.",
+                )
+            else:
+                _add(
+                    findings,
+                    f"{prefix}_OPEN",
+                    "responsibility",
+                    "blocker",
+                    f"{label} ist als erforderliche formale Prüfung noch offen.",
+                )
             continue
-        review = latest_by_type.get(review_type)
-        if review is None or review.status != GovernanceReview.Status.COMPLETED:
-            continue
-        if review.result == GovernanceReview.Result.FAILED:
-            _add(
-                findings,
-                f"{prefix}_FAILED",
-                "responsibility",
-                "blocker",
-                f"{label} wurde nicht bestanden.",
-            )
-        elif review.result == GovernanceReview.Result.PASSED_WITH_CONDITIONS:
+        if state.conditionally_passed:
             _add(
                 findings,
                 f"{prefix}_CONDITIONAL",
@@ -560,7 +539,7 @@ def build_scale_readiness_snapshot(
             "reviewed_at": _iso(review.reviewed_at),
             "evidence_url": review.evidence_url,
         }
-        for review in use_case.governance_reviews.order_by("review_type", "-created_at")
+        for review in governance_review_evidence(use_case)
     ]
     return {
         "schema_version": SCALE_READINESS_SCHEMA_VERSION,
