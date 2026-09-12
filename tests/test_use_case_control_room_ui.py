@@ -68,13 +68,45 @@ def test_all_existing_use_case_actions_remain_reachable_with_existing_permission
 
     assert "can_edit" in TEMPLATE
     assert "nav_is_coordinator" in TEMPLATE
-    assert "journey.next_action.key != 'use_case'" in TEMPLATE
     assert "journey.next_action.key != 'pilot_start'" in TEMPLATE
     assert "journey.next_action.key != 'assessment'" in TEMPLATE
     assert "journey.next_action.key != 'approval'" in rendered_sources
     assert "journey.next_action.key != 'governance'" in TEMPLATE
     assert "Lifecycle-Review" not in TEMPLATE
     assert "Entscheidung dokumentieren" in TEMPLATE
+    assert "Stammdaten bearbeiten" not in TEMPLATE
+
+
+def test_section_actions_own_edit_paths_without_reintroducing_readiness_hard_stops():
+    page_header_start = TEMPLATE.index('id="use-case-overview"')
+    page_header_end = TEMPLATE.index("</header>", page_header_start)
+    page_header = TEMPLATE[page_header_start:page_header_end]
+    assert "reviews:create" in page_header
+    assert "use_cases:edit" not in page_header
+    assert "use_cases:assessment_create" not in page_header
+    assert "use_cases:approval_decision_create" not in page_header
+
+    assessment_start = TEMPLATE.index('id="assessment"')
+    assessment_end = TEMPLATE.index("</section>", assessment_start)
+    assessment = TEMPLATE[assessment_start:assessment_end]
+    assert 'data-testid="assessment-edit-action"' in assessment
+    assert 'data-testid="approval-decision-action"' in assessment
+    assert 'data-testid="assessment-negative-decision-action"' in assessment
+    assert "use_case.status == 'review'" in assessment
+    assert "blocker_details" not in assessment
+    assert "decision_check.blockers" not in assessment
+
+    metric_start = TEMPLATE.index('id="metric-title"')
+    metric_end = TEMPLATE.index("</section>", metric_start)
+    metric = TEMPLATE[metric_start:metric_end]
+    assert 'data-testid="metric-edit-action"' in metric
+    assert "#field-metric_name" in metric
+
+    context_start = TEMPLATE.index('id="business-context-title"')
+    context_end = TEMPLATE.index("</section>", context_start)
+    context = TEMPLATE[context_start:context_end]
+    assert 'data-testid="business-context-edit-action"' in context
+    assert "#field-problem_statement" in context
 
 
 def test_next_action_is_owned_once_by_decision_state_on_migrated_work_object():
