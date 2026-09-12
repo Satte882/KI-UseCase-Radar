@@ -67,7 +67,7 @@
       </div>
       <div>
         <div class="uc-data-label">Bewertungsdetails</div>
-        <details>
+        <details id="assessment-evidence">
           <summary>Begründung, Evidenz und Metadaten anzeigen</summary>
           <div class="uc-assessment-rationale">
             <p>{{ latest_assessment.rationale }}</p>
@@ -106,7 +106,7 @@
           <div class="kpi-cell"><small>Ist</small><strong>{{ metric.actual.display }}</strong></div>
           <div class="kpi-cell"><small>Baseline</small><strong>{{ metric.baseline.display }}</strong></div>
         </div>
-        <details>
+        <details id="metric-evidence">
           <summary>Messgrundlage und Nachweis anzeigen</summary>
           <dl class="uc-detail-list mt-3">
             <dt>Messmethode</dt><dd>{{ use_case.metric_measurement_method|default:"–" }}</dd>
@@ -172,27 +172,41 @@
       </dl>
     </section>
 
-    <details class="uc-side-panel" id="governance-evidence" open>
-      <summary><strong>Governance & Nachweise anzeigen</strong></summary>
-      <div class="pt-3">
-        <div class="uc-governance-list">
-          {% for status in governance_statuses %}
-          <div class="uc-governance-item">
-            <div class="uc-governance-item__heading"><strong>{{ status.kind.label }}</strong><span class="badge {{ status.badge_class }}">{{ status.label }}</span></div>
-            {% if status.result %}<div class="uc-governance-result"><strong>Ergebnis:</strong> {{ status.result }}</div>{% endif %}
-            <div class="uc-secondary-copy">{{ status.attribution_note }}{% if status.actor %}: {{ status.actor }}{% endif %}{% if status.changed_at %}, {% if status.changed_at_has_time %}{{ status.changed_at|date:"d.m.Y H:i" }}{% else %}{{ status.changed_at|date:"d.m.Y" }}{% endif %}{% endif %}</div>
-            {% if status.rationale %}<div class="uc-governance-rationale">{{ status.rationale|truncatechars:140 }}</div>{% endif %}
+    <section class="uc-side-panel" id="governance-evidence" aria-labelledby="governance-evidence-title">
+      <h2 id="governance-evidence-title">Governance &amp; Nachweise</h2>
+      <p class="uc-secondary-copy">Aktueller Prüfstatus und offene Prüfwege bleiben sichtbar; Begründungen, Metadaten und Nachweise sind nachrangig.</p>
+      <div class="uc-governance-list" data-testid="governance-status-summary">
+        {% for status in governance_statuses %}
+        <div class="uc-governance-item">
+          <div class="uc-governance-item__heading"><strong>{{ status.kind.label }}</strong><span class="badge {{ status.badge_class }}">{{ status.label }}</span></div>
+          {% if status.state == 'open' or status.state == 'not_assessed' %}
             {% if status.target_url %}<a class="btn btn-sm btn-outline-secondary" href="{{ status.target_url }}">Prüfartefakt öffnen</a>{% endif %}
-          </div>
-          {% endfor %}
+          {% endif %}
         </div>
-        <div class="uc-side-actions">
-          {% if nav_is_coordinator and journey.next_action.key != 'governance' %}<a class="btn btn-outline-secondary" href="{% url 'governance:create' use_case.pk %}">Governance-Screening</a>{% endif %}
-          {% if can_edit %}<a class="btn btn-outline-secondary" href="{% url 'notifications:evidence_create' use_case.pk %}">Nachweislink hinzufügen</a>{% endif %}
-        </div>
-        <div class="uc-evidence-links">{% for evidence in use_case.evidence_links.all %}<a href="{{ evidence.url }}" rel="noopener noreferrer" target="_blank"><strong>{{ evidence.label }}</strong><span>{{ evidence.get_document_type_display }}</span></a>{% endfor %}</div>
+        {% endfor %}
       </div>
-    </details>
+      <div class="uc-side-actions">
+        {% if nav_is_coordinator and journey.next_action.key != 'governance' %}<a class="btn btn-outline-secondary" href="{% url 'governance:create' use_case.pk %}">Governance-Screening</a>{% endif %}
+        {% if can_edit %}<a class="btn btn-outline-secondary" href="{% url 'notifications:evidence_create' use_case.pk %}">Nachweislink hinzufügen</a>{% endif %}
+      </div>
+      <details class="architecture-disclosure mt-3" id="governance-evidence-details">
+        <summary>Begründungen, Prüfmetadaten und Nachweise anzeigen</summary>
+        <div class="pt-3">
+          <div class="uc-governance-list">
+            {% for status in governance_statuses %}
+            <div class="uc-governance-item">
+              <div class="uc-governance-item__heading"><strong>{{ status.kind.label }}</strong><span class="badge {{ status.badge_class }}">{{ status.label }}</span></div>
+              {% if status.result %}<div class="uc-governance-result"><strong>Ergebnis:</strong> {{ status.result }}</div>{% endif %}
+              <div class="uc-secondary-copy">{{ status.attribution_note }}{% if status.actor %}: {{ status.actor }}{% endif %}{% if status.changed_at %}, {% if status.changed_at_has_time %}{{ status.changed_at|date:"d.m.Y H:i" }}{% else %}{{ status.changed_at|date:"d.m.Y" }}{% endif %}{% endif %}</div>
+              {% if status.rationale %}<div class="uc-governance-rationale">{{ status.rationale|truncatechars:140 }}</div>{% endif %}
+              {% if status.target_url and status.state != 'open' and status.state != 'not_assessed' %}<a class="btn btn-sm btn-outline-secondary" href="{{ status.target_url }}">Prüfartefakt öffnen</a>{% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          <div class="uc-evidence-links">{% for evidence in use_case.evidence_links.all %}<a href="{{ evidence.url }}" rel="noopener noreferrer" target="_blank"><strong>{{ evidence.label }}</strong><span>{{ evidence.get_document_type_display }}</span></a>{% endfor %}</div>
+        </div>
+      </details>
+    </section>
   </aside>
 </div>
 
