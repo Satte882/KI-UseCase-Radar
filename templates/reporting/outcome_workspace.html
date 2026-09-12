@@ -66,7 +66,7 @@
         Pilotwirkung, Governance und Delivery bleiben in ihren bestehenden Sources of Truth. ML-Test-Score-, Release-, Rollback- und Monitoring-Nachweise werden im bestehenden Review nur in der für die Entscheidung verwendeten Version referenziert.
       </div>
       {% if latest_scale_review %}
-      <section class="outcome-scale-decision" aria-labelledby="saved-scale-decision-title">
+      <section class="outcome-scale-decision" id="outcome-scale-review" aria-labelledby="saved-scale-decision-title">
         <div class="outcome-scale-decision__heading">
           <div>
             <div class="outcome-eyebrow">Gespeicherte Entscheidung</div>
@@ -93,9 +93,11 @@
     </div>
   </div>
 
+  {% include "includes/local_work_status.html" %}
+
   {% if selected_use_case %}
   {% metric_set selected_use_case as metric %}
-  <div class="app-card outcome-use-case-card">
+  <div class="app-card outcome-use-case-card" id="outcome-measurement">
     <div class="card-body">
       <div class="outcome-use-case-heading">
         <div>
@@ -117,7 +119,7 @@
         <div><small>Ergebnis</small><strong>{{ selected_use_case.metric_result_label }}</strong></div>
       </div>
 
-      <dl class="outcome-facts">
+      <dl class="outcome-facts" id="outcome-delivery-context">
         <div><dt>Business Owner</dt><dd>{{ selected_use_case.business_owner.get_display_name }}</dd></div>
         <div><dt>Technical Owner</dt><dd>{% if selected_use_case.technical_owner %}{{ selected_use_case.technical_owner.get_display_name }}{% else %}Nicht zugeordnet{% endif %}</dd></div>
         <div><dt>Nächster Review</dt><dd>{{ selected_use_case.next_review_date|default:"Nicht geplant" }}</dd></div>
