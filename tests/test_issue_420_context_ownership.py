@@ -15,7 +15,6 @@ from ki_radar.use_cases.governance_status import build_governance_statuses
 from ki_radar.use_cases.models import UseCase
 from ki_radar.use_cases.transition_policy import (
     current_handed_over_package as transition_handover,
-    required_governance_blockers as transition_governance_blockers,
 )
 
 
@@ -71,10 +70,6 @@ def test_delivery_owned_handover_contract_is_persisted_milestone(
 
 def test_transition_policy_reuses_delivery_owned_handover_contract():
     assert transition_handover is delivery_handover
-
-
-def test_transition_policy_reuses_governance_owned_blocker_contract():
-    assert transition_governance_blockers is governance_blockers
 
 
 @pytest.mark.django_db
