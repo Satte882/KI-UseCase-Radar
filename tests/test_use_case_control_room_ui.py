@@ -15,6 +15,12 @@ CSS = read_repo_text("static", "css", "ui-control-room-use-case.css")
 PRIMITIVES = read_repo_text("static", "css", "ui-control-room-primitives.css")
 TOPBAR_CSS = read_repo_text("static", "css", "context-topbar.css")
 README = read_repo_text("README.md")
+BASE = read_repo_text("templates", "base.html")
+DISCLOSURE_NAVIGATION = read_repo_text("static", "js", "disclosure-navigation.js")
+DELIVERY_DETAIL = read_repo_text("templates", "delivery", "package_detail.html")
+PROCESS_DETAIL = read_repo_text("templates", "architecture", "process_analysis_detail.html")
+VALUE_STREAM_DETAIL = read_repo_text("templates", "architecture", "value_stream_detail.html")
+OUTCOME_WORKSPACE = read_repo_text("templates", "reporting", "outcome_workspace.html")
 
 
 def test_use_case_detail_composes_shared_work_object_patterns():
@@ -190,3 +196,33 @@ def test_readme_describes_contextual_lifecycle_instead_of_permanent_journey():
     assert "kontextbezogen" in README
     assert "Querschnitts- und Listensichten" in README
     assert "dauerhaft sichtbar" not in README
+
+
+def test_issue_410_keeps_active_readiness_and_governance_visible():
+    assert 'id="upcoming-gate-readiness"' in DECISION_STATE
+    assert 'data-testid="governance-status-summary"' in TEMPLATE
+    assert "status.state == 'open' or status.state == 'not_assessed'" in TEMPLATE
+    assert 'id="governance-evidence-details"' in TEMPLATE
+    assert '<details class="uc-side-panel" id="governance-evidence" open>' not in TEMPLATE
+
+
+def test_issue_410_keeps_secondary_information_collapsible():
+    for marker in (
+        'id="assessment-evidence"',
+        'id="metric-evidence"',
+        'id="origin-context"',
+        'id="review-copilot"',
+        'id="decision-history"',
+    ):
+        assert marker in TEMPLATE
+    assert '{% if row.is_primary %} open{% endif %}' in DELIVERY_DETAIL
+    assert 'data-testid="process-validation-evidence"' in PROCESS_DETAIL
+    assert 'data-testid="value-stream-screening-details"' in VALUE_STREAM_DETAIL
+    assert '<details class="outcome-use-case-context">' in OUTCOME_WORKSPACE
+
+
+def test_issue_410_hash_navigation_reveals_disclosure_targets():
+    assert "js/disclosure-navigation.js" in BASE
+    assert 'window.addEventListener("hashchange", revealHashTarget)' in DISCLOSURE_NAVIGATION
+    assert 'target.matches("details")' in DISCLOSURE_NAVIGATION
+    assert "disclosure.open = true" in DISCLOSURE_NAVIGATION
