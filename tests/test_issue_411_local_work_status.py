@@ -67,7 +67,7 @@ def test_local_status_entries_link_to_real_work_areas_and_are_not_color_only():
         "outcome-delivery-context",
     ):
         assert target in LOCAL_STATUS
-    for marker in ("✓", "○", "!", "–", "·"):
+    for marker in ("✓", "○", "!", "\u2013", "·"):
         assert marker in LOCAL_STATUS
     assert 'aria-label="Arbeitsbereiche' in LOCAL_STATUS
 
