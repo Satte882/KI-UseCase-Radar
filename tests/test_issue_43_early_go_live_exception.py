@@ -7,6 +7,8 @@ from django.urls import reverse
 from django.utils import timezone
 
 from ki_radar.delivery.models import DeliveryPackage
+from ki_radar.governance.models import GovernanceAssessment
+from ki_radar.governance.services import create_screening_review_artifacts
 from ki_radar.reviews.forms import ReviewForm
 from ki_radar.reviews.models import EarlyGoLiveException, Review
 from ki_radar.reviews.services import create_review
@@ -225,15 +227,16 @@ def test_early_exception_cannot_override_mandatory_go_live_blockers(
     business_unit,
 ):
     use_case = _early_go_live_candidate(owner, coordinator, business_unit)
-    use_case.privacy_review_required = True
-    use_case.privacy_review_completed = False
-    use_case.save(
-        update_fields=[
-            "privacy_review_required",
-            "privacy_review_completed",
-            "updated_at",
-        ]
+    screening = GovernanceAssessment.objects.create(
+        use_case=use_case,
+        assessment_date=timezone.localdate(),
+        reviewer=coordinator,
+        basis_version="Issue 43",
+        privacy_review_required=True,
+        result=GovernanceAssessment.Result.PRIVACY,
+        privacy_review_rationale="Datenschutzprüfung ist vor Go-live erforderlich.",
     )
+    create_screening_review_artifacts(assessment=screening, actor=coordinator)
 
     with pytest.raises(ValidationError, match="Datenschutzprüfung"):
         create_review(

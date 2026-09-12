@@ -14,14 +14,16 @@ from ki_radar.accounts.permissions import (
     GROUP_TECH_ADMIN,
     is_coordinator,
 )
-
-from .models import ApprovalDecision, DecisionAssessment, UseCase
-from .transition_policy import (
-    APPROVED_DECISION_STATUSES,
-    current_handed_over_package,
+from ki_radar.delivery.handover import recorded_handover_package
+from ki_radar.governance.services import (
+    current_governance_status,
     failed_required_governance_reviews,
+    open_required_governance_warnings,
     required_governance_blockers,
 )
+
+from .models import ApprovalDecision, DecisionAssessment, UseCase
+from .transition_policy import APPROVED_DECISION_STATUSES
 
 PILOT_STATUS_BLOCKER = "Lifecycle-Status Prüfung"
 PILOT_PACKAGE_BLOCKER = "Aktuelles Delivery Package"
@@ -214,11 +216,11 @@ def check_pilot_start(use_case: UseCase) -> DecisionCheck:
     )
     if use_case.status != UseCase.Status.REVIEW:
         blockers.append(PILOT_STATUS_BLOCKER)
-    if current_handed_over_package(use_case) is None:
+    if recorded_handover_package(use_case) is None:
         blockers.append(PILOT_HANDOVER_BLOCKER)
     if use_case.decision_status not in APPROVAL_STATUSES:
         blockers.append("Positive Freigabeentscheidung")
-    if not use_case.governance_assessments.exists():
+    if not current_governance_status(use_case).has_screening:
         blockers.append("Governance-Screening")
     blockers.extend(required_governance_blockers(use_case))
     if (
@@ -400,7 +402,7 @@ def validate_pilot_start_date(*, use_case: UseCase, pilot_start: date | None) ->
         raise ValidationError("Der tatsächliche Pilotbeginn ist erforderlich.")
     if pilot_start > timezone.localdate():
         raise ValidationError("Der tatsächliche Pilotbeginn darf nicht in der Zukunft liegen.")
-    package = current_handed_over_package(use_case)
+    package = recorded_handover_package(use_case)
     if package is None:
         raise ValidationError(
             "Der Pilot kann erst nach der verbindlichen Übergabe des aktuellen "
@@ -436,14 +438,6 @@ def apply_status_transition(
     )
 
 
-def _open_required_governance_warnings(use_case: UseCase) -> list[str]:
-    warnings = []
-    for blocker in required_governance_blockers(use_case):
-        if "noch offen" in blocker or "besitzt kein erfolgreiches Ergebnis" in blocker:
-            warnings.append(f"Readiness offen: {blocker}")
-    return warnings
-
-
 def approval_check(
     *,
     use_case: UseCase,
@@ -469,10 +463,10 @@ def approval_check(
             blockers.append(
                 "Fachlich verantwortliche und freigebende Person müssen verschieden sein"
             )
-        if not use_case.governance_assessments.exists():
+        if not current_governance_status(use_case).has_screening:
             blockers.append("Governance-Screening")
         blockers.extend(failed_required_governance_reviews(use_case))
-        warnings.extend(_open_required_governance_warnings(use_case))
+        warnings.extend(open_required_governance_warnings(use_case))
         warnings.extend(_readiness_warnings(use_case, APPROVAL_METRIC_REQUIREMENTS))
         if assessment is not None:
             if assessment.confidence_level == UseCase.Level.LOW:

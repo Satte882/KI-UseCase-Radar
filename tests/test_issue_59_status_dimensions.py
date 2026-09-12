@@ -1,9 +1,12 @@
 import pytest
 from django.core.management import call_command
 from django.urls import reverse
+from django.utils import timezone
 
 from ki_radar.accounts.models import User
 from ki_radar.core.demo_architecture_data import INVOICE_USE_CASE_KEY
+from ki_radar.governance.models import GovernanceAssessment
+from ki_radar.governance.services import create_screening_review_artifacts
 from ki_radar.use_cases.models import UseCase
 from ki_radar.use_cases.status_dimensions import (
     build_use_case_status_dimensions,
@@ -34,6 +37,21 @@ def _remove_decision_chain(use_case):
     use_case.decision_assessments.all().delete()
 
 
+def _set_open_privacy_review(use_case, coordinator):
+    use_case.governance_reviews.all().delete()
+    use_case.governance_assessments.all().delete()
+    screening = GovernanceAssessment.objects.create(
+        use_case=use_case,
+        assessment_date=timezone.localdate(),
+        reviewer=coordinator,
+        basis_version="Issue 59",
+        privacy_review_required=True,
+        result=GovernanceAssessment.Result.PRIVACY,
+        privacy_review_rationale="Datenschutzprüfung ist für diesen Test erforderlich.",
+    )
+    create_screening_review_artifacts(assessment=screening, actor=coordinator)
+
+
 @pytest.mark.django_db
 def test_complete_intake_without_assessment_is_only_assessment_ready(coordinator, use_case):
     _remove_decision_chain(use_case)
@@ -57,16 +75,8 @@ def test_assessment_with_open_governance_keeps_approval_actionable(coordinator, 
     use_case.delivery_packages.all().delete()
     use_case.approval_decisions.all().delete()
     use_case.status = UseCase.Status.IDEA
-    use_case.privacy_review_required = True
-    use_case.privacy_review_completed = False
-    use_case.save(
-        update_fields=[
-            "status",
-            "privacy_review_required",
-            "privacy_review_completed",
-            "updated_at",
-        ]
-    )
+    use_case.save(update_fields=["status", "updated_at"])
+    _set_open_privacy_review(use_case, coordinator)
 
     check = current_work_check(use_case)
     journey = build_use_case_journey(use_case, coordinator)

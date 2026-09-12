@@ -6,16 +6,31 @@ from datetime import date, datetime
 from django.urls import reverse
 
 from ki_radar.governance.models import GovernanceReview
+from ki_radar.governance.services import (
+    REVIEW_DEFINITIONS,
+    GovernanceReviewState,
+    ReviewDefinition,
+    current_governance_status,
+)
 
 from .models import UseCase
 
 
 @dataclass(frozen=True)
 class ReviewKind:
+    """Presentation metadata sourced from the Governance-owned definition."""
+
     key: str
     label: str
-    required_field: str
     completed_field: str
+
+
+def _kind(definition: ReviewDefinition) -> ReviewKind:
+    return ReviewKind(
+        key=definition.review_type,
+        label=definition.short_label,
+        completed_field=definition.completed_field,
+    )
 
 
 @dataclass(frozen=True)
@@ -35,28 +50,6 @@ class GovernanceReviewStatus:
     @property
     def editable(self) -> bool:
         return False
-
-
-REVIEW_KINDS = (
-    ReviewKind(
-        key="privacy",
-        label="Datenschutz",
-        required_field="privacy_review_required",
-        completed_field="privacy_review_completed",
-    ),
-    ReviewKind(
-        key="security",
-        label="Security",
-        required_field="security_review_required",
-        completed_field="security_review_completed",
-    ),
-    ReviewKind(
-        key="legal",
-        label="Recht",
-        required_field="legal_review_required",
-        completed_field="legal_review_completed",
-    ),
-)
 
 
 def _display_name(user, *, fallback: str) -> str:
@@ -79,21 +72,19 @@ def _latest_completion_change(use_case: UseCase, field_name: str):
     return latest_change
 
 
-def _artifact_status(use_case: UseCase, kind: ReviewKind, assessment):
-    artifact = (
-        use_case.governance_reviews.filter(
-            review_type=kind.key,
-            screening=assessment,
-        )
-        .select_related("reviewer")
-        .first()
-    )
+def _artifact_status(
+    use_case: UseCase,
+    state: GovernanceReviewState,
+) -> GovernanceReviewStatus | None:
+    artifact = state.review
     if artifact is None:
         return None
 
+    definition = state.definition
+    kind = _kind(definition)
     target_url = reverse(
         "governance:review",
-        kwargs={"use_case_id": use_case.pk, "review_type": kind.key},
+        kwargs={"use_case_id": use_case.pk, "review_type": definition.review_type},
     )
     common = {
         "kind": kind,
@@ -135,16 +126,27 @@ def _artifact_status(use_case: UseCase, kind: ReviewKind, assessment):
 
 
 def build_governance_statuses(use_case: UseCase) -> tuple[GovernanceReviewStatus, ...]:
-    assessment = None
-    if use_case.pk:
-        assessment = use_case.governance_assessments.select_related("reviewer").first()
+    governance = current_governance_status(use_case) if use_case.pk else None
+    assessment = governance.screening if governance is not None else None
+    states = governance.reviews if governance is not None else ()
+
+    if not states:
+        states = tuple(
+            GovernanceReviewState(definition=definition, required=False, review=None)
+            for definition in REVIEW_DEFINITIONS.values()
+        )
 
     statuses = []
-    for kind in REVIEW_KINDS:
+    for state in states:
+        definition = state.definition
+        kind = _kind(definition)
         review_url = (
             reverse(
                 "governance:review",
-                kwargs={"use_case_id": use_case.pk, "review_type": kind.key},
+                kwargs={
+                    "use_case_id": use_case.pk,
+                    "review_type": definition.review_type,
+                },
             )
             if use_case.pk
             else ""
@@ -169,14 +171,12 @@ def build_governance_statuses(use_case: UseCase) -> tuple[GovernanceReviewStatus
             )
             continue
 
-        artifact_status = _artifact_status(use_case, kind, assessment)
+        artifact_status = _artifact_status(use_case, state)
         if artifact_status is not None:
             statuses.append(artifact_status)
             continue
 
-        required = getattr(assessment, kind.required_field)
-        completed = required and getattr(use_case, kind.completed_field)
-        if not required:
+        if not state.required:
             statuses.append(
                 GovernanceReviewStatus(
                     kind=kind,
@@ -187,14 +187,14 @@ def build_governance_statuses(use_case: UseCase) -> tuple[GovernanceReviewStatus
                     changed_at=assessment.assessment_date,
                     changed_at_has_time=False,
                     attribution_note="Maßgebliches Governance-Screening",
-                    rationale=assessment.review_rationale(kind.key),
+                    rationale=assessment.review_rationale(definition.review_type),
                     target_url=review_url,
                 )
             )
             continue
 
-        completion_change = _latest_completion_change(use_case, kind.completed_field)
-        if completed:
+        completion_change = _latest_completion_change(use_case, definition.completed_field)
+        if state.completed:
             statuses.append(
                 GovernanceReviewStatus(
                     kind=kind,
@@ -227,7 +227,7 @@ def build_governance_statuses(use_case: UseCase) -> tuple[GovernanceReviewStatus
                 changed_at=assessment.assessment_date,
                 changed_at_has_time=False,
                 attribution_note="Als erforderlich bewertet",
-                rationale=assessment.review_rationale(kind.key),
+                rationale=assessment.review_rationale(definition.review_type),
                 target_url=review_url,
             )
         )

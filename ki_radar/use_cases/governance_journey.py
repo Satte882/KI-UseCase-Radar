@@ -4,6 +4,7 @@ from django.urls import reverse
 
 from ki_radar.accounts.permissions import is_coordinator
 from ki_radar.delivery.models import DeliveryPackage
+from ki_radar.governance.services import current_governance_status
 
 from . import journey as legacy
 from . import workflow
@@ -11,17 +12,6 @@ from .models import UseCase
 
 JourneyState = workflow.JourneyState
 JourneyStep = workflow.JourneyStep
-
-REVIEW_ORDER = (
-    ("privacy", "Datenschutzprüfung", "privacy_review_required", "privacy_review_completed"),
-    (
-        "security",
-        "Informationssicherheitsprüfung",
-        "security_review_required",
-        "security_review_completed",
-    ),
-    ("legal", "Rechtsprüfung", "legal_review_required", "legal_review_completed"),
-)
 
 _original_build_use_case = None
 
@@ -40,14 +30,6 @@ def _state(
             journey.completion_message if completion_message is None else completion_message
         ),
     )
-
-
-def _incomplete_required_reviews(use_case: UseCase, screening) -> list[tuple[str, str]]:
-    return [
-        (review_type, label)
-        for review_type, label, required_field, completed_field in REVIEW_ORDER
-        if getattr(screening, required_field) and not getattr(use_case, completed_field)
-    ]
 
 
 def _governance_step(use_case: UseCase, user) -> JourneyStep:
@@ -74,8 +56,8 @@ def _governance_step(use_case: UseCase, user) -> JourneyStep:
             ),
         )
 
-    screening = use_case.governance_assessments.first()
-    if screening is None:
+    governance = current_governance_status(use_case)
+    if not governance.has_screening:
         allowed = is_coordinator(user)
         return JourneyStep(
             key="governance",
@@ -93,9 +75,9 @@ def _governance_step(use_case: UseCase, user) -> JourneyStep:
             ),
         )
 
-    incomplete_reviews = _incomplete_required_reviews(use_case, screening)
+    incomplete_reviews = governance.incomplete_required_reviews
     if incomplete_reviews:
-        review_type, label = incomplete_reviews[0]
+        first = incomplete_reviews[0]
         allowed = is_coordinator(user)
         return JourneyStep(
             key="governance",
@@ -104,27 +86,26 @@ def _governance_step(use_case: UseCase, user) -> JourneyStep:
             url=(
                 reverse(
                     "governance:review",
-                    kwargs={"use_case_id": use_case.pk, "review_type": review_type},
+                    kwargs={
+                        "use_case_id": use_case.pk,
+                        "review_type": first.definition.review_type,
+                    },
                 )
                 if allowed
                 else None
             ),
-            action_label=f"{label} durchführen" if allowed else "",
+            action_label=f"{first.definition.label} durchführen" if allowed else "",
             reason=(
-                "Erforderliche Fachprüfungen sind noch offen. Delivery-Vorbereitung kann "
-                "parallel laufen; vor dem tatsächlichen Pilotstart müssen sie abgeschlossen sein."
+                "Erforderliche Fachprüfungen sind noch nicht erfolgreich abgeschlossen. "
+                "Delivery-Vorbereitung kann parallel laufen; vor dem tatsächlichen Pilotstart "
+                "müssen sie abgeschlossen sein."
             ),
-            details=tuple(item_label for _item_type, item_label in incomplete_reviews),
+            details=tuple(item.definition.label for item in incomplete_reviews),
         )
 
-    required_reviews = [
-        label
-        for _review_type, label, required_field, _completed_field in REVIEW_ORDER
-        if getattr(screening, required_field)
-    ]
     reason = (
         "Governance-Screening und alle erforderlichen Fachprüfungen sind abgeschlossen."
-        if required_reviews
+        if governance.required_reviews
         else "Das Governance-Screening hat keine zusätzlichen Fachprüfungen abgeleitet."
     )
     return JourneyStep(
