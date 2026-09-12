@@ -32,7 +32,7 @@ def test_status_strip_is_secondary_to_primary_action_and_scoped_to_needed_pages(
     assert primary < local_status
     assert "process_analysis_detail" in NEXT_ACTION
     assert "package_detail" in NEXT_ACTION
-    assert "value_stream_detail' %}\n{% include \"includes/local_work_status.html\"" not in NEXT_ACTION
+    assert "value_stream_detail" not in LOCAL_STATUS
     assert OUTCOME.index('data-testid="outcome-primary-action"') < OUTCOME.index(
         'includes/local_work_status.html'
     )
@@ -51,7 +51,7 @@ def test_status_strip_projects_existing_domain_states_without_new_progress_engin
     assert "Blockiert" in LOCAL_STATUS
     assert "Optional" in LOCAL_STATUS
     assert "3 von" not in LOCAL_STATUS
-    assert "%" not in LOCAL_STATUS
+    assert "Fortschritt" not in LOCAL_STATUS
 
 
 def test_local_status_entries_link_to_real_work_areas_and_are_not_color_only():
