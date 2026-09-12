@@ -56,8 +56,10 @@
       </div>
     {% endif %}
     {% if gate_blocker_details %}
-      <details class="mt-3">
-        <summary>Nächstes Gate vorbereiten · {{ gate_blocker_details|length }} Voraussetzungen offen</summary>
+      <div class="mt-3" id="upcoming-gate-readiness" data-testid="upcoming-gate-readiness">
+        <div class="cr-decision-readiness__summary uc-readiness__summary">
+          <div><strong>Nächstes Gate vorbereiten · {{ gate_blocker_details|length }} Voraussetzungen offen</strong><span>Diese Readiness-Punkte bleiben sichtbar, blockieren die laufende Pilotarbeit aber nicht.</span></div>
+        </div>
         <div class="blocker-actions uc-blocker-actions mt-3">
           {% for blocker in gate_blocker_details %}
           <div class="blocker-action blocker-{{ blocker.category }}">
@@ -70,7 +72,7 @@
           </div>
           {% endfor %}
         </div>
-      </details>
+      </div>
     {% endif %}
     {% if not blocker_details and not decision_check.warnings and not gate_blocker_details %}<p class="cr-decision-ready uc-ready-copy">Alle strukturierten Voraussetzungen für diese Lifecycle-Entscheidung sind erfüllt.</p>{% endif %}
   </div>

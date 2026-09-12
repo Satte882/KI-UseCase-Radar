@@ -190,3 +190,11 @@ def test_readme_describes_contextual_lifecycle_instead_of_permanent_journey():
     assert "kontextbezogen" in README
     assert "Querschnitts- und Listensichten" in README
     assert "dauerhaft sichtbar" not in README
+
+
+def test_issue_410_keeps_active_work_visible_and_secondary_detail_collapsible():
+    assert 'id="upcoming-gate-readiness"' in DECISION_STATE
+    assert 'data-testid="governance-status-summary"' in TEMPLATE
+    assert 'id="governance-evidence-details"' in TEMPLATE
+    assert 'id="assessment-evidence"' in TEMPLATE
+    assert 'id="metric-evidence"' in TEMPLATE

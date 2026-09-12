@@ -46,7 +46,7 @@ def test_assessment_and_metric_prioritize_decision_information():
 def test_secondary_information_uses_native_disclosure():
     for summary in (
         "Ursprung & strategischen Kontext anzeigen",
-        "Governance & Nachweise anzeigen",
+        "Begründungen, Prüfmetadaten und Nachweise anzeigen",
         "OpenRouter Review-Copilot anzeigen",
         "Entscheidungs- und Änderungshistorie anzeigen",
     ):
@@ -55,8 +55,11 @@ def test_secondary_information_uses_native_disclosure():
     assert 'data-bs-toggle="collapse"' not in DETAIL
 
 
-def test_governance_is_open_and_lifecycle_links_target_reachable_sections():
-    assert '<details class="uc-side-panel" id="governance-evidence" open>' in DETAIL
+def test_governance_keeps_current_state_visible_and_lifecycle_target_reachable():
+    assert '<section class="uc-side-panel" id="governance-evidence"' in DETAIL
+    assert 'data-testid="governance-status-summary"' in DETAIL
+    assert 'id="governance-evidence-details"' in DETAIL
+    assert 'id="governance-evidence-details" open' not in DETAIL
     assert "#status-dimensions" not in GOVERNANCE_JOURNEY
     assert "#governance-evidence" in GOVERNANCE_JOURNEY
     assert 'id="decision-history"' in DETAIL
