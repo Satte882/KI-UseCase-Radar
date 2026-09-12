@@ -14,8 +14,12 @@ def read_repo_text(*parts):
 USE_CASE_DETAIL = read_repo_text("templates", "use_cases", "detail.html")
 DECISION_STATE = read_repo_text("templates", "includes", "decision_state.html")
 DELIVERY_DETAIL = read_repo_text("templates", "delivery", "package_detail.html")
-PROCESS_DETAIL = read_repo_text("templates", "architecture", "process_analysis_detail.html")
-VALUE_STREAM_DETAIL = read_repo_text("templates", "architecture", "value_stream_detail.html")
+PROCESS_DETAIL = read_repo_text(
+    "templates", "architecture", "process_analysis_detail.html"
+)
+VALUE_STREAM_DETAIL = read_repo_text(
+    "templates", "architecture", "value_stream_detail.html"
+)
 OUTCOME_WORKSPACE = read_repo_text("templates", "reporting", "outcome_workspace.html")
 BASE = read_repo_text("templates", "base.html")
 DISCLOSURE_NAVIGATION = read_repo_text("static", "js", "disclosure-navigation.js")
@@ -39,14 +43,20 @@ def test_use_case_governance_keeps_status_and_open_paths_visible():
     governance_summary = USE_CASE_DETAIL[governance_start:disclosure_start]
 
     assert 'data-testid="governance-status-summary"' in governance_summary
-    assert "status.state == 'open' or status.state == 'not_assessed'" in governance_summary
+    assert (
+        "status.state == 'open' or status.state == 'not_assessed'"
+        in governance_summary
+    )
     assert "Prüfartefakt öffnen" in governance_summary
     assert "governance:create" in governance_summary
     assert "notifications:evidence_create" in governance_summary
-    assert '<details class="uc-side-panel" id="governance-evidence" open>' not in USE_CASE_DETAIL
     assert (
-        '<details class="architecture-disclosure mt-3" id="governance-evidence-details">'
-        in USE_CASE_DETAIL
+        '<details class="uc-side-panel" id="governance-evidence" open>'
+        not in USE_CASE_DETAIL
+    )
+    assert (
+        '<details class="architecture-disclosure mt-3" '
+        'id="governance-evidence-details">' in USE_CASE_DETAIL
     )
 
 
@@ -73,7 +83,10 @@ def test_secondary_information_stays_collapsible_after_state_aware_hardening():
 
 def test_hash_navigation_reveals_native_disclosure_targets_globally():
     assert "js/disclosure-navigation.js" in BASE
-    assert 'window.addEventListener("hashchange", revealHashTarget)' in DISCLOSURE_NAVIGATION
+    assert (
+        'window.addEventListener("hashchange", revealHashTarget)'
+        in DISCLOSURE_NAVIGATION
+    )
     assert 'target.matches("details")' in DISCLOSURE_NAVIGATION
     assert 'target.closest("details")' in DISCLOSURE_NAVIGATION
     assert "disclosure.open = true" in DISCLOSURE_NAVIGATION
