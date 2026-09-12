@@ -14,7 +14,7 @@ from ki_radar.accounts.permissions import (
     GROUP_TECH_ADMIN,
     is_coordinator,
 )
-from ki_radar.delivery.handover import current_handed_over_package
+from ki_radar.delivery.handover import recorded_handover_package
 from ki_radar.governance.services import (
     current_governance_status,
     failed_required_governance_reviews,
@@ -216,7 +216,7 @@ def check_pilot_start(use_case: UseCase) -> DecisionCheck:
     )
     if use_case.status != UseCase.Status.REVIEW:
         blockers.append(PILOT_STATUS_BLOCKER)
-    if current_handed_over_package(use_case) is None:
+    if recorded_handover_package(use_case) is None:
         blockers.append(PILOT_HANDOVER_BLOCKER)
     if use_case.decision_status not in APPROVAL_STATUSES:
         blockers.append("Positive Freigabeentscheidung")
@@ -402,7 +402,7 @@ def validate_pilot_start_date(*, use_case: UseCase, pilot_start: date | None) ->
         raise ValidationError("Der tatsächliche Pilotbeginn ist erforderlich.")
     if pilot_start > timezone.localdate():
         raise ValidationError("Der tatsächliche Pilotbeginn darf nicht in der Zukunft liegen.")
-    package = current_handed_over_package(use_case)
+    package = recorded_handover_package(use_case)
     if package is None:
         raise ValidationError(
             "Der Pilot kann erst nach der verbindlichen Übergabe des aktuellen "

@@ -3,7 +3,7 @@ from types import SimpleNamespace
 import pytest
 from django.utils import timezone
 
-from ki_radar.delivery.handover import current_handed_over_package
+from ki_radar.delivery.handover import recorded_handover_package
 from ki_radar.delivery.models import DeliveryPackage
 from ki_radar.governance.models import GovernanceAssessment
 from ki_radar.governance.services import (
@@ -53,14 +53,14 @@ def _use_case(*, owner, business_unit, **overrides):
         (DeliveryPackage.Status.HANDED_OVER, timezone.now(), True),
     ],
 )
-def test_delivery_owned_handover_contract_is_persisted_milestone(
+def test_delivery_owned_recorded_handover_contract_is_persisted_milestone(
     status,
     handed_over_at,
     expected,
 ):
     package = SimpleNamespace(status=status, handed_over_at=handed_over_at)
 
-    result = current_handed_over_package(_handover_use_case(package))
+    result = recorded_handover_package(_handover_use_case(package))
 
     assert (result is package) is expected
 

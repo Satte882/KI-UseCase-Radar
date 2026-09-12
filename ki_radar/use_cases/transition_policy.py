@@ -8,7 +8,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.utils import timezone
 
 from ki_radar.accounts.permissions import is_coordinator
-from ki_radar.delivery.handover import current_handed_over_package
+from ki_radar.delivery.handover import recorded_handover_package
 from ki_radar.governance.services import current_governance_status, required_governance_blockers
 
 from .models import UseCase
@@ -114,7 +114,7 @@ def validate_pilot_start(
     blockers: list[str] = []
     if use_case.decision_status not in APPROVED_DECISION_STATUSES:
         blockers.append("finale positive Freigabe")
-    package = current_handed_over_package(use_case)
+    package = recorded_handover_package(use_case)
     if package is None:
         blockers.append("verbindliche Übergabe des aktuellen Delivery Packages")
     governance = current_governance_status(use_case)

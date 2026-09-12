@@ -2,16 +2,43 @@ import pytest
 from django.contrib.auth.models import Group
 from django.core.management import call_command
 from django.urls import reverse
+from django.utils import timezone
 
 from ki_radar.accounts.models import User
 from ki_radar.accounts.permissions import GROUP_COORDINATOR
 from ki_radar.core.demo_architecture_data import INVOICE_USE_CASE_KEY
+from ki_radar.governance.models import GovernanceAssessment
+from ki_radar.governance.services import create_screening_review_artifacts
 from ki_radar.use_cases.models import UseCase
 
 
 @pytest.fixture(autouse=True)
 def enable_demo_seed(settings):
     settings.DEBUG = True
+
+
+def _set_governance_screening(use_case, *, privacy_required=False):
+    use_case.governance_reviews.all().delete()
+    use_case.governance_assessments.all().delete()
+    reviewer = use_case.decision_assessments.first().assessed_by
+    screening = GovernanceAssessment.objects.create(
+        use_case=use_case,
+        assessment_date=timezone.localdate(),
+        reviewer=reviewer,
+        basis_version="Issue 61",
+        privacy_review_required=privacy_required,
+        result=(
+            GovernanceAssessment.Result.PRIVACY
+            if privacy_required
+            else GovernanceAssessment.Result.NO_FLAGS
+        ),
+        privacy_review_rationale=(
+            "Datenschutzprüfung ist für diesen Test erforderlich."
+            if privacy_required
+            else "Keine Datenschutzprüfung erforderlich."
+        ),
+    )
+    create_screening_review_artifacts(assessment=screening, actor=reviewer)
 
 
 @pytest.fixture
@@ -29,6 +56,7 @@ def prepared_use_case(db):
     use_case.legal_review_required = False
     use_case.legal_review_completed = False
     use_case.save()
+    _set_governance_screening(use_case)
     return use_case
 
 
@@ -82,9 +110,7 @@ def test_role_blocker_is_visible_before_form_and_routes_to_assignment(
 def test_open_governance_review_is_visible_readiness_for_positive_approval(
     client, prepared_use_case, independent_coordinator
 ):
-    prepared_use_case.privacy_review_required = True
-    prepared_use_case.privacy_review_completed = False
-    prepared_use_case.save()
+    _set_governance_screening(prepared_use_case, privacy_required=True)
     client.force_login(independent_coordinator)
 
     response = client.get(_decision_url(prepared_use_case, UseCase.DecisionStatus.APPROVED))
@@ -101,9 +127,7 @@ def test_open_governance_review_is_visible_readiness_for_positive_approval(
 def test_negative_decision_form_can_open_despite_positive_governance_blocker(
     client, prepared_use_case, independent_coordinator
 ):
-    prepared_use_case.privacy_review_required = True
-    prepared_use_case.privacy_review_completed = False
-    prepared_use_case.save()
+    _set_governance_screening(prepared_use_case, privacy_required=True)
     client.force_login(independent_coordinator)
 
     response = client.get(_decision_url(prepared_use_case, UseCase.DecisionStatus.DEFERRED))

@@ -12,7 +12,6 @@ from ki_radar.use_cases.metric_presentation import build_metric_set_presentation
 from ki_radar.use_cases.models import ApprovalDecision, UseCase
 
 from .exports import render_delivery_markdown
-from .handover import current_handed_over_package
 from .mapping_integration import (
     apply_refresh_plan,
     block8_mapper_enabled,
@@ -31,7 +30,7 @@ from .permissions import (
     confirmation_role_label,
     reviewer_roles,
 )
-from .readiness import blocking_findings, missing_ready_fields
+from .readiness import blocking_findings, delivery_status_snapshot, missing_ready_fields
 
 APPROVED_STATUSES = {
     UseCase.DecisionStatus.APPROVED,
@@ -71,6 +70,15 @@ def current_delivery_package(use_case: UseCase) -> DeliveryPackage | None:
     """Return the latest Delivery Package version for the Use Case."""
 
     return DeliveryPackage.objects.filter(use_case_id=use_case.pk).first()
+
+
+def current_handed_over_package(use_case: UseCase) -> DeliveryPackage | None:
+    """Return the current package only when its handover is complete and readiness-valid."""
+
+    package = current_delivery_package(use_case)
+    if package is not None and delivery_status_snapshot(package).handover_complete:
+        return package
+    return None
 
 
 def delivery_eligibility(use_case: UseCase) -> tuple[bool, str, ApprovalDecision | None]:
