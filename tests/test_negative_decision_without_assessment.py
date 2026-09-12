@@ -115,3 +115,9 @@ def test_negative_decision_without_assessment_is_reachable_in_ui(
         "use_cases:approval_decision_create",
         kwargs={"pk": use_case.pk},
     )
+
+    detail_response = client.get(use_case.get_absolute_url())
+    assert detail_response.status_code == 200
+    detail_html = detail_response.content.decode()
+    assert 'data-testid="assessment-negative-decision-action"' in detail_html
+    assert "Zurückstellen / nicht weiterverfolgen" in detail_html
