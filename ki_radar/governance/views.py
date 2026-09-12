@@ -15,8 +15,8 @@ from .forms import GovernanceAssessmentForm, GovernanceReviewForm
 from .models import GovernanceReview
 from .services import (
     REVIEW_DEFINITIONS,
-    REVIEW_ORDER,
     create_screening_review_artifacts,
+    current_governance_status,
     latest_review_for_screening,
     review_definition,
     review_history,
@@ -25,13 +25,10 @@ from .services import (
 
 
 def _next_required_review(use_case: UseCase) -> str | None:
-    for review_type in REVIEW_ORDER:
-        config = review_definition(review_type)
-        if getattr(use_case, config.required_field) and not getattr(
-            use_case, config.completed_field
-        ):
-            return review_type
-    return None
+    governance = current_governance_status(use_case)
+    if not governance.incomplete_required_reviews:
+        return None
+    return governance.incomplete_required_reviews[0].definition.review_type
 
 
 def _next_url(use_case: UseCase) -> str:
@@ -112,7 +109,8 @@ def review_create(request, use_case_id, review_type):
         raise Http404
 
     use_case = get_object_or_404(UseCase, pk=use_case_id)
-    screening = use_case.governance_assessments.first()
+    governance = current_governance_status(use_case)
+    screening = governance.screening
     if screening is None:
         messages.warning(
             request,
@@ -121,7 +119,8 @@ def review_create(request, use_case_id, review_type):
         return redirect("governance:create", use_case_id=use_case.pk)
 
     config = review_definition(review_type)
-    required = getattr(screening, config.required_field)
+    state = next(item for item in governance.reviews if item.definition.review_type == review_type)
+    required = state.required
     latest_review = latest_review_for_screening(
         use_case=use_case,
         review_type=review_type,
