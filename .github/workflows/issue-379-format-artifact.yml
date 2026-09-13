@@ -5,15 +5,17 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   format-artifact:
     if: github.head_ref == 'issue-379-llm-review-export'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout feature branch
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
 
       - name: Install Python
         uses: actions/setup-python@v5
@@ -36,13 +38,23 @@ jobs:
           ki_radar/review_export_use_cases.py
           tests/test_issue_379_llm_review_export.py
 
-      - name: Upload formatted files
-        uses: actions/upload-artifact@v4
-        with:
-          name: issue-379-formatted
-          path: |
-            ki_radar/review_export.py
-            ki_radar/review_export_architecture.py
-            ki_radar/review_export_use_cases.py
+      - name: Commit formatted files
+        shell: bash
+        run: |
+          if git diff --quiet -- \
+            ki_radar/review_export.py \
+            ki_radar/review_export_architecture.py \
+            ki_radar/review_export_use_cases.py \
+            tests/test_issue_379_llm_review_export.py; then
+            echo "No formatting changes required."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            ki_radar/review_export.py \
+            ki_radar/review_export_architecture.py \
+            ki_radar/review_export_use_cases.py \
             tests/test_issue_379_llm_review_export.py
-          if-no-files-found: error
+          git commit -m "style: format #379 export files"
+          git push origin HEAD:${{ github.head_ref }}
