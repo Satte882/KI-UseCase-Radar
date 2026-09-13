@@ -89,8 +89,8 @@ class IdeaCandidate(TimeStampedModel):
     class Meta:
         ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=["state", "-created_at"]),
-            models.Index(fields=["business_unit", "state"]),
+            models.Index(fields=["state", "-created_at"], name="idea_state_created_idx"),
+            models.Index(fields=["business_unit", "state"], name="idea_bu_state_idx"),
         ]
         constraints = [
             models.CheckConstraint(
