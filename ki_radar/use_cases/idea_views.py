@@ -10,8 +10,8 @@ from django.views.decorators.http import require_POST
 from ki_radar.accounts.models import BusinessUnit
 
 from .idea_forms import IdeaCandidateForm, IdeaDismissForm, IdeaTriageForm
+from .idea_models import IdeaCandidate
 from .intake_views import IDEA_CANDIDATE_SESSION_KEY, SESSION_KEY
-from .models import IdeaCandidate
 from .permissions import (
     can_create_idea,
     can_edit_idea,
@@ -136,7 +136,11 @@ def idea_edit(request, pk):
     return render(
         request,
         "use_cases/ideas/form.html",
-        {"form": form, "page_title": "Idee bearbeiten", "submit_label": "Änderungen speichern"},
+        {
+            "form": form,
+            "page_title": "Idee bearbeiten",
+            "submit_label": "Änderungen speichern",
+        },
     )
 
 
@@ -148,12 +152,24 @@ def idea_triage(request, pk):
         raise PermissionDenied
     form = IdeaTriageForm(request.POST, instance=idea)
     if not form.is_valid():
-        messages.error(request, "Triage konnte nicht gespeichert werden. Werte müssen zwischen 1 und 5 liegen.")
+        messages.error(
+            request,
+            "Triage konnte nicht gespeichert werden. Werte müssen zwischen 1 und 5 liegen.",
+        )
         return redirect(idea)
     idea = form.save(commit=False)
     idea.triaged_by = request.user
     idea.triaged_at = timezone.now()
-    idea.save(update_fields=["impact", "confidence", "ease", "triaged_by", "triaged_at", "updated_at"])
+    idea.save(
+        update_fields=[
+            "impact",
+            "confidence",
+            "ease",
+            "triaged_by",
+            "triaged_at",
+            "updated_at",
+        ]
+    )
     messages.success(request, "Quick-Triage wurde gespeichert.")
     return redirect(idea)
 
@@ -183,7 +199,10 @@ def idea_dismiss(request, pk):
                 "updated_at",
             ]
         )
-    messages.success(request, "Idee wurde nachvollziehbar als nicht weiterzuverfolgen abgeschlossen.")
+    messages.success(
+        request,
+        "Idee wurde nachvollziehbar als nicht weiterzuverfolgen abgeschlossen.",
+    )
     return redirect(idea)
 
 
@@ -194,13 +213,17 @@ def idea_promote(request, pk):
     if not can_promote_idea(request.user, idea):
         raise PermissionDenied
     if idea.state != IdeaCandidate.State.OPEN or idea.promoted_use_case_id is not None:
-        messages.warning(request, "Diese Idee wurde bereits abgeschlossen und kann nicht erneut übernommen werden.")
+        messages.warning(
+            request,
+            "Diese Idee wurde bereits abgeschlossen und kann nicht erneut übernommen werden.",
+        )
         return redirect(idea)
 
     if request.session.get(SESSION_KEY):
         messages.warning(
             request,
-            "Es läuft bereits eine Use-Case-Aufnahme. Setzen Sie diese fort oder verwerfen Sie den Draft bewusst, bevor Sie eine Idee übernehmen.",
+            "Es läuft bereits eine Use-Case-Aufnahme. Setzen Sie diese fort oder verwerfen Sie "
+            "den Draft bewusst, bevor Sie eine Idee übernehmen.",
         )
         return redirect(idea)
 
@@ -215,6 +238,7 @@ def idea_promote(request, pk):
     request.session.modified = True
     messages.info(
         request,
-        "Die Idee wurde in den bestehenden Intake vorbefüllt. Erst der erfolgreiche Abschluss von Schritt 6 übernimmt sie als Use Case.",
+        "Die Idee wurde in den bestehenden Intake vorbefüllt. Erst der erfolgreiche Abschluss "
+        "von Schritt 6 übernimmt sie als Use Case.",
     )
     return redirect("use_cases:create")
