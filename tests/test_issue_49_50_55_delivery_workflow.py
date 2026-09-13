@@ -92,7 +92,7 @@ def test_multiple_section_findings_explain_field_rule_and_cause(
 
     assert {finding.field_label for finding in scope_findings} == {
         "Nicht im Scope",
-        "MVP-Scope",
+        "Must / MVP-Scope",
     }
     assert len(scope_findings) == 2
     expected_rule = "Pflichtangabe muss vollständig ausgefüllt sein."
