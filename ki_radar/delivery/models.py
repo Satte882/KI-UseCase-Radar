@@ -77,7 +77,34 @@ class DeliveryPackage(TimeStampedModel):
     human_oversight = models.TextField(verbose_name="Menschliche Aufsicht")
     logging_and_audit = models.TextField(verbose_name="Logging und Nachvollziehbarkeit")
     operations_and_support = models.TextField(verbose_name="Betrieb und Support")
-    mvp_scope = models.TextField(verbose_name="MVP-Scope")
+    mvp_scope = models.TextField(
+        verbose_name="Must / MVP-Scope",
+        help_text=(
+            "Unverzichtbarer Mindestumfang für diese Delivery-Version "
+            "(MoSCoW: Must)."
+        ),
+    )
+    should_scope = models.TextField(
+        blank=True,
+        verbose_name="Should",
+        help_text=(
+            "Wichtiger Umfang, der nach dem Must-Scope folgen soll, aber für den "
+            "Mindestnutzen nicht zwingend ist."
+        ),
+    )
+    could_scope = models.TextField(
+        blank=True,
+        verbose_name="Could",
+        help_text="Optionaler Umfang mit Nutzen, sofern Zeit und Kapazität verfügbar sind.",
+    )
+    wont_this_time = models.TextField(
+        blank=True,
+        verbose_name="Won't this time",
+        help_text=(
+            "Bewusst für diese Delivery-Version zurückgestellt. Anders als 'Nicht im Scope' "
+            "liegt dieser Umfang grundsätzlich innerhalb des möglichen Lösungsrahmens."
+        ),
+    )
     acceptance_criteria = models.TextField(verbose_name="Akzeptanzkriterien")
     test_scenarios = models.TextField(verbose_name="Testfälle und Qualitätssicherung")
     measurement_plan = models.TextField(verbose_name="Erfolgsmessung und Pilot")
