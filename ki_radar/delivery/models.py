@@ -79,10 +79,7 @@ class DeliveryPackage(TimeStampedModel):
     operations_and_support = models.TextField(verbose_name="Betrieb und Support")
     mvp_scope = models.TextField(
         verbose_name="Must / MVP-Scope",
-        help_text=(
-            "Unverzichtbarer Mindestumfang für diese Delivery-Version "
-            "(MoSCoW: Must)."
-        ),
+        help_text="Unverzichtbarer Mindestumfang für diese Delivery-Version (MoSCoW: Must).",
     )
     should_scope = models.TextField(
         blank=True,
