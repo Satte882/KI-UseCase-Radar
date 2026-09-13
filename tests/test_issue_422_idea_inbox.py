@@ -320,9 +320,7 @@ def test_long_open_idea_is_marked_without_new_state(reader):
         description="Noch offen",
         submitted_by=reader,
     )
-    IdeaCandidate.objects.filter(pk=idea.pk).update(
-        created_at=timezone.now() - timedelta(days=31)
-    )
+    IdeaCandidate.objects.filter(pk=idea.pk).update(created_at=timezone.now() - timedelta(days=31))
     idea.refresh_from_db()
 
     assert idea.state == IdeaCandidate.State.OPEN
