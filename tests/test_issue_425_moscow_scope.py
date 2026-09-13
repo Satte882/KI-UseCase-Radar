@@ -12,7 +12,7 @@ from ki_radar.delivery.evidence_mapping_contract import (
     mapping_spec,
 )
 from ki_radar.delivery.exports import render_delivery_markdown
-from ki_radar.delivery.forms import DeliveryPackageForm, SECTION_FIELDS
+from ki_radar.delivery.forms import SECTION_FIELDS, DeliveryPackageForm
 from ki_radar.delivery.models import (
     DELIVERY_SECTION_DEFINITIONS,
     SECTION_REVIEW_REQUIREMENTS,
