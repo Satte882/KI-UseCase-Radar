@@ -20,6 +20,9 @@ SECTION_FIELDS = {
         "out_of_scope",
         "users_and_scenarios",
         "mvp_scope",
+        "should_scope",
+        "could_scope",
+        "wont_this_time",
     ],
     "solution_direction": [
         "solution_outline",
