@@ -116,15 +116,27 @@ class IdeaCandidate(TimeStampedModel):
         super().clean()
         if self.state == self.State.DISMISSED and not self.decision_note.strip():
             raise ValidationError(
-                {"decision_note": "Für nicht weiterverfolgte Ideen ist eine Begründung erforderlich."}
+                {
+                    "decision_note": (
+                        "Für nicht weiterverfolgte Ideen ist eine Begründung erforderlich."
+                    )
+                }
             )
         if self.state == self.State.PROMOTED and self.promoted_use_case_id is None:
             raise ValidationError(
-                {"promoted_use_case": "Eine übernommene Idee muss mit genau einem Use Case verknüpft sein."}
+                {
+                    "promoted_use_case": (
+                        "Eine übernommene Idee muss mit genau einem Use Case verknüpft sein."
+                    )
+                }
             )
         if self.state != self.State.PROMOTED and self.promoted_use_case_id is not None:
             raise ValidationError(
-                {"promoted_use_case": "Nur übernommene Ideen dürfen mit einem Use Case verknüpft sein."}
+                {
+                    "promoted_use_case": (
+                        "Nur übernommene Ideen dürfen mit einem Use Case verknüpft sein."
+                    )
+                }
             )
 
     @property
