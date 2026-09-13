@@ -1,0 +1,48 @@
+name: Issue 379 formatter artifact
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  format-artifact:
+    if: github.head_ref == 'issue-379-llm-review-export'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.10.0"
+
+      - name: Install dependencies
+        run: uv sync --frozen --dev
+
+      - name: Format issue files
+        run: >-
+          uv run ruff format
+          ki_radar/review_export.py
+          ki_radar/review_export_architecture.py
+          ki_radar/review_export_use_cases.py
+          tests/test_issue_379_llm_review_export.py
+
+      - name: Upload formatted files
+        uses: actions/upload-artifact@v4
+        with:
+          name: issue-379-formatted
+          path: |
+            ki_radar/review_export.py
+            ki_radar/review_export_architecture.py
+            ki_radar/review_export_use_cases.py
+            tests/test_issue_379_llm_review_export.py
+          if-no-files-found: error
