@@ -8,6 +8,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.db.models import Model
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 from ki_radar.accounts.models import BusinessUnit
 from ki_radar.accounts.permissions import is_business_owner
@@ -19,6 +20,7 @@ from .permissions import can_create_use_case
 from .services import intake_blockers
 
 SESSION_KEY = "use_case_intake"
+IDEA_CANDIDATE_SESSION_KEY = "use_case_intake_idea_candidate"
 STEP_LABELS = {
     1: "Problem",
     2: "Prozess",
@@ -263,6 +265,23 @@ def _persist_optional_origin(*, candidate: UseCase, stored: dict) -> None:
     )
 
 
+def _lock_idea_candidate_for_promotion(request):
+    idea_candidate_id = request.session.get(IDEA_CANDIDATE_SESSION_KEY)
+    if not idea_candidate_id:
+        return None
+
+    from .idea_models import IdeaCandidate
+
+    idea = IdeaCandidate.objects.select_for_update().filter(pk=idea_candidate_id).first()
+    if idea is None:
+        raise ValidationError("Die Ursprungsidee ist nicht mehr verfügbar.")
+    if idea.state != IdeaCandidate.State.OPEN or idea.promoted_use_case_id is not None:
+        raise ValidationError(
+            "Die Ursprungsidee wurde bereits abgeschlossen und kann nicht erneut übernommen werden."
+        )
+    return idea
+
+
 @login_required
 def use_case_intake(request, step: int = 1):
     if not can_create_use_case(request.user):
@@ -305,13 +324,23 @@ def use_case_intake(request, step: int = 1):
             else:
                 try:
                     with transaction.atomic():
+                        idea = _lock_idea_candidate_for_promotion(request)
                         candidate._history_user = request.user
                         candidate.save()
                         _persist_optional_origin(candidate=candidate, stored=stored)
+                        if idea is not None:
+                            from .idea_models import IdeaCandidate
+
+                            idea.state = IdeaCandidate.State.PROMOTED
+                            idea.promoted_use_case = candidate
+                            idea.save(
+                                update_fields=["state", "promoted_use_case", "updated_at"]
+                            )
                 except ValidationError as exc:
                     messages.error(request, " ".join(exc.messages))
                 else:
                     request.session.pop(SESSION_KEY, None)
+                    request.session.pop(IDEA_CANDIDATE_SESSION_KEY, None)
                     messages.success(
                         request,
                         f"Use Case {candidate.short_id} ist bereit zur Bewertung.",
@@ -329,6 +358,7 @@ def use_case_intake(request, step: int = 1):
                 "stored": stored,
                 "candidate": candidate,
                 "blockers": blockers,
+                "has_intake_draft": bool(stored),
             },
         )
 
@@ -369,5 +399,18 @@ def use_case_intake(request, step: int = 1):
                 error_step=error_step,
             ),
             "previous_step": step - 1 if step > 1 else None,
+            "has_intake_draft": bool(stored),
         },
     )
+
+
+@login_required
+@require_POST
+def discard_use_case_intake(request):
+    if not can_create_use_case(request.user):
+        raise PermissionDenied
+    request.session.pop(SESSION_KEY, None)
+    request.session.pop(IDEA_CANDIDATE_SESSION_KEY, None)
+    request.session.modified = True
+    messages.success(request, "Laufende Use-Case-Aufnahme wurde verworfen.")
+    return redirect("use_cases:create")
