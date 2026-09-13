@@ -2,7 +2,7 @@ from django import forms
 
 from ki_radar.accounts.models import BusinessUnit
 
-from .models import IdeaCandidate
+from .idea_models import IdeaCandidate
 
 FORM_CONTROL = "form-control"
 FORM_SELECT = "form-select"
