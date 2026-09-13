@@ -18,6 +18,29 @@ def can_view_use_case(user, use_case) -> bool:
     return user.is_authenticated and not use_case.is_archived
 
 
+def can_create_idea(user) -> bool:
+    return bool(
+        user
+        and user.is_authenticated
+        and user.is_active
+        and not getattr(user, "is_anonymized", False)
+    )
+
+
+def can_edit_idea(user, idea) -> bool:
+    return bool(can_create_idea(user) and idea.state == "open" and idea.submitted_by_id == user.id)
+
+
+def can_triage_idea(user, idea) -> bool:
+    return bool(idea.state == "open" and is_business_owner(user))
+
+
+def can_promote_idea(user, idea) -> bool:
+    return bool(
+        idea.state == "open" and idea.promoted_use_case_id is None and can_create_use_case(user)
+    )
+
+
 def _can_accountable_transition(user, use_case) -> bool:
     if not user or not user.is_authenticated:
         return False

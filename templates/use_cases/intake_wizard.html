@@ -22,9 +22,18 @@
   {% endfor %}
 </nav>
 
-<div class="progress mb-4" role="progressbar" aria-label="Fortschritt" aria-valuenow="{{ step }}" aria-valuemin="1" aria-valuemax="{{ total_steps }}">
+<div class="progress mb-3" role="progressbar" aria-label="Fortschritt" aria-valuenow="{{ step }}" aria-valuemin="1" aria-valuemax="{{ total_steps }}">
   <div class="progress-bar {{ progress_class }}"></div>
 </div>
+
+{% if has_intake_draft %}
+<div class="d-flex justify-content-end mb-3">
+  <form method="post" action="{% url 'use_cases:intake_discard' %}">
+    {% csrf_token %}
+    <button class="btn btn-sm btn-outline-danger" type="submit">Laufenden Intake bewusst verwerfen</button>
+  </form>
+</div>
+{% endif %}
 
 <div class="app-card mb-4">
   {% if form %}
