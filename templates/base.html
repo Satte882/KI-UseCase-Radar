@@ -38,6 +38,9 @@
       <a class="sidebar-link {% if request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'reporting:dashboard' %}">
         <span class="nav-icon">⌁</span> Arbeitsvorrat
       </a>
+      <a class="sidebar-link {% if request.resolver_match.namespace == 'use_cases' and request.resolver_match.url_name|slice:':5' == 'idea_' %}active{% endif %}" href="{% url 'use_cases:idea_list' %}">
+        <span class="nav-icon">◇</span> Ideen-Inbox
+      </a>
       <a class="sidebar-link {% if request.resolver_match.namespace == 'reporting' and request.resolver_match.url_name == 'portfolio' %}active{% endif %}" href="{% url 'reporting:portfolio' %}">
         <span class="nav-icon">◈</span> Portfolio <small>Querschnitt</small>
       </a>
@@ -54,7 +57,7 @@
       {% if journey and request.resolver_match.namespace == 'architecture' %}
       {% analysis_sidebar %}
       {% endif %}
-      <a class="sidebar-link {% if request.resolver_match.namespace == 'use_cases' or request.resolver_match.namespace == 'governance' or request.resolver_match.namespace == 'reviews' and use_case %}active{% endif %}" href="{% url 'use_cases:list' %}">
+      <a class="sidebar-link {% if request.resolver_match.namespace == 'use_cases' %}{% if request.resolver_match.url_name|slice:':5' != 'idea_' %}active{% endif %}{% elif request.resolver_match.namespace == 'governance' or request.resolver_match.namespace == 'reviews' and use_case %}active{% endif %}" href="{% url 'use_cases:list' %}">
         <span class="nav-icon">◫</span> Use Cases
       </a>
       {% if journey %}
