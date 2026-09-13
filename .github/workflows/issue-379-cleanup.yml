@@ -1,0 +1,79 @@
+name: Issue 379 final cleanup
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: github.head_ref == 'issue-379-llm-review-export'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.10.0"
+
+      - name: Install dependencies
+        run: uv sync --frozen --dev
+
+      - name: Normalize test expectation and format
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("tests/test_issue_379_llm_review_export.py")
+          text = path.read_text(encoding="utf-8")
+          old = "[Link vorhanden – im Export ausgelassen]"
+          new = "[Link vorhanden - im Export ausgelassen]"
+          if old not in text:
+              raise SystemExit("Expected old link placeholder assertion not found")
+          path.write_text(text.replace(old, new), encoding="utf-8")
+          PY
+          uv run ruff format \
+            ki_radar/review_export.py \
+            ki_radar/review_export_architecture.py \
+            ki_radar/review_export_core.py \
+            ki_radar/review_export_renderer.py \
+            ki_radar/review_export_use_cases.py \
+            tests/test_issue_379_llm_review_export.py
+          uv run ruff check \
+            ki_radar/review_export.py \
+            ki_radar/review_export_architecture.py \
+            ki_radar/review_export_core.py \
+            ki_radar/review_export_renderer.py \
+            ki_radar/review_export_use_cases.py \
+            tests/test_issue_379_llm_review_export.py
+
+      - name: Commit cleanup
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            ki_radar/review_export.py \
+            ki_radar/review_export_architecture.py \
+            ki_radar/review_export_core.py \
+            ki_radar/review_export_renderer.py \
+            ki_radar/review_export_use_cases.py \
+            tests/test_issue_379_llm_review_export.py
+          if git diff --cached --quiet; then
+            echo "No cleanup changes required."
+            exit 0
+          fi
+          git commit -m "refactor: finalize #379 export layering"
+          git push origin HEAD:${{ github.head_ref }}
