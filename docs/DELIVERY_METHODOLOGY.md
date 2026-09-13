@@ -16,19 +16,6 @@ KI-Radar verwendet **CRISP-ML(Q)** als Lebenszyklus- und Qualitätssicherungsrah
 | **6. Akzeptanz und Erfolgsmessung** | CRISP-ML(Q): Evaluation; fachliche und technische Akzeptanz, Testfälle und Messkonzept |
 | **7. Risiken, Abhängigkeiten und Umsetzungsstart** | CRISP-ML(Q): Deployment sowie Monitoring and Maintenance; Voraussetzungen, Auflagen, Verantwortlichkeiten und initialer Umsetzungsrahmen |
 
-## Scope-Priorisierung nach MoSCoW
-
-Die Delivery-Sektion **„Scope, Nutzer und MVP“** verwendet für die Priorisierung des Lieferumfangs die etablierte **MoSCoW-Methode**. Sie konkretisiert den bereits freigegebenen Scope für eine konkrete Delivery-Version und erzeugt keinen zusätzlichen Workflow, Score, Freigabeschritt oder eine neue Governance-Entscheidung.
-
-- **Must:** unverzichtbarer Mindestumfang; wird im bestehenden Feld `mvp_scope` als **Must / MVP-Scope** geführt.
-- **Should:** wichtiger Umfang, der nach dem Must-Scope folgen soll, für den Mindestnutzen aber nicht zwingend ist.
-- **Could:** optionaler Umfang mit zusätzlichem Nutzen, sofern Zeit und Kapazität verfügbar sind.
-- **Won't this time:** grundsätzlich denkbarer beziehungsweise zulässiger Umfang, der bewusst für diese Delivery-Version zurückgestellt wird.
-
-`in_scope` und `out_of_scope` bleiben davon getrennte Scope-Grenzen. Insbesondere ist **Won't this time nicht dasselbe wie `out_of_scope`**: `out_of_scope` liegt außerhalb der fachlich gesetzten Grenze, während Won't this time innerhalb des grundsätzlich möglichen Lösungsrahmens liegt, aber für das aktuelle Inkrement bewusst nicht umgesetzt wird.
-
-Die in MoSCoW-/DSDM-Kontexten häufig verwendete Leitlinie, den Must-Anteil bewusst zu begrenzen (beispielsweise auf ungefähr 60 % der erwarteten Umsetzungskapazität), dient hier nur als methodischer Denkanstoß gegen einen überladenen MVP-Scope. KI-Radar berechnet oder erzwingt keinen 60-%-Wert, solange keine belastbaren Aufwandsschätzungen auf Ebene einzelner Scope-, Requirement- oder Backlog-Items vorliegen.
-
 ## Einordnung für Delivery
 
 Das Delivery Package bildet nicht den vollständigen CRISP-ML(Q)-Lebenszyklus innerhalb von KI-Radar ab. Es übergibt den freigegebenen Problem-, Scope-, Lösungs-, Architektur- und Qualitätsrahmen. Deployment, Rollback, laufendes Monitoring und die eigentliche ML-Test-Score-Erhebung werden während der Umsetzung und im Betrieb durch die zuständigen Delivery- und Betriebsteams durchgeführt.
