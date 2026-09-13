@@ -28,11 +28,7 @@ def can_create_idea(user) -> bool:
 
 
 def can_edit_idea(user, idea) -> bool:
-    return bool(
-        can_create_idea(user)
-        and idea.state == "open"
-        and idea.submitted_by_id == user.id
-    )
+    return bool(can_create_idea(user) and idea.state == "open" and idea.submitted_by_id == user.id)
 
 
 def can_triage_idea(user, idea) -> bool:
