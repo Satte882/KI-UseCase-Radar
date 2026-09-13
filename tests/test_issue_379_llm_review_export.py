@@ -270,7 +270,7 @@ def test_export_is_stable_for_multiline_special_chars_and_redacts_inline_referen
     assert "[URL redacted]" in content
     assert "[email redacted]" in content
     assert "[internal-id redacted]" in content
-    assert "[Link vorhanden – im Export ausgelassen]" in content
+    assert "[Link vorhanden - im Export ausgelassen]" in content
     assert "## Instructions for External LLM" in content
 
 
