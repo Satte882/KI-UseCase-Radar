@@ -14,13 +14,17 @@ from ki_radar.review_export import (
     build_value_stream_review_context,
     render_review_markdown,
 )
+from ki_radar.review_export_security import sanitize_external_markdown
 from ki_radar.use_cases.models import UseCase
 from ki_radar.use_cases.permissions import can_view_use_case
 
 
 def _markdown_response(content: str, *, filename_stem: str) -> HttpResponse:
     safe_stem = slugify(filename_stem) or "llm-review"
-    response = HttpResponse(content, content_type="text/markdown; charset=utf-8")
+    response = HttpResponse(
+        sanitize_external_markdown(content),
+        content_type="text/markdown; charset=utf-8",
+    )
     response["Content-Disposition"] = f'attachment; filename="{safe_stem}.md"'
     return response
 
