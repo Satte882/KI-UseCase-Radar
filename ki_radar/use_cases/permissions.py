@@ -37,9 +37,7 @@ def can_triage_idea(user, idea) -> bool:
 
 def can_promote_idea(user, idea) -> bool:
     return bool(
-        idea.state == "open"
-        and idea.promoted_use_case_id is None
-        and can_create_use_case(user)
+        idea.state == "open" and idea.promoted_use_case_id is None and can_create_use_case(user)
     )
 
 
