@@ -21,7 +21,9 @@ class IdeaCandidateForm(forms.ModelForm):
         help_texts = {
             "description": "Beschreiben Sie Problem, Beobachtung oder Idee in wenigen Sätzen.",
             "business_unit": "Optional. Kann bei einer noch unscharfen Idee offen bleiben.",
-            "source_note": "Optional, z. B. Teams, Workshop, Miro oder Name des ursprünglichen Einreichers.",
+            "source_note": (
+                "Optional, z. B. Teams, Workshop, Miro oder Name des ursprünglichen Einreichers."
+            ),
         }
         widgets = {
             "description": forms.Textarea(attrs={"rows": 5}),
@@ -53,7 +55,9 @@ class IdeaTriageForm(forms.ModelForm):
             "ease": "Validierbarkeit",
         }
         help_texts = {
-            "impact": "1 = kleiner lokaler Effekt · 5 = erheblicher wirtschaftlicher/strategischer Effekt",
+            "impact": (
+                "1 = kleiner lokaler Effekt · 5 = erheblicher wirtschaftlicher/strategischer Effekt"
+            ),
             "confidence": "1 = Annahme · 5 = gut belegte Ausgangslage. Nur Triage-Confidence.",
             "ease": "1 = schwer zu prüfen · 5 = sehr schnell und günstig validierbar",
         }
