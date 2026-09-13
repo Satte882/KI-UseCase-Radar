@@ -119,9 +119,7 @@ def test_incomplete_intake_exposes_open_required_question(client, owner, busines
 
 
 @pytest.mark.django_db
-def test_conditional_value_stream_screening_requirement_is_visible(
-    client, owner, business_unit
-):
+def test_conditional_value_stream_screening_requirement_is_visible(client, owner, business_unit):
     stream = ValueStream.objects.create(
         name="Serviceprozess",
         business_unit=business_unit,
@@ -150,9 +148,7 @@ def test_conditional_value_stream_screening_requirement_is_visible(
 
 
 @pytest.mark.django_db
-def test_compound_metric_set_is_partial_not_heuristically_complete(
-    client, owner, business_unit
-):
+def test_compound_metric_set_is_partial_not_heuristically_complete(client, owner, business_unit):
     use_case = make_use_case(
         owner,
         business_unit,
@@ -172,9 +168,7 @@ def test_compound_metric_set_is_partial_not_heuristically_complete(
 
 
 @pytest.mark.django_db
-def test_use_case_export_embeds_only_exact_recorded_upstream(
-    client, owner, business_unit
-):
+def test_use_case_export_embeds_only_exact_recorded_upstream(client, owner, business_unit):
     stream, stage, process = make_discovery(owner, business_unit)
     use_case = make_use_case(owner, business_unit)
     UseCaseOrigin.objects.create(
@@ -281,9 +275,7 @@ def test_export_is_stable_for_multiline_special_chars_and_redacts_inline_referen
 
 
 @pytest.mark.django_db
-def test_export_is_read_only_and_does_not_change_lifecycle_or_history(
-    client, owner, business_unit
-):
+def test_export_is_read_only_and_does_not_change_lifecycle_or_history(client, owner, business_unit):
     use_case = make_use_case(owner, business_unit)
     original_status = use_case.status
     original_decision_status = use_case.decision_status
@@ -300,9 +292,7 @@ def test_export_is_read_only_and_does_not_change_lifecycle_or_history(
 
 
 @pytest.mark.django_db
-def test_detail_page_exposes_download_with_external_sharing_warning(
-    client, owner, business_unit
-):
+def test_detail_page_exposes_download_with_external_sharing_warning(client, owner, business_unit):
     use_case = make_use_case(owner, business_unit)
     client.force_login(owner)
 

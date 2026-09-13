@@ -125,9 +125,7 @@ def build_value_stream_review_context(value_stream: ValueStream, actor) -> Revie
                     field_name=field_name,
                     section="Value-Stream-Phasen",
                     question_id=f"value_stream.stage.{field_name}",
-                    canonical_source=(
-                        "architecture.ValueStreamStage + ValueStreamStageForm"
-                    ),
+                    canonical_source=("architecture.ValueStreamStage + ValueStreamStageForm"),
                     instance_ref=reference,
                 )
             )
@@ -277,8 +275,7 @@ def build_process_review_context(process_analysis: ProcessAnalysis, actor) -> Re
                 section="Prozessanalyse und Diagnose",
                 question_id=f"process.{field_name}",
                 canonical_source=(
-                    "architecture.ProcessAnalysis + ProcessAnalysisForm + "
-                    "PROCESS_REQUIRED_FIELDS"
+                    "architecture.ProcessAnalysis + ProcessAnalysisForm + PROCESS_REQUIRED_FIELDS"
                 ),
                 requirement=requirement,
                 relevance=relevance,
@@ -338,9 +335,7 @@ def _append_process_validation(context, process_analysis) -> None:
             section="Validierung und Provenance",
             question_id="process.validation.current_version",
             label="Aktuelle Prozessversion validiert",
-            purpose=(
-                "Unterscheidet aktuelle Validierung von veralteten Validierungsartefakten."
-            ),
+            purpose=("Unterscheidet aktuelle Validierung von veralteten Validierungsartefakten."),
             requirement="conditional",
             relevance="now",
             enforcement="validation",
@@ -410,9 +405,7 @@ def _append_solution_options(context, process_analysis, options) -> None:
 
         details = [getattr(option, name, None) for name in detail_fields]
         relevance = (
-            "now"
-            if option.evaluation_status == option.EvaluationStatus.ASSESSED
-            else "later"
+            "now" if option.evaluation_status == option.EvaluationStatus.ASSESSED else "later"
         )
         context.questions.append(
             ReviewQuestion(
@@ -424,9 +417,7 @@ def _append_solution_options(context, process_analysis, options) -> None:
                 relevance=relevance,
                 enforcement="validation",
                 condition="Option ist bewertet oder soll bindend verglichen werden",
-                status=(
-                    "answered" if option.comparison_complete else compound_status(details)
-                ),
+                status=("answered" if option.comparison_complete else compound_status(details)),
                 sharing_class=SHARING_UNCHANGED,
                 canonical_source="architecture.SolutionOption.comparison_complete",
                 answer_source=f"{reference}.comparison_complete",

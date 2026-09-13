@@ -208,9 +208,7 @@ def _append_governance(context: ReviewContext, use_case: UseCase) -> None:
                 condition="massgebliches Governance-Screening",
                 status=answer_state,
                 sharing_class=SHARING_APPROVED_TARGET,
-                canonical_source=(
-                    "governance.current_governance_status + GovernanceReview"
-                ),
+                canonical_source=("governance.current_governance_status + GovernanceReview"),
                 answer_source=f"GovernanceReview/{status.kind.key}",
                 answer=" | ".join(answer_parts),
             )
@@ -225,17 +223,13 @@ def _append_delivery(context: ReviewContext, use_case: UseCase) -> None:
         return
 
     required_fields = {
-        field_name
-        for fields in READY_REQUIRED_FIELDS.values()
-        for field_name in fields
+        field_name for fields in READY_REQUIRED_FIELDS.values() for field_name in fields
     }
     optional_moscow = {"should_scope", "could_scope", "wont_this_time"}
     for field_name in sorted(required_fields | optional_moscow):
         requirement = "required" if field_name in required_fields else "optional"
         sharing_override = (
-            SHARING_OMIT
-            if field_name == "external_delivery_url"
-            else SHARING_APPROVED_TARGET
+            SHARING_OMIT if field_name == "external_delivery_url" else SHARING_APPROVED_TARGET
         )
         context.questions.append(
             model_question(
@@ -352,9 +346,7 @@ def build_use_case_review_context(use_case: UseCase, actor) -> ReviewContext:
         anchor="UseCase",
         title=use_case.title,
         reference=use_case.short_id or "Use Case",
-        lifecycle=(
-            f"{use_case.get_status_display()} | {use_case.get_decision_status_display()}"
-        ),
+        lifecycle=(f"{use_case.get_status_display()} | {use_case.get_decision_status_display()}"),
         source_revision=source_revision(use_case),
         blockers=blockers.copy(),
         readiness_gaps=warnings.copy(),

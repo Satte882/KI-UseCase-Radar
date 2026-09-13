@@ -504,7 +504,9 @@ def build_process_review_context(process_analysis: ProcessAnalysis, actor) -> Re
         process_version=process_analysis.version
     ).first()
     any_validation = process_analysis.validations.first()
-    validation_status = "answered" if current_validation else ("partial" if any_validation else "open")
+    validation_status = (
+        "answered" if current_validation else ("partial" if any_validation else "open")
+    )
     validation_answer = (
         f"Version v{process_analysis.version} validiert; "
         f"Notiz: {current_validation.note or '[keine zusätzliche Notiz]'}"
@@ -539,7 +541,9 @@ def build_process_review_context(process_analysis: ProcessAnalysis, actor) -> Re
         )
     )
     if validation_status != "answered":
-        ctx.readiness_gaps.append("Für die aktuelle Prozessversion fehlt eine aktuelle Validierung.")
+        ctx.readiness_gaps.append(
+            "Für die aktuelle Prozessversion fehlt eine aktuelle Validierung."
+        )
 
     drift = source_differences(process_analysis.source_snapshot, stage=process_analysis.stage)
     for item in drift:
@@ -664,9 +668,15 @@ def _use_case_requirement_metadata(
 
     if field_name in INTAKE_REQUIREMENTS:
         requirement, target_rank, condition = "required", 0, "-"
-    elif field_name in POSITIVE_APPROVAL_CORE_REQUIREMENTS or field_name in APPROVAL_METRIC_REQUIREMENTS:
+    elif (
+        field_name in POSITIVE_APPROVAL_CORE_REQUIREMENTS
+        or field_name in APPROVAL_METRIC_REQUIREMENTS
+    ):
         requirement, target_rank, condition = "conditional", 1, "bei positiver Freigabe"
-    elif field_name in BASE_REQUIREMENTS[UseCase.Status.PILOT] or field_name in PILOT_METRIC_REQUIREMENTS:
+    elif (
+        field_name in BASE_REQUIREMENTS[UseCase.Status.PILOT]
+        or field_name in PILOT_METRIC_REQUIREMENTS
+    ):
         requirement, target_rank, condition = "conditional", 1, "für Pilotstart"
     elif field_name in GO_LIVE_CORE_REQUIREMENTS:
         requirement, target_rank, condition = "conditional", 2, "für Produktivsetzung"
@@ -816,7 +826,9 @@ def _append_delivery(ctx: ReviewContext, use_case: UseCase) -> None:
             ctx.readiness_gaps.append("Kein Delivery Package vorhanden.")
         return
 
-    required_fields = {field_name for fields in READY_REQUIRED_FIELDS.values() for field_name in fields}
+    required_fields = {
+        field_name for fields in READY_REQUIRED_FIELDS.values() for field_name in fields
+    }
     optional_moscow = {"should_scope", "could_scope", "wont_this_time"}
     for field_name in sorted(required_fields | optional_moscow):
         requirement = "required" if field_name in required_fields else "optional"
@@ -831,7 +843,9 @@ def _append_delivery(ctx: ReviewContext, use_case: UseCase) -> None:
                 relevance="now",
                 enforcement="readiness" if requirement == "required" else "none",
                 sharing_override=(
-                    SHARING_OMIT if field_name == "external_delivery_url" else SHARING_APPROVED_TARGET
+                    SHARING_OMIT
+                    if field_name == "external_delivery_url"
+                    else SHARING_APPROVED_TARGET
                 ),
             )
         )
