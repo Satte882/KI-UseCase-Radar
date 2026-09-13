@@ -66,6 +66,9 @@ MAPPING_CONTRACT_VERSION = "block8.v1"
 FORBIDDEN_AUTOMATED_DELIVERY_FIELDS = frozenset(
     {
         "mvp_scope",
+        "should_scope",
+        "could_scope",
+        "wont_this_time",
         "functional_requirements",
         "non_functional_requirements",
         "logging_and_audit",

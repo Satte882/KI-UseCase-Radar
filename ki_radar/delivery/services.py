@@ -39,7 +39,7 @@ APPROVED_STATUSES = {
 
 SECTION_ORIGINS = {
     "problem_and_target": DeliverySectionReview.ContentOrigin.INHERITED,
-    "scope_and_users": DeliverySectionReview.ContentOrigin.INHERITED,
+    "scope_and_users": DeliverySectionReview.ContentOrigin.MIXED,
     "solution_direction": DeliverySectionReview.ContentOrigin.MIXED,
     "architecture_and_data": DeliverySectionReview.ContentOrigin.MIXED,
     "requirements_and_governance": DeliverySectionReview.ContentOrigin.NEW,
@@ -456,6 +456,9 @@ def build_initial_delivery_data(
             use_case.support_responsibility or "Betriebsverantwortung festlegen."
         ),
         "mvp_scope": "Kleinsten Ende-zu-Ende-Ablauf für die Nutzenvalidierung beschreiben.",
+        "should_scope": "",
+        "could_scope": "",
+        "wont_this_time": "",
         "acceptance_criteria": (
             "1. Fachlicher Kernablauf ist Ende-zu-Ende demonstrierbar.\n"
             "2. Freigabeauflagen und Governance-Anforderungen sind umgesetzt.\n"

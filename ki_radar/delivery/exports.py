@@ -52,13 +52,33 @@ def _role_source_decisions(package: DeliveryPackage) -> str:
     return "\n".join(rows)
 
 
+def _moscow_prioritization(package: DeliveryPackage) -> str:
+    return "\n\n".join(
+        [
+            (
+                "MoSCoW priorisiert den Umfang dieser Delivery-Version. "
+                "'Won't this time' bezeichnet bewusst zurückgestellten, grundsätzlich "
+                "zulässigen Umfang und ist nicht mit 'Nicht im Scope' gleichzusetzen."
+            ),
+            f"### Must / MVP-Scope\n{package.mvp_scope or '-'}",
+            f"### Should\n{package.should_scope or '-'}",
+            f"### Could\n{package.could_scope or '-'}",
+            f"### Won't this time\n{package.wont_this_time or '-'}",
+        ]
+    )
+
+
 def render_delivery_markdown(package: DeliveryPackage) -> str:
     sections = [
         ("Problem und Geschäftskontext", package.problem_context),
         ("Ziel und Ergebnis", package.target_outcome),
         (
-            "Scope",
+            "Scope-Grenzen",
             f"### Im Scope\n{package.in_scope}\n\n### Nicht im Scope\n{package.out_of_scope}",
+        ),
+        (
+            "Priorisierung für diese Delivery-Version (MoSCoW)",
+            _moscow_prioritization(package),
         ),
         ("Nutzer und Szenarien", package.users_and_scenarios),
         ("Lösungsrahmen", package.solution_outline),
@@ -71,7 +91,6 @@ def render_delivery_markdown(package: DeliveryPackage) -> str:
         ("Menschliche Aufsicht", package.human_oversight),
         ("Logging und Audit", package.logging_and_audit),
         ("Betrieb und Support", package.operations_and_support),
-        ("MVP-Scope", package.mvp_scope),
         ("Akzeptanzkriterien", package.acceptance_criteria),
         ("Testfälle", package.test_scenarios),
         (
