@@ -333,9 +333,7 @@ def use_case_intake(request, step: int = 1):
 
                             idea.state = IdeaCandidate.State.PROMOTED
                             idea.promoted_use_case = candidate
-                            idea.save(
-                                update_fields=["state", "promoted_use_case", "updated_at"]
-                            )
+                            idea.save(update_fields=["state", "promoted_use_case", "updated_at"])
                 except ValidationError as exc:
                     messages.error(request, " ".join(exc.messages))
                 else:
