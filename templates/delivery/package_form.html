@@ -60,6 +60,9 @@
       <div class="card-header">
         <strong>{{ group.label }}</strong>
         <div class="small text-muted mt-1">Zuständig: {{ group.responsible_role }} · {{ group.responsible_person }}</div>
+        {% if group.key == "scope_and_users" %}
+        <div class="small text-muted mt-1"><strong>Priorisierung nach MoSCoW:</strong> Must entspricht dem verbindlichen MVP-Mindestumfang. Should und Could sind nachgelagert; Won't this time ist bewusst für diese Delivery-Version zurückgestellt und nicht identisch mit „Nicht im Scope“.</div>
+        {% endif %}
       </div>
       <div class="card-body delivery-form-grid">
         {% for field in group.fields %}
@@ -90,8 +93,8 @@
                 <div class="card-body">
                   <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
                     <div>
-                      <strong>KI-Unterstützung für den MVP-Scope</strong>
-                      <div class="small text-muted mt-1">Nur ausgewählte Problem-, Ziel-, Scope-, Nutzer- und Lösungskontexte werden über OpenRouter verarbeitet. Der Entwurf wird nicht automatisch gespeichert oder bestätigt.</div>
+                      <strong>KI-Unterstützung für Must / MVP-Scope</strong>
+                      <div class="small text-muted mt-1">Der Entwurf konkretisiert ausschließlich den unverzichtbaren Minimum-Scope. Should, Could und Won't this time werden nicht automatisch priorisiert. Verarbeitet werden nur ausgewählte Problem-, Ziel-, Scope-, Nutzer- und Lösungskontexte über OpenRouter; gespeichert oder bestätigt wird nichts automatisch.</div>
                     </div>
                     <button type="button" class="btn btn-sm btn-outline-primary" data-ai-generate aria-busy="false"{% if not ai.static_ready %} disabled{% endif %}>
                       <span class="spinner-border spinner-border-sm d-none" aria-hidden="true" data-ai-spinner></span>
