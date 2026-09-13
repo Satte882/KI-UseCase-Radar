@@ -5,6 +5,10 @@ class UseCasesConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "ki_radar.use_cases"
 
+    def import_models(self):
+        super().import_models()
+        from . import idea_models  # noqa: F401
+
     def ready(self):
         from . import classification  # noqa: F401
         from .governance_journey import install as install_governance_journey
