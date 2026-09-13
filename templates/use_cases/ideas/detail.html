@@ -44,7 +44,12 @@
 <section id="quick-triage" class="app-card mb-4" tabindex="-1">
   <div class="card-body">
     <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
-      <div><div class="section-title">Quick-Triage</div><h2 class="h5 mb-1">Impact · Confidence · Validierbarkeit</h2><p class="text-muted mb-0">Nur Orientierung für die Reihenfolge in der Ideen-Inbox. Kein Assessment und keine Promote-Automatik.</p></div>
+      <div>
+        <div class="section-title">Quick-Triage</div>
+        <h2 class="h5 mb-1">Impact · Confidence · Validierbarkeit</h2>
+        <p class="text-muted mb-1">Nur Orientierung für die Reihenfolge in der Ideen-Inbox. Kein Assessment und keine Promote-Automatik.</p>
+        <p class="small text-muted mb-0">Angelehnt an die <a href="https://www.productboard.com/glossary/product-prioritization-frameworks/" target="_blank" rel="noopener noreferrer">ICE-Methode</a> (Impact, Confidence, Ease). Validierbarkeit ersetzt hier bewusst „Ease“, weil in dieser frühen Phase die schnelle Überprüfbarkeit einer Idee entscheidend ist.</p>
+      </div>
       <div class="text-end"><div class="text-muted small">Quick Score</div><div class="h3 mb-0">{% if idea.quick_score is not None %}{{ idea.quick_score }}{% else %}–{% endif %}</div></div>
     </div>
     {% if can_triage %}
