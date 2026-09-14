@@ -203,20 +203,20 @@ Der Blackbox-Agent erhält **nicht**:
 
 ## 7. Zehn-Run-Stichprobenmatrix
 
-Die Matrix variiert Fachbereich, Arbeitstyp, Datenreife, Pain-Point-Klarheit und Problemcharakter. Die letzte Spalte beschreibt nur die **Testspannung**, nicht das erwartete Ergebnis.
+Die Matrix variiert Fachbereich, Arbeitstyp, Datenreife, Pain-Point-Klarheit, Unternehmensgröße und **primäre Zielart**. Damit soll verhindert werden, dass die Stichprobe selbst ausschließlich auf Prozess-/Koordinationseffizienz vorgerahmt ist. Die letzte Spalte beschreibt nur die **Testspannung**, nicht das erwartete Ergebnis.
 
-| Run | Kontext | Datenreife | Pain-Klarheit | Problemcharakter / Testspannung |
-|---|---|---|---|---|
-| R01 | mittelständischer Maschinenbauer, After Sales / Service | mittel | klar | viel manuelle Koordination und wiederkehrende Informationssuche |
-| R02 | produzierendes KMU, interne Qualitätsarbeit | niedrig-mittel | diffus | Nacharbeit steigt, Ursachen sind nicht eindeutig belegt |
-| R03 | Handelsunternehmen, Bestell-/Freigabekontext | hoch | klar | wiederkehrende Standardfälle und bekannte Regeln; KI darf nicht erzwungen werden |
-| R04 | Dienstleistungs-KMU, Kundenservice | hoch | mittel | hohes Kontaktvolumen, mehrere Kanäle, Freitext und saisonale Schwankung |
-| R05 | mittelständisches Unternehmen, HR / Onboarding | niedrig | diffus | viele Übergaben, lokale Varianten, unvollständige Transparenz |
-| R06 | technischer Außendienst / Field Service | mittel | klar | Termin-/Ressourcenkoordination, Ausnahmen und Abhängigkeiten |
-| R07 | B2B-Vertrieb, Angebots-/Kalkulationsarbeit | mittel | klar | wissens- und dokumentenintensive Arbeit, heterogene Eingaben |
-| R08 | produzierendes KMU, Instandhaltung | hoch | mittel | historische Maschinen-/Störungsdaten vorhanden, Wirkungskette noch offen |
-| R09 | Großhandel / Logistik, Retouren und Ausnahmebearbeitung | mittel | diffus | mehrere Ursachen, Medienbrüche und Regeln gemischt |
-| R10 | Engineering-/Projektorganisation, technische Änderungsarbeit | niedrig-mittel | mittel | verteiltes Wissen, Abstimmung, Dokumentation und Verantwortungsübergaben |
+| Run | Kontext | Datenreife | Pain-Klarheit | Primäre Zielart | Problemcharakter / Testspannung |
+|---|---|---|---|---|---|
+| R01 | mittelständischer Maschinenbauer, After Sales / Service | mittel | klar | Effizienz + Servicequalität | viel manuelle Koordination und wiederkehrende Informationssuche |
+| R02 | produzierendes KMU, interne Qualitätsarbeit | niedrig-mittel | diffus | Qualität + Ursachenklärung | Nacharbeit steigt, Ursachen sind nicht eindeutig belegt |
+| R03 | Handelsunternehmen, Bestell-/Freigabekontext | hoch | klar | Durchlaufzeit + Regeltreue | wiederkehrende Standardfälle und bekannte Regeln; KI darf nicht erzwungen werden |
+| R04 | Dienstleistungs-KMU, Kundenservice | hoch | mittel | Servicequalität + Effizienz | hohes Kontaktvolumen, mehrere Kanäle, Freitext und saisonale Schwankung |
+| R05 | mittelständisches Unternehmen, HR / Onboarding | niedrig | diffus | Zuverlässigkeit + Nutzererlebnis | viele Übergaben, lokale Varianten, unvollständige Transparenz |
+| R06 | technischer Außendienst / Field Service | mittel | klar | Planungsqualität + Resilienz | Termin-/Ressourcenkoordination, Ausnahmen und Abhängigkeiten |
+| R07 | B2B-Industrieunternehmen, strategischer Vertrieb | mittel | mittel | Wachstum + Marge | Abschlussquote und Margenqualität verbessern, ohne den Hebel vorzugeben |
+| R08 | reguliertes Produktionsunternehmen, Traceability / Qualitätssicherung | hoch | klar | Risiko + Compliance | Nachweis- und Rückverfolgbarkeitsrisiko bei hoher Datenverfügbarkeit; Effizienz ist nicht Primärziel |
+| R09 | Großhandel / Logistik, Retouren und Ausnahmebearbeitung | mittel | diffus | Qualität + Durchlaufzeit | mehrere Ursachen, Medienbrüche und Regeln gemischt |
+| R10 | Engineering-/Projektorganisation, Wissens- und Entscheidungsarbeit | niedrig-mittel | mittel | Entscheidungsqualität + Wissensrobustheit | kritisches Expertenwissen verteilt; wiederkehrende Entscheidungen sind schwer nachvollziehbar |
 
 ### R01 – Maschinenbau / After Sales
 
@@ -275,27 +275,27 @@ Unternehmen: technischer Serviceanbieter, ca. 450 Mitarbeitende.
 Bereich: Außendienststeuerung.
 Ausgangslage: Einsatztermine müssen häufig kurzfristig umgeplant werden. Qualifikation, Ersatzteile, Reiseweg, Kundentermin und Priorität beeinflussen die Planung.
 Informationslage: Einsatz-, Mitarbeiter- und Auftragsdaten sind vorhanden, einzelne Randbedingungen werden aber manuell gepflegt.
-Ziel: Planungsaufwand und Terminverschiebungen reduzieren.
+Ziel: Planungsqualität erhöhen und Terminverschiebungen reduzieren.
 ```
 
-### R07 – B2B-Vertrieb
+### R07 – Strategischer B2B-Vertrieb / Wachstum
 
 ```text
-Unternehmen: B2B-Industriezulieferer, ca. 700 Mitarbeitende.
-Bereich: Vertrieb und Angebotswesen.
-Ausgangslage: Komplexe Kundenanfragen benötigen Informationen aus früheren Angeboten, Produktunterlagen, Preislisten und Rückfragen an Technik. Angebotsdurchlaufzeiten sind hoch.
-Informationslage: relevante Inhalte existieren digital, aber verteilt über CRM, Dokumentablagen und Fachsysteme.
-Ziel: Angebotsprozess beschleunigen und gleichzeitig Qualität sichern.
+Unternehmen: B2B-Industrieunternehmen, ca. 1.400 Mitarbeitende.
+Bereich: strategischer Vertrieb und Key Account Management.
+Ausgangslage: Das Unternehmen möchte Abschlussquote und Margenqualität in strategischen Kundenchancen steigern. Verlorene Angebote, Rabattentscheidungen und Kundenfeedback zeigen kein einheitliches Muster; reine Beschleunigung des Angebotsprozesses ist ausdrücklich nicht das Primärziel.
+Informationslage: CRM, Angebotsdaten und Deckungsbeiträge sind vorhanden; qualitative Verlustgründe und Kundenfeedback sind uneinheitlich dokumentiert.
+Ziel: einen belastbaren Hebel für profitables Wachstum identifizieren, ohne Technologie oder Prozessautomatisierung vorzugeben.
 ```
 
-### R08 – Instandhaltung
+### R08 – Traceability / Risiko und Compliance
 
 ```text
-Unternehmen: produzierendes KMU, ca. 900 Mitarbeitende.
-Bereich: Instandhaltung und Produktion.
-Ausgangslage: ungeplante Stillstände verursachen relevante Kosten. Das Unternehmen besitzt mehrere Jahre Störungs-, Wartungs- und Maschinendaten, weiß aber noch nicht, welcher Teil des End-to-End-Ablaufs den größten Hebel bietet.
-Informationslage: vergleichsweise hohe Datenreife, aber unterschiedliche Datenqualität je Anlage.
-Ziel: Ausfallzeiten wirtschaftlich sinnvoll reduzieren.
+Unternehmen: reguliertes Produktionsunternehmen, ca. 220 Mitarbeitende.
+Bereich: Qualitätssicherung, Produktion und Compliance.
+Ausgangslage: Bei internen Audits wurden Lücken in der Nachvollziehbarkeit von Chargen-, Prüf- und Freigabeinformationen sichtbar. Es gab noch keinen gravierenden Vorfall, aber das Management will das Risiko unvollständiger oder verspätet rekonstruierbarer Nachweise reduzieren. Effizienzgewinne sind willkommen, aber nicht das Primärziel.
+Informationslage: Produktions-, Prüf- und Chargendaten sind überwiegend strukturiert vorhanden; Nachweise liegen teilweise über mehrere Systeme und Dokumentablagen verteilt.
+Ziel: Rückverfolgbarkeit und Nachweissicherheit verbessern und dafür den sinnvollsten End-to-End-Hebel bestimmen.
 ```
 
 ### R09 – Retouren / Logistik
@@ -308,14 +308,14 @@ Informationslage: ERP- und Lagerdaten vorhanden; Begründungen und Fotos sind te
 Ziel: Bearbeitungszeit reduzieren und unnötige Schleifen vermeiden.
 ```
 
-### R10 – Engineering / technische Änderungen
+### R10 – Engineering / Wissen und Entscheidungsqualität
 
 ```text
-Unternehmen: projektorientierter Maschinen- und Anlagenbauer, ca. 1.000 Mitarbeitende.
+Unternehmen: projektorientierter Maschinen- und Anlagenbauer, ca. 1.100 Mitarbeitende.
 Bereich: Engineering und Projektabwicklung.
-Ausgangslage: technische Änderungen führen regelmäßig zu Abstimmungsaufwand zwischen Konstruktion, Projektleitung, Einkauf und Produktion. Wissen über frühere Entscheidungen ist verteilt.
-Informationslage: Dokumente und Änderungsinformationen existieren, sind aber über mehrere Ablagen und Systeme verteilt; belastbare Prozesskennzahlen fehlen teilweise.
-Ziel: Änderungsarbeit nachvollziehbarer und effizienter gestalten.
+Ausgangslage: Technische Entscheidungen zu Änderungen, Sonderfreigaben und wiederkehrenden Konstruktionsfragen hängen stark von wenigen erfahrenen Personen ab. Ähnliche Fragen werden in verschiedenen Projekten unterschiedlich entschieden; frühere Begründungen sind später schwer auffindbar. Das Kernproblem ist nicht primär Geschwindigkeit, sondern robuste und nachvollziehbare Entscheidungsqualität.
+Informationslage: technische Dokumente, Änderungsinformationen und Projektakten existieren, sind aber über mehrere Ablagen und Systeme verteilt; Entscheidungsbegründungen sind uneinheitlich dokumentiert.
+Ziel: Wissen und Entscheidungsqualität robuster machen, ohne eine bestimmte technische Lösung vorzugeben.
 ```
 
 ## 8. Session- und Rollen-Trennung
@@ -632,27 +632,46 @@ Kein numerischer Gesamtscore erforderlich.
 6. Entstehen mindestens zwei echte Lösungsoptionen oder nur Varianten derselben Idee?
 7. Wird eine Lösung ausgewählt, bevor die Diagnose belastbar ist?
 8. Wie oft endet Discovery plausibel mit Non-AI?
-9. Gibt es ein systematisches Bias in Richtung KI?
-10. Falls KI gewählt wird: ist der KI-Anteil gegenüber einfacheren Alternativen plausibel?
-11. Welche Gates erhöhen Qualität, welche erzeugen überwiegend Reibung?
-12. Wo fehlen klare Next Actions oder verständliche Erklärungen?
-13. Welche Informationen müssen unnötig mehrfach erfasst werden?
-14. Welche UX-Probleme treten in mehreren fachlich unterschiedlichen Fällen auf?
-15. Welche Befunde sind echte Produktprobleme und welche nur Agent-/Toolartefakte?
-16. Welche Journey-Schritte erzeugen wiederholt ungewöhnlich hohen Aufwand?
+9. Gibt es ein systematisches Bias in Richtung KI oder eines anderen Lösungstyps?
+10. Falls eine Lösungsklasse auffällig häufig gewählt wird: bleibt die Konvergenz **über unterschiedliche Zielarten** (Effizienz, Qualität, Wachstum, Risiko/Compliance, Wissens-/Entscheidungsqualität) bestehen, oder lässt sie sich plausibel durch die Szenarioverteilung erklären?
+11. Falls KI gewählt wird: ist der KI-Anteil gegenüber einfacheren Alternativen plausibel?
+12. Welche Gates erhöhen Qualität, welche erzeugen überwiegend Reibung?
+13. Wo fehlen klare Next Actions oder verständliche Erklärungen?
+14. Welche Informationen müssen unnötig mehrfach erfasst werden?
+15. Welche UX-Probleme treten in mehreren fachlich unterschiedlichen Fällen auf?
+16. Welche Befunde sind echte Produktprobleme und welche nur Agent-/Toolartefakte?
+17. Welche Journey-Schritte erzeugen wiederholt ungewöhnlich hohen Aufwand?
 
-### 16.3 Gesamturteil
+### 16.3 Pflichtprüfung: Szenario-Framing als Confounder
+
+Eine beobachtete Lösungskonvergenz darf **nicht automatisch** als Methodik-Bias des KI-UseCase-Radars gewertet werden.
+
+Vor einer solchen Aussage ist mindestens zu prüfen:
+
+- treten gleiche Lösungstypen nur in ähnlich gerahmten Effizienz-/Koordinationsfällen auf oder auch bei Wachstum, Risiko/Compliance und Wissens-/Entscheidungsproblemen?
+- korreliert die Lösungsklasse stärker mit Datenreife, Problemcharakter oder Zielart als mit der Produktführung?
+- wurden die Alternativen in den einzelnen Runs tatsächlich offen erzeugt und erst später verengt?
+- zeigt sich dasselbe Bias-Signal auch in Szenarien, deren Ausgangsrahmen diesen Lösungstyp nicht offensichtlich nahelegt?
+
+Interpretationsregel:
+
+> Erst wenn eine Lösungsklasse über **unterschiedliche Zielarten und Problemcharaktere hinweg** auffällig bevorzugt wird und die einzelnen Reviews keine sachliche Erklärung aus dem jeweiligen Charter liefern, darf dies als belastbares Signal für ein mögliches Methodik-/Produkt-Bias gewertet werden.
+
+Wenn die Konvergenz plausibel durch die Stichprobe erklärbar ist, muss das Cross-Run-Review dies ausdrücklich als **Stichproben-/Framing-Effekt** kennzeichnen statt der App zuzuschreiben.
+
+### 16.4 Gesamturteil
 
 Abschluss entlang folgender Dimensionen:
 
 - Discovery-Führung: `robust / teilweise robust / schwach`
 - Problem-vor-Lösung-Prinzip: `eingehalten / teilweise / häufig verletzt`
-- Lösungsneutralität: `robust / Bias erkennbar`
+- Lösungsneutralität: `robust / Bias erkennbar / durch Stichprobe nicht eindeutig beurteilbar`
+- Stichproben-/Framing-Einfluss: `gering / relevant / stark einschränkend`
 - Use-Case-Herleitung: `nachvollziehbar / uneinheitlich / schwach`
 - Non-AI-Fähigkeit: `funktioniert / teilweise / wird faktisch verdrängt`
 - UX-Unterstützung: `ausreichend / reibungsreich / blockierend`
 - Gate-Qualität: `überwiegend hilfreich / gemischt / kontraproduktiv`
-- Testaussage: `qualitativ belastbar / durch Agent-Toolprobleme eingeschränkt`
+- Testaussage: `qualitativ belastbar / durch Agent-Toolprobleme eingeschränkt / durch Stichproben-Framing eingeschränkt`
 
 ## 17. Ablagestruktur für #429
 
@@ -684,6 +703,7 @@ Die Run-Logs und Reviews bleiben einzeln nachvollziehbar. `AGENTIC_TEST_RUNS_REV
 - [x] reproduzierbarer Clean-State als Voraussetzung definiert;
 - [x] zehn unterschiedliche Runs eindeutig festgelegt;
 - [x] Fachbereich, Datenreife und Pain-Point-Klarheit variieren;
+- [x] Zielarten variieren über Effizienz, Qualität, Wachstum, Risiko/Compliance und Wissens-/Entscheidungsqualität;
 - [x] Fälle ermöglichen sowohl KI- als auch Non-AI-Ergebnisse;
 - [x] Run-Log-Template festgelegt;
 - [x] Finding-Schema und Kategorien festgelegt;
@@ -691,7 +711,7 @@ Die Run-Logs und Reviews bleiben einzeln nachvollziehbar. `AGENTIC_TEST_RUNS_REV
 - [x] Run-Endzustände einschließlich erfolgreichem Non-AI-Abschluss definiert;
 - [x] Abbruch-/Restart-Regeln festgelegt;
 - [x] unabhängiger Plausibilitätsreview definiert;
-- [x] Cross-Run-Schema festgelegt;
+- [x] Cross-Run-Schema inklusive Confounder-Prüfung für Szenario-Framing festgelegt;
 - [x] kanonische Testrolle `Business Owner` gegen aktuellen Permission-Stand festgelegt;
 - [x] gezieltes Permission-Testing abgegrenzt;
 - [x] progressbasierte Retry-/No-Progress-Regel definiert;
